@@ -1,0 +1,12 @@
+[package]
+name = "convertor"
+description = "A profile converter for surge/clash."
+authors = ["BppleMan"]
+version = "1.0.0"
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/BppleMan/convertor"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
