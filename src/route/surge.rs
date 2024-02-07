@@ -1,18 +1,21 @@
-use crate::error::AppError;
-use anyhow::{anyhow, Result};
+use std::collections::HashMap;
+use std::str::FromStr;
+
+use anyhow::Result;
 use axum::extract::Query;
-use base64::prelude::BASE64_STANDARD;
-use base64::Engine;
-use ini::Ini;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 use tracing::info;
 
-#[derive(Serialize, Deserialize)]
+use crate::error::AppError;
+use crate::profile::surge_profile::SurgeProfile;
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SurgeQuery {
     pub url: String,
     pub flag: String,
+    #[serde(default)]
+    pub policies: Option<String>,
 }
 
 pub async fn profile(query: Query<SurgeQuery>) -> Result<String, AppError> {
@@ -20,13 +23,29 @@ pub async fn profile(query: Query<SurgeQuery>) -> Result<String, AppError> {
     profile_impl(query).await.map_err(Into::into)
 }
 
-pub async fn rule_set() {}
+/// policy:
+/// - Direct
+/// - BosLife
+/// - no-resolve
+/// - force-remote-dns
+pub async fn rule_set(query: Query<SurgeQuery>) -> Result<String, AppError> {
+    info!("{:#?}", query.0);
+    rule_set_impl(query).await.map_err(Into::into)
+}
 
 async fn profile_impl(query: Query<SurgeQuery>) -> Result<String> {
     let raw_profile = get_raw_profile(&query.0).await?;
-    let ini = Ini::load_from_str(&raw_profile)?;
-    ini.sections().for_each(|sec| println!("{:?}", sec));
-    Ok(raw_profile)
+    let mut profile = SurgeProfile::new(raw_profile);
+    profile.replace_header();
+    profile.organize_proxy_group();
+    Ok(profile.to_string())
+}
+
+async fn rule_set_impl(query: Query<SurgeQuery>) -> Result<String> {
+    let raw_profile = get_raw_profile(&query.0).await?;
+    let profile = SurgeProfile::new(raw_profile);
+    let policies = query.0.policies.as_ref().unwrap().split(',').collect::<Vec<_>>();
+    Ok(profile.extract_rule(&policies))
 }
 
 async fn get_raw_profile(query: &SurgeQuery) -> Result<String> {
