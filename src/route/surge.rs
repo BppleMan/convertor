@@ -41,6 +41,6 @@ async fn profile_impl(query: Query<SurgeQuery>) -> Result<String> {
 async fn rule_set_impl(query: Query<SurgeQuery>) -> Result<String> {
     let raw_profile = get_raw_profile(&query.url, &query.flag).await?;
     let profile = SurgeProfile::new(raw_profile);
-    let policies = query.0.policies.as_ref().unwrap().split(',').collect::<Vec<_>>();
+    let policies = query.0.policies.as_ref().unwrap().split('|').collect::<Vec<_>>();
     Ok(profile.extract_rule(&policies))
 }
