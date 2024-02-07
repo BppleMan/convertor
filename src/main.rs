@@ -40,7 +40,8 @@ fn init() -> WorkerGuard {
     #[cfg(debug_assertions)]
     let base_dir = std::env::current_dir().unwrap();
     #[cfg(not(debug_assertions))]
-    let base_dir = PathBuf::from(std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_string())).join(".convertor");
+    let base_dir =
+        std::path::PathBuf::from(std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_string())).join(".convertor");
     let file_appender = tracing_appender::rolling::hourly(base_dir.join("logs"), "convertor.log");
     let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
 

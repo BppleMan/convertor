@@ -2,7 +2,7 @@
 name = "convertor"
 description = "A profile converter for surge/clash."
 authors = ["BppleMan"]
-version = "1.1.0"
+version = "1.1.1"
 edition = "2021"
 license = "Apache-2.0"
 repository = "https://github.com/BppleMan/convertor"
