@@ -4,11 +4,9 @@ mod route;
 mod region;
 mod middleware;
 
-use anyhow::Result;
-use axum::extract::Query;
 use axum::routing::get;
 use axum::Router;
-use tokio::task::JoinHandle;
+use color_eyre::Result;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -29,25 +27,14 @@ async fn main() -> Result<()> {
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8196").await?;
 
-    let _handle: JoinHandle<Result<()>> = tokio::spawn(async move {
-        axum::serve(listener, app).await?;
-        Ok(())
-    });
-
-    let rule_set = route::surge::rule_set(Query(route::surge::SurgeQuery {
-        url: "http://127.0.0.1:8196/api/v1/client/subscribe?token=4287df4ba2618c4da1f9efd7ffeb30a5".to_string(),
-        flag: "surge".to_string(),
-        policies: Some("DIRECT".to_string()),
-    }))
-    .await?;
-
-    println!("rule-set:\n{}", rule_set);
-    _handle.await??;
+    axum::serve(listener, app).await?;
 
     Ok(())
 }
 
 fn init() -> WorkerGuard {
+    color_eyre::install().unwrap();
+
     let filter = EnvFilter::new("info").add_directive("convertor=trace".parse().unwrap());
 
     #[cfg(debug_assertions)]

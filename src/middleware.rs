@@ -15,7 +15,7 @@ where
 {
     type Rejection = (StatusCode, &'static str);
 
-    async fn from_request(req: axum::extract::Request, state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request(req: axum::extract::Request, _state: &S) -> Result<Self, Self::Rejection> {
         if let Some(query) = req.uri().query() {
             let params: HashMap<String, String> =
                 serde_qs::from_str(query).map_err(|_| (StatusCode::BAD_REQUEST, "Invalid query string"))?;
