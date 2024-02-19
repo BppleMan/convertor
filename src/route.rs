@@ -12,8 +12,21 @@ pub async fn root() -> Result<(), AppError> {
     Ok(())
 }
 
-async fn get_raw_profile(url: impl AsRef<str>, flag: impl AsRef<str>) -> Result<String> {
+pub async fn get_raw_profile(
+    url: impl AsRef<str>,
+    flag: impl AsRef<str>,
+) -> Result<String> {
     let mut url = Url::from_str(url.as_ref())?;
     url.query_pairs_mut().append_pair("flag", flag.as_ref());
-    reqwest::get(url).await?.text().await.map_err(Into::into)
+    reqwest::Client::new()
+        .get(url)
+        .header(
+            "User-Agent",
+            format!("convertor/{}", env!("CARGO_PKG_VERSION")),
+        )
+        .send()
+        .await?
+        .text()
+        .await
+        .map_err(Into::into)
 }

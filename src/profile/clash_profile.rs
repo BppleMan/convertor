@@ -1,4 +1,3 @@
-use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 
@@ -6,7 +5,8 @@ mod proxy;
 mod proxy_group;
 mod rule;
 
-use crate::region::REGIONS;
+use crate::profile::group_by;
+use crate::region::Region;
 pub use proxy::*;
 pub use proxy_group::*;
 
@@ -37,35 +37,45 @@ impl ClashProfile {
     }
 
     pub fn organize_proxy_group(&mut self) {
-        let boslife_info_group = self.proxies.iter().filter(|p| !p.name.starts_with("[BosLife]")).fold(
-            ProxyGroup::new("BosLife Info".to_string(), ProxyGroupType::Select, vec![]),
-            |mut acc, proxy| {
-                acc.proxies.push(proxy.name.clone());
-                acc
-            },
+        let mut proxy_names = self
+            .proxies
+            .iter()
+            .map(|p| p.name.to_string())
+            .collect::<Vec<_>>();
+        let other = proxy_names.split_off(3);
+        let boslife_info_group = ProxyGroup::new(
+            "BosLife Info".to_string(),
+            ProxyGroupType::Select,
+            proxy_names,
         );
-        let proxy_groups =
-            self.proxies
-                .iter()
-                .filter(|p| p.name.starts_with("[BosLife]"))
-                .fold(IndexMap::new(), |mut acc, group| {
-                    if let Some(proxy_group_name) = REGIONS.iter().find(|region| group.name.contains(region.as_str())) {
-                        let proxy_group = acc.entry(proxy_group_name.to_string()).or_insert(ProxyGroup::new(
-                            proxy_group_name.to_string(),
-                            ProxyGroupType::URLTest,
-                            vec![],
-                        ));
-                        proxy_group.proxies.push(group.name.clone());
-                    }
-                    acc
-                });
-        let boslife_group = ProxyGroup::new(
+        let mut proxy_map = group_by(&other);
+        let groups =
+            group_by(&proxy_map.keys().map(|k| k.as_str()).collect::<Vec<_>>());
+        let mut boslife_group = ProxyGroup::new(
             "BosLife".to_string(),
             ProxyGroupType::Select,
-            proxy_groups.keys().map(|k| k.to_string()).collect(),
+            proxy_map.keys().map(|k| k.to_string()).collect(),
         );
+        for (group, proxies) in &groups {
+            if !proxy_map.contains_key(group) {
+                proxy_map.insert(group.clone(), proxies.clone());
+            }
+        }
+        for (group, proxies) in groups {
+            if let Some(region) = Region::detect(group) {
+                boslife_group.proxies.push(region.cn.clone());
+                if !proxy_map.contains_key(&region.cn) {
+                    proxy_map.insert(region.cn.clone(), proxies);
+                }
+            }
+        }
         self.proxy_groups = vec![boslife_group, boslife_info_group];
-        self.proxy_groups.extend(proxy_groups.into_values());
+        self.proxy_groups.extend(proxy_map.into_iter().map(
+            |(name, policy)| {
+                ProxyGroup::new(name, ProxyGroupType::UrlTest, policy)
+            },
+        ));
+        println!("{:#?}", self.proxy_groups);
     }
 }
 

@@ -20,5 +20,5 @@ pub enum ProxyGroupType {
     Select,
     #[default]
     #[serde(rename = "url-test")]
-    URLTest,
+    UrlTest,
 }
