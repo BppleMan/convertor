@@ -45,7 +45,7 @@ async fn profile_impl(
     let host = host
         .map(|h| h.to_str().map(|s| s.to_string()))
         .transpose()?;
-    profile.replace_header(host);
+    profile.replace_header(host, &query.url);
     profile.organize_proxy_group();
     Ok(profile.to_string())
 }

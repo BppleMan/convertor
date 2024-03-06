@@ -42,13 +42,18 @@ impl SurgeProfile {
         Self { sections }
     }
 
-    pub fn replace_header(&mut self, host: Option<impl AsRef<str>>) {
+    pub fn replace_header(
+        &mut self,
+        host: Option<impl AsRef<str>>,
+        url: impl AsRef<str>,
+    ) {
         let host = host
             .as_ref()
             .map(|h| h.as_ref())
             .unwrap_or("mini-lan.sgponte");
         let header = &mut self.sections["header"];
-        header[0] = format!("#!MANAGED-CONFIG http://{}/surge?url=https%3A%2F%2Fapi.imlax.net%2Fapi%2Fv1%2Fclient%2Fsubscribe%3Ftoken%3D4287df4ba2618c4da1f9efd7ffeb30a5&secret=bppleman interval=259200 strict=true", host)
+        let url = urlencoding::encode(url.as_ref()).to_string();
+        header[0] = format!("#!MANAGED-CONFIG http://{host}/surge?url={url}&secret=bppleman interval=259200 strict=true")
     }
 
     pub fn organize_proxy_group(&mut self) {
