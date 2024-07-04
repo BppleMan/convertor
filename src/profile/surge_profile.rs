@@ -137,6 +137,33 @@ impl SurgeProfile {
             .unwrap_or_default()
     }
 
+    pub fn extract_boslife_subscription(&self) -> String {
+        self.rule()
+            .map(|rules| {
+                let mut begin = false;
+                let mut boslife = vec!["// Boslife Subscription".to_string()];
+                for line in rules {
+                    if line.contains("Subscription") && line.starts_with("//") {
+                        begin = true;
+                        continue;
+                    }
+                    if line.starts_with("//") {
+                        break;
+                    }
+                    if begin {
+                        let rule_part = line.split(',').collect::<Vec<_>>();
+                        if rule_part.len() > 2 {
+                            boslife.push(rule_part[0..2].join(","));
+                        } else {
+                            boslife.push(line.to_string())
+                        }
+                    }
+                }
+                boslife.join("\n")
+            })
+            .unwrap_or_default()
+    }
+
     fn proxy(&self) -> Option<&Vec<String>> {
         self.sections.get("[Proxy]")
     }

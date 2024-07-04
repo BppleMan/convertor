@@ -1,19 +1,22 @@
 use axum::body::Body;
 use axum::extract::Query;
 use axum::http::{header, HeaderValue, Request};
+use color_eyre::eyre::eyre;
 use color_eyre::Result;
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
 use crate::error::AppError;
+use crate::profile::get_raw_profile;
 use crate::profile::surge_profile::SurgeProfile;
-use crate::route::get_raw_profile;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SurgeQuery {
     pub url: String,
     #[serde(default)]
     pub policies: Option<String>,
+    #[serde(default)]
+    pub boslife: Option<bool>,
 }
 
 pub async fn profile(
@@ -53,12 +56,12 @@ async fn profile_impl(
 async fn rule_set_impl(query: Query<SurgeQuery>) -> Result<String> {
     let raw_profile = get_raw_profile(&query.url, "surge").await?;
     let profile = SurgeProfile::new(raw_profile);
-    let policies = query
-        .0
-        .policies
-        .as_ref()
-        .unwrap()
-        .split('|')
-        .collect::<Vec<_>>();
-    Ok(profile.extract_rule(&policies))
+    if let Some(policies) = query.0.policies.as_ref() {
+        let policies = policies.split('|').collect::<Vec<_>>();
+        Ok(profile.extract_rule(&policies))
+    } else if query.0.boslife == Some(true) {
+        Ok(profile.extract_boslife_subscription())
+    } else {
+        Err(eyre!("Invalid query: missing policies or boslife flag"))
+    }
 }

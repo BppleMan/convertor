@@ -1,6 +1,6 @@
 use crate::error::AppError;
 use crate::profile::clash_profile::ClashProfile;
-use crate::route::get_raw_profile;
+use crate::profile::get_raw_profile;
 use axum::extract::Query;
 use color_eyre::Result;
 use serde::{Deserialize, Serialize};

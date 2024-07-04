@@ -83,6 +83,7 @@ async fn print_request_response(
 
     let res = next.run(req).await;
 
+    debug!("{:#?}", res);
     // let (parts, body) = res.into_parts();
     // let bytes = buffer_and_print("response", body).await?;
     // let res = Response::from_parts(parts, Body::from(bytes));
