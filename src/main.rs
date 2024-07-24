@@ -11,6 +11,7 @@ use axum::middleware::Next;
 use axum::response::IntoResponse;
 use axum::routing::get;
 use axum::Router;
+use clap::Parser;
 use color_eyre::Result;
 use http_body_util::BodyExt;
 use tracing::debug;
@@ -21,8 +22,18 @@ use tracing_subscriber::EnvFilter;
 
 pub const MOCK_CONTENT: &str = include_str!("../assets/mock");
 
+// a clap command line argument parser
+#[derive(Debug, Parser)]
+#[clap(name = "convertor", version, author)]
+struct Convertor {
+    #[clap(short, long, default_value = "8196")]
+    port: u16,
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
+    let convertor = Convertor::parse();
+
     let _guard = init();
 
     let app = Router::new()
@@ -33,7 +44,13 @@ async fn main() -> Result<()> {
         .route("/api/v1/client/subscribe", get(MOCK_CONTENT))
         .layer(axum::middleware::from_fn(print_request_response));
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:8196").await?;
+    let addr = format!("0.0.0.0:{}", convertor.port);
+
+    println!("Listening on: http://{}", addr);
+    println!("usage: http://{}?url=[boslife subscription url]", addr);
+    println!("url need to be url-encoded");
+
+    let listener = tokio::net::TcpListener::bind(addr).await?;
 
     axum::serve(listener, app).await?;
 
