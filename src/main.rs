@@ -47,8 +47,15 @@ async fn main() -> Result<()> {
     let addr = format!("0.0.0.0:{}", convertor.port);
 
     println!("Listening on: http://{}", addr);
-    println!("usage: http://{}?url=[boslife subscription url]", addr);
-    println!("url need to be url-encoded");
+    println!("usage: all url parameters need to be url-encoded");
+    println!(
+        "\tmain sub: http://{}/surge?url=[boslife subscription url]",
+        addr
+    );
+    println!(
+        "\trule set: http://{}/rule-set?url=[boslife subscription url]&boslife=true",
+        addr
+    );
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
 
