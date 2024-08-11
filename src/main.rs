@@ -1,24 +1,22 @@
+use axum::routing::get;
+use axum::Router;
+use clap::Parser;
+use color_eyre::Result;
+use tokio::signal;
+use tower_http::trace::{
+    DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer,
+};
+use tower_http::LatencyUnit;
+use tracing_appender::non_blocking::WorkerGuard;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
+use tracing_subscriber::EnvFilter;
+
 mod error;
 mod profile;
 mod route;
 mod region;
 mod middleware;
-
-use axum::body::Bytes;
-use axum::extract::Request;
-use axum::http::StatusCode;
-use axum::middleware::Next;
-use axum::response::IntoResponse;
-use axum::routing::get;
-use axum::Router;
-use clap::Parser;
-use color_eyre::Result;
-use http_body_util::BodyExt;
-use tracing::debug;
-use tracing_appender::non_blocking::WorkerGuard;
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::util::SubscriberInitExt;
-use tracing_subscriber::EnvFilter;
 
 pub const MOCK_CONTENT: &str = include_str!("../assets/mock");
 
@@ -42,7 +40,16 @@ async fn main() -> Result<()> {
         .route("/surge", get(route::surge::profile))
         .route("/surge/rule_set", get(route::surge::rule_set))
         .route("/api/v1/client/subscribe", get(MOCK_CONTENT))
-        .layer(axum::middleware::from_fn(print_request_response));
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(DefaultMakeSpan::new().include_headers(true))
+                .on_request(DefaultOnRequest::new().level(tracing::Level::INFO))
+                .on_response(
+                    DefaultOnResponse::new()
+                        .level(tracing::Level::INFO)
+                        .latency_unit(LatencyUnit::Millis),
+                ),
+        );
 
     let addr = format!("0.0.0.0:{}", convertor.port);
 
@@ -59,7 +66,9 @@ async fn main() -> Result<()> {
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
 
-    axum::serve(listener, app).await?;
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await?;
 
     Ok(())
 }
@@ -68,7 +77,8 @@ fn init() -> WorkerGuard {
     color_eyre::install().unwrap();
 
     let filter = EnvFilter::new("info")
-        .add_directive("convertor=trace".parse().unwrap());
+        .add_directive("convertor=trace".parse().unwrap())
+        .add_directive("tower_http=trace".parse().unwrap());
 
     #[cfg(debug_assertions)]
     let base_dir = std::env::current_dir().unwrap();
@@ -96,46 +106,26 @@ fn init() -> WorkerGuard {
     guard
 }
 
-async fn print_request_response(
-    req: Request,
-    next: Next,
-) -> Result<impl IntoResponse, (StatusCode, String)> {
-    debug!("{:#?}", req);
-    // let (parts, body) = req.into_parts();
-    // let bytes = buffer_and_print("request", body).await?;
-    // let req = Request::from_parts(parts, Body::from(bytes));
-
-    let res = next.run(req).await;
-
-    debug!("{:#?}", res);
-    // let (parts, body) = res.into_parts();
-    // let bytes = buffer_and_print("response", body).await?;
-    // let res = Response::from_parts(parts, Body::from(bytes));
-
-    Ok(res)
-}
-
-async fn _buffer_and_print<B>(
-    direction: &str,
-    body: B,
-) -> Result<Bytes, (StatusCode, String)>
-where
-    B: axum::body::HttpBody<Data = Bytes>,
-    B::Error: std::fmt::Display,
-{
-    let bytes = match body.collect().await {
-        Ok(collected) => collected.to_bytes(),
-        Err(err) => {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                format!("failed to read {direction} body: {err}"),
-            ));
-        }
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl+C handler");
     };
 
-    if let Ok(body) = std::str::from_utf8(&bytes) {
-        debug!("{direction} body = {body}");
-    }
+    #[cfg(unix)]
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("failed to install signal handler")
+            .recv()
+            .await;
+    };
 
-    Ok(bytes)
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
 }
