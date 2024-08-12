@@ -1,0 +1,45 @@
+[Unit]
+Description=Convertor Service
+#Documentation=https://example.com/docs  # 可选：提供程序的文档链接
+After=network.target  # 在网络服务启动后启动
+
+[Service]
+# 指定要运行的程序
+ExecStart=/root/.cargo/bin/convertor -p 8001
+
+# 重启策略，默认设置为 on-failure
+Restart=on-failure
+
+# 设置环境变量（可选）
+#Environment=RUST_LOG=info
+
+# 配置服务运行用户和组（推荐不使用 root）
+User=root
+Group=root
+
+# 限制资源使用（可选）
+# 例如限制内存使用
+MemoryLimit=500M
+
+# 限制进程创建
+TasksMax=100
+
+# 限制文件句柄数
+LimitNOFILE=1024
+
+# 设置工作目录
+WorkingDirectory=/root/.convertor
+
+# 输出日志到 systemd journal
+StandardOutput=journal
+StandardError=journal
+
+# 配置运行服务所需的文件或目录权限（可选）
+ReadOnlyPaths=/root/.convertor
+ReadWritePaths=/root/.convertor
+
+# 防止核心转储（可选）
+LimitCORE=0
+
+[Install]
+WantedBy=multi-user.target
