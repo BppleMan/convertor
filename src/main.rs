@@ -32,7 +32,7 @@ struct Convertor {
     host: String,
 
     /// port to listen on
-    #[clap(short, long, default_value = "8196")]
+    #[clap(short, long, default_value = "8001")]
     port: u16,
 }
 
