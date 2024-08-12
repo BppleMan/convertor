@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use axum::routing::get;
 use axum::Router;
 use clap::Parser;
@@ -7,6 +9,7 @@ use tower_http::trace::{
     DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer,
 };
 use tower_http::LatencyUnit;
+use tracing::info;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -24,6 +27,11 @@ pub const MOCK_CONTENT: &str = include_str!("../assets/mock");
 #[derive(Debug, Parser)]
 #[clap(name = "convertor", version, author)]
 struct Convertor {
+    /// host to listen on
+    #[clap(long, default_value = "127.0.0.1")]
+    host: String,
+
+    /// port to listen on
     #[clap(short, long, default_value = "8196")]
     port: u16,
 }
@@ -33,6 +41,8 @@ async fn main() -> Result<()> {
     let convertor = Convertor::parse();
 
     let _guard = init();
+
+    info!("{:#?}", convertor);
 
     let app = Router::new()
         .route("/", get(route::root))
@@ -51,26 +61,39 @@ async fn main() -> Result<()> {
                 ),
         );
 
-    let addr = format!("0.0.0.0:{}", convertor.port);
+    let addr = format!("{}:{}", convertor.host, convertor.port);
 
-    println!("Listening on: http://{}", addr);
-    println!("usage: all url parameters need to be url-encoded");
-    println!(
+    info!("Listening on: http://{}", addr);
+    info!("usage: all url parameters need to be url-encoded");
+    info!(
         "\tmain sub: http://{}/surge?url=[boslife subscription url]",
         addr
     );
-    println!(
+    info!(
         "\trule set: http://{}/rule-set?url=[boslife subscription url]&boslife=true",
         addr
     );
 
-    let listener = tokio::net::TcpListener::bind(addr).await?;
+    let listener = tokio::net::TcpListener::bind(&addr).await?;
 
+    info!("Server starting");
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
         .await?;
+    info!("Server stopped");
 
     Ok(())
+}
+
+fn base_dir() -> PathBuf {
+    #[cfg(debug_assertions)]
+    let base_dir = std::env::current_dir().unwrap();
+    #[cfg(not(debug_assertions))]
+    let base_dir = std::path::PathBuf::from(
+        std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_string()),
+    )
+    .join(".convertor");
+    base_dir
 }
 
 fn init() -> WorkerGuard {
@@ -80,13 +103,7 @@ fn init() -> WorkerGuard {
         .add_directive("convertor=trace".parse().unwrap())
         .add_directive("tower_http=trace".parse().unwrap());
 
-    #[cfg(debug_assertions)]
-    let base_dir = std::env::current_dir().unwrap();
-    #[cfg(not(debug_assertions))]
-    let base_dir = std::path::PathBuf::from(
-        std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_string()),
-    )
-    .join(".convertor");
+    let base_dir = base_dir();
     let file_appender = tracing_appender::rolling::hourly(
         base_dir.join("logs"),
         "convertor.log",
