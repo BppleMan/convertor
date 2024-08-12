@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use axum::routing::get;
 use axum::Router;
@@ -9,7 +9,7 @@ use tower_http::trace::{
     DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer,
 };
 use tower_http::LatencyUnit;
-use tracing::info;
+use tracing::{info, warn};
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -40,9 +40,12 @@ struct Convertor {
 async fn main() -> Result<()> {
     let convertor = Convertor::parse();
 
-    let _guard = init();
+    let base_dir = base_dir();
+
+    let _guard = init(&base_dir);
 
     info!("{:#?}", convertor);
+    info!("base_dir: {:?}", base_dir);
 
     let app = Router::new()
         .route("/", get(route::root))
@@ -64,6 +67,7 @@ async fn main() -> Result<()> {
     let addr = format!("{}:{}", convertor.host, convertor.port);
 
     info!("Listening on: http://{}", addr);
+    warn!("It is recommended to use nginx for reverse proxy and enable SSL");
     info!("usage: all url parameters need to be url-encoded");
     info!(
         "\tmain sub: http://{}/surge?url=[boslife subscription url]",
@@ -96,16 +100,15 @@ fn base_dir() -> PathBuf {
     base_dir
 }
 
-fn init() -> WorkerGuard {
+fn init<P: AsRef<Path>>(base_dir: P) -> WorkerGuard {
     color_eyre::install().unwrap();
 
     let filter = EnvFilter::new("info")
         .add_directive("convertor=trace".parse().unwrap())
         .add_directive("tower_http=trace".parse().unwrap());
 
-    let base_dir = base_dir();
     let file_appender = tracing_appender::rolling::hourly(
-        base_dir.join("logs"),
+        base_dir.as_ref().join("logs"),
         "convertor.log",
     );
     let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
