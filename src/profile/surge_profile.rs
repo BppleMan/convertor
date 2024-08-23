@@ -54,7 +54,7 @@ impl SurgeProfile {
         let header = &mut self.sections["header"];
         let url = urlencoding::encode(url.as_ref()).to_string();
         header[0] = format!(
-            "#!MANAGED-CONFIG https://{host}/surge?url={url} interval=259200 \
+            "#!MANAGED-CONFIG http://{host}/surge?url={url} interval=259200 \
         strict=true"
         )
     }
