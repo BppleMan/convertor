@@ -1,7 +1,6 @@
 use std::fmt::{Display, Formatter};
 
-use crate::profile::group_by;
-use crate::region::Region;
+use crate::profile::{group_by_region, split_and_merge_groups};
 use indexmap::IndexMap;
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -42,7 +41,16 @@ impl SurgeProfile {
         Self { sections }
     }
 
-    pub fn replace_header(
+    pub fn parse<HOST: AsRef<str>, URL: AsRef<str>>(
+        &mut self,
+        host: Option<HOST>,
+        url: URL,
+    ) {
+        self.replace_header(host, url);
+        self.organize_proxy_group();
+    }
+
+    fn replace_header(
         &mut self,
         host: Option<impl AsRef<str>>,
         url: impl AsRef<str>,
@@ -59,56 +67,44 @@ impl SurgeProfile {
         )
     }
 
-    pub fn organize_proxy_group(&mut self) {
-        let mut proxy_map: IndexMap<String, Vec<String>> = IndexMap::new();
-        let mut boslife = vec![];
-        let mut boslife_info = vec![];
+    fn organize_proxy_group(&mut self) {
         if let Some(proxies) = self.proxy() {
             let proxies = proxies
                 .iter()
+                .skip(1)
                 .filter(|p| !p.is_empty())
-                .map(|p| p.split('=').next().unwrap().to_string())
+                .filter_map(|p| p.split('=').next().map(|name| name.trim()))
                 .collect::<Vec<_>>();
-            boslife_info = proxies[1..4].to_vec();
-            proxy_map = group_by(&proxies[4..]);
-            let groups = group_by(
-                &proxy_map.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
+            let grouped_proxies = group_by_region(&proxies);
+            let (groups, info_proxies) =
+                split_and_merge_groups(grouped_proxies);
+            println!("{:#?}", groups);
+            let boslife_group = format!(
+                "BosLife = select, {}",
+                groups
+                    .keys()
+                    .map(|r| format!("{} {}", r.icon, r.cn))
+                    .collect::<Vec<_>>()
+                    .join(", ")
             );
-            for (group, proxies) in &groups {
-                boslife.push(group.clone());
-                if !proxy_map.contains_key(group) {
-                    proxy_map.insert(group.clone(), proxies.clone());
+            let boslife_info =
+                format!("BosLife Info = select, {}", info_proxies.join(", "));
+            if let Some(proxy_group) = self.proxy_group_mut() {
+                if !proxy_group.is_empty() {
+                    proxy_group.truncate(1);
                 }
-            }
-            for (group, proxies) in groups {
-                if let Some(region) = Region::detect(group) {
-                    boslife.push(region.cn.clone());
-                    if !proxy_map.contains_key(&region.cn) {
-                        proxy_map.insert(region.cn.clone(), proxies);
-                    }
-                }
-            }
-        }
-        let boslife_group = format!("BosLife = select, {}", boslife.join(", "));
-        let boslife_info =
-            format!("BosLife Info = select, {}", boslife_info.join(", "));
-        if let Some(proxy_group) = self.proxy_group_mut() {
-            if !proxy_group.is_empty() {
-                proxy_group.truncate(1);
-            }
-            proxy_group.push(boslife_group);
-            proxy_group.push(boslife_info);
-            proxy_map
-                .into_iter()
-                .filter(|(name, _)| name != "BosLife Info")
-                .for_each(|(name, proxies)| {
+                proxy_group.push(boslife_group);
+                proxy_group.push(boslife_info);
+                groups.into_iter().for_each(|(region, proxies)| {
+                    let name = format!("{} {}", region.icon, region.cn);
                     proxy_group.push(format!(
                         "{name} = url-test, {}",
                         proxies.join(", ")
                     ));
                 });
-            proxy_group.push("".to_string());
-            proxy_group.push("".to_string());
+                proxy_group.push("".to_string());
+                proxy_group.push("".to_string());
+            }
         }
     }
 
@@ -191,5 +187,19 @@ impl Display for SurgeProfile {
                 .collect::<Vec<_>>()
                 .join("\n")
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const PROFILE: &str = include_str!("../../assets/surge/mock.conf");
+
+    #[test]
+    fn test_parse() {
+        let mut profile = SurgeProfile::new(PROFILE);
+        profile.parse(Some("mini-lan.sgponte"), "https://example.com");
+        println!("{}", profile);
     }
 }

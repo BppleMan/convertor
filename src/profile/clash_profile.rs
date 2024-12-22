@@ -5,7 +5,7 @@ mod proxy;
 mod proxy_group;
 mod rule;
 
-use crate::profile::group_by;
+use crate::profile::group_by_region;
 use crate::region::Region;
 pub use proxy::*;
 pub use proxy_group::*;
@@ -48,9 +48,10 @@ impl ClashProfile {
             ProxyGroupType::Select,
             proxy_names,
         );
-        let mut proxy_map = group_by(&other);
-        let groups =
-            group_by(&proxy_map.keys().map(|k| k.as_str()).collect::<Vec<_>>());
+        let mut proxy_map = group_by_region(&other);
+        let groups = group_by_region(
+            &proxy_map.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
+        );
         let mut boslife_group = ProxyGroup::new(
             "BosLife".to_string(),
             ProxyGroupType::Select,

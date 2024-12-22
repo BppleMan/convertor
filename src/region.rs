@@ -1,16 +1,17 @@
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 
-static REGIONS: Lazy<Vec<Region>> = Lazy::new(|| {
-    let content = include_str!("../assets/regions.json");
-    serde_json::from_str(content).unwrap()
-});
+const REGIONS_CONTENT: &str = include_str!("../assets/regions.json");
 
-#[derive(Debug, Serialize, Deserialize)]
+static REGIONS: Lazy<Vec<Region>> =
+    Lazy::new(|| serde_json::from_str(REGIONS_CONTENT).unwrap());
+
+#[derive(Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Region {
     pub code: String,
     pub en: String,
     pub cn: String,
+    pub icon: String,
 }
 
 impl Region {

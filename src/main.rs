@@ -21,8 +21,6 @@ mod route;
 mod region;
 mod middleware;
 
-pub const MOCK_CONTENT: &str = include_str!("../assets/mock");
-
 // a clap command line argument parser
 #[derive(Debug, Parser)]
 #[clap(name = "convertor", version, author)]
@@ -52,7 +50,6 @@ async fn main() -> Result<()> {
         .route("/clash", get(route::clash::profile))
         .route("/surge", get(route::surge::profile))
         .route("/surge/rule_set", get(route::surge::rule_set))
-        .route("/api/v1/client/subscribe", get(MOCK_CONTENT))
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(DefaultMakeSpan::new().include_headers(true))

@@ -1,39 +1,46 @@
+use crate::region::Region;
 use indexmap::IndexMap;
+use regex::Regex;
 use reqwest::Url;
 use std::str::FromStr;
-use trie_rs::TrieBuilder;
 
 pub mod surge_profile;
 pub mod clash_profile;
 
-fn group_by(sources: &[impl AsRef<str>]) -> IndexMap<String, Vec<String>> {
-    let trie = sources
-        .iter()
-        .fold(TrieBuilder::new(), |mut acc, proxy| {
-            acc.push(proxy.as_ref());
-            acc
-        })
-        .build();
+pub fn group_by_region<S: AsRef<str>>(
+    sources: &[S],
+) -> IndexMap<String, Vec<String>> {
+    let match_number = Regex::new(r"\W*\d+\s*$").unwrap();
     sources.iter().fold(
         IndexMap::<String, Vec<String>>::new(),
         |mut acc, source| {
             let source = source.as_ref();
-            let unselect = acc
-                .iter()
-                .all(|(_key, value)| !value.contains(&source.to_string()));
-            if unselect {
-                if let Some((prefix, _)) = source.rsplit_once('-') {
-                    // let results_in_u8s = trie.predictive_search(prefix).collect::<Vec<Vec<u8>>>();
-                    let results_in_str =
-                        trie.predictive_search(prefix).collect::<Vec<String>>();
-                    acc.insert(prefix.to_string(), results_in_str);
-                } else {
-                    acc.insert(source.to_string(), vec![source.to_string()]);
-                }
-            }
+            let region_part = match_number.replace(source, "").to_string();
+            acc.entry(region_part).or_default().push(source.to_string());
             acc
         },
     )
+}
+
+pub fn split_and_merge_groups(
+    groups: IndexMap<String, Vec<String>>,
+) -> (IndexMap<&'static Region, Vec<String>>, Vec<String>) {
+    let mut useful_groups: IndexMap<&'static Region, Vec<String>> =
+        IndexMap::new();
+    let mut extra_groups = vec![];
+
+    for group_name in groups.keys() {
+        if let Some(region) = Region::detect(group_name) {
+            useful_groups
+                .entry(region)
+                .or_default()
+                .extend(groups[group_name].clone());
+        } else {
+            extra_groups.extend(groups[group_name].clone());
+        }
+    }
+
+    (useful_groups, extra_groups)
 }
 
 pub async fn get_raw_profile(
