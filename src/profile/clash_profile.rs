@@ -76,7 +76,6 @@ impl ClashProfile {
                 ProxyGroup::new(name, ProxyGroupType::UrlTest, policy)
             },
         ));
-        println!("{:#?}", self.proxy_groups);
     }
 }
 

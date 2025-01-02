@@ -41,19 +41,21 @@ impl SurgeProfile {
         Self { sections }
     }
 
-    pub fn parse<HOST: AsRef<str>, URL: AsRef<str>>(
+    pub fn parse<HOST: AsRef<str>, URL: AsRef<str>, TOKEN: AsRef<str>>(
         &mut self,
         host: Option<HOST>,
         url: URL,
+        token: TOKEN,
     ) {
-        self.replace_header(host, url);
+        self.replace_header(host, url, token);
         self.organize_proxy_group();
     }
 
-    fn replace_header(
+    fn replace_header<HOST: AsRef<str>, URL: AsRef<str>, TOKEN: AsRef<str>>(
         &mut self,
-        host: Option<impl AsRef<str>>,
-        url: impl AsRef<str>,
+        host: Option<HOST>,
+        url: URL,
+        token: TOKEN,
     ) {
         let host = host
             .as_ref()
@@ -61,9 +63,10 @@ impl SurgeProfile {
             .unwrap_or("mini-lan.sgponte");
         let header = &mut self.sections["header"];
         let url = urlencoding::encode(url.as_ref()).to_string();
+        let token = urlencoding::encode(token.as_ref()).to_string();
         header[0] = format!(
-            "#!MANAGED-CONFIG http://{host}/surge?url={url} interval=259200 \
-        strict=true"
+            "#!MANAGED-CONFIG http://{}/surge?base_url={}&token={} interval=259200 strict=true",
+            host, url, token
         )
     }
 
@@ -78,7 +81,6 @@ impl SurgeProfile {
             let grouped_proxies = group_by_region(&proxies);
             let (groups, info_proxies) =
                 split_and_merge_groups(grouped_proxies);
-            println!("{:#?}", groups);
             let boslife_group = format!(
                 "BosLife = select, {}",
                 groups
@@ -199,7 +201,7 @@ mod tests {
     #[test]
     fn test_parse() {
         let mut profile = SurgeProfile::new(PROFILE);
-        profile.parse(Some("mini-lan.sgponte"), "https://example.com");
+        profile.parse(Some("mini-lan.sgponte"), "https://example.com", "token");
         println!("{}", profile);
     }
 }

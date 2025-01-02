@@ -8,7 +8,8 @@ use tracing::info;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ClashQuery {
-    pub url: String,
+    pub base_url: String,
+    pub token: String,
 }
 
 pub async fn profile(query: Query<ClashQuery>) -> Result<String, AppError> {
@@ -17,7 +18,8 @@ pub async fn profile(query: Query<ClashQuery>) -> Result<String, AppError> {
 }
 
 async fn profile_impl(query: Query<ClashQuery>) -> Result<String> {
-    let raw_profile = get_raw_profile(&query.url, "clash").await?;
+    let raw_profile =
+        get_raw_profile(&query.base_url, &query.token, "clash").await?;
     let mut profile = ClashProfile::from_str(raw_profile)?;
     profile.organize_proxy_group();
     Ok(profile.to_string())

@@ -1,3 +1,4 @@
+use crate::encrypt::decrypt;
 use crate::region::Region;
 use indexmap::IndexMap;
 use regex::Regex;
@@ -45,9 +46,13 @@ pub fn split_and_merge_groups(
 
 pub async fn get_raw_profile(
     url: impl AsRef<str>,
+    token: impl AsRef<str>,
     flag: impl AsRef<str>,
 ) -> color_eyre::Result<String> {
     let mut url = Url::from_str(url.as_ref())?;
+    let secret = std::env::var("SECRET")?;
+    let token = decrypt(secret.as_ref(), token.as_ref())?;
+    url.query_pairs_mut().append_pair("token", token.as_ref());
     url.query_pairs_mut().append_pair("flag", flag.as_ref());
     reqwest::Client::new()
         .get(url)
