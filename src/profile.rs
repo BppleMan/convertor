@@ -50,7 +50,7 @@ pub async fn get_raw_profile(
     flag: impl AsRef<str>,
 ) -> color_eyre::Result<String> {
     let mut url = Url::from_str(url.as_ref())?;
-    let secret = std::env::var("SECRET")?;
+    let secret = std::env::var("CONVERTOR_SECRET")?;
     let token = decrypt(secret.as_ref(), token.as_ref())?;
     url.query_pairs_mut().append_pair("token", token.as_ref());
     url.query_pairs_mut().append_pair("flag", flag.as_ref());
