@@ -9,6 +9,7 @@ const BASE_URL: &str = "https://boslife.net/api/v1";
 const LOGIN_API: &str = "/passport/auth/login";
 const RESET_API: &str = "/user/resetSecurity";
 const GET_SUBSCRIPTION_API: &str = "/user/getSubscribe";
+const _GET_SUBSCRIPTION_LOG_API: &str = "/user/stat/getSubscribeLog";
 
 async fn login(client: &reqwest::Client) -> Result<String> {
     let login_url = format!("{}{}", BASE_URL, LOGIN_API);
