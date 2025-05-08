@@ -27,17 +27,18 @@ mod encrypt;
 // a clap command line argument parser
 #[derive(Debug, Parser)]
 #[clap(version, author)]
-struct Convertor {
+struct ConvertorCli {
     #[clap(flatten)]
     common: CommonArgs,
 
     #[command(subcommand)]
-    sub_cmd: Option<SubCmd>,
+    command: Option<SubCommand>,
 }
 
 #[derive(Debug, Subcommand)]
-enum SubCmd {
+enum SubCommand {
     UpdateProfile(UpdateProfile),
+    Subscribe,
 }
 
 #[derive(Debug, Args)]
@@ -64,65 +65,64 @@ async fn main() -> Result<()> {
     let base_dir = base_dir();
     init(&base_dir);
 
-    let convertor = Convertor::parse();
+    let cli = ConvertorCli::parse();
 
-    if let Some(SubCmd::UpdateProfile(UpdateProfile {
-        common,
-        refresh_token,
-    })) = convertor.sub_cmd
-    {
-        let addr = format!("{}:{}", common.host, common.port);
-        update_profile(&addr, refresh_token).await?;
-    } else {
-        info!("{:#?}", convertor);
-        info!("base_dir: {:?}", base_dir);
+    match &cli.command {
+        None => start_server(cli, base_dir).await?,
+        Some(SubCommand::UpdateProfile(UpdateProfile {
+            common,
+            refresh_token,
+        })) => {
+            let addr = format!("{}:{}", common.host, common.port);
+            update_profile(&addr, *refresh_token).await?;
+        }
+        Some(SubCommand::Subscribe) => {}
+    }
 
-        let app = Router::new()
-            .route("/", get(route::root))
-            .route("/clash", get(route::clash::profile))
-            .route("/surge", get(route::surge::profile))
-            .route("/surge/rule_set", get(route::surge::rule_set))
-            .layer(
-                TraceLayer::new_for_http()
-                    .make_span_with(
-                        DefaultMakeSpan::new().include_headers(true),
-                    )
-                    .on_request(
-                        DefaultOnRequest::new().level(tracing::Level::INFO),
-                    )
-                    .on_response(
-                        DefaultOnResponse::new()
-                            .level(tracing::Level::INFO)
-                            .latency_unit(LatencyUnit::Millis),
-                    ),
-            );
+    Ok(())
+}
 
-        let addr =
-            format!("{}:{}", convertor.common.host, convertor.common.port);
+async fn start_server(cli: ConvertorCli, base_dir: PathBuf) -> Result<()> {
+    info!("{:#?}", cli);
+    info!("base_dir: {:?}", base_dir);
 
-        info!("Listening on: http://{}", addr);
-        warn!(
-            "It is recommended to use nginx for reverse proxy and enable SSL"
+    let app = Router::new()
+        .route("/", get(route::root))
+        .route("/clash", get(route::clash::profile))
+        .route("/surge", get(route::surge::profile))
+        .route("/surge/rule_set", get(route::surge::rule_set))
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(DefaultMakeSpan::new().include_headers(true))
+                .on_request(DefaultOnRequest::new().level(tracing::Level::INFO))
+                .on_response(
+                    DefaultOnResponse::new()
+                        .level(tracing::Level::INFO)
+                        .latency_unit(LatencyUnit::Millis),
+                ),
         );
-        info!("usage: all url parameters need to be url-encoded");
-        info!(
-            "\tmain sub: http://{}/surge?url=[boslife subscription url]",
-            addr
-        );
-        info!(
+
+    let addr = format!("{}:{}", cli.common.host, cli.common.port);
+
+    info!("Listening on: http://{}", addr);
+    warn!("It is recommended to use nginx for reverse proxy and enable SSL");
+    info!("usage: all url parameters need to be url-encoded");
+    info!(
+        "\tmain sub: http://{}/surge?url=[boslife subscription url]",
+        addr
+    );
+    info!(
         "\trule set: http://{}/rule-set?url=[boslife subscription url]&boslife=true",
         addr
     );
 
-        let listener = tokio::net::TcpListener::bind(&addr).await?;
+    let listener = tokio::net::TcpListener::bind(&addr).await?;
 
-        info!("Server starting");
-        axum::serve(listener, app)
-            .with_graceful_shutdown(shutdown_signal())
-            .await?;
-        info!("Server stopped");
-    }
-
+    info!("Server starting");
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await?;
+    info!("Server stopped");
     Ok(())
 }
 
