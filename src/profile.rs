@@ -1,12 +1,7 @@
-use crate::airport::convertor_url::ConvertorUrl;
-use crate::encrypt::decrypt;
-use crate::op;
 use crate::region::Region;
-use color_eyre::eyre::WrapErr;
 use indexmap::IndexMap;
 use regex::Regex;
-use reqwest::Url;
-use std::str::FromStr;
+use reqwest::IntoUrl;
 
 pub mod surge_profile;
 pub mod clash_profile;
@@ -48,16 +43,10 @@ pub fn split_and_merge_groups(
 }
 
 pub async fn get_raw_profile(
-    convertor_url: &ConvertorUrl,
-    flag: impl AsRef<str>,
+    service_url: impl IntoUrl,
 ) -> color_eyre::Result<String> {
-    let mut url = Url::from_str(&convertor_url.airport_url)?;
-    let secret = std::env::var("CONVERTOR_SECRET")
-        .wrap_err_with(|| "没有找到环境变量 $CONVERTOR_SECRET")?;
-    url.query_pairs_mut().append_pair("token", token.as_ref());
-    url.query_pairs_mut().append_pair("flag", flag.as_ref());
     reqwest::Client::new()
-        .get(url)
+        .get(service_url)
         .header(
             "User-Agent",
             format!("convertor/{}", env!("CARGO_PKG_VERSION")),

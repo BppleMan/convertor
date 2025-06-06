@@ -1,39 +1,43 @@
 use crate::boslife::RuleSetType;
 use crate::encrypt::{decrypt, encrypt};
-use color_eyre::eyre::{eyre, WrapErr};
+use crate::op;
+use crate::op::get_convertor_secret;
+use color_eyre::eyre::eyre;
 use reqwest::{IntoUrl, Url};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConvertorUrl {
     pub server: String,
-    pub airport_url: String,
-    pub airport_token: String,
-    pub encrypted_token: String,
+    pub service_url: String,
+    pub service_token: String,
+    pub encrypted_service_token: String,
 }
 
 impl ConvertorUrl {
-    pub(crate) fn new(
+    /// 传入服务器地址和服务的 URL，生成 ConvertorUrl 实例
+    /// 服务的 URL 指的是机场的订阅地址，通常包含 token
+    pub fn new(
         server_addr: impl AsRef<str>,
-        subscription_url: &Url,
+        service_url: &Url,
     ) -> color_eyre::Result<Self> {
         let base_url = format!(
             "{}{}",
-            subscription_url.origin().ascii_serialization(),
-            subscription_url.path()
+            service_url.origin().ascii_serialization(),
+            service_url.path()
         );
-        let token = subscription_url
+        let token = service_url
             .query_pairs()
             .find(|(k, _)| k == "token")
             .map(|(_, v)| v.to_string())
-            .ok_or_else(|| eyre!("token not found"))?;
-        let secret = std::env::var("CONVERTOR_SECRET")?;
+            .ok_or_else(|| eyre!("Token not found"))?;
+        let secret = op::get_convertor_secret()?;
         let encrypted_token = encrypt(secret.as_ref(), &token)?;
         Ok(Self {
             server: server_addr.as_ref().to_string(),
-            airport_url: base_url,
-            airport_token: token,
-            encrypted_token,
+            service_url: base_url,
+            service_token: token,
+            encrypted_service_token: encrypted_token,
         })
     }
 
@@ -52,23 +56,24 @@ impl ConvertorUrl {
             .find(|(k, _)| k == "token")
             .map(|(_, v)| urlencoding::decode(&v).unwrap().to_string())
             .ok_or_else(|| eyre!("token not found"))?;
-        let secret = std::env::var("CONVERTOR_SECRET")
-            .wrap_err("没有找到环境变量 $CONVERTOR_SECRET")
-            .;
+        let secret = get_convertor_secret()?;
         let airport_token = decrypt(secret.as_ref(), &encrypted_token)?;
         Ok(Self {
             server,
-            airport_url,
-            airport_token,
-            encrypted_token,
+            service_url: airport_url,
+            service_token: airport_token,
+            encrypted_service_token: encrypted_token,
         })
     }
 
     pub fn encode_to_convertor_url(&self) -> color_eyre::Result<Url> {
         let mut url = Url::parse(&self.server)?.join("surge")?;
         url.query_pairs_mut()
-            .append_pair("base_url", &urlencoding::encode(&self.airport_url))
-            .append_pair("token", &urlencoding::encode(&self.encrypted_token));
+            .append_pair("base_url", &urlencoding::encode(&self.service_url))
+            .append_pair(
+                "token",
+                &urlencoding::encode(&self.encrypted_service_token),
+            );
         Ok(url)
     }
 
@@ -78,8 +83,8 @@ impl ConvertorUrl {
     ) -> color_eyre::Result<Url> {
         let mut url = Url::parse(&self.server)?.join("surge/rule_set")?;
         url.query_pairs_mut()
-            .append_pair("base_url", &self.airport_url)
-            .append_pair("token", &self.airport_token);
+            .append_pair("base_url", &self.service_url)
+            .append_pair("token", &self.service_token);
         match rule_set_type {
             RuleSetType::BosLifeSubscription => {
                 url.query_pairs_mut().append_pair("boslife", "true")
@@ -105,13 +110,15 @@ impl ConvertorUrl {
         };
         Ok(url)
     }
-    
-    pub fn build_airport_url(
+
+    /// 构建一个服务的 URL，用于获取机场订阅
+    pub fn build_service_url(
         &self,
         flag: impl AsRef<str>,
     ) -> color_eyre::Result<Url> {
-        let mut url = Url::parse(&self.airport_url)?;
-        url.query_pairs_mut().append_pair("token", &secret);
+        let mut url = Url::parse(&self.service_url)?;
+        url.query_pairs_mut()
+            .append_pair("token", &self.service_token);
         url.query_pairs_mut().append_pair("flag", flag.as_ref());
         Ok(url)
     }

@@ -8,6 +8,8 @@ use regex::Regex;
 static SECTION_REGEX: Lazy<Regex> =
     Lazy::new(|| Regex::new(r#"^\[[^\[\]]+]$"#).unwrap());
 
+const MANAGED_CONFIG_HEADER: &str = "MANAGED-CONFIG";
+
 #[derive(Debug)]
 pub struct SurgeProfile {
     sections: IndexMap<String, Vec<String>>,
@@ -22,51 +24,35 @@ impl SurgeProfile {
             .collect::<Vec<String>>();
         let mut sections = IndexMap::new();
 
-        let mut section = "header".to_string();
-        let mut len = 0;
-        while len < content.len() {
-            let line = &content[len];
+        let mut section = MANAGED_CONFIG_HEADER.to_string();
+        let mut cursor = 0;
+        while cursor < content.len() {
+            let line = &content[cursor];
             if SECTION_REGEX.is_match(line) {
                 let new_section = line.to_string();
                 sections.insert(
                     std::mem::replace(&mut section, new_section),
-                    content.drain(..len).collect::<Vec<_>>(),
+                    content.drain(..cursor).collect::<Vec<_>>(),
                 );
-                len = 0;
+                cursor = 0;
             }
-            len += 1;
+            cursor += 1;
         }
         sections.insert(section, content);
 
         Self { sections }
     }
 
-    pub fn parse<HOST: AsRef<str>, URL: AsRef<str>, TOKEN: AsRef<str>>(
-        &mut self,
-        host: Option<HOST>,
-        url: URL,
-        token: TOKEN,
-    ) {
-        self.replace_header(host, url, token);
+    pub fn parse(&mut self, url: impl AsRef<str>) {
+        self.replace_header(url);
         self.organize_proxy_group();
     }
 
-    fn replace_header<HOST: AsRef<str>, URL: AsRef<str>, TOKEN: AsRef<str>>(
-        &mut self,
-        host: Option<HOST>,
-        url: URL,
-        token: TOKEN,
-    ) {
-        let host = host
-            .as_ref()
-            .map(|h| h.as_ref())
-            .unwrap_or("mini-lan.sgponte");
-        let header = &mut self.sections["header"];
-        let url = urlencoding::encode(url.as_ref()).to_string();
-        let token = urlencoding::encode(token.as_ref()).to_string();
+    fn replace_header(&mut self, convertor_url: impl AsRef<str>) {
+        let header = &mut self.sections[MANAGED_CONFIG_HEADER];
         header[0] = format!(
-            "#!MANAGED-CONFIG http://{}/surge?base_url={}&token={} interval=259200 strict=true",
-            host, url, token
+            "#!MANAGED-CONFIG {} interval=259200 strict=true",
+            convertor_url.as_ref()
         )
     }
 
@@ -195,13 +181,23 @@ impl Display for SurgeProfile {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::convertor_url::ConvertorUrl;
+    use reqwest::Url;
 
     const PROFILE: &str = include_str!("../../assets/surge/mock.conf");
 
     #[test]
-    fn test_parse() {
+    fn test_parse() -> color_eyre::Result<()> {
+        color_eyre::install()?;
+
         let mut profile = SurgeProfile::new(PROFILE);
-        profile.parse(Some("mini-lan.sgponte"), "https://example.com", "token");
+        let convertor_url = ConvertorUrl::new(
+            "http://127.0.0.1:8001",
+            &Url::parse("https://example.com?token=12345")?,
+        )?;
+        profile.parse(convertor_url.encode_to_convertor_url()?);
         println!("{}", profile);
+
+        Ok(())
     }
 }

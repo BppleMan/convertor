@@ -1,4 +1,4 @@
-pub struct AirportConfig {
+pub struct ServiceConfig {
     pub base_url: &'static str,
     pub prefix_path: &'static str,
     pub one_password_key: &'static str,

@@ -1,49 +1,9 @@
-use crate::airport::convertor_url::ConvertorUrl;
-use crate::encrypt::{decrypt, encrypt};
-use crate::op;
+use crate::convertor_url::ConvertorUrl;
+use crate::service::boslife_service::BosLifeService;
+use crate::service::service_api::AirportApi;
 use color_eyre::eyre::{eyre, OptionExt};
 use color_eyre::Result;
-use reqwest::Url;
 use std::path::Path;
-
-const BASE_URL: &str = "https://www.blnew.com/proxy";
-const LOGIN_API: &str = "/passport/auth/login";
-const RESET_API: &str = "/user/resetSecurity";
-const GET_SUBSCRIPTION_API: &str = "/user/getSubscribe";
-const _GET_SUBSCRIPTION_LOG_API: &str = "/user/stat/getSubscribeLog";
-
-async fn login(client: &reqwest::Client) -> Result<String> {
-    let login_url = format!("{}{}", BASE_URL, LOGIN_API);
-    let boslife_identity = op::get_item("pkrtud2bg5clrfmtm254quskzu").await?;
-    let response = client
-        .post(login_url)
-        .header(
-            "User-Agent",
-            format!("convertor/{}", env!("CARGO_PKG_VERSION")),
-        )
-        .form(&[
-            ("email", &boslife_identity.username),
-            ("password", &boslife_identity.password),
-        ])
-        .send()
-        .await?
-        .json::<serde_json::Value>()
-        .await?;
-    let auth_token = response
-        .as_object()
-        .ok_or_else(|| eyre!("response not a json object"))?
-        .get("data")
-        .ok_or_else(|| eyre!("response object not found [data]"))?
-        .as_object()
-        .ok_or_else(|| eyre!("response[data] not a json object"))?
-        .get("auth_data")
-        .ok_or_else(|| eyre!("response[data] object not found [auth_data]"))?
-        .as_str()
-        .ok_or_else(|| eyre!("response[data][auth_data] not a json object"))?
-        .to_string();
-
-    Ok(auth_token)
-}
 
 pub async fn update_profile<S: AsRef<str>>(
     server_addr: S,
@@ -51,69 +11,16 @@ pub async fn update_profile<S: AsRef<str>>(
 ) -> Result<()> {
     let client = reqwest::Client::new();
 
-    let auth_token = login(&client).await?;
+    let service = BosLifeService::new(client);
+    let auth_token = service.login().await?;
 
     let subscription_url = if refresh_token {
-        let reset_url = format!("{}{}", BASE_URL, RESET_API);
-
-        let response = client
-            .get(reset_url)
-            .header(
-                "User-Agent",
-                format!("convertor/{}", env!("CARGO_PKG_VERSION")),
-            )
-            .header("Authorization", auth_token)
-            .send()
-            .await?
-            .json::<serde_json::Value>()
-            .await?;
-
-        Url::parse(
-            response
-                .as_object()
-                .ok_or_else(|| eyre!("response not a json object"))?
-                .get("data")
-                .ok_or_else(|| eyre!("response object not found [data]"))?
-                .as_str()
-                .ok_or_else(|| eyre!("response[data] not a string"))?,
-        )?
+        service.reset_subscription_url(&auth_token).await?
     } else {
-        let get_subscription_url =
-            format!("{}{}", BASE_URL, GET_SUBSCRIPTION_API);
-
-        let response = client
-            .get(get_subscription_url)
-            .header(
-                "User-Agent",
-                format!("convertor/{}", env!("CARGO_PKG_VERSION")),
-            )
-            .header("Authorization", auth_token)
-            .send()
-            .await?
-            .json::<serde_json::Value>()
-            .await?;
-
-        Url::parse(
-            response
-                .as_object()
-                .ok_or_else(|| eyre!("response not a json object"))?
-                .get("data")
-                .ok_or_else(|| eyre!("response object not found [data]"))?
-                .as_object()
-                .ok_or_else(|| eyre!("response[data] not a json object"))?
-                .get("subscribe_url")
-                .ok_or_else(|| {
-                    eyre!("response[data] object not found [subscribe_url]")
-                })?
-                .as_str()
-                .ok_or_else(|| {
-                    eyre!("response[data][subscribe_url] not a string")
-                })?,
-        )?
+        service.get_subscription_url(&auth_token).await?
     };
 
-    let surge_subscription_url =
-        ConvertorUrl::new(server_addr, &subscription_url)?;
+    let convertor_url = ConvertorUrl::new(server_addr, &subscription_url)?;
 
     let icloud_env = std::env::var("ICLOUD")?;
     let icloud_path = Path::new(&icloud_env);
@@ -123,26 +30,21 @@ pub async fn update_profile<S: AsRef<str>>(
         .join("iCloud~com~nssurge~inc")
         .join("Documents");
 
-    update_subscription(
-        &subscription_url,
-        &surge_subscription_url,
-        &ns_surge_path,
-    )
-    .await?;
+    update_surge_conf(&convertor_url, &ns_surge_path).await?;
 
-    update_rule_set(&surge_subscription_url, &ns_surge_path).await?;
+    update_rule_set(&convertor_url, &ns_surge_path).await?;
 
     Ok(())
 }
 
-async fn update_subscription<P: AsRef<Path>>(
-    subscription_url: &Url,
-    surge_subscription_url: &ConvertorUrl,
-    ns_surge_path: P,
+async fn update_surge_conf(
+    convertor_url: &ConvertorUrl,
+    ns_surge_path: impl AsRef<Path>,
 ) -> Result<()> {
     // update BosLife.conf subscription
     let boslife_conf = format!(
-        "#!MANAGED-CONFIG {subscription_url} interval=259200 strict=true"
+        "#!MANAGED-CONFIG {} interval=259200 strict=true",
+        convertor_url.build_service_url("surge")?
     );
     println!("BosLife.conf: {}", boslife_conf);
     update_conf(&ns_surge_path, "BosLife", &boslife_conf).await?;
@@ -150,17 +52,17 @@ async fn update_subscription<P: AsRef<Path>>(
     // update surge.conf subscription
     let surge_conf = format!(
         r#"#!MANAGED-CONFIG {} interval=259200 strict=true"#,
-        surge_subscription_url.encode_to_convertor_url()?
+        convertor_url.encode_to_convertor_url()?
     );
     println!("surge.conf: {}", surge_conf);
     update_conf(&ns_surge_path, "surge", &surge_conf).await?;
     Ok(())
 }
 
-async fn update_conf<P: AsRef<Path>, N: AsRef<str>, S: AsRef<str>>(
-    ns_surge_path: P,
-    name: N,
-    sub_url: S,
+async fn update_conf(
+    ns_surge_path: impl AsRef<Path>,
+    name: impl AsRef<str>,
+    sub_url: impl AsRef<str>,
 ) -> Result<()> {
     let path = ns_surge_path
         .as_ref()
@@ -174,48 +76,40 @@ async fn update_conf<P: AsRef<Path>, N: AsRef<str>, S: AsRef<str>>(
     Ok(())
 }
 
-async fn update_rule_set<P: AsRef<Path>>(
-    surge_subscription_url: &ConvertorUrl,
-    ns_surge_path: P,
+async fn update_rule_set(
+    convertor_url: &ConvertorUrl,
+    ns_surge_path: impl AsRef<Path>,
 ) -> Result<()> {
     update_dconf(
-        surge_subscription_url,
+        convertor_url,
         &ns_surge_path,
         RuleSetType::BosLifeSubscription,
     )
     .await?;
+    update_dconf(convertor_url, &ns_surge_path, RuleSetType::BosLifePolicy)
+        .await?;
     update_dconf(
-        surge_subscription_url,
-        &ns_surge_path,
-        RuleSetType::BosLifePolicy,
-    )
-    .await?;
-    update_dconf(
-        surge_subscription_url,
+        convertor_url,
         &ns_surge_path,
         RuleSetType::BosLifeNoResolvePolicy,
     )
     .await?;
     update_dconf(
-        surge_subscription_url,
+        convertor_url,
         &ns_surge_path,
         RuleSetType::BosLifeForceRemoteDnsPolicy,
     )
     .await?;
+    update_dconf(convertor_url, &ns_surge_path, RuleSetType::DirectPolicy)
+        .await?;
     update_dconf(
-        surge_subscription_url,
-        &ns_surge_path,
-        RuleSetType::DirectPolicy,
-    )
-    .await?;
-    update_dconf(
-        surge_subscription_url,
+        convertor_url,
         &ns_surge_path,
         RuleSetType::DirectNoResolvePolicy,
     )
     .await?;
     update_dconf(
-        surge_subscription_url,
+        convertor_url,
         &ns_surge_path,
         RuleSetType::DirectForceRemoteDnsPolicy,
     )

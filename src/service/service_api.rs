@@ -1,12 +1,12 @@
-use crate::airport::airport_config::AirportConfig;
 use crate::op;
+use crate::service::service_config::ServiceConfig;
 use color_eyre::eyre::WrapErr;
 use reqwest::{Method, Response, Url};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 pub trait AirportApi {
-    fn config(&self) -> &AirportConfig;
+    fn config(&self) -> &ServiceConfig;
 
     fn client(&self) -> &reqwest::Client;
 

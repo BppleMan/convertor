@@ -1,15 +1,15 @@
-use crate::airport::airport_api::AirportApi;
-use crate::airport::airport_config::{AirportConfig, ConfigApi};
+use crate::service::service_api::AirportApi;
+use crate::service::service_config::{ConfigApi, ServiceConfig};
 use reqwest::Client;
 
 pub struct BosLifeService {
-    pub config: AirportConfig,
+    pub config: ServiceConfig,
     pub client: Client,
 }
 
 impl BosLifeService {
     pub fn new(client: Client) -> Self {
-        let config = AirportConfig {
+        let config = ServiceConfig {
             base_url: "https://www.blnew.com",
             prefix_path: "/proxy",
             one_password_key: "pkrtud2bg5clrfmtm254quskzu",
@@ -35,7 +35,7 @@ impl BosLifeService {
 }
 
 impl AirportApi for BosLifeService {
-    fn config(&self) -> &AirportConfig {
+    fn config(&self) -> &ServiceConfig {
         &self.config
     }
 
@@ -46,9 +46,9 @@ impl AirportApi for BosLifeService {
 
 #[cfg(test)]
 mod tests {
-    use crate::airport::airport_api::AirportApi;
-    use crate::airport::boslife_service::BosLifeService;
-    use crate::airport::subscription_log::SubscriptionLog;
+    use crate::service::boslife_service::BosLifeService;
+    use crate::service::service_api::AirportApi;
+    use crate::service::subscription_log::SubscriptionLog;
 
     #[tokio::test]
     async fn test_login() -> color_eyre::Result<()> {
