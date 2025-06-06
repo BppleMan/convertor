@@ -1,14 +1,15 @@
 use crate::convertor_url::ConvertorUrl;
 use crate::error::AppError;
-use crate::profile::get_raw_profile;
 use crate::profile::surge_profile::SurgeProfile;
-use crate::route::extract_convertor_url;
+use crate::route::{extract_convertor_url, AppState};
+use crate::service::service_api::AirportApi;
 use axum::body::Body;
-use axum::extract::Query;
+use axum::extract::{Query, State};
 use axum::http::Request;
 use color_eyre::eyre::eyre;
 use color_eyre::Result;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SurgeQuery {
@@ -21,11 +22,14 @@ pub struct SurgeQuery {
 }
 
 pub async fn profile(
+    State(state): State<Arc<AppState>>,
     query: Query<SurgeQuery>,
     request: Request<Body>,
 ) -> Result<String, AppError> {
     let convertor_url = extract_convertor_url(&request)?;
-    profile_impl(query, convertor_url).await.map_err(Into::into)
+    profile_impl(state, query, convertor_url)
+        .await
+        .map_err(Into::into)
 }
 
 /// policy:
@@ -34,32 +38,39 @@ pub async fn profile(
 /// - no-resolve
 /// - force-remote-dns
 pub async fn rule_set(
+    State(state): State<Arc<AppState>>,
     query: Query<SurgeQuery>,
     request: Request<Body>,
 ) -> Result<String, AppError> {
     let convertor_url = extract_convertor_url(&request)?;
-    rule_set_impl(query, convertor_url)
+    rule_set_impl(state, query, convertor_url)
         .await
         .map_err(Into::into)
 }
 
 async fn profile_impl(
+    state: Arc<AppState>,
     _query: Query<SurgeQuery>,
     convertor_url: ConvertorUrl,
 ) -> Result<String> {
-    let raw_profile =
-        get_raw_profile(convertor_url.build_service_url("surge")?).await?;
+    let raw_profile = state
+        .service
+        .get_raw_profile(convertor_url.build_service_url("surge")?)
+        .await?;
     let mut profile = SurgeProfile::new(raw_profile);
     profile.parse(convertor_url.encode_to_convertor_url()?);
     Ok(profile.to_string())
 }
 
 async fn rule_set_impl(
+    state: Arc<AppState>,
     query: Query<SurgeQuery>,
     convertor_url: ConvertorUrl,
 ) -> Result<String> {
-    let raw_profile =
-        get_raw_profile(convertor_url.build_service_url("surge")?).await?;
+    let raw_profile = state
+        .service
+        .get_raw_profile(convertor_url.build_service_url("surge")?)
+        .await?;
     let profile = SurgeProfile::new(raw_profile);
     if let Some(policies) = query.policies.as_ref() {
         let policies = policies.split('|').collect::<Vec<_>>();

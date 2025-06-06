@@ -1,10 +1,12 @@
-use std::path::{Path, PathBuf};
-
-use crate::boslife::update_profile;
+use crate::route::AppState;
+use crate::service::boslife_service::BosLifeService;
+use crate::update_profile::{get_subscription_url, update_profile};
 use axum::routing::get;
 use axum::Router;
 use clap::{Args, Parser, Subcommand};
 use color_eyre::Result;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use tokio::signal;
 use tower_http::trace::{
     DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer,
@@ -20,7 +22,7 @@ mod profile;
 mod route;
 mod region;
 mod middleware;
-mod boslife;
+mod update_profile;
 mod op;
 mod encrypt;
 mod service;
@@ -41,7 +43,12 @@ struct ConvertorCli {
 #[derive(Debug, Subcommand)]
 enum SubCommand {
     UpdateProfile(UpdateProfile),
-    Subscribe,
+    Subscription {
+        /// convertor 所在服务器的地址
+        /// 格式为 `http://ip:port`
+        #[arg(default_value = "http://127.0.0.1:8001")]
+        server: String,
+    },
 }
 
 #[derive(Debug, Args)]
@@ -62,22 +69,34 @@ async fn main() -> Result<()> {
     init(&base_dir);
 
     let cli = ConvertorCli::parse();
+    let client = reqwest::Client::new();
 
-    match &cli.command {
-        None => start_server(cli, base_dir).await?,
+    match cli.command {
+        None => {
+            let state = AppState {
+                service: BosLifeService::new(client),
+            };
+            start_server(cli, state, base_dir).await?
+        }
         Some(SubCommand::UpdateProfile(UpdateProfile {
             server,
             refresh_token,
         })) => {
-            update_profile(server, *refresh_token).await?;
+            update_profile(client, server, refresh_token).await?;
         }
-        Some(SubCommand::Subscribe) => {}
+        Some(SubCommand::Subscription { server }) => {
+            get_subscription_url(client, server).await?;
+        }
     }
 
     Ok(())
 }
 
-async fn start_server(cli: ConvertorCli, base_dir: PathBuf) -> Result<()> {
+async fn start_server(
+    cli: ConvertorCli,
+    app_state: AppState,
+    base_dir: PathBuf,
+) -> Result<()> {
     info!("{:#?}", cli);
     info!("base_dir: {:?}", base_dir);
 
@@ -86,6 +105,11 @@ async fn start_server(cli: ConvertorCli, base_dir: PathBuf) -> Result<()> {
         .route("/clash", get(route::clash::profile))
         .route("/surge", get(route::surge::profile))
         .route("/surge/rule_set", get(route::surge::rule_set))
+        .route(
+            "/subscription_log",
+            get(route::subscription::subscription_log),
+        )
+        .with_state(Arc::new(app_state))
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(DefaultMakeSpan::new().include_headers(true))

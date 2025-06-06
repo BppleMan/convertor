@@ -5,12 +5,30 @@ use color_eyre::eyre::{eyre, OptionExt};
 use color_eyre::Result;
 use std::path::Path;
 
-pub async fn update_profile<S: AsRef<str>>(
-    server_addr: S,
+pub async fn get_subscription_url(
+    client: reqwest::Client,
+    server_addr: impl AsRef<str>,
+) -> Result<()> {
+    let service = BosLifeService::new(client);
+    let auth_token = service.login().await?;
+    let subscription_url = service.get_subscription_url(&auth_token).await?;
+    let convertor_url = ConvertorUrl::new(server_addr, &subscription_url)?;
+    println!(
+        "Convertor URL: {}",
+        convertor_url.encode_to_convertor_url()?
+    );
+    println!(
+        "Subscription URL: {}",
+        convertor_url.build_service_url("surge")?
+    );
+    Ok(())
+}
+
+pub async fn update_profile(
+    client: reqwest::Client,
+    server_addr: impl AsRef<str>,
     refresh_token: bool,
 ) -> Result<()> {
-    let client = reqwest::Client::new();
-
     let service = BosLifeService::new(client);
     let auth_token = service.login().await?;
 

@@ -75,6 +75,28 @@ pub trait AirportApi {
         }
     }
 
+    async fn get_raw_profile(
+        &self,
+        url: impl AsRef<str>,
+    ) -> color_eyre::Result<String> {
+        let response = self
+            .request(
+                Method::GET,
+                url,
+                Vec::<(&str, &str)>::new(),
+                Option::<&str>::None,
+            )
+            .await?;
+        if response.status().is_success() {
+            response.text().await.map_err(Into::into)
+        } else {
+            Err(color_eyre::eyre::eyre!(
+                "Get raw profile failed: {}",
+                response.status()
+            ))
+        }
+    }
+
     async fn reset_subscription_url(
         &self,
         auth_token: impl AsRef<str>,

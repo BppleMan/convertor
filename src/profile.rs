@@ -1,7 +1,6 @@
 use crate::region::Region;
 use indexmap::IndexMap;
 use regex::Regex;
-use reqwest::IntoUrl;
 
 pub mod surge_profile;
 pub mod clash_profile;
@@ -40,20 +39,4 @@ pub fn split_and_merge_groups(
     }
 
     (useful_groups, extra_groups)
-}
-
-pub async fn get_raw_profile(
-    service_url: impl IntoUrl,
-) -> color_eyre::Result<String> {
-    reqwest::Client::new()
-        .get(service_url)
-        .header(
-            "User-Agent",
-            format!("convertor/{}", env!("CARGO_PKG_VERSION")),
-        )
-        .send()
-        .await?
-        .text()
-        .await
-        .map_err(Into::into)
 }

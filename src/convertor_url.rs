@@ -1,7 +1,7 @@
-use crate::boslife::RuleSetType;
 use crate::encrypt::{decrypt, encrypt};
 use crate::op;
 use crate::op::get_convertor_secret;
+use crate::update_profile::RuleSetType;
 use color_eyre::eyre::eyre;
 use reqwest::{IntoUrl, Url};
 use serde::{Deserialize, Serialize};
