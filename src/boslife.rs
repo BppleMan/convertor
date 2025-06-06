@@ -5,7 +5,7 @@ use color_eyre::Result;
 use reqwest::Url;
 use std::path::Path;
 
-const BASE_URL: &str = "https://boslife.net/api/v1";
+const BASE_URL: &str = "https://www.blnew.com/proxy";
 const LOGIN_API: &str = "/passport/auth/login";
 const RESET_API: &str = "/user/resetSecurity";
 const GET_SUBSCRIPTION_API: &str = "/user/getSubscribe";
@@ -13,7 +13,7 @@ const _GET_SUBSCRIPTION_LOG_API: &str = "/user/stat/getSubscribeLog";
 
 async fn login(client: &reqwest::Client) -> Result<String> {
     let login_url = format!("{}{}", BASE_URL, LOGIN_API);
-    let boslife_identity = op::get_item("BosLife").await?;
+    let boslife_identity = op::get_item("pkrtud2bg5clrfmtm254quskzu").await?;
     let response = client
         .post(login_url)
         .header(
@@ -45,7 +45,7 @@ async fn login(client: &reqwest::Client) -> Result<String> {
 }
 
 pub async fn update_profile<S: AsRef<str>>(
-    surge_subscription_host: S,
+    server_addr: S,
     refresh_token: bool,
 ) -> Result<()> {
     let client = reqwest::Client::new();
@@ -112,7 +112,7 @@ pub async fn update_profile<S: AsRef<str>>(
     };
 
     let surge_subscription_url =
-        SurgeSubscriptionUrl::new(surge_subscription_host, &subscription_url)?;
+        SurgeSubscriptionUrl::new(server_addr, &subscription_url)?;
 
     let icloud_env = std::env::var("ICLOUD")?;
     let icloud_path = Path::new(&icloud_env);

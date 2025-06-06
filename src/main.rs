@@ -28,8 +28,9 @@ mod encrypt;
 #[derive(Debug, Parser)]
 #[clap(version, author)]
 struct ConvertorCli {
-    #[clap(flatten)]
-    common: CommonArgs,
+    /// 监听地址, 不需要指定协议
+    #[arg(default_value = "127.0.0.1:8001")]
+    listen: String,
 
     #[command(subcommand)]
     command: Option<SubCommand>,
@@ -43,21 +44,14 @@ enum SubCommand {
 
 #[derive(Debug, Args)]
 struct UpdateProfile {
-    #[clap(flatten)]
-    common: CommonArgs,
+    /// convertor 所在服务器的地址
+    /// 格式为 `http://ip:port`
+    #[arg(long)]
+    server: String,
+
+    /// 是否刷新 boslife token
     #[arg(short, long, default_value = "false")]
     refresh_token: bool,
-}
-
-#[derive(Debug, Clone, Args)]
-struct CommonArgs {
-    /// host to listen on
-    #[arg(long, default_value = "http://127.0.0.1")]
-    host: String,
-
-    /// port to listen on
-    #[arg(long, default_value = "8001")]
-    port: u16,
 }
 
 #[tokio::main]
@@ -70,11 +64,10 @@ async fn main() -> Result<()> {
     match &cli.command {
         None => start_server(cli, base_dir).await?,
         Some(SubCommand::UpdateProfile(UpdateProfile {
-            common,
+            server,
             refresh_token,
         })) => {
-            let addr = format!("{}:{}", common.host, common.port);
-            update_profile(&addr, *refresh_token).await?;
+            update_profile(server, *refresh_token).await?;
         }
         Some(SubCommand::Subscribe) => {}
     }
@@ -102,7 +95,8 @@ async fn start_server(cli: ConvertorCli, base_dir: PathBuf) -> Result<()> {
                 ),
         );
 
-    let addr = format!("{}:{}", cli.common.host, cli.common.port);
+    // let addr = format!("{}:{}", cli.host, cli.port);
+    let addr = cli.listen;
 
     info!("Listening on: http://{}", addr);
     warn!("It is recommended to use nginx for reverse proxy and enable SSL");

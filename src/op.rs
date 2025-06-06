@@ -16,6 +16,7 @@ pub async fn get_item(name: &str) -> Result<OpItem> {
         .arg(name)
         .arg("--fields")
         .arg("username,password")
+        .arg("--reveal")
         .stdout(Stdio::piped())
         .output()
         .await?;
