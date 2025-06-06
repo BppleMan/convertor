@@ -1,3 +1,4 @@
+use crate::airport::convertor_url::ConvertorUrl;
 use crate::encrypt::decrypt;
 use crate::op;
 use crate::region::Region;
@@ -47,16 +48,12 @@ pub fn split_and_merge_groups(
 }
 
 pub async fn get_raw_profile(
-    url: impl AsRef<str>,
-    token: impl AsRef<str>,
+    convertor_url: &ConvertorUrl,
     flag: impl AsRef<str>,
 ) -> color_eyre::Result<String> {
-    let mut url = Url::from_str(url.as_ref())?;
-    let secret = op::get_item("CONVERTOR_SECRET")
-        .await
-        .wrap_err_with(|| "没有找到环境变量 $CONVERTOR_SECRET")?
-        .password;
-    let token = decrypt(secret.as_ref(), token.as_ref())?;
+    let mut url = Url::from_str(&convertor_url.airport_url)?;
+    let secret = std::env::var("CONVERTOR_SECRET")
+        .wrap_err_with(|| "没有找到环境变量 $CONVERTOR_SECRET")?;
     url.query_pairs_mut().append_pair("token", token.as_ref());
     url.query_pairs_mut().append_pair("flag", flag.as_ref());
     reqwest::Client::new()

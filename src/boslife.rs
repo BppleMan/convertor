@@ -1,4 +1,5 @@
-use crate::encrypt::encrypt;
+use crate::airport::convertor_url::ConvertorUrl;
+use crate::encrypt::{decrypt, encrypt};
 use crate::op;
 use color_eyre::eyre::{eyre, OptionExt};
 use color_eyre::Result;
@@ -112,7 +113,7 @@ pub async fn update_profile<S: AsRef<str>>(
     };
 
     let surge_subscription_url =
-        SurgeSubscriptionUrl::new(server_addr, &subscription_url)?;
+        ConvertorUrl::new(server_addr, &subscription_url)?;
 
     let icloud_env = std::env::var("ICLOUD")?;
     let icloud_path = Path::new(&icloud_env);
@@ -136,7 +137,7 @@ pub async fn update_profile<S: AsRef<str>>(
 
 async fn update_subscription<P: AsRef<Path>>(
     subscription_url: &Url,
-    surge_subscription_url: &SurgeSubscriptionUrl,
+    surge_subscription_url: &ConvertorUrl,
     ns_surge_path: P,
 ) -> Result<()> {
     // update BosLife.conf subscription
@@ -149,7 +150,7 @@ async fn update_subscription<P: AsRef<Path>>(
     // update surge.conf subscription
     let surge_conf = format!(
         r#"#!MANAGED-CONFIG {} interval=259200 strict=true"#,
-        surge_subscription_url.create_surge_api()?
+        surge_subscription_url.encode_to_convertor_url()?
     );
     println!("surge.conf: {}", surge_conf);
     update_conf(&ns_surge_path, "surge", &surge_conf).await?;
@@ -174,7 +175,7 @@ async fn update_conf<P: AsRef<Path>, N: AsRef<str>, S: AsRef<str>>(
 }
 
 async fn update_rule_set<P: AsRef<Path>>(
-    surge_subscription_url: &SurgeSubscriptionUrl,
+    surge_subscription_url: &ConvertorUrl,
     ns_surge_path: P,
 ) -> Result<()> {
     update_dconf(
@@ -223,7 +224,7 @@ async fn update_rule_set<P: AsRef<Path>>(
 }
 
 async fn update_dconf<P: AsRef<Path>>(
-    surge_subscription_url: &SurgeSubscriptionUrl,
+    surge_subscription_url: &ConvertorUrl,
     ns_surge_path: P,
     rule_set_type: RuleSetType,
 ) -> Result<()> {
@@ -259,81 +260,7 @@ async fn update_dconf<P: AsRef<Path>>(
     Ok(())
 }
 
-#[derive(Debug, Clone)]
-struct SurgeSubscriptionUrl {
-    host: String,
-    base_url: String,
-    token: String,
-}
-
-impl SurgeSubscriptionUrl {
-    fn new<S: AsRef<str>>(
-        surge_subscription_host: S,
-        subscription_url: &Url,
-    ) -> Result<Self> {
-        let base_url = format!(
-            "{}{}",
-            subscription_url.origin().ascii_serialization(),
-            subscription_url.path()
-        );
-        let token = subscription_url
-            .query_pairs()
-            .find(|(k, _)| k == "token")
-            .map(|(_, v)| v.to_string())
-            .ok_or_else(|| eyre!("token not found"))?;
-        let secret = std::env::var("CONVERTOR_SECRET")?;
-        let encrypted_token = encrypt(secret.as_ref(), &token)?;
-        let encoded_base_url = urlencoding::encode(&base_url).to_string();
-        let encoded_encrypted_token =
-            urlencoding::encode(&encrypted_token).to_string();
-        Ok(Self {
-            host: surge_subscription_host.as_ref().to_string(),
-            base_url: encoded_base_url,
-            token: encoded_encrypted_token,
-        })
-    }
-
-    fn create_surge_api(&self) -> Result<Url> {
-        let mut url = Url::parse(&self.host)?.join("surge")?;
-        url.query_pairs_mut()
-            .append_pair("base_url", &self.base_url)
-            .append_pair("token", &self.token);
-        Ok(url)
-    }
-
-    fn create_rule_set_api(&self, rule_set_type: &RuleSetType) -> Result<Url> {
-        let mut url = Url::parse(&self.host)?.join("surge/rule_set")?;
-        url.query_pairs_mut()
-            .append_pair("base_url", &self.base_url)
-            .append_pair("token", &self.token);
-        match rule_set_type {
-            RuleSetType::BosLifeSubscription => {
-                url.query_pairs_mut().append_pair("boslife", "true")
-            }
-            RuleSetType::BosLifePolicy => {
-                url.query_pairs_mut().append_pair("policies", "BosLife")
-            }
-            RuleSetType::BosLifeNoResolvePolicy => url
-                .query_pairs_mut()
-                .append_pair("policies", "BosLife|no-resolve"),
-            RuleSetType::BosLifeForceRemoteDnsPolicy => url
-                .query_pairs_mut()
-                .append_pair("policies", "BosLife|force-remote-dns"),
-            RuleSetType::DirectPolicy => {
-                url.query_pairs_mut().append_pair("policies", "DIRECT")
-            }
-            RuleSetType::DirectNoResolvePolicy => url
-                .query_pairs_mut()
-                .append_pair("policies", "DIRECT|no-resolve"),
-            RuleSetType::DirectForceRemoteDnsPolicy => url
-                .query_pairs_mut()
-                .append_pair("policies", "DIRECT|force-remote-dns"),
-        };
-        Ok(url)
-    }
-}
-
-enum RuleSetType {
+pub enum RuleSetType {
     BosLifeSubscription,
     BosLifePolicy,
     BosLifeNoResolvePolicy,
