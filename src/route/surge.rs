@@ -2,7 +2,7 @@ use crate::convertor_url::ConvertorUrl;
 use crate::error::AppError;
 use crate::profile::surge_profile::SurgeProfile;
 use crate::route::{extract_convertor_url, AppState};
-use crate::service::service_api::AirportApi;
+use crate::service::service_api::ServiceApi;
 use axum::body::Body;
 use axum::extract::{Query, State};
 use axum::http::Request;
@@ -10,6 +10,7 @@ use color_eyre::eyre::eyre;
 use color_eyre::Result;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use tracing::info;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SurgeQuery {
@@ -53,6 +54,7 @@ async fn profile_impl(
     _query: Query<SurgeQuery>,
     convertor_url: ConvertorUrl,
 ) -> Result<String> {
+    info!("surge profile impl: get raw profile");
     let raw_profile = state
         .service
         .get_raw_profile(convertor_url.build_service_url("surge")?)

@@ -5,7 +5,7 @@ After=network.target  # 在网络服务启动后启动
 
 [Service]
 # 指定要运行的程序
-ExecStart=/root/.cargo/bin/convertor -p 8001
+ExecStart=/root/.cargo/bin/convertor 0.0.0.0:8001
 
 # 重启策略，默认设置为 on-failure
 Restart=on-failure

@@ -1,14 +1,27 @@
-use crate::op;
+use crate::op::OpItem;
 use crate::service::service_config::ServiceConfig;
-use color_eyre::eyre::WrapErr;
+use crate::service::subscription_log::SubscriptionLog;
+use color_eyre::eyre::{eyre, WrapErr};
+use moka::future::Cache;
 use reqwest::{Method, Response, Url};
-use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-pub trait AirportApi {
+pub const CACHED_AUTH_TOKEN_KEY: &str = "CACHED_AUTH_TOKEN";
+pub const CACHED_PROFILE_KEY: &str = "CACHED_PROFILE";
+pub const CACHED_SUBSCRIPTION_LOGS_KEY: &str = "CACHED_SUBSCRIPTION_LOGS";
+
+pub trait ServiceApi {
     fn config(&self) -> &ServiceConfig;
 
     fn client(&self) -> &reqwest::Client;
+
+    fn cached_auth_token(&self) -> &Cache<String, String>;
+
+    fn cached_profile(&self) -> &Cache<String, String>;
+
+    fn cached_subscription_logs(&self) -> &Cache<String, Vec<SubscriptionLog>>;
+
+    async fn get_credential(&self) -> color_eyre::Result<OpItem>;
 
     async fn request<T: Serialize + ?Sized>(
         &self,
@@ -34,67 +47,76 @@ pub trait AirportApi {
     }
 
     async fn login(&self) -> color_eyre::Result<String> {
-        let login_url = format!(
-            "{}{}{}",
-            self.config().base_url,
-            self.config().prefix_path,
-            self.config().login_api.api_path
-        );
-        println!("{}", login_url);
-        let identity = op::get_item(self.config().one_password_key).await?;
-        let response = self
-            .request(
-                Method::POST,
-                &login_url,
-                Vec::<(&str, &str)>::new(),
-                Some(&[
-                    ("email", &identity.username),
-                    ("password", &identity.password),
-                ]),
-            )
-            .await?;
-        if response.status().is_success() {
-            let json_response = response.text().await?;
-            let auth_token = jsonpath_lib::select_as(
-                &json_response,
-                self.config().login_api.json_path,
-            )
-            .wrap_err_with(|| {
-                format!(
-                    "failed to select json_path: {}",
-                    self.config().login_api.json_path
-                )
-            })?
-            .remove(0);
-            Ok(auth_token)
-        } else {
-            Err(color_eyre::eyre::eyre!(
-                "Login failed: {}",
-                response.status()
-            ))
-        }
+        self.cached_auth_token()
+            .try_get_with(CACHED_AUTH_TOKEN_KEY.to_string(), async {
+                let login_url = format!(
+                    "{}{}{}",
+                    self.config().base_url,
+                    self.config().prefix_path,
+                    self.config().login_api.api_path
+                );
+                let identity = self.get_credential().await?;
+                let response = self
+                    .request(
+                        Method::POST,
+                        &login_url,
+                        Vec::<(&str, &str)>::new(),
+                        Some(&[
+                            ("email", &identity.username),
+                            ("password", &identity.password),
+                        ]),
+                    )
+                    .await?;
+                if response.status().is_success() {
+                    let json_response = response.text().await?;
+                    let auth_token = jsonpath_lib::select_as(
+                        &json_response,
+                        self.config().login_api.json_path,
+                    )
+                    .wrap_err_with(|| {
+                        format!(
+                            "failed to select json_path: {}",
+                            self.config().login_api.json_path
+                        )
+                    })?
+                    .remove(0);
+                    Ok(auth_token)
+                } else {
+                    Err(eyre!("Login failed: {}", response.status()))
+                }
+            })
+            .await
+            .map_err(|e| eyre!(e))
     }
 
     async fn get_raw_profile(
         &self,
         url: impl AsRef<str>,
     ) -> color_eyre::Result<String> {
-        let response = self
-            .request(
-                Method::GET,
-                url,
-                Vec::<(&str, &str)>::new(),
-                Option::<&str>::None,
+        self.cached_profile()
+            .try_get_with(
+                format!("{}_{}", CACHED_PROFILE_KEY, url.as_ref()),
+                async {
+                    let response = self
+                        .request(
+                            Method::GET,
+                            url,
+                            Vec::<(&str, &str)>::new(),
+                            Option::<&str>::None,
+                        )
+                        .await?;
+                    if response.status().is_success() {
+                        response.text().await.map_err(Into::into)
+                    } else {
+                        Err(eyre!(
+                            "Get raw profile failed: {}",
+                            response.status()
+                        ))
+                    }
+                },
             )
-            .await?;
-        if response.status().is_success() {
-            response.text().await.map_err(Into::into)
-        } else {
-            Err(color_eyre::eyre::eyre!(
-                "Get raw profile failed: {}",
-                response.status()
-            ))
-        }
+            .await
+            .map_err(|e| eyre!(e))
     }
 
     async fn reset_subscription_url(
@@ -130,7 +152,7 @@ pub trait AirportApi {
             .remove(0);
             Url::parse(&url_str).map_err(|e| e.into())
         } else {
-            Err(color_eyre::eyre::eyre!(
+            Err(eyre!(
                 "Reset subscription URL failed: {}",
                 response.status()
             ))
@@ -170,44 +192,55 @@ pub trait AirportApi {
             .remove(0);
             Url::parse(&url_str).map_err(|e| e.into())
         } else {
-            Err(color_eyre::eyre::eyre!(
-                "Get subscription URL failed: {}",
-                response.status()
-            ))
+            Err(eyre!("Get subscription URL failed: {}", response.status()))
         }
     }
 
-    async fn get_subscription_log<T: DeserializeOwned>(
+    async fn get_subscription_log(
         &self,
         auth_token: impl AsRef<str>,
-    ) -> color_eyre::Result<T> {
-        let log_url = format!(
-            "{}{}{}",
-            self.config().base_url,
-            self.config().prefix_path,
-            self.config().get_subscription_log.api_path
-        );
-        let response = self
-            .request(
-                Method::GET,
-                &log_url,
-                vec![("Authorization", auth_token)],
-                Option::<&str>::None,
+    ) -> color_eyre::Result<Vec<SubscriptionLog>> {
+        println!("{}_{}", CACHED_SUBSCRIPTION_LOGS_KEY, auth_token.as_ref());
+        self.cached_subscription_logs()
+            .try_get_with(
+                format!(
+                    "{}_{}",
+                    CACHED_SUBSCRIPTION_LOGS_KEY,
+                    auth_token.as_ref()
+                ),
+                async {
+                    let log_url = format!(
+                        "{}{}{}",
+                        self.config().base_url,
+                        self.config().prefix_path,
+                        self.config().get_subscription_log.api_path
+                    );
+                    let response = self
+                        .request(
+                            Method::GET,
+                            &log_url,
+                            vec![("Authorization", auth_token)],
+                            Option::<&str>::None,
+                        )
+                        .await?;
+                    if response.status().is_success() {
+                        let response = response.text().await?;
+                        let response: Vec<SubscriptionLog> =
+                            jsonpath_lib::select_as(
+                                &response,
+                                self.config().get_subscription_log.json_path,
+                            )?
+                            .remove(0);
+                        Ok(response)
+                    } else {
+                        Err(eyre!(
+                            "Get subscription log failed: {}",
+                            response.status()
+                        ))
+                    }
+                },
             )
-            .await?;
-        if response.status().is_success() {
-            let response = response.text().await?;
-            let response: T = jsonpath_lib::select_as(
-                &response,
-                self.config().get_subscription_log.json_path,
-            )?
-            .remove(0);
-            Ok(response)
-        } else {
-            Err(color_eyre::eyre::eyre!(
-                "Get subscription log failed: {}",
-                response.status()
-            ))
-        }
+            .await
+            .map_err(|e| eyre!(e))
     }
 }

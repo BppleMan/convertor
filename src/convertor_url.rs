@@ -1,5 +1,4 @@
 use crate::encrypt::{decrypt, encrypt};
-use crate::op;
 use crate::op::get_convertor_secret;
 use crate::update_profile::RuleSetType;
 use color_eyre::eyre::eyre;
@@ -31,7 +30,7 @@ impl ConvertorUrl {
             .find(|(k, _)| k == "token")
             .map(|(_, v)| v.to_string())
             .ok_or_else(|| eyre!("Token not found"))?;
-        let secret = op::get_convertor_secret()?;
+        let secret = get_convertor_secret()?;
         let encrypted_token = encrypt(secret.as_ref(), &token)?;
         Ok(Self {
             server: server_addr.as_ref().to_string(),
@@ -46,23 +45,23 @@ impl ConvertorUrl {
     ) -> color_eyre::Result<Self> {
         let convertor_url = convertor_url.into_url()?;
         let server = convertor_url.origin().ascii_serialization().to_string();
-        let airport_url = convertor_url
+        let service_url = convertor_url
             .query_pairs()
             .find(|(k, _)| k == "base_url")
             .map(|(_, v)| urlencoding::decode(&v).unwrap().to_string())
             .ok_or_else(|| eyre!("base_url not found"))?;
-        let encrypted_token = convertor_url
+        let encrypted_service_token = convertor_url
             .query_pairs()
             .find(|(k, _)| k == "token")
             .map(|(_, v)| urlencoding::decode(&v).unwrap().to_string())
             .ok_or_else(|| eyre!("token not found"))?;
         let secret = get_convertor_secret()?;
-        let airport_token = decrypt(secret.as_ref(), &encrypted_token)?;
+        let service_token = decrypt(secret.as_ref(), &encrypted_service_token)?;
         Ok(Self {
             server,
-            service_url: airport_url,
-            service_token: airport_token,
-            encrypted_service_token: encrypted_token,
+            service_url,
+            service_token,
+            encrypted_service_token,
         })
     }
 

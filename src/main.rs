@@ -162,7 +162,8 @@ fn init<P: AsRef<Path>>(base_dir: P) {
 
     let filter = EnvFilter::new("info")
         .add_directive("convertor=trace".parse().unwrap())
-        .add_directive("tower_http=trace".parse().unwrap());
+        .add_directive("tower_http=trace".parse().unwrap())
+        .add_directive("moka=trace".parse().unwrap());
 
     let file_appender = tracing_appender::rolling::hourly(
         base_dir.as_ref().join("logs"),

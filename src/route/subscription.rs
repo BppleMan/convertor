@@ -1,6 +1,6 @@
 use crate::error::AppError;
 use crate::route::AppState;
-use crate::service::service_api::AirportApi;
+use crate::service::service_api::ServiceApi;
 use crate::service::subscription_log::SubscriptionLog;
 use axum::extract::{Query, State};
 use axum::Json;

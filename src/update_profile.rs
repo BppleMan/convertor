@@ -1,6 +1,6 @@
 use crate::convertor_url::ConvertorUrl;
 use crate::service::boslife_service::BosLifeService;
-use crate::service::service_api::AirportApi;
+use crate::service::service_api::ServiceApi;
 use color_eyre::eyre::{eyre, OptionExt};
 use color_eyre::Result;
 use std::path::Path;

@@ -2,7 +2,7 @@ use crate::convertor_url::ConvertorUrl;
 use crate::error::AppError;
 use crate::profile::clash_profile::ClashProfile;
 use crate::route::{extract_convertor_url, AppState};
-use crate::service::service_api::AirportApi;
+use crate::service::service_api::ServiceApi;
 use axum::body::Body;
 use axum::extract::{Query, State};
 use axum::http::Request;
