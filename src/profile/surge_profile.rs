@@ -96,32 +96,28 @@ impl SurgeProfile {
         }
     }
 
-    pub fn extract_rule(&self, policies: &[impl AsRef<str>]) -> String {
-        self.rule()
-            .map(|rules| {
-                rules
-                    .iter()
-                    .filter(|rule| !rule.starts_with("//"))
-                    .filter(|rule| !rule.starts_with('#'))
-                    .filter(|rule| !rule.starts_with("GEOIP,CN"))
-                    .filter(|rule| !rule.starts_with("FINAL,DIRECT"))
-                    .filter(|rule| {
-                        policies
-                            .iter()
-                            .all(|policy| rule.contains(policy.as_ref()))
-                    })
-                    .map(|rule| {
-                        let rule_part = rule.split(',').collect::<Vec<_>>();
-                        if rule_part.len() > 2 {
-                            rule_part[0..2].join(",")
-                        } else {
-                            rule.to_string()
-                        }
-                    })
-                    .collect::<Vec<String>>()
-                    .join("\n")
-            })
-            .unwrap_or_default()
+    pub fn extract_rule(&self, policies: impl AsRef<str>) -> String {
+        if let Some(rules) = self.rule() {
+            rules
+                .iter()
+                .filter(|rule| !rule.starts_with("//"))
+                .filter(|rule| !rule.starts_with('#'))
+                .filter(|rule| !rule.starts_with("GEOIP,CN"))
+                .filter(|rule| !rule.starts_with("FINAL,DIRECT"))
+                .filter(|rule| rule.contains(policies.as_ref()))
+                .map(|rule| {
+                    let rule_part = rule.split(',').collect::<Vec<_>>();
+                    if rule_part.len() > 2 {
+                        rule_part[0..2].join(",")
+                    } else {
+                        rule.to_string()
+                    }
+                })
+                .collect::<Vec<String>>()
+                .join("\n")
+        } else {
+            "".to_string()
+        }
     }
 
     pub fn extract_boslife_subscription(&self) -> String {
@@ -181,6 +177,7 @@ impl Display for SurgeProfile {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::surge_config::RuleSetType;
     use crate::convertor_url::ConvertorUrl;
     use reqwest::Url;
 
@@ -193,11 +190,27 @@ mod tests {
         let mut profile = SurgeProfile::new(PROFILE);
         let convertor_url = ConvertorUrl::new(
             "http://127.0.0.1:8001",
-            &Url::parse("https://example.com?token=12345")?,
+            Url::parse("https://example.com?token=12345")?,
         )?;
-        profile.parse(convertor_url.encode_to_convertor_url()?);
+        profile.parse(convertor_url.build_convertor_url("surge")?);
         println!("{}", profile);
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_extract_rule() -> color_eyre::Result<()> {
+        color_eyre::install()?;
+
+        let mut profile = SurgeProfile::new(PROFILE);
+        let convertor_url = ConvertorUrl::new(
+            "http://127.0.1:8001",
+            Url::parse("https://example.com?token=12345")?,
+        )?;
+        profile.parse(convertor_url.build_convertor_url("surge")?);
+        let policies = RuleSetType::BosLifeSubscription.policy();
+        let rules = profile.extract_rule(policies);
+        println!("Extracted Rules:\n{}", rules);
         Ok(())
     }
 }

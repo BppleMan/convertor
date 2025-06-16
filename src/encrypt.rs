@@ -40,9 +40,12 @@ pub fn decrypt(secret: &[u8], encrypted: &str) -> Result<String> {
     let ciphertext = STANDARD.decode(parts[1])?;
 
     // 解密数据
-    let plaintext = cipher
-        .decrypt(Nonce::from_slice(&nonce), ciphertext.as_ref())
-        .map_err(|e| eyre!(e))?;
+    let plaintext =
+        match cipher.decrypt(Nonce::from_slice(&nonce), ciphertext.as_ref()) {
+            Ok(plaintext) => plaintext,
+            Err(e) => panic!("{}", e),
+        };
+
     Ok(String::from_utf8(plaintext)?)
 }
 

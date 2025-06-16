@@ -1,0 +1,196 @@
+use crate::convertor_url::ConvertorUrl;
+use color_eyre::eyre::OptionExt;
+use color_eyre::Result;
+use std::borrow::Cow;
+use std::path::{Path, PathBuf};
+use tracing::error;
+
+#[derive(Debug)]
+pub struct SurgeConfig {
+    #[allow(unused)]
+    pub ns_surge_path: PathBuf,
+    pub main_config_path: PathBuf,
+    pub default_config_path: PathBuf,
+    pub rules_config_path: PathBuf,
+}
+
+impl SurgeConfig {
+    pub fn try_new() -> Result<Self> {
+        let icloud_env = std::env::var("ICLOUD")?;
+        let icloud_path = Path::new(&icloud_env);
+        let ns_surge_path = icloud_path
+            .parent()
+            .ok_or_eyre("not found icloud's parent")?
+            .join("iCloud~com~nssurge~inc")
+            .join("Documents");
+        let main_config_path = ns_surge_path.join("surge").join("surge.conf");
+        let default_config_path =
+            ns_surge_path.join("surge").join("BosLife.conf");
+        let rules_config_path = ns_surge_path.join("surge").join("rules.conf");
+        Ok(Self {
+            ns_surge_path,
+            main_config_path,
+            default_config_path,
+            rules_config_path,
+        })
+    }
+
+    pub async fn update_surge_config(
+        &self,
+        convertor_url: &ConvertorUrl,
+    ) -> Result<()> {
+        // update BosLife.conf subscription
+        let boslife_conf = format!(
+            "#!MANAGED-CONFIG {} interval=259200 strict=true",
+            convertor_url.build_subscription_url("surge")?
+        );
+        println!("BosLife.conf: {}", boslife_conf);
+        Self::update_conf(&self.default_config_path, &boslife_conf).await?;
+
+        // update surge.conf subscription
+        let surge_conf = format!(
+            r#"#!MANAGED-CONFIG {} interval=259200 strict=true"#,
+            convertor_url.build_convertor_url("surge")?
+        );
+        println!("surge.conf: {}", surge_conf);
+        Self::update_conf(&self.main_config_path, &surge_conf).await?;
+
+        Ok(())
+    }
+
+    pub async fn update_surge_rule_set(
+        &self,
+        convertor_url: &ConvertorUrl,
+    ) -> Result<()> {
+        let content =
+            tokio::fs::read_to_string(&self.rules_config_path).await?;
+        let mut lines = content.lines().map(Cow::Borrowed).collect::<Vec<_>>();
+
+        let find_position = |rst: &RuleSetType| {
+            lines
+                .iter()
+                .position(|l| l.contains(rst.name()))
+                .map(|pos| pos)
+                .ok_or_eyre(format!("rule set {} not found", rst.name()))
+        };
+
+        let pos_and_rst = RuleSetType::all()
+            .iter()
+            .map(|rst| find_position(rst).map(|pos| (pos, rst)))
+            .collect::<Vec<_>>();
+
+        for pair in pos_and_rst {
+            match pair {
+                Ok((pos, rst)) => {
+                    lines[pos] = Cow::Owned(rst.rule_set(
+                        convertor_url.build_rule_set_url(rst)?.to_string(),
+                    ));
+                }
+                Err(e) => error!("{e}"),
+            }
+        }
+        let content = lines.join("\n");
+        tokio::fs::write(&self.rules_config_path, &content).await?;
+        Ok(())
+    }
+
+    async fn update_conf(
+        config_path: impl AsRef<Path>,
+        sub_url: impl AsRef<str>,
+    ) -> Result<()> {
+        let mut content = tokio::fs::read_to_string(&config_path).await?;
+        let mut lines = content.lines().collect::<Vec<_>>();
+        lines[0] = sub_url.as_ref();
+        content = lines.join("\n");
+        tokio::fs::write(&config_path, &content).await?;
+        Ok(())
+    }
+}
+
+pub enum RuleSetType {
+    BosLifeSubscription,
+    BosLifePolicy,
+    BosLifeNoResolvePolicy,
+    BosLifeForceRemoteDnsPolicy,
+    DirectPolicy,
+    DirectNoResolvePolicy,
+    DirectForceRemoteDnsPolicy,
+}
+
+impl RuleSetType {
+    pub const fn all() -> &'static [RuleSetType] {
+        &[
+            RuleSetType::BosLifeSubscription,
+            RuleSetType::BosLifePolicy,
+            RuleSetType::BosLifeNoResolvePolicy,
+            RuleSetType::BosLifeForceRemoteDnsPolicy,
+            RuleSetType::DirectPolicy,
+            RuleSetType::DirectNoResolvePolicy,
+            RuleSetType::DirectForceRemoteDnsPolicy,
+        ]
+    }
+
+    pub fn name(&self) -> &'static str {
+        match self {
+            RuleSetType::BosLifeSubscription => "[BosLife Subscription]",
+            RuleSetType::BosLifePolicy => "[BosLife Policy]",
+            RuleSetType::BosLifeNoResolvePolicy => {
+                "[BosLife No Resolve Policy]"
+            }
+            RuleSetType::BosLifeForceRemoteDnsPolicy => {
+                "[BosLife Force Remote Dns Policy]"
+            }
+            RuleSetType::DirectPolicy => "[Direct Policy]",
+            RuleSetType::DirectNoResolvePolicy => "[Direct No Resolve Policy]",
+            RuleSetType::DirectForceRemoteDnsPolicy => {
+                "[Direct Force Remote Dns Policy]"
+            }
+        }
+    }
+
+    pub fn comment(&self) -> String {
+        format!(
+            r#"// Added for {} by convertor/{}"#,
+            self.name(),
+            env!("CARGO_PKG_VERSION")
+        )
+    }
+
+    pub fn policy(&self) -> &'static str {
+        match self {
+            RuleSetType::BosLifeSubscription => "DIRECT",
+            RuleSetType::BosLifePolicy => "BosLife",
+            RuleSetType::BosLifeNoResolvePolicy => "BosLife,no-resolve",
+            RuleSetType::BosLifeForceRemoteDnsPolicy => {
+                "BosLife,force-remote-dns"
+            }
+            RuleSetType::DirectPolicy => "DIRECT",
+            RuleSetType::DirectNoResolvePolicy => "DIRECT,no-resolve",
+            RuleSetType::DirectForceRemoteDnsPolicy => {
+                "DIRECT,force-remote-dns"
+            }
+        }
+    }
+
+    pub fn rule_set(&self, rule_set_url: impl AsRef<str>) -> String {
+        match self {
+            RuleSetType::BosLifeSubscription
+            | RuleSetType::BosLifePolicy
+            | RuleSetType::BosLifeNoResolvePolicy
+            | RuleSetType::BosLifeForceRemoteDnsPolicy
+            | RuleSetType::DirectPolicy
+            | RuleSetType::DirectNoResolvePolicy => format!(
+                r#"RULE-SET,{},{} {}"#,
+                rule_set_url.as_ref(),
+                self.policy(),
+                self.comment()
+            ),
+            RuleSetType::DirectForceRemoteDnsPolicy => format!(
+                r#"// RULE-SET,{},{} {}"#,
+                rule_set_url.as_ref(),
+                self.policy(),
+                self.comment()
+            ),
+        }
+    }
+}

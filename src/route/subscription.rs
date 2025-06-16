@@ -17,7 +17,7 @@ pub async fn subscription_log(
     State(state): State<Arc<AppState>>,
     mut query: Query<SubscriptionQuery>,
 ) -> Result<Json<Vec<SubscriptionLog>>, AppError> {
-    let auth_token = state.service.login().await?;
+    let auth_token = state.service.login(None).await?;
     let mut logs: Vec<SubscriptionLog> =
         state.service.get_subscription_log(&auth_token).await?;
     if let (Some(current), Some(size)) =

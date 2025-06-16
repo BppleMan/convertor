@@ -1,9 +1,10 @@
 use crate::route::AppState;
-use crate::service::boslife_service::BosLifeService;
-use crate::update_profile::{get_subscription_url, update_profile};
+use crate::service::boslife_service::{
+    BosLifeService, BosLifeServiceSubscription,
+};
 use axum::routing::get;
 use axum::Router;
-use clap::{Args, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 use color_eyre::Result;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -22,13 +23,12 @@ mod profile;
 mod route;
 mod region;
 mod middleware;
-mod update_profile;
 mod op;
 mod encrypt;
 mod service;
-pub mod convertor_url;
+mod convertor_url;
+mod config;
 
-// a clap command line argument parser
 #[derive(Debug, Parser)]
 #[clap(version, author)]
 struct ConvertorCli {
@@ -37,30 +37,17 @@ struct ConvertorCli {
     listen: String,
 
     #[command(subcommand)]
-    command: Option<SubCommand>,
+    command: Option<Service>,
 }
 
 #[derive(Debug, Subcommand)]
-enum SubCommand {
-    UpdateProfile(UpdateProfile),
-    Subscription {
-        /// convertor 所在服务器的地址
-        /// 格式为 `http://ip:port`
-        #[arg(default_value = "http://127.0.0.1:8001")]
-        server: String,
+enum Service {
+    /// 操作 boslife 订阅配置
+    #[command(name = "bl")]
+    BosLife {
+        #[command(subcommand)]
+        operation: BosLifeServiceSubscription,
     },
-}
-
-#[derive(Debug, Args)]
-struct UpdateProfile {
-    /// convertor 所在服务器的地址
-    /// 格式为 `http://ip:port`
-    #[arg(long)]
-    server: String,
-
-    /// 是否刷新 boslife token
-    #[arg(short, long, default_value = "false")]
-    refresh_token: bool,
 }
 
 #[tokio::main]
@@ -70,22 +57,12 @@ async fn main() -> Result<()> {
 
     let cli = ConvertorCli::parse();
     let client = reqwest::Client::new();
+    let service = BosLifeService::new(client);
 
     match cli.command {
-        None => {
-            let state = AppState {
-                service: BosLifeService::new(client),
-            };
-            start_server(cli, state, base_dir).await?
-        }
-        Some(SubCommand::UpdateProfile(UpdateProfile {
-            server,
-            refresh_token,
-        })) => {
-            update_profile(client, server, refresh_token).await?;
-        }
-        Some(SubCommand::Subscription { server }) => {
-            get_subscription_url(client, server).await?;
+        None => start_server(cli, AppState { service }, base_dir).await?,
+        Some(Service::BosLife { operation }) => {
+            operation.execute(service).await?;
         }
     }
 

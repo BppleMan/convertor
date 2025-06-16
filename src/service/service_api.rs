@@ -46,7 +46,10 @@ pub trait ServiceApi {
         Ok(request_builder.send().await?)
     }
 
-    async fn login(&self) -> color_eyre::Result<String> {
+    async fn login(
+        &self,
+        credential: Option<OpItem>,
+    ) -> color_eyre::Result<String> {
         self.cached_auth_token()
             .try_get_with(CACHED_AUTH_TOKEN_KEY.to_string(), async {
                 let login_url = format!(
@@ -55,15 +58,18 @@ pub trait ServiceApi {
                     self.config().prefix_path,
                     self.config().login_api.api_path
                 );
-                let identity = self.get_credential().await?;
+                let credential = match credential {
+                    Some(cred) => cred,
+                    None => self.get_credential().await?,
+                };
                 let response = self
                     .request(
                         Method::POST,
                         &login_url,
                         Vec::<(&str, &str)>::new(),
                         Some(&[
-                            ("email", &identity.username),
-                            ("password", &identity.password),
+                            ("email", &credential.username),
+                            ("password", &credential.password),
                         ]),
                     )
                     .await?;
@@ -119,7 +125,7 @@ pub trait ServiceApi {
             .map_err(|e| eyre!(e))
     }
 
-    async fn reset_subscription_url(
+    async fn reset_raw_subscription_url(
         &self,
         auth_token: impl AsRef<str>,
     ) -> color_eyre::Result<Url> {
@@ -159,7 +165,7 @@ pub trait ServiceApi {
         }
     }
 
-    async fn get_subscription_url(
+    async fn get_raw_subscription_url(
         &self,
         auth_token: impl AsRef<str>,
     ) -> color_eyre::Result<Url> {

@@ -3,9 +3,7 @@
     <option name="buildProfileId" value="dev" />
     <option name="command" value="run --package convertor --bin convertor" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-    <envs>
-      <env name="CONVERTOR_SECRET" value="bppleman" />
-    </envs>
+    <envs />
     <option name="emulateTerminal" value="true" />
     <option name="channel" value="DEFAULT" />
     <option name="requiredFeatures" value="true" />
