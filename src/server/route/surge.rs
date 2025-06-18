@@ -1,7 +1,7 @@
 use crate::convertor_url::ConvertorUrl;
 use crate::error::AppError;
 use crate::profile::surge_profile::SurgeProfile;
-use crate::route::AppState;
+use crate::server::route::AppState;
 use crate::service::service_api::ServiceApi;
 use axum::body::Body;
 use axum::extract::{Query, State};
@@ -26,7 +26,10 @@ pub async fn profile(
     query: Query<SurgeQuery>,
     request: Request<Body>,
 ) -> Result<String, AppError> {
-    let convertor_url = ConvertorUrl::try_from(&request)?;
+    let convertor_url = ConvertorUrl::decode_from_request(
+        &request,
+        &state.service.config.secret,
+    )?;
     profile_impl(state, query, convertor_url)
         .await
         .map_err(Into::into)
@@ -42,7 +45,10 @@ pub async fn rule_set(
     query: Query<SurgeQuery>,
     request: Request<Body>,
 ) -> Result<String, AppError> {
-    let convertor_url = ConvertorUrl::try_from(&request)?;
+    let convertor_url = ConvertorUrl::decode_from_request(
+        &request,
+        &state.service.config.secret,
+    )?;
     rule_set_impl(state, query, convertor_url)
         .await
         .map_err(Into::into)

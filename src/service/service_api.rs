@@ -1,5 +1,5 @@
-use crate::op::OpItem;
-use crate::service::service_config::ServiceConfig;
+use crate::config::convertor_config::Credential;
+use crate::config::service_config::ServiceConfig;
 use crate::service::subscription_log::SubscriptionLog;
 use color_eyre::eyre::{eyre, WrapErr};
 use moka::future::Cache;
@@ -11,6 +11,8 @@ pub const CACHED_PROFILE_KEY: &str = "CACHED_PROFILE";
 pub const CACHED_SUBSCRIPTION_LOGS_KEY: &str = "CACHED_SUBSCRIPTION_LOGS";
 
 pub trait ServiceApi {
+    type Cred: Credential;
+
     fn config(&self) -> &ServiceConfig;
 
     fn client(&self) -> &reqwest::Client;
@@ -21,7 +23,7 @@ pub trait ServiceApi {
 
     fn cached_subscription_logs(&self) -> &Cache<String, Vec<SubscriptionLog>>;
 
-    async fn get_credential(&self) -> color_eyre::Result<OpItem>;
+    fn get_credential(&self) -> &Self::Cred;
 
     async fn request<T: Serialize + ?Sized>(
         &self,
@@ -46,10 +48,7 @@ pub trait ServiceApi {
         Ok(request_builder.send().await?)
     }
 
-    async fn login(
-        &self,
-        credential: Option<OpItem>,
-    ) -> color_eyre::Result<String> {
+    async fn login(&self) -> color_eyre::Result<String> {
         self.cached_auth_token()
             .try_get_with(CACHED_AUTH_TOKEN_KEY.to_string(), async {
                 let login_url = format!(
@@ -58,18 +57,15 @@ pub trait ServiceApi {
                     self.config().prefix_path,
                     self.config().login_api.api_path
                 );
-                let credential = match credential {
-                    Some(cred) => cred,
-                    None => self.get_credential().await?,
-                };
+
                 let response = self
                     .request(
                         Method::POST,
                         &login_url,
                         Vec::<(&str, &str)>::new(),
                         Some(&[
-                            ("email", &credential.username),
-                            ("password", &credential.password),
+                            ("email", &self.get_credential().get_username()),
+                            ("password", &self.get_credential().get_password()),
                         ]),
                     )
                     .await?;
@@ -77,7 +73,7 @@ pub trait ServiceApi {
                     let json_response = response.text().await?;
                     let auth_token = jsonpath_lib::select_as(
                         &json_response,
-                        self.config().login_api.json_path,
+                        &self.config().login_api.json_path,
                     )
                     .wrap_err_with(|| {
                         format!(
@@ -147,7 +143,7 @@ pub trait ServiceApi {
             let json_response = response.text().await?;
             let url_str: String = jsonpath_lib::select_as(
                 &json_response,
-                self.config().reset_subscription_url.json_path,
+                &self.config().reset_subscription_url.json_path,
             )
             .wrap_err_with(|| {
                 format!(
@@ -187,7 +183,7 @@ pub trait ServiceApi {
             let json_response = response.text().await?;
             let url_str: String = jsonpath_lib::select_as(
                 &json_response,
-                self.config().get_subscription_url.json_path,
+                &self.config().get_subscription_url.json_path,
             )
             .wrap_err_with(|| {
                 format!(
@@ -234,7 +230,7 @@ pub trait ServiceApi {
                         let response: Vec<SubscriptionLog> =
                             jsonpath_lib::select_as(
                                 &response,
-                                self.config().get_subscription_log.json_path,
+                                &self.config().get_subscription_log.json_path,
                             )?
                             .remove(0);
                         Ok(response)

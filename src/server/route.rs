@@ -1,5 +1,5 @@
+use crate::boslife::boslife_service::BosLifeService;
 use crate::error::AppError;
-use crate::service::boslife_service::BosLifeService;
 use color_eyre::eyre::eyre;
 use color_eyre::Result;
 

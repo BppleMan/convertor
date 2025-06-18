@@ -1,4 +1,2 @@
-pub mod service_api;
-pub mod service_config;
-pub mod boslife_service;
+pub(crate) mod service_api;
 pub mod subscription_log;

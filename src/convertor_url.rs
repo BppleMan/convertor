@@ -1,62 +1,79 @@
 use crate::config::surge_config::RuleSetType;
 use crate::encrypt::{decrypt, encrypt};
-use crate::op::get_convertor_secret;
 use axum::body::Body;
 use axum::http::{header, Request};
 use color_eyre::eyre::{eyre, WrapErr};
-use color_eyre::Report;
 use reqwest::{IntoUrl, Url};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ConvertorUrl {
-    pub server: String,
+    pub server: Url,
     pub service_url: Url,
+    pub encrypted_service_url: String,
 }
 
 impl ConvertorUrl {
     /// 传入服务器地址和服务的 URL，生成 ConvertorUrl 实例
     /// 服务的 URL 指的是机场的订阅地址，通常包含 token
     pub fn new(
-        server_addr: impl AsRef<str>,
+        server: Url,
+        secret: impl AsRef<str>,
         service_url: Url,
     ) -> color_eyre::Result<Self> {
+        let encrypted_service_url =
+            encrypt(secret.as_ref().as_bytes(), service_url.as_str())?;
         Ok(Self {
-            server: server_addr.as_ref().to_string(),
+            server,
             service_url,
+            encrypted_service_url,
         })
     }
 
     pub fn decode_from_convertor_url(
         convertor_url: impl IntoUrl,
+        convertor_secret: impl AsRef<str>,
     ) -> color_eyre::Result<Self> {
         let convertor_url = convertor_url.into_url()?;
-        let server = convertor_url.origin().ascii_serialization().to_string();
-        let convertor_secret = get_convertor_secret()?;
-        let decoded_service_url = convertor_url
+        let server = Url::parse(&convertor_url.origin().ascii_serialization())?;
+        let encrypted_service_url = convertor_url
             .query_pairs()
             .find(|(k, _)| k == "raw_url")
             .ok_or_else(|| eyre!("raw_url not found"))?
-            .1;
-        let decrypted_service_url =
-            decrypt(convertor_secret.as_bytes(), &decoded_service_url)?;
+            .1
+            .to_string();
+        let decrypted_service_url = decrypt(
+            convertor_secret.as_ref().as_bytes(),
+            &encrypted_service_url,
+        )?;
         let service_url = Url::parse(&decrypted_service_url)
             .wrap_err("Invalid service URL")?;
         Ok(Self {
             server,
             service_url,
+            encrypted_service_url,
         })
+    }
+
+    pub fn decode_from_request(
+        request: &Request<Body>,
+        convertor_secret: impl AsRef<str>,
+    ) -> color_eyre::Result<Self> {
+        let host = request
+            .headers()
+            .get(header::HOST)
+            .ok_or_else(|| eyre!("Missing Host header"))?
+            .to_str()?;
+        let full_url = format!("http://{}{}", host, request.uri());
+        ConvertorUrl::decode_from_convertor_url(full_url, convertor_secret)
     }
 
     pub fn build_convertor_url(
         &self,
         flag: impl AsRef<str>,
     ) -> color_eyre::Result<Url> {
-        let convertor_secret = get_convertor_secret()?;
-        let encrypted_service_url =
-            encrypt(convertor_secret.as_bytes(), self.service_url.as_str())?;
-        let mut url = Url::parse(&self.server)?.join(flag.as_ref())?;
+        let mut url = self.server.join(flag.as_ref())?;
         url.query_pairs_mut()
-            .append_pair("raw_url", &encrypted_service_url);
+            .append_pair("raw_url", &self.encrypted_service_url);
         Ok(url)
     }
 
@@ -65,12 +82,9 @@ impl ConvertorUrl {
         &self,
         rule_set_type: &RuleSetType,
     ) -> color_eyre::Result<Url> {
-        let convertor_secret = get_convertor_secret()?;
-        let encrypted_service_url =
-            encrypt(&convertor_secret.as_bytes(), self.service_url.as_str())?;
-        let mut url = Url::parse(&self.server)?.join("surge/rule_set")?;
+        let mut url = self.server.join("surge/rule_set")?;
         url.query_pairs_mut()
-            .append_pair("raw_url", &encrypted_service_url);
+            .append_pair("raw_url", &self.encrypted_service_url);
         if matches!(rule_set_type, RuleSetType::BosLifeSubscription) {
             url.query_pairs_mut().append_pair("boslife", "true");
         } else {
@@ -88,19 +102,5 @@ impl ConvertorUrl {
         let mut url = self.service_url.clone();
         url.query_pairs_mut().append_pair("flag", flag.as_ref());
         Ok(url)
-    }
-}
-
-impl TryFrom<&Request<Body>> for ConvertorUrl {
-    type Error = Report;
-
-    fn try_from(value: &Request<Body>) -> Result<Self, Self::Error> {
-        let host = value
-            .headers()
-            .get(header::HOST)
-            .ok_or_else(|| eyre!("Missing Host header"))?
-            .to_str()?;
-        let full_url = format!("http://{}{}", host, value.uri());
-        ConvertorUrl::decode_from_convertor_url(full_url)
     }
 }

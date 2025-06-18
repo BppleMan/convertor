@@ -1,14 +1,15 @@
 use crate::convertor_url::ConvertorUrl;
 use color_eyre::eyre::OptionExt;
 use color_eyre::Result;
+use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use tracing::error;
 
-#[derive(Debug)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct SurgeConfig {
     #[allow(unused)]
-    pub ns_surge_path: PathBuf,
+    pub surge_dir: PathBuf,
     pub main_config_path: PathBuf,
     pub default_config_path: PathBuf,
     pub rules_config_path: PathBuf,
@@ -26,9 +27,9 @@ impl SurgeConfig {
         let main_config_path = ns_surge_path.join("surge").join("surge.conf");
         let default_config_path =
             ns_surge_path.join("surge").join("BosLife.conf");
-        let rules_config_path = ns_surge_path.join("surge").join("rules.conf");
+        let rules_config_path = ns_surge_path.join("surge").join("rules.dconf");
         Ok(Self {
-            ns_surge_path,
+            surge_dir: ns_surge_path,
             main_config_path,
             default_config_path,
             rules_config_path,
@@ -40,19 +41,16 @@ impl SurgeConfig {
         convertor_url: &ConvertorUrl,
     ) -> Result<()> {
         // update BosLife.conf subscription
-        let boslife_conf = format!(
-            "#!MANAGED-CONFIG {} interval=259200 strict=true",
-            convertor_url.build_subscription_url("surge")?
+        let manager_config_header = Self::build_managed_config_header(
+            convertor_url.build_subscription_url("surge")?,
         );
-        println!("BosLife.conf: {}", boslife_conf);
-        Self::update_conf(&self.default_config_path, &boslife_conf).await?;
+        Self::update_conf(&self.default_config_path, &manager_config_header)
+            .await?;
 
         // update surge.conf subscription
-        let surge_conf = format!(
-            r#"#!MANAGED-CONFIG {} interval=259200 strict=true"#,
-            convertor_url.build_convertor_url("surge")?
+        let surge_conf = Self::build_managed_config_header(
+            convertor_url.build_convertor_url("surge")?,
         );
-        println!("surge.conf: {}", surge_conf);
         Self::update_conf(&self.main_config_path, &surge_conf).await?;
 
         Ok(())
@@ -70,7 +68,6 @@ impl SurgeConfig {
             lines
                 .iter()
                 .position(|l| l.contains(rst.name()))
-                .map(|pos| pos)
                 .ok_or_eyre(format!("rule set {} not found", rst.name()))
         };
 
@@ -82,9 +79,9 @@ impl SurgeConfig {
         for pair in pos_and_rst {
             match pair {
                 Ok((pos, rst)) => {
-                    lines[pos] = Cow::Owned(rst.rule_set(
-                        convertor_url.build_rule_set_url(rst)?.to_string(),
-                    ));
+                    lines[pos] = Cow::Owned(
+                        rst.rule_set(&convertor_url.build_rule_set_url(rst)?),
+                    );
                 }
                 Err(e) => error!("{e}"),
             }
@@ -104,6 +101,13 @@ impl SurgeConfig {
         content = lines.join("\n");
         tokio::fs::write(&config_path, &content).await?;
         Ok(())
+    }
+
+    pub fn build_managed_config_header(url: impl AsRef<str>) -> String {
+        format!(
+            "#!MANAGED-CONFIG {} interval=259200 strict=true",
+            url.as_ref()
+        )
     }
 }
 

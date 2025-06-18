@@ -1,5 +1,6 @@
 use std::fmt::{Display, Formatter};
 
+use crate::config::surge_config::SurgeConfig;
 use crate::profile::{group_by_region, split_and_merge_groups};
 use indexmap::IndexMap;
 use once_cell::sync::Lazy;
@@ -50,10 +51,7 @@ impl SurgeProfile {
 
     fn replace_header(&mut self, convertor_url: impl AsRef<str>) {
         let header = &mut self.sections[MANAGED_CONFIG_HEADER];
-        header[0] = format!(
-            "#!MANAGED-CONFIG {} interval=259200 strict=true",
-            convertor_url.as_ref()
-        )
+        header[0] = SurgeConfig::build_managed_config_header(convertor_url);
     }
 
     fn organize_proxy_group(&mut self) {
@@ -171,46 +169,5 @@ impl Display for SurgeProfile {
                 .collect::<Vec<_>>()
                 .join("\n")
         )
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::config::surge_config::RuleSetType;
-    use crate::convertor_url::ConvertorUrl;
-    use reqwest::Url;
-
-    const PROFILE: &str = include_str!("../../assets/surge/mock.conf");
-
-    #[test]
-    fn test_parse() -> color_eyre::Result<()> {
-        color_eyre::install()?;
-
-        let mut profile = SurgeProfile::new(PROFILE);
-        let convertor_url = ConvertorUrl::new(
-            "http://127.0.0.1:8001",
-            Url::parse("https://example.com?token=12345")?,
-        )?;
-        profile.parse(convertor_url.build_convertor_url("surge")?);
-        println!("{}", profile);
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_extract_rule() -> color_eyre::Result<()> {
-        color_eyre::install()?;
-
-        let mut profile = SurgeProfile::new(PROFILE);
-        let convertor_url = ConvertorUrl::new(
-            "http://127.0.1:8001",
-            Url::parse("https://example.com?token=12345")?,
-        )?;
-        profile.parse(convertor_url.build_convertor_url("surge")?);
-        let policies = RuleSetType::BosLifeSubscription.policy();
-        let rules = profile.extract_rule(policies);
-        println!("Extracted Rules:\n{}", rules);
-        Ok(())
     }
 }
