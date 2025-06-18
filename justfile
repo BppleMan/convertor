@@ -17,3 +17,6 @@ cert:
       -keyout cert/ip-key.pem \
       -out cert/ip-cert.pem \
       -config cert/ip-cert.cnf
+
+sync_toml:
+    scp ~/.convertor/convertor.toml ubuntu:~/.convertor/convertor.toml

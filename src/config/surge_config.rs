@@ -1,4 +1,4 @@
-use crate::convertor_url::ConvertorUrl;
+use crate::config::convertor_url::ConvertorUrl;
 use color_eyre::eyre::OptionExt;
 use color_eyre::Result;
 use serde::{Deserialize, Serialize};

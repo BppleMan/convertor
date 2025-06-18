@@ -11,7 +11,6 @@ pub mod profile;
 pub mod region;
 pub mod encrypt;
 pub mod service;
-pub mod convertor_url;
 pub mod config;
 pub mod boslife;
 pub mod server;

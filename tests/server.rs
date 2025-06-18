@@ -5,18 +5,22 @@ use convertor::boslife::boslife_service::BosLifeService;
 use convertor::config::convertor_config::ConvertorConfig;
 use convertor::server::route;
 use convertor::server::route::AppState;
+use std::str::FromStr;
 use std::sync::Arc;
 use tower_http::trace::{
     DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer,
 };
 use tower_http::LatencyUnit;
+use tracing::warn;
 
 pub mod server_test;
 
 const TEST_CONFIG_STR: &str = include_str!("../test-assets/convertor.toml");
 
 pub async fn start_server() -> color_eyre::Result<ServerContext> {
-    color_eyre::install()?;
+    if let Err(e) = color_eyre::install() {
+        warn!("Failed to install color_eyre: {}", e);
+    }
 
     let client = reqwest::Client::new();
     let config = ConvertorConfig::from_str(TEST_CONFIG_STR)?;

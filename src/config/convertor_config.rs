@@ -1,9 +1,11 @@
 use crate::config::service_config::ServiceConfig;
 use color_eyre::eyre::{eyre, WrapErr};
+use color_eyre::Report;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::path::Path;
+use std::str::FromStr;
 use url::Url;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -11,8 +13,7 @@ use url::Url;
 pub struct ConvertorConfig<T: Credential> {
     pub secret: String,
     pub server: Url,
-    pub service_credential: T,
-    pub service_config: ServiceConfig,
+    pub service_config: ServiceConfig<T>,
 }
 
 impl<T: Credential> ConvertorConfig<T> {
@@ -29,7 +30,7 @@ impl<T: Credential> ConvertorConfig<T> {
             format!("{} 不是一个目录", current.display())
         );
         loop {
-            let file = current.join("convertor.toml");
+            let file = current.join("../../test-assets/convertor.toml");
             if file.exists() {
                 return Self::from_file(file);
             }
@@ -53,10 +54,6 @@ impl<T: Credential> ConvertorConfig<T> {
             .wrap_err_with(|| format!("解析配置文件失败: {}", path.display()))
     }
 
-    pub fn from_str(content: impl AsRef<str>) -> color_eyre::Result<Self> {
-        toml::from_str(content.as_ref()).wrap_err("解析配置字符串失败")
-    }
-
     pub fn server_host_with_port(&self) -> color_eyre::Result<String> {
         self.server
             .host_str()
@@ -75,24 +72,16 @@ impl<T: Credential> ConvertorConfig<T> {
     }
 }
 
+impl<T: Credential> FromStr for ConvertorConfig<T> {
+    type Err = Report;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        toml::from_str(s).wrap_err("解析配置字符串失败")
+    }
+}
+
 pub trait Credential: Debug + Default + Serialize + DeserializeOwned {
     fn get_username(&self) -> &str;
 
     fn get_password(&self) -> &str;
-}
-
-#[derive(Debug, Default, Serialize, Deserialize)]
-pub struct BasicCredential {
-    pub username: String,
-    pub password: String,
-}
-
-impl Credential for BasicCredential {
-    fn get_username(&self) -> &str {
-        &self.username
-    }
-
-    fn get_password(&self) -> &str {
-        &self.password
-    }
 }

@@ -13,7 +13,7 @@ pub const CACHED_SUBSCRIPTION_LOGS_KEY: &str = "CACHED_SUBSCRIPTION_LOGS";
 pub trait ServiceApi {
     type Cred: Credential;
 
-    fn config(&self) -> &ServiceConfig;
+    fn config(&self) -> &ServiceConfig<Self::Cred>;
 
     fn client(&self) -> &reqwest::Client;
 
@@ -22,8 +22,6 @@ pub trait ServiceApi {
     fn cached_profile(&self) -> &Cache<String, String>;
 
     fn cached_subscription_logs(&self) -> &Cache<String, Vec<SubscriptionLog>>;
-
-    fn get_credential(&self) -> &Self::Cred;
 
     async fn request<T: Serialize + ?Sized>(
         &self,
@@ -64,8 +62,11 @@ pub trait ServiceApi {
                         &login_url,
                         Vec::<(&str, &str)>::new(),
                         Some(&[
-                            ("email", &self.get_credential().get_username()),
-                            ("password", &self.get_credential().get_password()),
+                            ("email", &self.config().credential.get_username()),
+                            (
+                                "password",
+                                &self.config().credential.get_password(),
+                            ),
                         ]),
                     )
                     .await?;

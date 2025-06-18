@@ -1,9 +1,9 @@
 use crate::boslife::boslife_command::BosLifeCommand;
 use crate::boslife::boslife_credential::BosLifeCredential;
 use crate::config::convertor_config::ConvertorConfig;
+use crate::config::convertor_url::ConvertorUrl;
 use crate::config::service_config::ServiceConfig;
 use crate::config::surge_config::{RuleSetType, SurgeConfig};
-use crate::convertor_url::ConvertorUrl;
 use crate::service::service_api::ServiceApi;
 use crate::service::subscription_log::SubscriptionLog;
 use moka::future::Cache;
@@ -150,7 +150,7 @@ impl BosLifeService {
 impl ServiceApi for BosLifeService {
     type Cred = BosLifeCredential;
 
-    fn config(&self) -> &ServiceConfig {
+    fn config(&self) -> &ServiceConfig<BosLifeCredential> {
         &self.config.service_config
     }
 
@@ -168,9 +168,5 @@ impl ServiceApi for BosLifeService {
 
     fn cached_subscription_logs(&self) -> &Cache<String, Vec<SubscriptionLog>> {
         &self.cached_subscription_logs
-    }
-
-    fn get_credential(&self) -> &BosLifeCredential {
-        &self.config.service_credential
     }
 }

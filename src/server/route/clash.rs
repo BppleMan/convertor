@@ -1,4 +1,4 @@
-use crate::convertor_url::ConvertorUrl;
+use crate::config::convertor_url::ConvertorUrl;
 use crate::error::AppError;
 use crate::profile::clash_profile::ClashProfile;
 use crate::server::route::AppState;
