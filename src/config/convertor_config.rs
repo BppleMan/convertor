@@ -30,7 +30,7 @@ impl<T: Credential> ConvertorConfig<T> {
             format!("{} 不是一个目录", current.display())
         );
         loop {
-            let file = current.join("../../test-assets/convertor.toml");
+            let file = current.join("convertor.toml");
             if file.exists() {
                 return Self::from_file(file);
             }
