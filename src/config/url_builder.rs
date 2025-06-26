@@ -1,18 +1,18 @@
-use crate::config::surge_config::RuleSetType;
 use crate::encrypt::{decrypt, encrypt};
+use crate::profile::RuleSetPolicy;
 use axum::body::Body;
 use axum::http::{header, Request};
 use color_eyre::eyre::{eyre, WrapErr};
 use reqwest::{IntoUrl, Url};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct ConvertorUrl {
+pub struct UrlBuilder {
     pub server: Url,
     pub service_url: Url,
     pub encrypted_service_url: String,
 }
 
-impl ConvertorUrl {
+impl UrlBuilder {
     /// 传入服务器地址和服务的 URL，生成 ConvertorUrl 实例
     /// 服务的 URL 指的是机场的订阅地址，通常包含 token
     pub fn new(
@@ -64,28 +64,58 @@ impl ConvertorUrl {
             .ok_or_else(|| eyre!("Missing Host header"))?
             .to_str()?;
         let full_url = format!("http://{}{}", host, request.uri());
-        ConvertorUrl::decode_from_convertor_url(full_url, convertor_secret)
+        UrlBuilder::decode_from_convertor_url(full_url, convertor_secret)
     }
 
     pub fn build_convertor_url(
         &self,
         flag: impl AsRef<str>,
     ) -> color_eyre::Result<Url> {
-        let mut url = self.server.join(flag.as_ref())?;
+        let mut url = self.server.clone();
+        {
+            let mut path = url
+                .path_segments_mut()
+                .map_err(|()| eyre!("无法获取路径段"))?;
+            path.push(flag.as_ref());
+        }
         url.query_pairs_mut()
             .append_pair("raw_url", &self.encrypted_service_url);
+        Ok(url)
+    }
+
+    pub fn build_proxy_provider_url(
+        &self,
+        flag: impl AsRef<str>,
+    ) -> color_eyre::Result<Url> {
+        let mut url = self.server.clone();
+        {
+            let mut path = url
+                .path_segments_mut()
+                .map_err(|()| eyre!("无法获取路径段"))?;
+            path.push(flag.as_ref()).push("proxy-provider");
+        }
+        url.query_pairs_mut()
+            .append_pair("raw_url", &self.encrypted_service_url);
+        url.query_pairs_mut().append_pair("flag", flag.as_ref());
         Ok(url)
     }
 
     /// 构建一个规则集的 URL，用于获取机场的规则集
     pub fn build_rule_set_url(
         &self,
-        rule_set_type: &RuleSetType,
+        flag: impl AsRef<str>,
+        rule_set_type: &RuleSetPolicy,
     ) -> color_eyre::Result<Url> {
-        let mut url = self.server.join("surge/rule_set")?;
+        let mut url = self.server.clone();
+        {
+            let mut path = url
+                .path_segments_mut()
+                .map_err(|()| eyre!("无法获取路径段"))?;
+            path.push(flag.as_ref()).push("rule-set");
+        }
         url.query_pairs_mut()
             .append_pair("raw_url", &self.encrypted_service_url);
-        if matches!(rule_set_type, RuleSetType::BosLifeSubscription) {
+        if matches!(rule_set_type, RuleSetPolicy::BosLifeSubscription) {
             url.query_pairs_mut().append_pair("boslife", "true");
         } else {
             url.query_pairs_mut()

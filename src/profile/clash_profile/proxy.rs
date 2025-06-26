@@ -4,12 +4,13 @@ use serde::{Deserialize, Serialize};
 pub struct Proxy {
     pub name: String,
     #[serde(rename = "type")]
-    pub ty: String,
+    pub r#type: String,
     pub server: String,
     pub port: u16,
     pub password: String,
+    pub cipher: String,
     pub udp: bool,
-    pub sni: String,
+    pub sni: Option<String>,
     #[serde(rename = "skip-cert-verify", default)]
     pub skip_cert_verify: Option<bool>,
 }

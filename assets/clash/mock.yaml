@@ -7,79 +7,67 @@ log-level: info
 external-controller: '0.0.0.0:9090'
 secret: ''
 proxies:
-    - { name: '剩余流量：457.45 GB', type: trojan, server: h00kgaa1.hand992.com, port: 60010, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: hk4.networkspeed.info, skip-cert-verify: true }
-    - { name: '距离下次重置剩余：15 天', type: trojan, server: h00kgaa1.hand992.com, port: 60010, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: hk4.networkspeed.info, skip-cert-verify: true }
-    - { name: 套餐到期：2024-04-22, type: trojan, server: h00kgaa1.hand992.com, port: 60010, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: hk4.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 香港-01', type: trojan, server: h00kgaa1.hand992.com, port: 60010, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: hk4.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 香港-02', type: trojan, server: h00kgbb2.hand992.com, port: 60011, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: hk1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 香港-03', type: trojan, server: h00kgaa3.hand992.com, port: 60012, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: hk3.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 香港-04', type: trojan, server: h00kgbb4.hand992.com, port: 60013, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: hk1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 香港-05', type: trojan, server: h00kgbb5.hand992.com, port: 60014, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: hk1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 香港-06', type: trojan, server: h00kgaa6.hand992.com, port: 60015, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: hk3.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 香港-07', type: trojan, server: h00kgcc7.hand992.com, port: 60016, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: hk2.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 香港-08', type: trojan, server: h00kgaa8.hand992.com, port: 60017, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: hk3.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 香港-09', type: trojan, server: h00kgcc9.hand992.com, port: 60018, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: hk2.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 香港-10', type: trojan, server: h00kgcc10.hand992.com, port: 60019, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: hk2.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 香港-11', type: trojan, server: h00gcc11.hand992.com, port: 60020, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: hk4.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 香港-12', type: trojan, server: h00gcc12.hand992.com, port: 60021, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: hk4.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 香港-13', type: trojan, server: h00gcc13.hand992.com, port: 60022, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: hk5.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 香港-14', type: trojan, server: h00gcc14.hand992.com, port: 60023, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: hk5.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 香港-15', type: trojan, server: h00gcc15.hand992.com, port: 60024, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: hk5.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 新加坡-01', type: trojan, server: sin00p1.hand992.com, port: 60075, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: sgp1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 新加坡-02', type: trojan, server: sin00p2.hand992.com, port: 60076, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: sgp1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 新加坡-03', type: trojan, server: sin00p3.hand992.com, port: 60077, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: sgp1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 新加坡-04', type: trojan, server: sin00p4.hand992.com, port: 60078, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: sgp2.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 新加坡-05', type: trojan, server: sin00p5.hand992.com, port: 60079, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: sgp1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 新加坡-06', type: trojan, server: sin00p6.hand992.com, port: 60080, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: sgp2.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 新加坡-07', type: trojan, server: sin00p7.hand992.com, port: 60140, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: sgp3.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 新加坡-08', type: trojan, server: sin00p8.hand992.com, port: 60141, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: sgp3.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 新加坡-09', type: trojan, server: sin00p9.hand992.com, port: 60142, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: sgp3.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 日本-01', type: trojan, server: ja00paa1.hand992.com, port: 60053, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: jp1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 日本-02', type: trojan, server: ja00paa2.hand992.com, port: 60054, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: jp1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 日本-03', type: trojan, server: ja00paa3.hand992.com, port: 60055, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: jp1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 日本-04', type: trojan, server: ja00paa4.hand992.com, port: 60056, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: jp2.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 日本-05', type: trojan, server: ja00paa5.hand992.com, port: 60057, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: jp1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 日本-06', type: trojan, server: ja00paa6.hand992.com, port: 60058, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: jp2.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 日本-07', type: trojan, server: ja00paa7.hand992.com, port: 60059, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: jp3.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 日本-08', type: trojan, server: ja00paa8.hand992.com, port: 60060, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: jp3.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 日本-09', type: trojan, server: ja00paa9.hand992.com, port: 60061, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: jp3.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 台湾-01', type: trojan, server: t00waa1.hand992.com, port: 60095, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: tw1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 台湾-02', type: trojan, server: t00waa2.hand992.com, port: 60096, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: tw2.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 台湾-03', type: trojan, server: t00waa3.hand992.com, port: 60097, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: tw1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 台湾-04', type: trojan, server: t00waa4.hand992.com, port: 60098, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: tw2.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 台湾-05', type: trojan, server: t00waa5.hand992.com, port: 60099, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: tw1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 台湾-06', type: trojan, server: t00waa6.hand992.com, port: 60100, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: tw2.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 美国-01', type: trojan, server: u00sbb1.hand992.com, port: 60033, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: us1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 美国-02', type: trojan, server: u00sbb2.hand992.com, port: 60034, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: us2.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 美国-03', type: trojan, server: u00sbb3.hand992.com, port: 60035, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: us1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 美国-04', type: trojan, server: u00sbb4.hand992.com, port: 60036, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: us2.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 美国-05', type: trojan, server: u00sbb5.hand992.com, port: 60037, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: us1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 美国-06', type: trojan, server: u00sbb6.hand992.com, port: 60038, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: us2.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 韩国-01', type: trojan, server: k00raa1.hand992.com, port: 60101, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: kr1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 韩国-02', type: trojan, server: k00raa2.hand992.com, port: 60102, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: kr1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 韩国-03', type: trojan, server: k00raa3.hand992.com, port: 60103, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: kr1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 法国-01', type: trojan, server: frpar1.hand992.com, port: 60138, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: fr1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 法国-02', type: trojan, server: frpar2.hand992.com, port: 60139, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: fr1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 英国-01', type: trojan, server: u00kdm1.hand992.com, port: 60082, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: uk1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 英国-02', type: trojan, server: u00kdm2.hand992.com, port: 60083, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: uk1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 英国-03', type: trojan, server: u00kdm3.hand992.com, port: 60084, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: uk1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 澳洲-01', type: trojan, server: meau1.hand992.com, port: 60130, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: me1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 澳洲-02', type: trojan, server: meau2.hand992.com, port: 60131, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: me1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 土耳其-01', type: trojan, server: turcc1.hand992.com, port: 60090, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: tr1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 加拿大-01', type: trojan, server: ca00nbb1.hand992.com, port: 60121, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: ca1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 加拿大-02', type: trojan, server: ca00nbb2.hand992.com, port: 60122, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: ca1.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 印度-01', type: trojan, server: argt1.hand992.com, port: 60135, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: arg1.networkspeed.info }
-    - { name: '[BosLife] 德国-01', type: trojan, server: defrak0.hand992.com, port: 60125, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: def.networkspeed.info, skip-cert-verify: true }
-    - { name: '[BosLife] 德国-02', type: trojan, server: defrak1.hand992.com, port: 60126, password: 41c50342-8b0f-47f3-8094-c6f373d96877, udp: true, sni: def.networkspeed.info, skip-cert-verify: true }
+    - { name: '剩余流量：491.66 GB', type: ss, server: bppleman.com, port: 24000, cipher: aes-128-gcm, password: bppleman, udp: true }
+    - { name: '距离下次重置剩余：27 天', type: ss, server: bppleman.com, port: 24000, cipher: aes-128-gcm, password: bppleman, udp: true }
+    - { name: 套餐到期：2026-04-22, type: ss, server: bppleman.com, port: 24000, cipher: aes-128-gcm, password: bppleman, udp: true }
+    - { name: '🇭🇰 香港 01', type: ss, server: bppleman.com, port: 24000, cipher: aes-128-gcm, password: bppleman, udp: true }
+    - { name: '🇭🇰 香港 02', type: ss, server: bppleman.com, port: 24001, cipher: aes-128-gcm, password: bppleman, udp: true }
+    - { name: '🇭🇰 香港 03', type: ss, server: bppleman.com, port: 24002, cipher: aes-128-gcm, password: bppleman, udp: true }
+    - { name: '🇭🇰 香港 04', type: ss, server: bppleman.com, port: 24003, cipher: aes-128-gcm, password: bppleman, udp: true }
+    - { name: '🇭🇰 香港 05', type: ss, server: bppleman.com, port: 24004, cipher: aes-128-gcm, password: bppleman, udp: true }
+    - { name: '🇭🇰 香港 06', type: ss, server: bppleman.com, port: 24005, cipher: aes-128-gcm, password: bppleman, udp: true }
+    - { name: '🇭🇰 香港 07', type: ss, server: bppleman.com, port: 24006, cipher: aes-128-gcm, password: bppleman, udp: true }
+    - { name: '🇭🇰 香港 08', type: ss, server: bppleman.com, port: 24007, cipher: aes-128-gcm, password: bppleman, udp: true }
+    - { name: '🇭🇰 香港 09', type: ss, server: bppleman.com, port: 24008, cipher: aes-128-gcm, password: bppleman, udp: true }
+    - { name: '🇭🇰 香港 10', type: ss, server: bppleman.com, port: 24009, cipher: aes-128-gcm, password: bppleman, udp: true }
+    - { name: '🇭🇰 香港 11', type: ss, server: bppleman.com, port: 24010, cipher: aes-128-gcm, password: bppleman, udp: true }
+    - { name: '🇭🇰 香港 12', type: ss, server: bppleman.com, port: 24011, cipher: aes-128-gcm, password: bppleman, udp: true }
+    - { name: '🇭🇰 香港 13', type: ss, server: bppleman.com, port: 24012, cipher: aes-128-gcm, password: bppleman, udp: true }
+    - { name: '🇭🇰 香港 14', type: ss, server: bppleman.com, port: 24013, cipher: aes-128-gcm, password: bppleman, udp: true }
+    - { name: '🇭🇰 香港 15 - YouTube免广', type: ss, server: bppleman.com, port: 24014, cipher: aes-128-gcm, password: bppleman, udp: true }
+    - { name: '🏳️‍🌈 台湾 01', type: ss, server: bppleman.com, port: 23010, cipher: chacha20-ietf-poly1305, password: bppleman, udp: true }
+    - { name: '🏳️‍🌈 台湾 02', type: ss, server: bppleman.com, port: 23011, cipher: chacha20-ietf-poly1305, password: bppleman, udp: true }
+    - { name: '🏳️‍🌈 台湾 03', type: ss, server: bppleman.com, port: 23012, cipher: chacha20-ietf-poly1305, password: bppleman, udp: true }
+    - { name: '🏳️‍🌈 台湾 04', type: ss, server: bppleman.com, port: 23013, cipher: chacha20-ietf-poly1305, password: bppleman, udp: true }
+    - { name: '🏳️‍🌈 台湾 05', type: ss, server: bppleman.com, port: 23014, cipher: chacha20-ietf-poly1305, password: bppleman, udp: true }
+    - { name: '🏳️‍🌈 台湾 06', type: ss, server: bppleman.com, port: 23015, cipher: chacha20-ietf-poly1305, password: bppleman, udp: true }
+    - { name: '🏳️‍🌈 台湾 07', type: ss, server: bppleman.com, port: 23016, cipher: chacha20-ietf-poly1305, password: bppleman, udp: true }
+    - { name: '🇸🇬 新加坡 01', type: ss, server: bppleman.com, port: 23001, cipher: chacha20-ietf-poly1305, password: bppleman, udp: true }
+    - { name: '🇸🇬 新加坡 02', type: ss, server: bppleman.com, port: 23002, cipher: chacha20-ietf-poly1305, password: bppleman, udp: true }
+    - { name: '🇸🇬 新加坡 03', type: ss, server: bppleman.com, port: 23003, cipher: chacha20-ietf-poly1305, password: bppleman, udp: true }
+    - { name: '🇸🇬 新加坡 04', type: ss, server: bppleman.com, port: 23004, cipher: chacha20-ietf-poly1305, password: bppleman, udp: true }
+    - { name: '🇸🇬 新加坡 05', type: ss, server: bppleman.com, port: 23005, cipher: chacha20-ietf-poly1305, password: bppleman, udp: true }
+    - { name: '🇸🇬 新加坡 06', type: ss, server: bppleman.com, port: 23006, cipher: chacha20-ietf-poly1305, password: bppleman, udp: true }
+    - { name: '🇸🇬 新加坡 07', type: ss, server: bppleman.com, port: 23007, cipher: chacha20-ietf-poly1305, password: bppleman, udp: true }
+    - { name: '🇸🇬 新加坡 08', type: ss, server: bppleman.com, port: 23008, cipher: chacha20-ietf-poly1305, password: bppleman, udp: true }
+    - { name: '🇸🇬 新加坡 09', type: ss, server: bppleman.com, port: 23009, cipher: chacha20-ietf-poly1305, password: bppleman, udp: true }
+    - { name: '🇯🇵 日本 01', type: ss, server: bppleman.com, port: 23020, cipher: chacha20-ietf-poly1305, password: bppleman, udp: true }
+    - { name: '🇯🇵 日本 02', type: ss, server: bppleman.com, port: 23021, cipher: chacha20-ietf-poly1305, password: bppleman, udp: true }
+    - { name: '🇯🇵 日本 03', type: ss, server: bppleman.com, port: 23022, cipher: chacha20-ietf-poly1305, password: bppleman, udp: true }
+    - { name: '🇯🇵 日本 04', type: ss, server: bppleman.com, port: 23023, cipher: chacha20-ietf-poly1305, password: bppleman, udp: true }
+    - { name: '🇯🇵 日本 05', type: ss, server: bppleman.com, port: 23024, cipher: chacha20-ietf-poly1305, password: bppleman, udp: true }
+    - { name: '🇯🇵 日本 06', type: ss, server: bppleman.com, port: 23025, cipher: chacha20-ietf-poly1305, password: bppleman, udp: true }
+    - { name: '🇺🇸 美国 01', type: ss, server: bppleman.com, port: 24050, cipher: aes-128-gcm, password: bppleman, udp: true }
+    - { name: '🇺🇸 美国 02', type: ss, server: bppleman.com, port: 24051, cipher: aes-128-gcm, password: bppleman, udp: true }
+    - { name: '🇺🇸 美国 03', type: ss, server: bppleman.com, port: 24052, cipher: aes-128-gcm, password: bppleman, udp: true }
+    - { name: '🇺🇸 美国 04', type: ss, server: bppleman.com, port: 24053, cipher: aes-128-gcm, password: bppleman, udp: true }
+    - { name: '🇺🇸 美国 05', type: ss, server: bppleman.com, port: 24054, cipher: aes-128-gcm, password: bppleman, udp: true }
+    - { name: '🇨🇦 加拿大 01', type: ss, server: bppleman.com, port: 24060, cipher: aes-128-gcm, password: bppleman, udp: true }
+    - { name: '🇰🇷 韩国 01', type: trojan, server: bppleman.com, port: 60101, password: bppleman, udp: true, sni: video-caps.wetvinfo.com, skip-cert-verify: true }
+    - { name: '🇬🇧 英国 01', type: trojan, server: bppleman.com, port: 60082, password: bppleman, udp: true, sni: video-caps.wetvinfo.com, skip-cert-verify: true }
+    - { name: '🇫🇷 法国 01', type: trojan, server: bppleman.com, port: 60138, password: bppleman, udp: true, sni: video-caps.wetvinfo.com, skip-cert-verify: true }
+    - { name: '🇩🇪 德国 01', type: trojan, server: bppleman.com, port: 60125, password: bppleman, udp: true, sni: video-caps.wetvinfo.com, skip-cert-verify: true }
+    - { name: '🇦🇺 澳洲 01', type: trojan, server: bppleman.com, port: 60092, password: bppleman, udp: true, sni: video-caps.wetvinfo.com, skip-cert-verify: true }
 proxy-groups:
-    - { name: BosLife, type: select, proxies: ['剩余流量：457.45 GB', '距离下次重置剩余：15 天', 套餐到期：2024-04-22, '[BosLife] 香港-01', '[BosLife] 香港-02', '[BosLife] 香港-03', '[BosLife] 香港-04', '[BosLife] 香港-05', '[BosLife] 香港-06', '[BosLife] 香港-07', '[BosLife] 香港-08', '[BosLife] 香港-09', '[BosLife] 香港-10', '[BosLife] 香港-11', '[BosLife] 香港-12', '[BosLife] 香港-13', '[BosLife] 香港-14', '[BosLife] 香港-15', '[BosLife] 新加坡-01', '[BosLife] 新加坡-02', '[BosLife] 新加坡-03', '[BosLife] 新加坡-04', '[BosLife] 新加坡-05', '[BosLife] 新加坡-06', '[BosLife] 新加坡-07', '[BosLife] 新加坡-08', '[BosLife] 新加坡-09', '[BosLife] 日本-01', '[BosLife] 日本-02', '[BosLife] 日本-03', '[BosLife] 日本-04', '[BosLife] 日本-05', '[BosLife] 日本-06', '[BosLife] 日本-07', '[BosLife] 日本-08', '[BosLife] 日本-09', '[BosLife] 台湾-01', '[BosLife] 台湾-02', '[BosLife] 台湾-03', '[BosLife] 台湾-04', '[BosLife] 台湾-05', '[BosLife] 台湾-06', '[BosLife] 美国-01', '[BosLife] 美国-02', '[BosLife] 美国-03', '[BosLife] 美国-04', '[BosLife] 美国-05', '[BosLife] 美国-06', '[BosLife] 韩国-01', '[BosLife] 韩国-02', '[BosLife] 韩国-03', '[BosLife] 法国-01', '[BosLife] 法国-02', '[BosLife] 英国-01', '[BosLife] 英国-02', '[BosLife] 英国-03', '[BosLife] 澳洲-01', '[BosLife] 澳洲-02', '[BosLife] 土耳其-01', '[BosLife] 加拿大-01', '[BosLife] 加拿大-02', '[BosLife] 印度-01', '[BosLife] 德国-01', '[BosLife] 德国-02'] }
+    - { name: BosLife, type: select, proxies: ['剩余流量：491.66 GB', '距离下次重置剩余：27 天', 套餐到期：2026-04-22, '🇭🇰 香港 01', '🇭🇰 香港 02', '🇭🇰 香港 03', '🇭🇰 香港 04', '🇭🇰 香港 05', '🇭🇰 香港 06', '🇭🇰 香港 07', '🇭🇰 香港 08', '🇭🇰 香港 09', '🇭🇰 香港 10', '🇭🇰 香港 11', '🇭🇰 香港 12', '🇭🇰 香港 13', '🇭🇰 香港 14', '🇭🇰 香港 15 - YouTube免广', '🏳️‍🌈 台湾 01', '🏳️‍🌈 台湾 02', '🏳️‍🌈 台湾 03', '🏳️‍🌈 台湾 04', '🏳️‍🌈 台湾 05', '🏳️‍🌈 台湾 06', '🏳️‍🌈 台湾 07', '🇸🇬 新加坡 01', '🇸🇬 新加坡 02', '🇸🇬 新加坡 03', '🇸🇬 新加坡 04', '🇸🇬 新加坡 05', '🇸🇬 新加坡 06', '🇸🇬 新加坡 07', '🇸🇬 新加坡 08', '🇸🇬 新加坡 09', '🇯🇵 日本 01', '🇯🇵 日本 02', '🇯🇵 日本 03', '🇯🇵 日本 04', '🇯🇵 日本 05', '🇯🇵 日本 06', '🇺🇸 美国 01', '🇺🇸 美国 02', '🇺🇸 美国 03', '🇺🇸 美国 04', '🇺🇸 美国 05', '🇨🇦 加拿大 01', '🇰🇷 韩国 01', '🇬🇧 英国 01', '🇫🇷 法国 01', '🇩🇪 德国 01', '🇦🇺 澳洲 01'] }
 rules:
-    - 'DOMAIN,api.imlax.net,DIRECT'
+    - 'DOMAIN,trdy.subiway.com:8888,DIRECT'
     - 'DOMAIN-SUFFIX,boslife.io,BosLife'
     - 'DOMAIN-SUFFIX,boslife.net,BosLife'
     - 'DOMAIN-SUFFIX,wikibos.com,BosLife'
     - 'DOMAIN-SUFFIX,boswiki.net,BosLife'
     - 'DOMAIN-SUFFIX,fastnode.info,BosLife'
+    - 'DOMAIN-SUFFIX,chatgpt.com,BosLife'
     - 'DOMAIN-SUFFIX,lin.ee,BosLife'
     - 'DOMAIN-SUFFIX,line.me,BosLife'
     - 'DOMAIN-SUFFIX,line.naver.jp,BosLife'
@@ -137,6 +125,8 @@ rules:
     - 'DOMAIN-KEYWORD,spotify,BosLife'
     - 'DOMAIN-KEYWORD,telegram,BosLife'
     - 'DOMAIN-KEYWORD,twitter,BosLife'
+    - 'DOMAIN-SUFFIX,x.ai,BosLife'
+    - 'DOMAIN-SUFFIX,x.com,BosLife'
     - 'DOMAIN-KEYWORD,whatsapp,BosLife'
     - 'DOMAIN-KEYWORD,youtube,BosLife'
     - 'DOMAIN-KEYWORD,google,BosLife'
@@ -204,6 +194,7 @@ rules:
     - 'DOMAIN-SUFFIX,adobedtm.com,BosLife'
     - 'DOMAIN-SUFFIX,aerisapi.com,BosLife'
     - 'DOMAIN-SUFFIX,akamaihd.net,BosLife'
+    - 'DOMAIN-SUFFIX,akamaized.net,BosLife'
     - 'DOMAIN-SUFFIX,alfredapp.com,BosLife'
     - 'DOMAIN-SUFFIX,allconnected.co,BosLife'
     - 'DOMAIN-SUFFIX,amazon.com,BosLife'
@@ -218,6 +209,7 @@ rules:
     - 'DOMAIN-SUFFIX,android-x86.org,BosLife'
     - 'DOMAIN-SUFFIX,angularjs.org,BosLife'
     - 'DOMAIN-SUFFIX,anthonycalzadilla.com,BosLife'
+    - 'DOMAIN-SUFFIX,anthropic.com,BosLife'
     - 'DOMAIN-SUFFIX,aol.com,BosLife'
     - 'DOMAIN-SUFFIX,aolcdn.com,BosLife'
     - 'DOMAIN-SUFFIX,api.mixpanel.com,BosLife'
@@ -228,6 +220,7 @@ rules:
     - 'DOMAIN-SUFFIX,apkpure.com,BosLife'
     - 'DOMAIN-SUFFIX,appdownloader.net,BosLife'
     - 'DOMAIN-SUFFIX,apple-dns.net,BosLife'
+    - 'DOMAIN-SUFFIX,apple-relay.apple.com,BosLife'
     - 'DOMAIN-SUFFIX,app-measurement.com,BosLife'
     - 'DOMAIN-SUFFIX,appshopper.com,BosLife'
     - 'DOMAIN-SUFFIX,arcgis.com,BosLife'
@@ -286,6 +279,7 @@ rules:
     - 'DOMAIN-SUFFIX,chromestatus.com,BosLife'
     - 'DOMAIN-SUFFIX,chromium.org,BosLife'
     - 'DOMAIN-SUFFIX,cl.ly,BosLife'
+    - 'DOMAIN-SUFFIX,claude.ai,BosLife'
     - 'DOMAIN-SUFFIX,cloudflare.com,BosLife'
     - 'DOMAIN-SUFFIX,cloudfront.net,BosLife'
     - 'DOMAIN-SUFFIX,cloudgarage.jp,BosLife'
@@ -339,6 +333,7 @@ rules:
     - 'DOMAIN-SUFFIX,entrust.net,BosLife'
     - 'DOMAIN-SUFFIX,eurekavpt.com,BosLife'
     - 'DOMAIN-SUFFIX,evernote.com,BosLife'
+    - 'DOMAIN-SUFFIX,evergent.com,BosLife'
     - 'DOMAIN-SUFFIX,extmatrix.com,BosLife'
     - 'DOMAIN-SUFFIX,eyny.com,BosLife'
     - 'DOMAIN-SUFFIX,fabric.io,BosLife'
@@ -424,6 +419,7 @@ rules:
     - 'DOMAIN-SUFFIX,itun.es,BosLife'
     - 'DOMAIN-SUFFIX,ixquick.com,BosLife'
     - 'DOMAIN-SUFFIX,j.mp,BosLife'
+    - 'DOMAIN-SUFFIX,jable.tv,BosLife'
     - 'DOMAIN-SUFFIX,javbus.com,BosLife'
     - 'DOMAIN-SUFFIX,js.revsci.net,BosLife'
     - 'DOMAIN-SUFFIX,jshint.com,BosLife'
@@ -478,6 +474,7 @@ rules:
     - 'DOMAIN-SUFFIX,netdna-cdn.com,BosLife'
     - 'DOMAIN-SUFFIX,newipnow.com,BosLife'
     - 'DOMAIN-SUFFIX,nextmedia.com,BosLife'
+    - 'DOMAIN-SUFFIX,news.com.au,BosLife'
     - 'DOMAIN-SUFFIX,nih.gov,BosLife'
     - 'DOMAIN-SUFFIX,nintendo.com,BosLife'
     - 'DOMAIN-SUFFIX,nintendo.net,BosLife'
@@ -496,13 +493,12 @@ rules:
     - 'DOMAIN-SUFFIX,onedrive.live.com,BosLife'
     - 'DOMAIN-SUFFIX,onenote.com,BosLife'
     - 'DOMAIN-SUFFIX,ooyala.com,BosLife'
-    - 'DOMAIN-SUFFIX,openai.com,BosLife'
-    - 'DOMAIN-SUFFIX,openaiapi-site.azureedge.net,BosLife'
     - 'DOMAIN-SUFFIX,oaistatic.com,BosLife'
     - 'DOMAIN-SUFFIX,oaiusercontent.com,BosLife'
     - 'DOMAIN-SUFFIX,theb.ai,BosLife'
     - 'DOMAIN-SUFFIX,identrust.com,BosLife'
     - 'DOMAIN-SUFFIX,auth0.com,BosLife'
+    - 'DOMAIN-SUFFIX,onwardsmg.com,BosLife'
     - 'DOMAIN-SUFFIX,openvpn.net,BosLife'
     - 'DOMAIN-SUFFIX,openwrt.org,BosLife'
     - 'DOMAIN-SUFFIX,optimizely.com,BosLife'
@@ -519,6 +515,11 @@ rules:
     - 'DOMAIN-SUFFIX,patreon.com,BosLife'
     - 'DOMAIN-SUFFIX,pdfexpert.com,BosLife'
     - 'DOMAIN-SUFFIX,periscope.tv,BosLife'
+    - 'DOMAIN-SUFFIX,plex.tv,BosLife'
+    - 'DOMAIN-SUFFIX,perplexity.ai,BosLife'
+    - 'DOMAIN-SUFFIX,perplexity.com,BosLife'
+    - 'DOMAIN-SUFFIX,pplx.ai,BosLife'
+    - 'DOMAIN-KEYWORD,perplexity,BosLife'
     - 'DOMAIN-SUFFIX,piaotian.net,BosLife'
     - 'DOMAIN-SUFFIX,picacomic.com,BosLife'
     - 'DOMAIN-SUFFIX,picasaweb.com,BosLife'
@@ -677,6 +678,7 @@ rules:
     - 'DOMAIN-SUFFIX,txmblr.com,BosLife'
     - 'DOMAIN-SUFFIX,typcn.com,BosLife'
     - 'DOMAIN-SUFFIX,typekit.net,BosLife'
+    - 'DOMAIN-SUFFIX,typingmind.com,BosLife'
     - 'DOMAIN-SUFFIX,typography.com,BosLife'
     - 'DOMAIN-SUFFIX,ubertags.com,BosLife'
     - 'DOMAIN-SUFFIX,ublock.org,BosLife'
@@ -753,6 +755,7 @@ rules:
     - 'DOMAIN-SUFFIX,wikipedia.com,BosLife'
     - 'DOMAIN-SUFFIX,wikipedia.org,BosLife'
     - 'DOMAIN-SUFFIX,wikisource.org,BosLife'
+    - 'DOMAIN-SUFFIX,wikiwand.com,BosLife'
     - 'DOMAIN-SUFFIX,windows.com,BosLife'
     - 'DOMAIN-SUFFIX,windows.net,BosLife'
     - 'DOMAIN-SUFFIX,wn.com,BosLife'
@@ -792,6 +795,107 @@ rules:
     - 'DOMAIN-SUFFIX,zaobao.com.sg,BosLife'
     - 'DOMAIN-SUFFIX,zeutch.com,BosLife'
     - 'DOMAIN-SUFFIX,zynamics.com,BosLife'
+    - 'DOMAIN,browser-intake-datadoghq.com,BosLife'
+    - 'DOMAIN,chat.openai.com.cdn.cloudflare.net,BosLife'
+    - 'DOMAIN,gemini.google.com,BosLife'
+    - 'DOMAIN,openai-api.arkoselabs.com,BosLife'
+    - 'DOMAIN,openaicom-api-bdcpf8c6d2e9atf6.z01.azurefd.net,BosLife'
+    - 'DOMAIN,openaicomproductionae4b.blob.core.windows.net,BosLife'
+    - 'DOMAIN,production-openaicom-storage.azureedge.net,BosLife'
+    - 'DOMAIN,static.cloudflareinsights.com,BosLife'
+    - 'DOMAIN-SUFFIX,ai.com,BosLife'
+    - 'DOMAIN-SUFFIX,algolia.net,BosLife'
+    - 'DOMAIN-SUFFIX,api.statsig.com,BosLife'
+    - 'DOMAIN-SUFFIX,auth0.com,BosLife'
+    - 'DOMAIN-SUFFIX,chatgpt.com,BosLife'
+    - 'DOMAIN-SUFFIX,chatgpt.livekit.cloud,BosLife'
+    - 'DOMAIN-SUFFIX,client-api.arkoselabs.com,BosLife'
+    - 'DOMAIN-SUFFIX,events.statsigapi.net,BosLife'
+    - 'DOMAIN-SUFFIX,featuregates.org,BosLife'
+    - 'DOMAIN-SUFFIX,host.livekit.cloud,BosLife'
+    - 'DOMAIN-SUFFIX,identrust.com,BosLife'
+    - 'DOMAIN-SUFFIX,intercom.io,BosLife'
+    - 'DOMAIN-SUFFIX,intercomcdn.com,BosLife'
+    - 'DOMAIN-SUFFIX,launchdarkly.com,BosLife'
+    - 'DOMAIN-SUFFIX,oaistatic.com,BosLife'
+    - 'DOMAIN-SUFFIX,oaiusercontent.com,BosLife'
+    - 'DOMAIN-SUFFIX,observeit.net,BosLife'
+    - 'DOMAIN-SUFFIX,openai.com,BosLife'
+    - 'DOMAIN-SUFFIX,openaiapi-site.azureedge.net,BosLife'
+    - 'DOMAIN-SUFFIX,openaicom.imgix.net,BosLife'
+    - 'DOMAIN-SUFFIX,segment.io,BosLife'
+    - 'DOMAIN-SUFFIX,sentry.io,BosLife'
+    - 'DOMAIN-SUFFIX,stripe.com,BosLife'
+    - 'DOMAIN-SUFFIX,turn.livekit.cloud,BosLife'
+    - 'DOMAIN-KEYWORD,openai,BosLife'
+    - 'IP-CIDR,24.199.123.28/32,BosLife,no-resolve'
+    - 'IP-CIDR,64.23.132.171/32,BosLife,no-resolve'
+    - 'DOMAIN,ai.google.dev,BosLife'
+    - 'DOMAIN,alkalimakersuite-pa.clients6.google.com,BosLife'
+    - 'DOMAIN,makersuite.google.com,BosLife'
+    - 'DOMAIN-SUFFIX,bard.google.com,BosLife'
+    - 'DOMAIN-SUFFIX,deepmind.com,BosLife'
+    - 'DOMAIN-SUFFIX,deepmind.google,BosLife'
+    - 'DOMAIN-SUFFIX,gemini.google.com,BosLife'
+    - 'DOMAIN-SUFFIX,generativeai.google,BosLife'
+    - 'DOMAIN-SUFFIX,proactivebackend-pa.googleapis.com,BosLife'
+    - 'DOMAIN-SUFFIX,apis.google.com,BosLife'
+    - 'DOMAIN-KEYWORD,colab,BosLife'
+    - 'DOMAIN-KEYWORD,developerprofiles,BosLife'
+    - 'DOMAIN-KEYWORD,generativelanguage,BosLife'
+    - 'DOMAIN,api.msn.com,BosLife'
+    - 'DOMAIN,api.statsig.com,BosLife'
+    - 'DOMAIN,assets.msn.com,BosLife'
+    - 'DOMAIN,browser-intake-datadoghq.com,BosLife'
+    - 'DOMAIN,chat.openai.com.cdn.cloudflare.net,BosLife'
+    - 'DOMAIN,copilot.microsoft.com,BosLife'
+    - 'DOMAIN,gateway.bingviz.microsoft.net,BosLife'
+    - 'DOMAIN,gateway.bingviz.microsoftapp.net,BosLife'
+    - 'DOMAIN,in.appcenter.ms,BosLife'
+    - 'DOMAIN,location.microsoft.com,BosLife'
+    - 'DOMAIN,odc.officeapps.live.com,BosLife'
+    - 'DOMAIN,openai-api.arkoselabs.com,BosLife'
+    - 'DOMAIN,openaicomproductionae4b.blob.core.windows.net,BosLife'
+    - 'DOMAIN,production-openaicom-storage.azureedge.net,BosLife'
+    - 'DOMAIN,r.bing.com,BosLife'
+    - 'DOMAIN,self.events.data.microsoft.com,BosLife'
+    - 'DOMAIN,services.bingapis.com,BosLife'
+    - 'DOMAIN,static.cloudflareinsights.com,BosLife'
+    - 'DOMAIN,sydney.bing.com,BosLife'
+    - 'DOMAIN,www.bing.com,BosLife'
+    - 'DOMAIN-SUFFIX,algolia.net,BosLife'
+    - 'DOMAIN-SUFFIX,api.microsoftapp.net,BosLife'
+    - 'DOMAIN-SUFFIX,auth0.com,BosLife'
+    - 'DOMAIN-SUFFIX,bing-shopping.microsoft-falcon.io,BosLife'
+    - 'DOMAIN-SUFFIX,challenges.cloudflare.com,BosLife'
+    - 'DOMAIN-SUFFIX,chatgpt.com,BosLife'
+    - 'DOMAIN-SUFFIX,chatgpt.livekit.cloud,BosLife'
+    - 'DOMAIN-SUFFIX,client-api.arkoselabs.com,BosLife'
+    - 'DOMAIN-SUFFIX,edgeservices.bing.com,BosLife'
+    - 'DOMAIN-SUFFIX,events.statsigapi.net,BosLife'
+    - 'DOMAIN-SUFFIX,featuregates.org,BosLife'
+    - 'DOMAIN-SUFFIX,host.livekit.cloud,BosLife'
+    - 'DOMAIN-SUFFIX,identrust.com,BosLife'
+    - 'DOMAIN-SUFFIX,intercom.io,BosLife'
+    - 'DOMAIN-SUFFIX,intercomcdn.com,BosLife'
+    - 'DOMAIN-SUFFIX,launchdarkly.com,BosLife'
+    - 'DOMAIN-SUFFIX,oaistatic.com,BosLife'
+    - 'DOMAIN-SUFFIX,oaiusercontent.com,BosLife'
+    - 'DOMAIN-SUFFIX,observeit.net,BosLife'
+    - 'DOMAIN-SUFFIX,openai.com,BosLife'
+    - 'DOMAIN-SUFFIX,openaiapi-site.azureedge.net,BosLife'
+    - 'DOMAIN-SUFFIX,openaicom.imgix.net,BosLife'
+    - 'DOMAIN-SUFFIX,segment.io,BosLife'
+    - 'DOMAIN-SUFFIX,sentry.io,BosLife'
+    - 'DOMAIN-SUFFIX,stripe.com,BosLife'
+    - 'DOMAIN-SUFFIX,turn.livekit.cloud,BosLife'
+    - 'DOMAIN-KEYWORD,openaicom-api,BosLife'
+    - 'IP-CIDR,24.199.123.28/32,BosLife,no-resolve'
+    - 'IP-CIDR,64.23.132.171/32,BosLife,no-resolve'
+    - 'DOMAIN,cdn.usefathom.com,BosLife'
+    - 'DOMAIN-SUFFIX,anthropic.com,BosLife'
+    - 'DOMAIN-SUFFIX,claude.ai,BosLife'
+    - 'DOMAIN-SUFFIX,grok.com,BosLife'
     - 'DOMAIN-SUFFIX,telegra.ph,BosLife'
     - 'DOMAIN-SUFFIX,telegram.org,BosLife'
     - 'IP-CIDR,91.108.4.0/22,BosLife,no-resolve'
@@ -820,6 +924,65 @@ rules:
     - 'IP-CIDR,220.181.174.162/32,BosLife,no-resolve'
     - 'IP-CIDR,220.181.174.226/32,BosLife,no-resolve'
     - 'IP-CIDR,220.181.174.34/32,BosLife,no-resolve'
+    - 'DOMAIN-SUFFIX,ads-twitter.com,BosLife'
+    - 'DOMAIN-SUFFIX,cms-twdigitalassets.com,BosLife'
+    - 'DOMAIN-SUFFIX,periscope.tv,BosLife'
+    - 'DOMAIN-SUFFIX,pscp.tv,BosLife'
+    - 'DOMAIN-SUFFIX,t.co,BosLife'
+    - 'DOMAIN-SUFFIX,tellapart.com,BosLife'
+    - 'DOMAIN-SUFFIX,tweetdeck.com,BosLife'
+    - 'DOMAIN-SUFFIX,twimg.co,BosLife'
+    - 'DOMAIN-SUFFIX,twimg.com,BosLife'
+    - 'DOMAIN-SUFFIX,twimg.org,BosLife'
+    - 'DOMAIN-SUFFIX,twitpic.com,BosLife'
+    - 'DOMAIN-SUFFIX,twitter.biz,BosLife'
+    - 'DOMAIN-SUFFIX,twitter.com,BosLife'
+    - 'DOMAIN-SUFFIX,twitter.jp,BosLife'
+    - 'DOMAIN-SUFFIX,twittercommunity.com,BosLife'
+    - 'DOMAIN-SUFFIX,twitterflightschool.com,BosLife'
+    - 'DOMAIN-SUFFIX,twitterinc.com,BosLife'
+    - 'DOMAIN-SUFFIX,twitteroauth.com,BosLife'
+    - 'DOMAIN-SUFFIX,twitterstat.us,BosLife'
+    - 'DOMAIN-SUFFIX,twtrdns.net,BosLife'
+    - 'DOMAIN-SUFFIX,twttr.com,BosLife'
+    - 'DOMAIN-SUFFIX,twttr.net,BosLife'
+    - 'DOMAIN-SUFFIX,twvid.com,BosLife'
+    - 'DOMAIN-SUFFIX,vine.co,BosLife'
+    - 'DOMAIN-SUFFIX,x.com,BosLife'
+    - 'DOMAIN-KEYWORD,twitter,BosLife'
+    - 'IP-CIDR,192.133.76.0/22,BosLife,no-resolve'
+    - 'IP-CIDR,199.59.148.0/22,BosLife,no-resolve'
+    - 'IP-CIDR,199.96.56.0/21,BosLife,no-resolve'
+    - 'IP-CIDR,202.160.128.0/22,BosLife,no-resolve'
+    - 'IP-CIDR,209.237.192.0/19,BosLife,no-resolve'
+    - 'IP-CIDR,69.195.160.0/19,BosLife,no-resolve'
+    - 'DOMAIN-KEYWORD,hbogoasia,BosLife'
+    - 'DOMAIN-KEYWORD,hboasia,BosLife'
+    - 'DOMAIN-SUFFIX,hbolb.onwardsmg.com,BosLife'
+    - 'DOMAIN-SUFFIX,hbo.com,BosLife'
+    - 'DOMAIN-SUFFIX,hbogo.com,BosLife'
+    - 'DOMAIN-SUFFIX,hbogo.co,BosLife'
+    - 'DOMAIN-SUFFIX,hbogo.eu,BosLife'
+    - 'DOMAIN-SUFFIX,hbomax.com,BosLife'
+    - 'DOMAIN-SUFFIX,hbomaxcdn.com,BosLife'
+    - 'DOMAIN-SUFFIX,hbonow.com,BosLife'
+    - 'DOMAIN-SUFFIX,max.com,BosLife'
+    - 'DOMAIN-SUFFIX,maxgo.com,BosLife'
+    - 'DOMAIN-SUFFIX,discomax.com,BosLife'
+    - 'DOMAIN-SUFFIX,now-ashare.com,BosLife'
+    - 'DOMAIN-SUFFIX,now-tv.com,BosLife'
+    - 'DOMAIN-SUFFIX,now.com.hk,BosLife'
+    - 'DOMAIN-SUFFIX,nowe.com,BosLife'
+    - 'DOMAIN-SUFFIX,nowe.hk,BosLife'
+    - 'DOMAIN-SUFFIX,warnermediacdn.com,BosLife'
+    - 'DOMAIN-SUFFIX,forthethrone.com,BosLife'
+    - 'DOMAIN-SUFFIX,cinemax.com,BosLife'
+    - 'DOMAIN-SUFFIX,conviva.com,BosLife'
+    - 'DOMAIN-SUFFIX,boltdns.net,BosLife'
+    - 'DOMAIN-SUFFIX,comhbo.com,BosLife'
+    - 'DOMAIN-SUFFIX,brightline.tv,BosLife'
+    - 'DOMAIN-SUFFIX,litix.io,BosLife'
+    - 'DOMAIN-SUFFIX,hbogo.co.th,BosLife'
     - 'DOMAIN-KEYWORD,dualstack.apiproxy-,BosLife'
     - 'DOMAIN-KEYWORD,dualstack.ichnaea-web-,BosLife'
     - 'DOMAIN,netflix.com.edgesuite.net,BosLife'

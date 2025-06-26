@@ -24,9 +24,11 @@ pub async fn start_server(
     let app_state = AppState { service };
     let app = Router::new()
         .route("/", get(route::root))
-        .route("/clash", get(route::clash::profile))
         .route("/surge", get(route::surge::profile))
-        .route("/surge/rule_set", get(route::surge::rule_set))
+        .route("/surge/rule-set", get(route::surge::rule_set))
+        .route("/clash", get(route::clash::profile))
+        .route("/clash/proxy-provider", get(route::clash::proxy_provider))
+        .route("/clash/rule-set", get(route::clash::rule_set))
         .route(
             "/subscription_log",
             get(route::subscription::subscription_log),

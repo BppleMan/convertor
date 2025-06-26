@@ -5,6 +5,8 @@ use convertor::boslife::boslife_service::BosLifeService;
 use convertor::config::convertor_config::ConvertorConfig;
 use convertor::server::route;
 use convertor::server::route::AppState;
+use httpmock::Method::GET;
+use httpmock::MockServer;
 use std::str::FromStr;
 use std::sync::Arc;
 use tower_http::trace::{
@@ -33,7 +35,7 @@ pub async fn start_server() -> color_eyre::Result<ServerContext> {
         .route("/", get(route::root))
         .route("/clash", get(route::clash::profile))
         .route("/surge", get(route::surge::profile))
-        .route("/surge/rule_set", get(route::surge::rule_set))
+        .route("/surge/rule-set", get(route::surge::rule_set))
         .route(
             "/subscription_log",
             get(route::subscription::subscription_log),
@@ -51,4 +53,24 @@ pub async fn start_server() -> color_eyre::Result<ServerContext> {
         );
 
     Ok(ServerContext { app, service })
+}
+
+pub async fn start_mock_service_server() -> color_eyre::Result<()> {
+    if let Err(e) = color_eyre::install() {
+        warn!("Failed to install color_eyre: {}", e);
+    }
+
+    let mock_server = MockServer::start_async().await;
+    let mock = mock_server
+        .mock_async(|when, then| {
+            when.method(GET)
+                .path("/surge")
+                .query_param_exists("raw_url");
+            then.status(200)
+                .body("Surge profile response")
+                .header("Content-Type", "text/plain");
+        })
+        .await;
+
+    Ok(())
 }

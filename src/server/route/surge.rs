@@ -1,4 +1,4 @@
-use crate::config::convertor_url::ConvertorUrl;
+use crate::config::url_builder::UrlBuilder;
 use crate::error::AppError;
 use crate::profile::surge_profile::SurgeProfile;
 use crate::server::route::AppState;
@@ -14,7 +14,6 @@ use std::sync::Arc;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SurgeQuery {
     pub raw_url: String,
-    // pub token: String,
     #[serde(default)]
     pub policies: Option<String>,
     #[serde(default)]
@@ -26,13 +25,11 @@ pub async fn profile(
     query: Query<SurgeQuery>,
     request: Request<Body>,
 ) -> Result<String, AppError> {
-    let convertor_url = ConvertorUrl::decode_from_request(
+    let convertor_url = UrlBuilder::decode_from_request(
         &request,
         &state.service.config.secret,
     )?;
-    profile_impl(state, query, convertor_url)
-        .await
-        .map_err(Into::into)
+    profile_impl(state, convertor_url).await.map_err(Into::into)
 }
 
 /// policy:
@@ -45,19 +42,18 @@ pub async fn rule_set(
     query: Query<SurgeQuery>,
     request: Request<Body>,
 ) -> Result<String, AppError> {
-    let convertor_url = ConvertorUrl::decode_from_request(
+    let convertor_url = UrlBuilder::decode_from_request(
         &request,
         &state.service.config.secret,
     )?;
-    rule_set_impl(state, query, convertor_url)
+    rule_set_impl(state, convertor_url, query.policies.clone(), query.boslife)
         .await
         .map_err(Into::into)
 }
 
 async fn profile_impl(
     state: Arc<AppState>,
-    _query: Query<SurgeQuery>,
-    convertor_url: ConvertorUrl,
+    convertor_url: UrlBuilder,
 ) -> Result<String> {
     let raw_profile = state
         .service
@@ -70,17 +66,18 @@ async fn profile_impl(
 
 async fn rule_set_impl(
     state: Arc<AppState>,
-    query: Query<SurgeQuery>,
-    convertor_url: ConvertorUrl,
+    convertor_url: UrlBuilder,
+    policies: Option<String>,
+    boslife: Option<bool>,
 ) -> Result<String> {
     let raw_profile = state
         .service
         .get_raw_profile(convertor_url.build_subscription_url("surge")?)
         .await?;
     let profile = SurgeProfile::new(raw_profile);
-    if let Some(policies) = query.policies.as_ref() {
+    if let Some(policies) = policies {
         Ok(profile.extract_rule(policies))
-    } else if query.boslife == Some(true) {
+    } else if let Some(true) = boslife {
         // 专门处理 boslife 订阅 url 的规则
         Ok(profile.extract_boslife_subscription())
     } else {

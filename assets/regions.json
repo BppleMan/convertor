@@ -60,6 +60,12 @@
         "icon": "🇦🇺"
     },
     {
+        "code": "AU",
+        "en": "Australia",
+        "cn": "澳洲",
+        "icon": "🇦🇺"
+    },
+    {
         "code": "NZ",
         "en": "New Zealand",
         "cn": "新西兰",

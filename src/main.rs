@@ -17,9 +17,14 @@ async fn main() -> Result<()> {
 
     match cli.command {
         None => start_server(cli, service, base_dir).await?,
-        Some(Service::BosLife { command }) => {
-            service.execute(command).await?;
+        Some(Service::BosLife {
+            command,
+            server,
+            flag,
+        }) => {
+            service.execute(command, server, flag).await?;
         }
+        Some(Service::InstallService { name }) => {}
     }
 
     Ok(())

@@ -1,4 +1,5 @@
-use crate::config::convertor_url::ConvertorUrl;
+use crate::config::url_builder::UrlBuilder;
+use crate::profile::RuleSetPolicy;
 use color_eyre::eyre::OptionExt;
 use color_eyre::Result;
 use serde::{Deserialize, Serialize};
@@ -38,7 +39,7 @@ impl SurgeConfig {
 
     pub async fn update_surge_config(
         &self,
-        convertor_url: &ConvertorUrl,
+        convertor_url: &UrlBuilder,
     ) -> Result<()> {
         // update BosLife.conf subscription
         let manager_config_header = Self::build_managed_config_header(
@@ -58,20 +59,20 @@ impl SurgeConfig {
 
     pub async fn update_surge_rule_set(
         &self,
-        convertor_url: &ConvertorUrl,
+        convertor_url: &UrlBuilder,
     ) -> Result<()> {
         let content =
             tokio::fs::read_to_string(&self.rules_config_path).await?;
         let mut lines = content.lines().map(Cow::Borrowed).collect::<Vec<_>>();
 
-        let find_position = |rst: &RuleSetType| {
+        let find_position = |rst: &RuleSetPolicy| {
             lines
                 .iter()
                 .position(|l| l.contains(rst.name()))
                 .ok_or_eyre(format!("rule set {} not found", rst.name()))
         };
 
-        let pos_and_rst = RuleSetType::all()
+        let pos_and_rst = RuleSetPolicy::all()
             .iter()
             .map(|rst| find_position(rst).map(|pos| (pos, rst)))
             .collect::<Vec<_>>();
@@ -79,9 +80,9 @@ impl SurgeConfig {
         for pair in pos_and_rst {
             match pair {
                 Ok((pos, rst)) => {
-                    lines[pos] = Cow::Owned(
-                        rst.rule_set(&convertor_url.build_rule_set_url(rst)?),
-                    );
+                    lines[pos] = Cow::Owned(rst.rule_set(
+                        &convertor_url.build_rule_set_url("surge", rst)?,
+                    ));
                 }
                 Err(e) => error!("{e}"),
             }
@@ -108,93 +109,5 @@ impl SurgeConfig {
             "#!MANAGED-CONFIG {} interval=259200 strict=true",
             url.as_ref()
         )
-    }
-}
-
-pub enum RuleSetType {
-    BosLifeSubscription,
-    BosLifePolicy,
-    BosLifeNoResolvePolicy,
-    BosLifeForceRemoteDnsPolicy,
-    DirectPolicy,
-    DirectNoResolvePolicy,
-    DirectForceRemoteDnsPolicy,
-}
-
-impl RuleSetType {
-    pub const fn all() -> &'static [RuleSetType] {
-        &[
-            RuleSetType::BosLifeSubscription,
-            RuleSetType::BosLifePolicy,
-            RuleSetType::BosLifeNoResolvePolicy,
-            RuleSetType::BosLifeForceRemoteDnsPolicy,
-            RuleSetType::DirectPolicy,
-            RuleSetType::DirectNoResolvePolicy,
-            RuleSetType::DirectForceRemoteDnsPolicy,
-        ]
-    }
-
-    pub fn name(&self) -> &'static str {
-        match self {
-            RuleSetType::BosLifeSubscription => "[BosLife Subscription]",
-            RuleSetType::BosLifePolicy => "[BosLife Policy]",
-            RuleSetType::BosLifeNoResolvePolicy => {
-                "[BosLife No Resolve Policy]"
-            }
-            RuleSetType::BosLifeForceRemoteDnsPolicy => {
-                "[BosLife Force Remote Dns Policy]"
-            }
-            RuleSetType::DirectPolicy => "[Direct Policy]",
-            RuleSetType::DirectNoResolvePolicy => "[Direct No Resolve Policy]",
-            RuleSetType::DirectForceRemoteDnsPolicy => {
-                "[Direct Force Remote Dns Policy]"
-            }
-        }
-    }
-
-    pub fn comment(&self) -> String {
-        format!(
-            r#"// Added for {} by convertor/{}"#,
-            self.name(),
-            env!("CARGO_PKG_VERSION")
-        )
-    }
-
-    pub fn policy(&self) -> &'static str {
-        match self {
-            RuleSetType::BosLifeSubscription => "DIRECT",
-            RuleSetType::BosLifePolicy => "BosLife",
-            RuleSetType::BosLifeNoResolvePolicy => "BosLife,no-resolve",
-            RuleSetType::BosLifeForceRemoteDnsPolicy => {
-                "BosLife,force-remote-dns"
-            }
-            RuleSetType::DirectPolicy => "DIRECT",
-            RuleSetType::DirectNoResolvePolicy => "DIRECT,no-resolve",
-            RuleSetType::DirectForceRemoteDnsPolicy => {
-                "DIRECT,force-remote-dns"
-            }
-        }
-    }
-
-    pub fn rule_set(&self, rule_set_url: impl AsRef<str>) -> String {
-        match self {
-            RuleSetType::BosLifeSubscription
-            | RuleSetType::BosLifePolicy
-            | RuleSetType::BosLifeNoResolvePolicy
-            | RuleSetType::BosLifeForceRemoteDnsPolicy
-            | RuleSetType::DirectPolicy
-            | RuleSetType::DirectNoResolvePolicy => format!(
-                r#"RULE-SET,{},{} {}"#,
-                rule_set_url.as_ref(),
-                self.policy(),
-                self.comment()
-            ),
-            RuleSetType::DirectForceRemoteDnsPolicy => format!(
-                r#"// RULE-SET,{},{} {}"#,
-                rule_set_url.as_ref(),
-                self.policy(),
-                self.comment()
-            ),
-        }
     }
 }

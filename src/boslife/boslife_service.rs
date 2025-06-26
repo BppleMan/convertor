@@ -1,9 +1,10 @@
 use crate::boslife::boslife_command::BosLifeCommand;
 use crate::boslife::boslife_credential::BosLifeCredential;
 use crate::config::convertor_config::ConvertorConfig;
-use crate::config::convertor_url::ConvertorUrl;
 use crate::config::service_config::ServiceConfig;
-use crate::config::surge_config::{RuleSetType, SurgeConfig};
+use crate::config::surge_config::SurgeConfig;
+use crate::config::url_builder::UrlBuilder;
+use crate::profile::RuleSetPolicy;
 use crate::service::service_api::ServiceApi;
 use crate::service::subscription_log::SubscriptionLog;
 use moka::future::Cache;
@@ -41,21 +42,19 @@ impl BosLifeService {
     pub async fn execute(
         &self,
         command: BosLifeCommand,
-    ) -> color_eyre::Result<ConvertorUrl> {
-        let convertor_url = match command {
-            BosLifeCommand::Get { server } => {
+        server: Option<String>,
+        flag: String,
+    ) -> color_eyre::Result<UrlBuilder> {
+        let url_builder = match command {
+            BosLifeCommand::Get => {
                 let server = server.map(|s| Url::parse(&s)).transpose()?;
                 self.get_subscription_url(server).await
             }
-            BosLifeCommand::Update {
-                server,
-                refresh_token,
-            } => {
+            BosLifeCommand::Update { refresh_token } => {
                 let server = server.map(|s| Url::parse(&s)).transpose()?;
                 self.update_surge_config(server, refresh_token).await
             }
             BosLifeCommand::Encode {
-                server,
                 raw_subscription_url,
             } => {
                 let server = server.map(|s| Url::parse(&s)).transpose()?;
@@ -67,28 +66,32 @@ impl BosLifeService {
             }
         }?;
         println!(
-            "Raw Subscription URL:\n\t{}",
-            convertor_url.build_subscription_url("surge")?
+            "Raw Subscription URL:\n{}",
+            url_builder.build_subscription_url(&flag)?
         );
         println!(
-            "Convertor URL:\n\t{}",
-            convertor_url.build_convertor_url("surge")?
+            "Convertor URL:\n{}",
+            url_builder.build_convertor_url(&flag)?
         );
-        for rst in RuleSetType::all() {
-            let rule_set_url = convertor_url.build_rule_set_url(rst)?;
-            println!("Rule Set URL ({}):\n\t{}", rst.name(), rule_set_url);
+        println!(
+            "Proxy Provider:\n{}",
+            url_builder.build_proxy_provider_url(&flag)?
+        );
+        for rsp in RuleSetPolicy::all() {
+            let rule_set_url = url_builder.build_rule_set_url(&flag, rsp)?;
+            println!("{}:\n{}", rsp.name(), rule_set_url);
         }
-        Ok(convertor_url)
+        Ok(url_builder)
     }
 
     pub async fn get_subscription_url(
         &self,
         server: Option<Url>,
-    ) -> color_eyre::Result<ConvertorUrl> {
+    ) -> color_eyre::Result<UrlBuilder> {
         let auth_token = self.login().await?;
         let raw_subscription_url =
             self.get_raw_subscription_url(&auth_token).await?;
-        let convertor_url = ConvertorUrl::new(
+        let convertor_url = UrlBuilder::new(
             server.unwrap_or(self.config.server.clone()),
             &self.config.secret,
             raw_subscription_url,
@@ -100,7 +103,7 @@ impl BosLifeService {
         &self,
         server: Option<Url>,
         refresh_token: bool,
-    ) -> color_eyre::Result<ConvertorUrl> {
+    ) -> color_eyre::Result<UrlBuilder> {
         let auth_token = self.login().await?;
         let raw_subscription_url = if refresh_token {
             self.reset_raw_subscription_url(&auth_token).await?
@@ -108,7 +111,7 @@ impl BosLifeService {
             self.get_raw_subscription_url(&auth_token).await?
         };
 
-        let convertor_url = ConvertorUrl::new(
+        let convertor_url = UrlBuilder::new(
             server.unwrap_or(self.config.server.clone()),
             &self.config.secret,
             raw_subscription_url,
@@ -125,9 +128,9 @@ impl BosLifeService {
         &self,
         server: Option<Url>,
         raw_subscription_url: String,
-    ) -> color_eyre::Result<ConvertorUrl> {
+    ) -> color_eyre::Result<UrlBuilder> {
         let raw_subscription_url = Url::parse(&raw_subscription_url)?;
-        let convertor_url = ConvertorUrl::new(
+        let convertor_url = UrlBuilder::new(
             server.unwrap_or(self.config.server.clone()),
             &self.config.secret,
             raw_subscription_url,
@@ -138,8 +141,8 @@ impl BosLifeService {
     pub(crate) async fn decode_convertor_url(
         &self,
         raw_convertor_url: String,
-    ) -> color_eyre::Result<ConvertorUrl> {
-        let convertor_url = ConvertorUrl::decode_from_convertor_url(
+    ) -> color_eyre::Result<UrlBuilder> {
+        let convertor_url = UrlBuilder::decode_from_convertor_url(
             raw_convertor_url,
             &self.config.secret,
         )?;

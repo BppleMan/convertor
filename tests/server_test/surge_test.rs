@@ -2,7 +2,8 @@ use crate::server_test::server_context::ServerContext;
 use crate::start_server;
 use axum::body::Body;
 use axum::extract::Request;
-use convertor::config::surge_config::{RuleSetType, SurgeConfig};
+use convertor::config::surge_config::SurgeConfig;
+use convertor::profile::RuleSetPolicy;
 use http_body_util::BodyExt;
 use std::collections::HashMap;
 use tower::ServiceExt;
@@ -36,8 +37,8 @@ pub async fn test_surge_profile() -> color_eyre::Result<()> {
 pub async fn test_surge_rule_set() -> color_eyre::Result<()> {
     let ServerContext { app, service } = start_server().await?;
     let convertor_url = service.get_subscription_url(None).await?;
-    let url =
-        convertor_url.build_rule_set_url(&RuleSetType::BosLifeSubscription)?;
+    let url = convertor_url
+        .build_rule_set_url("surge", &RuleSetPolicy::BosLifeSubscription)?;
     let query_pairs =
         serde_qs::to_string(&url.query_pairs().collect::<HashMap<_, _>>())?;
     let uri = format!("{}?{}", url.path(), query_pairs);
