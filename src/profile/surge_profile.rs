@@ -6,8 +6,7 @@ use indexmap::IndexMap;
 use once_cell::sync::Lazy;
 use regex::Regex;
 
-static SECTION_REGEX: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r#"^\[[^\[\]]+]$"#).unwrap());
+static SECTION_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"^\[[^\[\]]+]$"#).unwrap());
 
 const MANAGED_CONFIG_HEADER: &str = "MANAGED-CONFIG";
 
@@ -18,11 +17,7 @@ pub struct SurgeProfile {
 
 impl SurgeProfile {
     pub fn new(content: impl Into<String>) -> Self {
-        let mut content = content
-            .into()
-            .lines()
-            .map(|s| s.to_string())
-            .collect::<Vec<String>>();
+        let mut content = content.into().lines().map(|s| s.to_string()).collect::<Vec<String>>();
         let mut sections = IndexMap::new();
 
         let mut section = MANAGED_CONFIG_HEADER.to_string();
@@ -63,8 +58,7 @@ impl SurgeProfile {
                 .filter_map(|p| p.split('=').next().map(|name| name.trim()))
                 .collect::<Vec<_>>();
             let grouped_proxies = group_by_region(&proxies);
-            let (groups, info_proxies) =
-                split_and_merge_groups(grouped_proxies);
+            let (groups, info_proxies) = split_and_merge_groups(grouped_proxies);
             let boslife_group = format!(
                 "BosLife = select, {}",
                 groups
@@ -73,8 +67,7 @@ impl SurgeProfile {
                     .collect::<Vec<_>>()
                     .join(", ")
             );
-            let boslife_info =
-                format!("BosLife Info = select, {}", info_proxies.join(", "));
+            let boslife_info = format!("BosLife Info = select, {}", info_proxies.join(", "));
             if let Some(proxy_group) = self.proxy_group_mut() {
                 if !proxy_group.is_empty() {
                     proxy_group.truncate(1);
@@ -83,10 +76,7 @@ impl SurgeProfile {
                 proxy_group.push(boslife_info);
                 groups.into_iter().for_each(|(region, proxies)| {
                     let name = format!("{} {}", region.icon, region.cn);
-                    proxy_group.push(format!(
-                        "{name} = url-test, {}",
-                        proxies.join(", ")
-                    ));
+                    proxy_group.push(format!("{name} = url-test, {}", proxies.join(", ")));
                 });
                 proxy_group.push("".to_string());
                 proxy_group.push("".to_string());

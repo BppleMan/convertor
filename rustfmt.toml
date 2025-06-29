@@ -1,5 +1,5 @@
 color = "Always"
-max_width = 80
+max_width = 120
 imports_granularity = "Module"
 imports_indent = "Block"
 imports_layout = "Vertical"

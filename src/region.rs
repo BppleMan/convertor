@@ -3,8 +3,7 @@ use serde::{Deserialize, Serialize};
 
 const REGIONS_CONTENT: &str = include_str!("../assets/regions.json");
 
-static REGIONS: Lazy<Vec<Region>> =
-    Lazy::new(|| serde_json::from_str(REGIONS_CONTENT).unwrap());
+static REGIONS: Lazy<Vec<Region>> = Lazy::new(|| serde_json::from_str(REGIONS_CONTENT).unwrap());
 
 #[derive(Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Region {

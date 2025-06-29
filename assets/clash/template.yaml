@@ -2,78 +2,11 @@ port: 7890
 socks-port: 7891
 redir-port: 7892
 allow-lan: true
-mode: Rule
+mode: "rule"
 log-level: info
-external-controller: '0.0.0.0:9090'
-secret: ''
-proxy-providers:
-  convertor:
-    type: http
-    url: "http://127.0.0.1:8001/clash/proxy-provider?raw_url="
-    path: ./proxy_providers/convertor.yaml
-    interval: 3600
-    proxy: DIRECT
-    size-limit: 0
-    format: yaml
-    health-check:
-      enable: true
-      url: https://www.gstatic.com/generate_204
-      interval: 300
-      timeout: 5000
-      lazy: true
-      expected-status: 204
+external-controller: "0.0.0.0:9090"
+secret: ""
+proxies:
+proxy-groups:
 rule-providers:
-  BosLifeSubscription:
-    type: http
-    url: "http://127.0.0.1:8001/clash/rule-set?raw_url="
-    path: ./rule_providers/BosLifeSubscription.yaml
-    interval: 600
-    proxy: DIRECT
-    size-limit: 0
-    format: yaml
-    behavior: classical
-  BosLife:
-    type: http
-    url: "http://127.0.0.1:8001/clash/rule-set?raw_url="
-    path: ./rule_providers/BosLife.yaml
-    interval: 600
-    proxy: DIRECT
-    size-limit: 0
-    format: yaml
-    behavior: classical
-  BosLifeNoResolve:
-    type: http
-    url: "http://127.0.0.1:8001/clash/rule-set?raw_url="
-    path: ./rule_providers/BosLifeNoResolve.yaml
-    interval: 600
-    proxy: DIRECT
-    size-limit: 0
-    format: yaml
-    behavior: classical
-  BosLifeForceRemoteDns:
-    type: http
-    url: "http://127.0.0.1:8001/clash/rule-set?raw_url="
-    path: ./rule_providers/BosLifeForceRemoteDns.yaml
-    interval: 600
-    proxy: DIRECT
-    size-limit: 0
-    format: yaml
-    behavior: classical
-  Direct:
-    type: http
-    url: "http://127.0.0.1:8001/clash/rule-set?raw_url="
-    path: ./rule_providers/Direct.yaml
-    interval: 600
-    proxy: DIRECT
-    size-limit: 0
-    format: yaml
-    behavior: classical
-  DirectNoResolve:
-    type: http
-    url: "http://127.0.0.1:8001/clash/rule-set?raw_url="
-    path: ./rule_providers/DirectNoResolve.yaml
-    interval: 600
-    proxy: DIRECT
-    size-limit: 0
-    format: yaml
-    behavior: classical
+rules:

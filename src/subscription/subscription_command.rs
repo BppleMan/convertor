@@ -1,7 +1,7 @@
 use clap::Subcommand;
 
 #[derive(Debug, Subcommand)]
-pub enum BosLifeCommand {
+pub enum SubscriptionCommand {
     /// 从 boslife 获取订阅地址
     Get,
     /// 从 boslife 更新订阅地址
