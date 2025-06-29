@@ -13,13 +13,10 @@ pub fn encrypt(secret: &[u8], plaintext: &str) -> Result<String> {
     let nonce = ChaCha20Poly1305::generate_nonce(&mut OsRng);
 
     // 加密数据
-    let ciphertext = cipher
-        .encrypt(&nonce, plaintext.as_bytes())
-        .map_err(|e| eyre!(e))?;
+    let ciphertext = cipher.encrypt(&nonce, plaintext.as_bytes()).map_err(|e| eyre!(e))?;
 
     // 返回 base64 编码的 nonce 和密文
-    let result =
-        format!("{}:{}", STANDARD.encode(nonce), STANDARD.encode(ciphertext));
+    let result = format!("{}:{}", STANDARD.encode(nonce), STANDARD.encode(ciphertext));
     Ok(result)
 }
 
@@ -40,11 +37,10 @@ pub fn decrypt(secret: &[u8], encrypted: &str) -> Result<String> {
     let ciphertext = STANDARD.decode(parts[1])?;
 
     // 解密数据
-    let plaintext =
-        match cipher.decrypt(Nonce::from_slice(&nonce), ciphertext.as_ref()) {
-            Ok(plaintext) => plaintext,
-            Err(e) => panic!("{}", e),
-        };
+    let plaintext = match cipher.decrypt(Nonce::from_slice(&nonce), ciphertext.as_ref()) {
+        Ok(plaintext) => plaintext,
+        Err(e) => panic!("{}", e),
+    };
 
     Ok(String::from_utf8(plaintext)?)
 }
