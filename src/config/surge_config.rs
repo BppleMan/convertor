@@ -55,8 +55,8 @@ impl SurgeConfig {
         let find_position = |rst: &RuleSetPolicy| {
             lines
                 .iter()
-                .position(|l| l.contains(rst.name()))
-                .ok_or_eyre(format!("rule set {} not found", rst.name()))
+                .position(|l| l.contains(rst.section_name()))
+                .ok_or_eyre(format!("rule set {} not found", rst.section_name()))
         };
 
         let pos_and_rst = RuleSetPolicy::all()
@@ -67,7 +67,10 @@ impl SurgeConfig {
         for pair in pos_and_rst {
             match pair {
                 Ok((pos, rst)) => {
-                    lines[pos] = Cow::Owned(rst.rule_set(&convertor_url.build_rule_set_url("surge", rst)?));
+                    let rule_set_url = convertor_url.build_rule_set_url("surge", rst)?;
+                    let [comment, rule_set] = Self::build_rule_set(rule_set_url.to_string(), rst);
+                    lines[pos] = Cow::Owned(comment);
+                    lines[pos + 1] = Cow::Owned(rule_set);
                 }
                 Err(e) => error!("{e}"),
             }
@@ -88,5 +91,12 @@ impl SurgeConfig {
 
     pub fn build_managed_config_header(url: impl AsRef<str>) -> String {
         format!("#!MANAGED-CONFIG {} interval=259200 strict=true", url.as_ref())
+    }
+
+    pub fn build_rule_set(url: impl AsRef<str>, policy: &RuleSetPolicy) -> [String; 2] {
+        [
+            policy.comment(),
+            format!(r#"RULE-SET,{},{}"#, url.as_ref(), policy.as_policies(),),
+        ]
     }
 }

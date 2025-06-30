@@ -24,6 +24,13 @@ impl UrlBuilder {
         })
     }
 
+    pub fn sub_host(&self) -> color_eyre::Result<String> {
+        self.service_url
+            .host_str()
+            .and_then(|host| self.service_url.port().map(|port| format!("{}:{}", host, port)))
+            .ok_or_else(|| eyre!("服务 URL 无效"))
+    }
+
     pub fn decode_from_convertor_url(
         convertor_url: impl IntoUrl,
         convertor_secret: impl AsRef<str>,
@@ -59,22 +66,11 @@ impl UrlBuilder {
         let mut url = self.server.clone();
         {
             let mut path = url.path_segments_mut().map_err(|()| eyre!("无法获取路径段"))?;
-            path.push(flag.as_ref());
+            path.push("profile");
         }
         url.query_pairs_mut()
+            .append_pair("flag", flag.as_ref())
             .append_pair("raw_url", &self.encrypted_service_url);
-        Ok(url)
-    }
-
-    pub fn build_proxy_provider_url(&self, flag: impl AsRef<str>) -> color_eyre::Result<Url> {
-        let mut url = self.server.clone();
-        {
-            let mut path = url.path_segments_mut().map_err(|()| eyre!("无法获取路径段"))?;
-            path.push(flag.as_ref()).push("proxy-provider");
-        }
-        url.query_pairs_mut()
-            .append_pair("raw_url", &self.encrypted_service_url);
-        url.query_pairs_mut().append_pair("flag", flag.as_ref());
         Ok(url)
     }
 
@@ -86,12 +82,9 @@ impl UrlBuilder {
             path.push(flag.as_ref()).push("rule-set");
         }
         url.query_pairs_mut()
-            .append_pair("raw_url", &self.encrypted_service_url);
-        if matches!(rule_set_type, RuleSetPolicy::BosLifeSubscription) {
-            url.query_pairs_mut().append_pair("boslife", "true");
-        } else {
-            url.query_pairs_mut().append_pair("policies", rule_set_type.policy());
-        }
+            .append_pair("flag", flag.as_ref())
+            .append_pair("raw_url", &self.encrypted_service_url)
+            .append_pair("policy", rule_set_type.as_str());
         Ok(url)
     }
 

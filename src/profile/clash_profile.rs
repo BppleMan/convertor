@@ -5,18 +5,13 @@ use std::collections::HashSet;
 use std::str::FromStr;
 use tracing::warn;
 
-mod proxy;
-mod proxy_group;
-mod rule;
-mod rule_provider;
-
-use crate::profile::clash_profile::rule::{Rule, RuleType};
-use crate::profile::clash_profile::rule_provider::RuleProvider;
+pub use crate::profile::proxy::*;
+pub use crate::profile::proxy_group::*;
+use crate::profile::rule::{Rule, RuleType};
+use crate::profile::rule_provider::RuleProvider;
 use crate::profile::rule_set_policy::RuleSetPolicy;
 use crate::region::Region;
 use crate::subscription::url_builder::UrlBuilder;
-pub use proxy::*;
-pub use proxy_group::*;
 
 const TEMPLATE_STR: &str = include_str!("../../assets/clash/template.yaml");
 
@@ -48,15 +43,17 @@ impl ClashProfile {
         Ok(serde_yaml::from_str(TEMPLATE_STR)?)
     }
 
-    pub fn generate_profile(
+    pub fn merge(
         &mut self,
         raw_profile: String,
-        sub_host: impl AsRef<str>,
         url_builder: &UrlBuilder,
+        secret: impl AsRef<str>,
     ) -> color_eyre::Result<()> {
         let raw_profile: ClashProfile = serde_yaml::from_str(&raw_profile)?;
+        let sub_host = url_builder.sub_host()?;
         self.proxies = raw_profile.proxies;
         self.rules = raw_profile.rules;
+        self.secret = secret.as_ref().to_string();
         self.optimize_proxies();
         self.optimize_rules(sub_host, url_builder);
         Ok(())
@@ -114,7 +111,7 @@ impl ClashProfile {
                 let rsp = if value.contains(sub_host.as_ref()) {
                     Some(RuleSetPolicy::BosLifeSubscription)
                 } else {
-                    match RuleSetPolicy::from_str(&rule.policies) {
+                    match RuleSetPolicy::from_str(&rule.policy) {
                         Ok(rsp) => Some(rsp),
                         Err(e) => {
                             warn!("{e}");
@@ -151,25 +148,26 @@ impl ClashProfile {
     }
 
     pub fn generate_rule_provider(&self, policy: RuleSetPolicy, sub_host: impl AsRef<str>) -> Option<String> {
-        if let Some(rules) = self.rules.as_ref().filter(|r| !r.is_empty()) {
-            let mut matched_rules = rules
-                .iter()
-                .filter(|rule| {
-                    if matches!(policy, RuleSetPolicy::BosLifeSubscription) {
-                        // BosLifeSubscription 策略只包括机场订阅链接
-                        rule.value.as_ref().map(|v| v.contains(sub_host.as_ref())) == Some(true)
-                    } else {
-                        // 对于其他策略，检查规则的 policies 是否匹配，但不能是 Final 或 Match 类型
-                        rule.policies == policy.policy() && !matches!(rule.rule_type, RuleType::Final | RuleType::Match)
-                    }
-                })
-                .map(|rule| format!(r#"    {}"#, rule.serialize()))
-                .collect::<Vec<_>>();
-            matched_rules.insert(0, "payload:".to_string());
-            Some(matched_rules.join("\n"))
-        } else {
-            None
-        }
+        let Some(rules) = self.rules.as_ref().filter(|r| !r.is_empty()) else {
+            return None;
+        };
+        let mut matched_rules = rules
+            .iter()
+            .filter(|rule| {
+                if matches!(policy, RuleSetPolicy::BosLifeSubscription) {
+                    // BosLifeSubscription 策略只包括机场订阅链接
+                    rule.value.as_ref().map(|v| v.contains(sub_host.as_ref())) == Some(true)
+                } else if !matches!(rule.rule_type, RuleType::Final | RuleType::Match) {
+                    // 对于其他策略，检查规则的 policies 是否匹配，但不能是 Final 或 Match 类型
+                    rule.policy == policy.as_policies()
+                } else {
+                    false
+                }
+            })
+            .map(|rule| format!(r#"    {}"#, rule.serialize()))
+            .collect::<Vec<_>>();
+        matched_rules.insert(0, "payload:".to_string());
+        Some(matched_rules.join("\n"))
     }
 
     pub fn serialize(&self) -> String {

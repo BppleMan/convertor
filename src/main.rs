@@ -8,13 +8,14 @@ use convertor::install_service::install_service;
 use convertor::server::start_server;
 use convertor::subscription::subscription_api::boslife_api::BosLifeApi;
 use convertor::subscription::subscription_service::SubscriptionService;
-use convertor::{base_dir, init};
+use convertor::{base_dir, init_backtrace, init_log};
 use url::Url;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let base_dir = base_dir();
-    init(&base_dir);
+    init_backtrace();
+    init_log(&base_dir);
 
     let cli = ConvertorCli::parse();
     let config = ConvertorConfig::search(&base_dir, cli.config)?;

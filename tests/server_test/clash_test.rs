@@ -12,26 +12,16 @@ pub async fn test_clash_profile() -> color_eyre::Result<()> {
     let url_builder = UrlBuilder::new(
         app_state.convertor_config.server.clone(),
         app_state.convertor_config.secret.clone(),
-        app_state
-            .subscription_api
-            .get_raw_subscription_url()
-            .await?,
+        app_state.subscription_api.get_raw_subscription_url().await?,
     )?;
     let url = url_builder.build_convertor_url("clash")?;
     let request = Request::builder()
-        .uri(format!(
-            "{}?{}",
-            url.path(),
-            url.query().unwrap_or("raw_url=")
-        ))
-        .header("host", app_state.convertor_config.server_host_with_port()?)
+        .uri(format!("{}?{}", url.path(), url.query().unwrap_or("raw_url=")))
+        .header("host", app_state.convertor_config.server_addr()?)
         .method("GET")
         .body(Body::empty())?;
     let response = app.oneshot(request).await?;
-    let body = String::from_utf8_lossy(
-        &response.into_body().collect().await?.to_bytes(),
-    )
-    .into_owned();
+    let body = String::from_utf8_lossy(&response.into_body().collect().await?.to_bytes()).into_owned();
     println!("Clash Profile Response:\n{}", body);
     Ok(())
 }

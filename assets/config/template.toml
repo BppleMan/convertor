@@ -1,0 +1,26 @@
+secret = "bppleman"
+server = "http://127.0.0.1:8001"
+
+[service_config]
+base_url = "https://www.blnew.com"
+prefix_path = "/proxy/"
+
+[service_config.credential]
+username = ""
+password = ""
+
+[service_config.login_api]
+api_path = "passport/auth/login"
+json_path = "$.data.auth_data"
+
+[service_config.get_subscription_api]
+api_path = "user/getSubscribe"
+json_path = "$.data.subscribe_url"
+
+[service_config.reset_subscription_api]
+api_path = "user/resetSecurity"
+json_path = "$.data"
+
+[service_config.get_subscription_logs_api]
+api_path = "user/stat/getSubscribeLog"
+json_path = "$.data"

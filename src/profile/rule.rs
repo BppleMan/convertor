@@ -10,7 +10,7 @@ pub struct Rule {
     pub rule_type: RuleType,
     /// 对于 FINAL 和 MATCH 类型的规则，value 是 None
     pub value: Option<String>,
-    pub policies: String,
+    pub policy: String,
 }
 
 impl Rule {
@@ -18,7 +18,7 @@ impl Rule {
         Self {
             rule_type: RuleType::RuleSet,
             value: Some(rsp.provider_name().to_string()),
-            policies: rsp.policy().to_string(),
+            policy: rsp.as_policies().to_string(),
         }
     }
 
@@ -28,7 +28,7 @@ impl Rule {
         if let Some(value) = &self.value {
             rule.push(value.to_string());
         }
-        rule.push(self.policies.clone());
+        rule.push(self.policy.clone());
         format!(r#"- "{}""#, rule.join(","))
     }
 }
@@ -55,19 +55,25 @@ pub enum RuleType {
     Match,
 }
 
+impl RuleType {
+    pub fn as_str(&self) -> &str {
+        match self {
+            RuleType::Domain => "DOMAIN",
+            RuleType::DomainSuffix => "DOMAIN-SUFFIX",
+            RuleType::DomainKeyword => "DOMAIN-KEYWORD",
+            RuleType::RuleSet => "RULE-SET",
+            RuleType::GeoIP => "GEOIP",
+            RuleType::IpCIDR => "IP-CIDR",
+            RuleType::IpCIDR6 => "IP-CIDR6",
+            RuleType::Final => "FINAL",
+            RuleType::Match => "MATCH",
+        }
+    }
+}
+
 impl Display for RuleType {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            RuleType::Domain => write!(f, "DOMAIN"),
-            RuleType::DomainSuffix => write!(f, "DOMAIN-SUFFIX"),
-            RuleType::DomainKeyword => write!(f, "DOMAIN-KEYWORD"),
-            RuleType::RuleSet => write!(f, "RULE-SET"),
-            RuleType::GeoIP => write!(f, "GEOIP"),
-            RuleType::IpCIDR => write!(f, "IP-CIDR"),
-            RuleType::IpCIDR6 => write!(f, "IP-CIDR6"),
-            RuleType::Final => write!(f, "FINAL"),
-            RuleType::Match => write!(f, "MATCH"),
-        }
+        write!(f, "{}", self.as_str().to_string())
     }
 }
 
@@ -100,7 +106,7 @@ impl Serialize for Rule {
         if let Some(value) = &self.value {
             rule.push(value.to_string());
         }
-        rule.push(self.policies.clone());
+        rule.push(self.policy.clone());
         serializer.serialize_str(&rule.join(","))
     }
 }
@@ -126,26 +132,24 @@ impl<'de> Deserialize<'de> for Rule {
             where
                 E: serde::de::Error,
             {
-                let parts = v.split(',').map(str::trim).collect::<Vec<_>>();
+                let rule_parts = v.splitn(3, ',').map(str::trim).collect::<Vec<_>>();
 
-                if parts.len() <= 1 {
+                if rule_parts.len() < 2 {
                     return Err(E::custom("rule must have at least 2 parts: rule_type and policy"));
                 }
 
-                let rule_type = RuleType::from_str(parts[0]).map_err(E::custom)?;
+                let rule_type = RuleType::from_str(rule_parts[0]).map_err(E::custom)?;
 
-                let (value, policies) = if parts.len() == 2 {
-                    (None, parts[1].to_string())
+                let (value, policy) = if rule_parts.len() == 2 {
+                    (None, rule_parts[1].to_string())
                 } else {
-                    let value = parts[1].to_string();
-                    let policies = parts[2..].iter().map(|s| s.to_string()).collect::<Vec<_>>().join(",");
-                    (Some(value), policies)
+                    (Some(rule_parts[1].to_string()), rule_parts[2].to_string())
                 };
 
                 Ok(Rule {
                     rule_type,
                     value,
-                    policies,
+                    policy,
                 })
             }
         }

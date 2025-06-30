@@ -22,9 +22,13 @@ pub fn base_dir() -> PathBuf {
     base_dir
 }
 
-pub fn init<P: AsRef<Path>>(base_dir: P) {
-    color_eyre::install().unwrap();
+pub fn init_backtrace() {
+    if let Err(e) = color_eyre::install() {
+        eprintln!("Failed to install color_eyre: {}", e);
+    }
+}
 
+pub fn init_log(base_dir: impl AsRef<Path>) {
     let filter = EnvFilter::new("info")
         .add_directive("convertor=trace".parse().unwrap())
         .add_directive("tower_http=trace".parse().unwrap())
@@ -36,7 +40,8 @@ pub fn init<P: AsRef<Path>>(base_dir: P) {
 
     let file_layer = tracing_subscriber::fmt::layer().with_writer(file_appender);
 
-    let stdout_layer = tracing_subscriber::fmt::layer().pretty();
+    let stdout_layer = tracing_subscriber::fmt::layer();
+    // .pretty();
 
     tracing_subscriber::registry()
         .with(filter)

@@ -19,12 +19,7 @@ impl ConvertorConfig {
         if let Some(path) = config_path {
             return Self::from_file(path);
         }
-        let mut current = cwd.as_ref().to_path_buf();
-        assert!(
-            current.is_absolute(),
-            "{}",
-            format!("{} 不是一个绝对路径", current.display())
-        );
+        let mut current = cwd.as_ref().to_path_buf().canonicalize()?;
         assert!(current.is_dir(), "{}", format!("{} 不是一个目录", current.display()));
         loop {
             let file = current.join("convertor.toml");
@@ -50,7 +45,7 @@ impl ConvertorConfig {
         toml::from_str(&content).wrap_err_with(|| format!("解析配置文件失败: {}", path.display()))
     }
 
-    pub fn server_host_with_port(&self) -> color_eyre::Result<String> {
+    pub fn server_addr(&self) -> color_eyre::Result<String> {
         self.server
             .host_str()
             .and_then(|host| self.server.port().map(|port| format!("{}:{}", host, port)))

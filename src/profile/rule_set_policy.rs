@@ -27,7 +27,23 @@ impl RuleSetPolicy {
         ]
     }
 
-    pub fn name(&self) -> &'static str {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            RuleSetPolicy::BosLifeSubscription => "BosLifeSubscription",
+            RuleSetPolicy::BosLife => "BosLife",
+            RuleSetPolicy::BosLifeNoResolve => "BosLifeNoResolve",
+            RuleSetPolicy::BosLifeForceRemoteDns => "BosLifeForceRemoteDns",
+            RuleSetPolicy::Direct => "Direct",
+            RuleSetPolicy::DirectNoResolve => "DirectNoResolve",
+            RuleSetPolicy::DirectForceRemoteDns => "DirectForceRemoteDns",
+        }
+    }
+
+    pub fn provider_name(&self) -> &'static str {
+        self.as_str()
+    }
+
+    pub fn section_name(&self) -> &'static str {
         match self {
             RuleSetPolicy::BosLifeSubscription => "[BosLife Subscription]",
             RuleSetPolicy::BosLife => "[BosLife Policy]",
@@ -42,12 +58,12 @@ impl RuleSetPolicy {
     pub fn comment(&self) -> String {
         format!(
             r#"// Added for {} by convertor/{}"#,
-            self.name(),
+            self.section_name(),
             env!("CARGO_PKG_VERSION")
         )
     }
 
-    pub fn policy(&self) -> &'static str {
+    pub fn as_policies(&self) -> &'static str {
         match self {
             RuleSetPolicy::BosLifeSubscription => "DIRECT",
             RuleSetPolicy::BosLife => "BosLife",
@@ -58,40 +74,6 @@ impl RuleSetPolicy {
             RuleSetPolicy::DirectForceRemoteDns => "DIRECT,force-remote-dns",
         }
     }
-
-    pub fn rule_set(&self, rule_set_url: impl AsRef<str>) -> String {
-        match self {
-            RuleSetPolicy::BosLifeSubscription
-            | RuleSetPolicy::BosLife
-            | RuleSetPolicy::BosLifeNoResolve
-            | RuleSetPolicy::BosLifeForceRemoteDns
-            | RuleSetPolicy::Direct
-            | RuleSetPolicy::DirectNoResolve => format!(
-                r#"RULE-SET,{},{} {}"#,
-                rule_set_url.as_ref(),
-                self.policy(),
-                self.comment()
-            ),
-            RuleSetPolicy::DirectForceRemoteDns => format!(
-                r#"// RULE-SET,{},{} {}"#,
-                rule_set_url.as_ref(),
-                self.policy(),
-                self.comment()
-            ),
-        }
-    }
-
-    pub fn provider_name(&self) -> &'static str {
-        match self {
-            RuleSetPolicy::BosLifeSubscription => "BosLifeSubscription",
-            RuleSetPolicy::BosLife => "BosLife",
-            RuleSetPolicy::BosLifeNoResolve => "BosLifeNoResolve",
-            RuleSetPolicy::BosLifeForceRemoteDns => "BosLifeForceRemoteDns",
-            RuleSetPolicy::Direct => "Direct",
-            RuleSetPolicy::DirectNoResolve => "DirectNoResolve",
-            RuleSetPolicy::DirectForceRemoteDns => "DirectForceRemoteDns",
-        }
-    }
 }
 
 impl FromStr for RuleSetPolicy {
@@ -100,11 +82,11 @@ impl FromStr for RuleSetPolicy {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "BosLife" => Ok(RuleSetPolicy::BosLife),
-            "BosLife,no-resolve" => Ok(RuleSetPolicy::BosLifeNoResolve),
-            "BosLife,force-remote" => Ok(RuleSetPolicy::BosLifeForceRemoteDns),
-            "DIRECT" => Ok(RuleSetPolicy::Direct),
-            "DIRECT,no-resolve" => Ok(RuleSetPolicy::DirectNoResolve),
-            "DIRECT,force-remote" => Ok(RuleSetPolicy::DirectForceRemoteDns),
+            "BosLifeNoResolve" => Ok(RuleSetPolicy::BosLifeNoResolve),
+            "BosLifeForceRemoteDns" => Ok(RuleSetPolicy::BosLifeForceRemoteDns),
+            "Direct" => Ok(RuleSetPolicy::Direct),
+            "DirectNoResolve" => Ok(RuleSetPolicy::DirectNoResolve),
+            "DirectForceRemoteDns" => Ok(RuleSetPolicy::DirectForceRemoteDns),
             _ => Err(eyre!("无法解析的规则集策略: {}", s)),
         }
     }

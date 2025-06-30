@@ -47,10 +47,9 @@ impl SubscriptionService {
         };
         println!("Raw Subscription URL:\n{}", url_builder.build_subscription_url(&flag)?);
         println!("Convertor URL:\n{}", url_builder.build_convertor_url(&flag)?);
-        println!("Proxy Provider:\n{}", url_builder.build_proxy_provider_url(&flag)?);
         for rsp in RuleSetPolicy::all() {
             let rule_set_url = url_builder.build_rule_set_url(&flag, rsp)?;
-            println!("{}:\n{}", rsp.name(), rule_set_url);
+            println!("{}:\n{}", rsp.section_name(), rule_set_url);
         }
         Ok(url_builder)
     }
