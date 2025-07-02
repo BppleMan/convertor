@@ -1,53 +1,52 @@
 use crate::server_test::server_context::ServerContext;
 use axum::routing::get;
 use axum::Router;
+use convertor::client::Client;
 use convertor::config::convertor_config::ConvertorConfig;
-use convertor::server::router;
-use convertor::server::router::AppState;
+use convertor::server::router::{profile, root, rule_set, subscription, AppState};
 use convertor::subscription::subscription_api::boslife_api::BosLifeApi;
 use convertor::subscription::subscription_config::ServiceConfig;
+use convertor::{init_backtrace, init_log};
 use httpmock::Method::{GET, POST};
 use httpmock::MockServer;
-use std::str::FromStr;
 use std::sync::Arc;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer};
 use tower_http::LatencyUnit;
-use tracing::warn;
 
 pub mod server_test;
 
-pub(crate) const TEST_CONFIG_STR: &str = include_str!("../test-assets/convertor.toml");
 pub(crate) const CLASH_MOCK_STR: &str = include_str!("../test-assets/clash/mock.yaml");
 pub(crate) const SURGE_MOCK_STR: &str = include_str!("../test-assets/surge/mock.conf");
 
+pub fn init_test_base_dir() -> std::path::PathBuf {
+    convertor::init_base_dir().parent().unwrap().join(".convertor.test")
+}
+
 pub async fn start_server_with_config(
-    flag: impl AsRef<str>,
+    client: Client,
     config: Option<ConvertorConfig>,
 ) -> color_eyre::Result<ServerContext> {
-    if let Err(e) = color_eyre::install() {
-        warn!("Failed to install color_eyre: {}", e);
-    }
+    let base_dir = init_test_base_dir();
+    init_backtrace();
+    init_log(&base_dir);
 
-    let client = reqwest::Client::new();
     let mut config = config
-        .map(Ok)
-        .unwrap_or_else(|| ConvertorConfig::from_str(TEST_CONFIG_STR))?;
-    let mock_server = start_mock_service_server(flag, &config.service_config).await?;
+        .map(color_eyre::Result::Ok)
+        .unwrap_or_else(|| ConvertorConfig::search(&base_dir, Option::<&str>::None))?;
+    let mock_server = start_mock_service_server(client, &config.service_config).await?;
     config.service_config.base_url = mock_server.base_url();
 
-    let service = BosLifeApi::new(client, config.service_config.clone());
+    let service = BosLifeApi::new(&base_dir, reqwest::Client::new(), config.service_config.clone());
 
     let app_state = Arc::new(AppState {
         convertor_config: config,
         subscription_api: service,
     });
     let app: Router = Router::new()
-        .route("/", get(router::root))
-        .route("/surge", get(router::surge::profile))
-        .route("/surge/rule-set", get(router::surge::rule_set))
-        .route("/clash", get(router::clash::profile))
-        .route("/clash/rule-set", get(router::clash::rule_set))
-        .route("/subscription_log", get(router::subscription::subscription_logs))
+        .route("/", get(root))
+        .route("/profile", get(profile))
+        .route("/rule-set", get(rule_set))
+        .route("/sub-log", get(subscription::subscription_logs))
         .with_state(app_state.clone())
         .layer(
             TraceLayer::new_for_http()
@@ -60,22 +59,21 @@ pub async fn start_server_with_config(
                 ),
         );
 
-    Ok(ServerContext { app, app_state })
+    Ok(ServerContext {
+        app,
+        app_state,
+        base_dir,
+    })
 }
 
-pub async fn start_server(flag: impl AsRef<str>) -> color_eyre::Result<ServerContext> {
-    start_server_with_config(flag, None).await
+pub async fn start_server(client: Client) -> color_eyre::Result<ServerContext> {
+    start_server_with_config(client, None).await
 }
 
-pub async fn start_mock_service_server(
-    flag: impl AsRef<str>,
-    config: &ServiceConfig,
-) -> color_eyre::Result<MockServer> {
-    if let Err(e) = color_eyre::install() {
-        warn!("Failed to install color_eyre: {}", e);
-    }
-
-    let flag = flag.as_ref();
+pub async fn start_mock_service_server(client: Client, config: &ServiceConfig) -> color_eyre::Result<MockServer> {
+    let base_dir = init_test_base_dir();
+    init_backtrace();
+    init_log(&base_dir);
 
     let mock_server = MockServer::start_async().await;
     mock_server
@@ -111,15 +109,11 @@ pub async fn start_mock_service_server(
         .mock_async(|when, then| {
             when.method(GET)
                 .path("/subscription")
-                .query_param("flag", flag)
+                .query_param("flag", client.as_str())
                 .query_param("token", "bppleman");
-            let body = if flag == "surge" {
-                SURGE_MOCK_STR
-            } else if flag == "clash" {
-                CLASH_MOCK_STR
-            } else {
-                warn!("Unknown flag: {}", flag);
-                return;
+            let body = match client {
+                Client::Surge => SURGE_MOCK_STR,
+                Client::Clash => CLASH_MOCK_STR,
             };
             then.status(200)
                 .body(body)

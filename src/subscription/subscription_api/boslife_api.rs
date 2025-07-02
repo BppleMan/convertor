@@ -1,43 +1,50 @@
+use crate::cache::Cache;
+use crate::client::Client;
 use crate::subscription::subscription_api::ServiceApi;
 use crate::subscription::subscription_config::ServiceConfig;
 use crate::subscription::subscription_log::SubscriptionLog;
-use moka::future::Cache;
-use reqwest::{Client, Method, Request, Url};
+use moka::future::Cache as MokaCache;
+use reqwest::{Method, Request, Url};
+use std::path::Path;
 
 #[derive(Clone)]
 pub struct BosLifeApi {
     pub config: ServiceConfig,
-    pub client: Client,
-    pub cached_string: Cache<String, String>,
-    pub cached_raw_subscription_url: Cache<String, Url>,
-    pub cached_subscription_logs: Cache<String, Vec<SubscriptionLog>>,
+    pub client: reqwest::Client,
+    pub cached_file: Cache<Url, String>,
+    pub cached_string: MokaCache<String, String>,
+    pub cached_raw_subscription_url: MokaCache<String, Url>,
+    pub cached_subscription_logs: MokaCache<String, Vec<SubscriptionLog>>,
 }
 
 impl BosLifeApi {
-    pub fn new(client: Client, config: ServiceConfig) -> Self {
-        let cached_string = Cache::builder()
+    pub fn new(base_dir: impl AsRef<Path>, client: reqwest::Client, config: ServiceConfig) -> Self {
+        let duration = std::time::Duration::from_secs(60 * 10); // 10 minutes
+        let cached_file = Cache::new(10, base_dir, duration.clone());
+        let cached_string = MokaCache::builder()
             .max_capacity(10)
-            .time_to_live(std::time::Duration::from_secs(60 * 10)) // 10 minutes
+            .time_to_live(duration.clone()) // 10 minutes
             .build();
-        let cached_raw_subscription_url = Cache::builder()
+        let cached_raw_subscription_url = MokaCache::builder()
             .max_capacity(10)
-            .time_to_live(std::time::Duration::from_secs(60 * 10)) // 10 minutes
+            .time_to_live(duration.clone()) // 10 minutes
             .build();
-        let cached_subscription_logs = Cache::builder()
+        let cached_subscription_logs = MokaCache::builder()
             .max_capacity(10)
-            .time_to_live(std::time::Duration::from_secs(60 * 10)) // 10 minutes
+            .time_to_live(duration.clone()) // 10 minutes
             .build();
         Self {
             config,
             client,
+            cached_file,
             cached_string,
             cached_raw_subscription_url,
             cached_subscription_logs,
         }
     }
 
-    pub async fn get_raw_profile(&self, url: Url) -> color_eyre::Result<String> {
-        ServiceApi::get_raw_profile(self, url).await
+    pub async fn get_raw_profile(&self, url: Url, client: Client) -> color_eyre::Result<String> {
+        ServiceApi::get_raw_profile(self, url, client).await
     }
 
     pub async fn get_raw_subscription_url(&self) -> color_eyre::Result<Url> {
@@ -58,7 +65,7 @@ impl ServiceApi for BosLifeApi {
         &self.config
     }
 
-    fn client(&self) -> &Client {
+    fn client(&self) -> &reqwest::Client {
         &self.client
     }
 
@@ -101,19 +108,19 @@ impl ServiceApi for BosLifeApi {
             .build()?)
     }
 
-    fn cached_auth_token(&self) -> &Cache<String, String> {
+    fn cached_auth_token(&self) -> &MokaCache<String, String> {
         &self.cached_string
     }
 
-    fn cached_profile(&self) -> &Cache<String, String> {
-        &self.cached_string
+    fn cached_profile(&self) -> &Cache<Url, String> {
+        &self.cached_file
     }
 
-    fn cached_raw_subscription_url(&self) -> &Cache<String, Url> {
+    fn cached_raw_subscription_url(&self) -> &MokaCache<String, Url> {
         &self.cached_raw_subscription_url
     }
 
-    fn cached_subscription_logs(&self) -> &Cache<String, Vec<SubscriptionLog>> {
+    fn cached_subscription_logs(&self) -> &MokaCache<String, Vec<SubscriptionLog>> {
         &self.cached_subscription_logs
     }
 }

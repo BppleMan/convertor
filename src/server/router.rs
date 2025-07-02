@@ -1,6 +1,7 @@
+use crate::client::Client;
 use crate::config::convertor_config::ConvertorConfig;
 use crate::error::AppError;
-use crate::profile::rule_set_policy::RuleSetPolicy;
+use crate::profile::core::policy::Policy;
 use crate::subscription::subscription_api::boslife_api::BosLifeApi;
 use crate::subscription::url_builder::UrlBuilder;
 use axum::body::Body;
@@ -10,11 +11,11 @@ use axum::routing::get;
 use axum::Router;
 use color_eyre::eyre::eyre;
 use color_eyre::Result;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::sync::Arc;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer};
 use tower_http::LatencyUnit;
-use tracing::instrument;
+use tracing::{info, instrument, warn};
 
 pub mod clash;
 pub mod surge;
@@ -25,12 +26,12 @@ pub struct AppState {
     pub subscription_api: BosLifeApi,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct ProfileQuery {
-    pub flag: String,
+    pub client: Client,
     pub raw_url: String,
     #[serde(default)]
-    pub policy: Option<RuleSetPolicy>,
+    pub policy: Option<Policy>,
 }
 
 pub fn router(app_state: AppState) -> Router {
@@ -64,15 +65,24 @@ pub async fn profile(
     Query(query): Query<ProfileQuery>,
     request: Request<Body>,
 ) -> Result<String, AppError> {
+    info!("请求配置文件");
+    info!("从 request 中解码 url_builder");
     let url_builder = UrlBuilder::decode_from_request(&request, &state.convertor_config.secret)?;
-    let raw_subscription_url = url_builder.build_subscription_url(&query.flag)?;
-    let raw_profile = state.subscription_api.get_raw_profile(raw_subscription_url).await?;
-    match query.flag.as_str() {
-        "surge" => surge::profile_impl(state, url_builder, raw_profile).await,
-        "clash" => clash::profile_impl(state, url_builder, raw_profile).await,
-        _ => Err(eyre!("未知的 flag: {}", query.flag).into()),
-    }
-    .map_err(Into::into)
+    info!("构建订阅 url");
+    let raw_subscription_url = url_builder.build_subscription_url(query.client)?;
+    info!("获取原始订阅内容");
+    let raw_profile = state
+        .subscription_api
+        .get_raw_profile(raw_subscription_url, query.client)
+        .await?;
+    info!("整理订阅内容");
+    let start = std::time::Instant::now();
+    let profile = match query.client {
+        Client::Surge => surge::profile_impl(state, url_builder, raw_profile).await,
+        Client::Clash => clash::profile_impl(state, url_builder, raw_profile).await,
+    }?;
+    warn!("整理订阅内容耗时: {}ms", start.elapsed().as_millis());
+    Ok(profile)
 }
 
 #[instrument(skip(state))]
@@ -82,12 +92,15 @@ pub async fn rule_set(
     request: Request<Body>,
 ) -> Result<String, AppError> {
     let url_builder = UrlBuilder::decode_from_request(&request, &state.convertor_config.secret)?;
-    let raw_subscription_url = url_builder.build_subscription_url(&query.flag)?;
-    let raw_profile = state.subscription_api.get_raw_profile(raw_subscription_url).await?;
-    match query.flag.as_str() {
-        "surge" => surge::rule_set_impl(state, url_builder, raw_profile, query.policy.clone()).await,
-        "clash" => clash::rule_set_impl(state, url_builder, raw_profile, query.policy.clone()).await,
-        _ => Err(eyre!("未知的 flag: {}", query.flag).into()),
+    let raw_subscription_url = url_builder.build_subscription_url(query.client)?;
+    let raw_profile = state
+        .subscription_api
+        .get_raw_profile(raw_subscription_url, query.client)
+        .await?;
+    match (query.client, query.policy) {
+        (Client::Surge, Some(policy)) => surge::rule_set_impl(state, url_builder, raw_profile, policy).await,
+        (Client::Clash, Some(policy)) => clash::rule_set_impl(state, url_builder, raw_profile, policy).await,
+        _ => Err(eyre!("错误的 client 或 policy 参数")),
     }
     .map_err(Into::into)
 }

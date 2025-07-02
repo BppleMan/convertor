@@ -1,7 +1,9 @@
+use crate::cache::{Cache, CacheKey};
+use crate::client::Client;
 use crate::subscription::subscription_config::ServiceConfig;
 use crate::subscription::subscription_log::SubscriptionLog;
 use color_eyre::eyre::{eyre, WrapErr};
-use moka::future::Cache;
+use moka::future::Cache as MokaCache;
 use reqwest::{Method, Request, Response, Url};
 
 pub mod boslife_api;
@@ -25,13 +27,13 @@ pub(crate) trait ServiceApi {
 
     fn get_subscription_logs_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request>;
 
-    fn cached_auth_token(&self) -> &Cache<String, String>;
+    fn cached_auth_token(&self) -> &MokaCache<String, String>;
 
-    fn cached_profile(&self) -> &Cache<String, String>;
+    fn cached_profile(&self) -> &Cache<Url, String>;
 
-    fn cached_raw_subscription_url(&self) -> &Cache<String, Url>;
+    fn cached_raw_subscription_url(&self) -> &MokaCache<String, Url>;
 
-    fn cached_subscription_logs(&self) -> &Cache<String, Vec<SubscriptionLog>>;
+    fn cached_subscription_logs(&self) -> &MokaCache<String, Vec<SubscriptionLog>>;
 
     async fn execute(&self, mut request: Request) -> color_eyre::Result<Response> {
         request
@@ -59,9 +61,10 @@ pub(crate) trait ServiceApi {
             .map_err(|e| eyre!(e))
     }
 
-    async fn get_raw_profile(&self, url: Url) -> color_eyre::Result<String> {
+    async fn get_raw_profile(&self, url: Url, client: Client) -> color_eyre::Result<String> {
+        let key = CacheKey::new(CACHED_PROFILE_KEY, url.clone(), client);
         self.cached_profile()
-            .try_get_with(format!("{}_{}", CACHED_PROFILE_KEY, url.as_str()), async {
+            .try_get_with(key, async {
                 let request = self.client().request(Method::GET, url).build()?;
                 let response = self.execute(request).await?;
                 if response.status().is_success() {

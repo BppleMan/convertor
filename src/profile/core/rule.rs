@@ -1,35 +1,39 @@
-use crate::profile::rule_set_policy::RuleSetPolicy;
+use crate::profile::core::policy::Policy;
+use crate::profile::renderer::clash_renderer::ClashRenderer;
+use crate::profile::renderer::surge_renderer::SurgeRenderer;
 use color_eyre::eyre::eyre;
 use color_eyre::Report;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
+use url::Url;
 
 #[derive(Debug, Clone)]
 pub struct Rule {
     pub rule_type: RuleType,
     /// 对于 FINAL 和 MATCH 类型的规则，value 是 None
     pub value: Option<String>,
-    pub policy: String,
+    pub policy: Policy,
+    pub comment: Option<String>,
 }
 
 impl Rule {
-    pub fn new_rule_set(rsp: RuleSetPolicy) -> Self {
+    pub fn surge_rule_set(policy: &Policy, url: Url) -> Self {
         Self {
             rule_type: RuleType::RuleSet,
-            value: Some(rsp.provider_name().to_string()),
-            policy: rsp.as_policies().to_string(),
+            value: Some(url.to_string()),
+            policy: policy.clone(),
+            comment: Some(SurgeRenderer::render_policy_for_comment(policy)),
         }
     }
 
-    pub fn serialize(&self) -> String {
-        let rule_type = self.rule_type.to_string();
-        let mut rule = vec![rule_type];
-        if let Some(value) = &self.value {
-            rule.push(value.to_string());
+    pub fn clash_rule_set(policy: &Policy) -> Self {
+        Self {
+            rule_type: RuleType::RuleSet,
+            value: Some(ClashRenderer::render_policy_for_provider(&policy)),
+            policy: policy.clone(),
+            comment: None,
         }
-        rule.push(self.policy.clone());
-        format!(r#"- "{}""#, rule.join(","))
     }
 }
 
@@ -86,28 +90,13 @@ impl FromStr for RuleType {
             "DOMAIN-SUFFIX" => Ok(RuleType::DomainSuffix),
             "DOMAIN-KEYWORD" => Ok(RuleType::DomainKeyword),
             "RULE-SET" => Ok(RuleType::RuleSet),
-            "GEOIP" => Ok(RuleType::GeoIP),
             "IP-CIDR" => Ok(RuleType::IpCIDR),
             "IP-CIDR6" => Ok(RuleType::IpCIDR6),
+            "GEOIP" => Ok(RuleType::GeoIP),
             "FINAL" => Ok(RuleType::Final),
             "MATCH" => Ok(RuleType::Match),
             _ => Err(eyre!("Unknown rule type: {}", s)),
         }
-    }
-}
-
-impl Serialize for Rule {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let rule_type = self.rule_type.to_string();
-        let mut rule = vec![rule_type];
-        if let Some(value) = &self.value {
-            rule.push(value.to_string());
-        }
-        rule.push(self.policy.clone());
-        serializer.serialize_str(&rule.join(","))
     }
 }
 
@@ -121,11 +110,8 @@ impl<'de> Deserialize<'de> for Rule {
         impl<'de> serde::de::Visitor<'de> for RuleVisitor {
             type Value = Rule;
 
-            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-                write!(
-                    formatter,
-                    "a comma-separated rule string like RULE_TYPE,value,policy1,..."
-                )
+            fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
+                write!(formatter, "规则语法应该形如: 规则类型[,值],策略名称[,选项]")
             }
 
             fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
@@ -135,21 +121,28 @@ impl<'de> Deserialize<'de> for Rule {
                 let rule_parts = v.splitn(3, ',').map(str::trim).collect::<Vec<_>>();
 
                 if rule_parts.len() < 2 {
-                    return Err(E::custom("rule must have at least 2 parts: rule_type and policy"));
+                    return Err(E::custom("规则语法应该形如: 规则类型[,值],策略名称[,选项]"));
                 }
 
                 let rule_type = RuleType::from_str(rule_parts[0]).map_err(E::custom)?;
 
                 let (value, policy) = if rule_parts.len() == 2 {
-                    (None, rule_parts[1].to_string())
+                    (
+                        None,
+                        Policy::deserialize(serde::de::value::StrDeserializer::new(rule_parts[1]))?,
+                    )
                 } else {
-                    (Some(rule_parts[1].to_string()), rule_parts[2].to_string())
+                    (
+                        Some(rule_parts[1].to_string()),
+                        Policy::deserialize(serde::de::value::StrDeserializer::new(rule_parts[2]))?,
+                    )
                 };
 
                 Ok(Rule {
                     rule_type,
                     value,
                     policy,
+                    comment: None,
                 })
             }
         }

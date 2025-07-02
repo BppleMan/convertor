@@ -1,37 +1,37 @@
-use crate::profile::rule_set_policy::RuleSetPolicy;
+use crate::profile::core::policy::Policy;
+use crate::profile::renderer::surge_renderer::SurgeRenderer;
 use crate::profile::surge_profile::SurgeProfile;
 use crate::server::router::AppState;
 use crate::subscription::url_builder::UrlBuilder;
 use color_eyre::eyre::eyre;
 use color_eyre::Result;
 use std::sync::Arc;
+use tracing::instrument;
 
+#[instrument(skip(_state, url_builder, raw_profile))]
 pub(super) async fn profile_impl(
     _state: Arc<AppState>,
     url_builder: UrlBuilder,
     raw_profile: String,
 ) -> Result<String> {
-    let mut profile = SurgeProfile::new(raw_profile);
+    let mut profile = SurgeProfile::parse(raw_profile)?;
     profile.optimize(url_builder)?;
-    Ok(profile.to_string())
+    let output = SurgeRenderer::render_profile(&profile)?;
+    Ok(output)
 }
 
 pub(super) async fn rule_set_impl(
     _state: Arc<AppState>,
     url_builder: UrlBuilder,
     raw_profile: String,
-    policy: Option<RuleSetPolicy>,
+    policy: Policy,
 ) -> Result<String> {
-    let raw_profile = SurgeProfile::new(raw_profile);
+    let profile = SurgeProfile::parse(raw_profile)?;
     let sub_host = url_builder
         .service_url
         .host_str()
         .ok_or(eyre!("错误的订阅 URL, 未能解析出 host"))?;
-    policy
-        .map(|policy| {
-            raw_profile
-                .generate_rule_provider(policy, sub_host)
-                .ok_or_else(|| eyre!("未能找到匹配策略的规则以生成 Rule Provider"))
-        })
-        .ok_or_else(|| eyre!("未知的查询参数: 缺少 policies 或 boslife 标志"))?
+    let rules = profile.rules_for_provider(policy, sub_host);
+    let output = SurgeRenderer::render_rules(&rules)?;
+    Ok(output)
 }

@@ -1,46 +1,30 @@
-use std::fmt::{Display, Formatter};
-
+use crate::client::Client;
 use crate::config::surge_config::SurgeConfig;
-use crate::profile::clash_profile::ProxyGroupType;
-use crate::profile::rule::RuleType;
-use crate::profile::rule_set_policy::RuleSetPolicy;
-use crate::region::Region;
+use crate::profile::core::policy::Policy;
+use crate::profile::core::proxy::Proxy;
+use crate::profile::core::proxy_group::{ProxyGroup, ProxyGroupType};
+use crate::profile::core::rule::{Rule, RuleType};
+use crate::profile::core::{extract_policies, group_by_region};
+use crate::profile::parser::surge_parser::SurgeParser;
 use crate::subscription::url_builder::UrlBuilder;
 use indexmap::IndexMap;
-use once_cell::sync::Lazy;
-use regex::Regex;
-
-static SECTION_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"^\[[^\[\]]+]$"#).unwrap());
-
-const MANAGED_CONFIG_HEADER: &str = "MANAGED-CONFIG";
+use tracing::instrument;
 
 #[derive(Debug)]
 pub struct SurgeProfile {
-    sections: IndexMap<String, Vec<String>>,
+    pub header: String,
+    pub general: Vec<String>,
+    pub proxies: Vec<Proxy>,
+    pub proxy_groups: Vec<ProxyGroup>,
+    pub rules: Vec<Rule>,
+    pub url_rewrite: Vec<String>,
+    pub misc: IndexMap<String, Vec<String>>,
 }
 
 impl SurgeProfile {
-    pub fn new(content: String) -> Self {
-        let mut content = content.lines().map(|s| s.to_string()).collect::<Vec<String>>();
-        let mut sections = IndexMap::new();
-
-        let mut section = MANAGED_CONFIG_HEADER.to_string();
-        let mut cursor = 0;
-        while cursor < content.len() {
-            let line = &content[cursor];
-            if SECTION_REGEX.is_match(line) {
-                let new_section = line.to_string();
-                sections.insert(
-                    std::mem::replace(&mut section, new_section),
-                    content.drain(..cursor).collect::<Vec<_>>(),
-                );
-                cursor = 0;
-            }
-            cursor += 1;
-        }
-        sections.insert(section, content);
-
-        Self { sections }
+    #[instrument(skip())]
+    pub fn parse(content: String) -> color_eyre::Result<Self> {
+        SurgeParser::parse_profile(content)
     }
 
     pub fn optimize(&mut self, url_builder: UrlBuilder) -> color_eyre::Result<()> {
@@ -50,156 +34,62 @@ impl SurgeProfile {
     }
 
     fn replace_header(&mut self, url_builder: UrlBuilder) -> color_eyre::Result<()> {
-        let header = &mut self.sections[MANAGED_CONFIG_HEADER];
-        let url = url_builder.build_convertor_url("surge")?;
-        header[0] = SurgeConfig::build_managed_config_header(url);
+        let url = url_builder.build_convertor_url(Client::Surge)?;
+        self.header = SurgeConfig::build_managed_config_header(url);
         Ok(())
     }
 
     fn optimize_proxies(&mut self) {
-        let Some(proxies) = self.proxies() else {
+        if self.proxies.is_empty() {
             return;
         };
-        let proxies = proxies
+        let (region_map, infos) = group_by_region(&self.proxies);
+        // 一个包含了所有地区组的大型代理组
+        let region_list = region_map.keys().map(|r| r.policy_name()).collect::<Vec<_>>();
+        let policies = extract_policies(&self.rules);
+        let policy_groups = policies
             .iter()
-            .skip(1)
-            .filter(|p| !p.is_empty())
-            .filter_map(|p| p.split_once('=').map(|(name, _)| name.trim()))
+            .map(|policy| {
+                let name = policy.name.clone();
+                ProxyGroup::new(name, ProxyGroupType::Select, region_list.clone())
+            })
             .collect::<Vec<_>>();
-        let (region_map, infos) = group_by_region(&proxies);
-        let boslife_group = Self::build_proxy_group(
-            "BosLife",
+        let subscription_info = ProxyGroup::new(
+            "Subscription Info".to_string(),
             ProxyGroupType::Select,
-            region_map
-                .keys()
-                .map(|r| format!("{} {}", r.icon, r.cn))
-                .collect::<Vec<_>>(),
+            infos.into_iter().map(|p| p.name.to_string()).collect::<Vec<_>>(),
         );
-        let boslife_info = Self::build_proxy_group(
-            "BosLife Info",
-            ProxyGroupType::Select,
-            infos
-                .iter()
-                .filter_map(|p| p.split_once('=').map(|(name, _)| name.trim()))
-                .collect::<Vec<_>>(),
-        );
+        // 每个地区的地区代理组
         let region_groups = region_map
             .into_iter()
             .map(|(region, proxies)| {
                 let name = format!("{} {}", region.icon, region.cn);
-                Self::build_proxy_group(
+                ProxyGroup::new(
                     name,
-                    ProxyGroupType::UrlTest,
-                    proxies
-                        .iter()
-                        .filter_map(|p| p.split_once('=').map(|(name, _)| name.trim()))
-                        .collect::<Vec<_>>(),
+                    ProxyGroupType::Smart,
+                    proxies.into_iter().map(|p| p.name.to_string()).collect::<Vec<_>>(),
                 )
             })
             .collect::<Vec<_>>();
-        if let Some(section) = self.proxy_groups_mut() {
-            section.truncate(1);
-            section.push(boslife_group);
-            section.push(boslife_info);
-            section.extend(region_groups);
-            section.push("".to_string());
-            section.push("".to_string());
-        }
+        self.proxy_groups.clear();
+        self.proxy_groups.extend(policy_groups);
+        self.proxy_groups.push(subscription_info);
+        self.proxy_groups.extend(region_groups);
     }
 
-    pub fn generate_rule_provider(&self, policy: RuleSetPolicy, sub_host: impl AsRef<str>) -> Option<String> {
-        let Some(rules) = self.rules().filter(|r| !r.is_empty()) else {
-            return None;
-        };
-        let mut matched_rules = rules
+    pub fn rules_for_provider(&self, policy: Policy, sub_host: impl AsRef<str>) -> Vec<Rule> {
+        self.rules
             .iter()
             .filter(|rule| {
-                let rule_parts = rule.splitn(3, ',').map(str::trim).collect::<Vec<_>>();
-                if rule_parts.len() < 2 {
-                    return false;
-                }
-                let rule_type = rule_parts[0];
-                let (value, policies) = if rule_parts.len() == 2 {
-                    (None, rule_parts[1])
-                } else {
-                    (Some(rule_parts[1]), rule_parts[2])
-                };
-                if matches!(policy, RuleSetPolicy::BosLifeSubscription) {
-                    value.map(|v| v.contains(sub_host.as_ref())) == Some(true)
-                } else if rule_type != RuleType::Final.as_str()
-                    && rule_type != RuleType::GeoIP.as_str()
-                    && rule_type != RuleType::Match.as_str()
-                {
-                    policies == policy.as_policies()
+                if policy == Policy::subscription_policy() {
+                    rule.value.as_ref().map(|v| v.contains(sub_host.as_ref())) == Some(true)
+                } else if !matches!(rule.rule_type, RuleType::Final | RuleType::GeoIP | RuleType::Match) {
+                    policy == rule.policy
                 } else {
                     false
                 }
             })
-            .map(|rule| rule.to_string())
-            .collect::<Vec<_>>();
-        matched_rules.insert(0, format!("// {}", policy.section_name()));
-        Some(matched_rules.join("\n"))
+            .cloned()
+            .collect::<Vec<_>>()
     }
-
-    fn proxies(&self) -> Option<&Vec<String>> {
-        self.sections.get("[Proxy]")
-    }
-
-    fn proxy_groups_mut(&mut self) -> Option<&mut Vec<String>> {
-        self.sections.get_mut("[Proxy Group]")
-    }
-
-    fn rules(&self) -> Option<&Vec<String>> {
-        self.sections.get("[Rule]")
-    }
-
-    fn build_proxy_group<T, I>(name: impl AsRef<str>, r#type: ProxyGroupType, proxies: I) -> String
-    where
-        T: AsRef<str>,
-        I: IntoIterator<Item = T>,
-    {
-        format!(
-            "{} = {}, {}",
-            name.as_ref(),
-            r#type.serialize(),
-            proxies
-                .into_iter()
-                .map(|p| p.as_ref().to_string())
-                .collect::<Vec<_>>()
-                .join(", ")
-        )
-    }
-}
-
-impl Display for SurgeProfile {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            self.sections
-                .values()
-                .map(|section| section.join("\n"))
-                .collect::<Vec<_>>()
-                .join("\n")
-        )
-    }
-}
-
-pub fn group_by_region<'a>(proxies: &'a [&str]) -> (IndexMap<&'static Region, Vec<&'a str>>, Vec<&'a str>) {
-    let match_number = Regex::new(r"^\d+$").unwrap();
-    proxies
-        .iter()
-        .fold((IndexMap::new(), Vec::new()), |(mut regions, mut infos), proxy| {
-            let Some((name, _)) = proxy.split_once('=') else {
-                infos.push(proxy);
-                return (regions, infos);
-            };
-            let mut parts = name.split(' ').collect::<Vec<_>>();
-            parts.retain(|part| match_number.is_match(part));
-            match parts.iter().find_map(Region::detect) {
-                Some(region) => regions.entry(region).or_default().push(proxy),
-                None => infos.push(proxy),
-            }
-            (regions, infos)
-        })
 }

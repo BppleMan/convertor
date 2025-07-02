@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use convertor::client::Client;
 use convertor::subscription::subscription_command::SubscriptionCommand;
 use std::net::SocketAddrV4;
 use std::path::PathBuf;
@@ -31,8 +32,7 @@ pub enum ConvertorCommand {
         server: Option<String>,
 
         /// 构造适用于 surge/clash 的订阅地址
-        #[arg()]
-        flag: String,
+        client: Client,
     },
 
     /// 安装服务

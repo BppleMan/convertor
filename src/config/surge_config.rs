@@ -1,11 +1,14 @@
-use crate::profile::rule_set_policy::RuleSetPolicy;
+use crate::client::Client;
+use crate::profile::core::policy::Policy;
+use crate::profile::core::rule::Rule;
+use crate::profile::renderer::surge_renderer::SurgeRenderer;
 use crate::subscription::url_builder::UrlBuilder;
 use color_eyre::eyre::OptionExt;
 use color_eyre::Result;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
-use tracing::error;
+use tracing::warn;
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct SurgeConfig {
@@ -38,41 +41,40 @@ impl SurgeConfig {
 
     pub async fn update_surge_config(&self, convertor_url: &UrlBuilder) -> Result<()> {
         // update BosLife.conf subscription
-        let manager_config_header = Self::build_managed_config_header(convertor_url.build_subscription_url("surge")?);
+        let manager_config_header =
+            Self::build_managed_config_header(convertor_url.build_subscription_url(Client::Surge)?);
         Self::update_conf(&self.default_config_path, &manager_config_header).await?;
 
         // update surge.conf subscription
-        let surge_conf = Self::build_managed_config_header(convertor_url.build_convertor_url("surge")?);
+        let surge_conf = Self::build_managed_config_header(convertor_url.build_convertor_url(Client::Surge)?);
         Self::update_conf(&self.main_config_path, &surge_conf).await?;
 
         Ok(())
     }
 
-    pub async fn update_surge_rule_set(&self, convertor_url: &UrlBuilder) -> Result<()> {
+    pub async fn update_surge_rule_set(&self, url_builder: &UrlBuilder, policies: &[Policy]) -> Result<()> {
         let content = tokio::fs::read_to_string(&self.rules_config_path).await?;
         let mut lines = content.lines().map(Cow::Borrowed).collect::<Vec<_>>();
 
-        let find_position = |rst: &RuleSetPolicy| {
-            lines
-                .iter()
-                .position(|l| l.contains(rst.section_name()))
-                .ok_or_eyre(format!("rule set {} not found", rst.section_name()))
-        };
-
-        let pos_and_rst = RuleSetPolicy::all()
+        let position_of_policy = policies
             .iter()
-            .map(|rst| find_position(rst).map(|pos| (pos, rst)))
+            .map(|policy| {
+                let comment = SurgeRenderer::render_policy_for_comment(policy);
+                let pos = lines.iter().position(|l| l.contains(&comment));
+                (pos, policy)
+            })
             .collect::<Vec<_>>();
 
-        for pair in pos_and_rst {
-            match pair {
-                Ok((pos, rst)) => {
-                    let rule_set_url = convertor_url.build_rule_set_url("surge", rst)?;
-                    let [comment, rule_set] = Self::build_rule_set(rule_set_url.to_string(), rst);
-                    lines[pos] = Cow::Owned(comment);
-                    lines[pos + 1] = Cow::Owned(rule_set);
+        for (pos, policy) in position_of_policy {
+            match pos {
+                Some(pos) => {
+                    let rule_set_url = url_builder.build_rule_set_url(Client::Surge, policy)?;
+                    let rule_set = Rule::surge_rule_set(policy, rule_set_url);
+                    lines[pos] = Cow::Owned(rule_set.comment.clone().expect("此处必须有注释"));
+                    let rule = SurgeRenderer::render_rule_set(&rule_set)?;
+                    lines[pos + 1] = Cow::Owned(rule);
                 }
-                Err(e) => error!("{e}"),
+                None => warn!("未找到 {:?} 的位置", policy),
             }
         }
         let content = lines.join("\n");
@@ -91,12 +93,5 @@ impl SurgeConfig {
 
     pub fn build_managed_config_header(url: impl AsRef<str>) -> String {
         format!("#!MANAGED-CONFIG {} interval=259200 strict=true", url.as_ref())
-    }
-
-    pub fn build_rule_set(url: impl AsRef<str>, policy: &RuleSetPolicy) -> [String; 2] {
-        [
-            policy.comment(),
-            format!(r#"RULE-SET,{},{}"#, url.as_ref(), policy.as_policies(),),
-        ]
     }
 }

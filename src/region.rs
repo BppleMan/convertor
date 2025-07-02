@@ -14,6 +14,10 @@ pub struct Region {
 }
 
 impl Region {
+    pub fn policy_name(&self) -> String {
+        format!("{} {}", self.icon, self.cn)
+    }
+
     pub fn detect(pattern: impl AsRef<str>) -> Option<&'static Self> {
         let pattern = pattern.as_ref();
         REGIONS.iter().find(|r| {

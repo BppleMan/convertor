@@ -31,7 +31,7 @@ impl ConvertorConfig {
             }
         }
         let home_dir = std::env::var("HOME")?;
-        let convertor_toml = Path::new(&home_dir).join(".convertor").join("convertor.toml");
+        let convertor_toml = Path::new(&home_dir).join("../../.convertor.dev").join("convertor.toml");
         if convertor_toml.exists() {
             return Self::from_file(convertor_toml);
         }
@@ -42,7 +42,9 @@ impl ConvertorConfig {
         let path = path.as_ref();
         assert!(path.is_file(), "{}", format!("{} 不是一个文件", path.display()));
         let content = std::fs::read_to_string(path).wrap_err_with(|| eyre!("读取配置文件失败: {}", path.display()))?;
-        toml::from_str(&content).wrap_err_with(|| format!("解析配置文件失败: {}", path.display()))
+        let config: ConvertorConfig =
+            toml::from_str(&content).wrap_err_with(|| format!("解析配置文件失败: {}", path.display()))?;
+        Ok(config)
     }
 
     pub fn server_addr(&self) -> color_eyre::Result<String> {
