@@ -14,7 +14,7 @@ pub(super) async fn profile_impl(
     url_builder: UrlBuilder,
     raw_profile: String,
 ) -> Result<String> {
-    let mut profile = SurgeProfile::parse(raw_profile)?;
+    let mut profile = SurgeProfile::parse(raw_profile.clone())?;
     profile.optimize(url_builder)?;
     let output = SurgeRenderer::render_profile(&profile)?;
     Ok(output)

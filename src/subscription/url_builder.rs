@@ -1,6 +1,7 @@
 use crate::client::Client;
 use crate::encrypt::{decrypt, encrypt};
-use crate::profile::core::policy::{Policy, QueryPolicy};
+use crate::profile::core::policy::Policy;
+use crate::server::router::ProfileQuery;
 use axum::body::Body;
 use axum::http::{header, Request};
 use color_eyre::eyre::{eyre, WrapErr};
@@ -83,15 +84,13 @@ impl UrlBuilder {
             path.push("rule-set");
         }
 
-        let query_policy = QueryPolicy::from(policy.clone());
-        let policy = serde_urlencoded::to_string(&query_policy)?;
-        url.query_pairs_mut()
-            .append_pair("client", client.as_str())
-            .append_pair("raw_url", &self.encrypted_service_url);
-        let policy_pair = url::form_urlencoded::parse(policy.as_bytes());
-        policy_pair.for_each(|(k, v)| {
-            url.query_pairs_mut().append_pair(&k, &v);
-        });
+        let profile_query = ProfileQuery {
+            raw_url: self.encrypted_service_url.clone(),
+            client,
+            policy: Some(policy.clone().into()),
+        };
+        let query = serde_qs::to_string(&profile_query)?;
+        url.set_query(Some(&query));
         Ok(url)
     }
 

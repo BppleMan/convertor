@@ -1,4 +1,4 @@
-use crate::server_test::server_context::ServerContext;
+use crate::server_test::ServerContext;
 use axum::routing::get;
 use axum::Router;
 use convertor::client::Client;
@@ -19,7 +19,7 @@ pub(crate) const CLASH_MOCK_STR: &str = include_str!("../test-assets/clash/mock.
 pub(crate) const SURGE_MOCK_STR: &str = include_str!("../test-assets/surge/mock.conf");
 
 pub fn init_test_base_dir() -> std::path::PathBuf {
-    convertor::init_base_dir().parent().unwrap().join(".convertor.test")
+    std::env::current_dir().unwrap().join(".convertor.test")
 }
 
 pub async fn start_server_with_config(

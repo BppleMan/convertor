@@ -1,4 +1,4 @@
-use crate::server_test::server_context::ServerContext;
+use crate::server_test::ServerContext;
 use crate::start_server;
 use axum::body::Body;
 use axum::extract::Request;

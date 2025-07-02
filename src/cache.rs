@@ -45,7 +45,6 @@ where
     where
         F: Future<Output = color_eyre::Result<V>>,
     {
-        println!("{:#?}", key);
         self.memory
             .try_get_with(key.clone(), {
                 let this = self.clone_shallow();
