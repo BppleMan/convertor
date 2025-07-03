@@ -4,9 +4,9 @@ use crate::profile::core::proxy_group::{ProxyGroup, ProxyGroupType};
 use crate::profile::core::rule::{Rule, RuleType};
 use crate::profile::surge_profile::SurgeProfile;
 use color_eyre::eyre::eyre;
-use indexmap::IndexMap;
+use std::collections::HashMap;
 use std::fmt::Write;
-use tracing::instrument;
+use tracing::{instrument, trace};
 
 // pub const SECTION_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"^\[[^\[\]]+]$"#).unwrap());
 // pub const COMMENT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\s*(;|#|//)").unwrap());
@@ -25,12 +25,36 @@ impl SurgeParser {
     #[instrument(skip_all)]
     pub fn parse_profile(content: String) -> color_eyre::Result<SurgeProfile> {
         let mut sections = Self::parse_raw(&content);
-        let header = Self::parse_header(&mut sections)?;
-        let general = Self::parse_general(&mut sections)?;
-        let proxies = Self::parse_proxies(&mut sections)?;
-        let proxy_groups = Self::parse_proxy_groups(&mut sections)?;
-        let rules = Self::parse_rules(&mut sections)?;
-        let url_rewrite = Self::parse_url_rewrite(&mut sections)?;
+        let header = if let Some(section) = sections.remove(MANAGED_CONFIG_HEADER) {
+            Self::parse_header(section)?
+        } else {
+            return Err(eyre!("没有找到 MANAGED-CONFIG 部分"));
+        };
+        let general = if let Some(section) = sections.remove(GENERAL_SECTION) {
+            Self::parse_general(section)?
+        } else {
+            return Err(eyre!("没有找到 [General] 部分"));
+        };
+        let proxies = if let Some(section) = sections.remove(PROXY_SECTION) {
+            Self::parse_proxies(section)?
+        } else {
+            return Err(eyre!("没有找到 [Proxy] 部分"));
+        };
+        let proxy_groups = if let Some(section) = sections.remove(PROXY_GROUP_SECTION) {
+            Self::parse_proxy_groups(section)?
+        } else {
+            return Err(eyre!("没有找到 [Proxy Group] 部分"));
+        };
+        let rules = if let Some(section) = sections.remove(RULE_SECTION) {
+            Self::parse_rules(section)?
+        } else {
+            return Err(eyre!("没有找到 [Rule] 部分"));
+        };
+        let url_rewrite = if let Some(section) = sections.remove(URL_REWRITE_SECTION) {
+            Self::parse_url_rewrite(section)?
+        } else {
+            vec![]
+        };
         let misc = sections
             .into_iter()
             .map(|(k, v)| (k.to_owned(), v.into_iter().map(str::to_owned).collect()))
@@ -47,8 +71,8 @@ impl SurgeParser {
     }
 
     #[instrument(skip_all)]
-    pub fn parse_raw(content: &str) -> IndexMap<&str, Vec<&str>> {
-        let mut sections = IndexMap::new();
+    pub fn parse_raw(content: &str) -> HashMap<&str, Vec<&str>> {
+        let mut sections = HashMap::new();
         let mut current_section = MANAGED_CONFIG_HEADER;
         let mut current_lines = Vec::new();
 
@@ -66,31 +90,27 @@ impl SurgeParser {
     }
 
     #[instrument(skip_all)]
-    pub fn parse_header(sections: &mut IndexMap<&str, Vec<&str>>) -> color_eyre::Result<String> {
-        let header = sections
-            .shift_remove(MANAGED_CONFIG_HEADER)
-            .ok_or_else(|| eyre!("没有找到 MANAGED-CONFIG"))?
-            .join("\n")
-            .trim()
-            .to_owned();
-        Ok(header)
+    pub fn parse_header(section: impl IntoIterator<Item = impl AsRef<str>>) -> color_eyre::Result<String> {
+        let mut output = String::new();
+        for line in section {
+            writeln!(output, "{}", line.as_ref())?;
+        }
+        Ok(output)
     }
 
     #[instrument(skip_all)]
-    pub fn parse_general(sections: &mut IndexMap<&str, Vec<&str>>) -> color_eyre::Result<Vec<String>> {
-        sections
-            .shift_remove(GENERAL_SECTION)
-            .map(|section| section.into_iter().map(|s| s.to_owned()).collect())
-            .ok_or_else(|| eyre!("没有找到 [General]"))
+    pub fn parse_general(section: impl IntoIterator<Item = impl AsRef<str>>) -> color_eyre::Result<Vec<String>> {
+        Ok(section.into_iter().map(|s| s.as_ref().to_owned()).collect())
     }
 
     #[instrument(skip_all)]
-    pub fn parse_proxies(sections: &mut IndexMap<&str, Vec<&str>>) -> color_eyre::Result<Vec<Proxy>> {
-        let proxies = sections
-            .shift_remove(PROXY_SECTION)
-            .ok_or_else(|| eyre!("没有找到 [Proxy]"))?;
-        let proxies = Self::parse_comment(proxies, Self::parse_proxy, |proxy, comment| proxy.comment = comment)?;
-        Ok(proxies)
+    pub fn parse_url_rewrite(section: impl IntoIterator<Item = impl AsRef<str>>) -> color_eyre::Result<Vec<String>> {
+        Ok(section.into_iter().map(|s| s.as_ref().to_owned()).collect())
+    }
+
+    #[instrument(skip_all)]
+    pub fn parse_proxies(section: impl IntoIterator<Item = impl AsRef<str>>) -> color_eyre::Result<Vec<Proxy>> {
+        Self::parse_comment(section, Self::parse_proxy, Proxy::set_comment)
     }
 
     #[instrument(skip_all)]
@@ -152,14 +172,10 @@ impl SurgeParser {
     }
 
     #[instrument(skip_all)]
-    pub fn parse_proxy_groups(sections: &mut IndexMap<&str, Vec<&str>>) -> color_eyre::Result<Vec<ProxyGroup>> {
-        let proxy_groups = sections
-            .shift_remove(PROXY_GROUP_SECTION)
-            .ok_or_else(|| eyre!("没有找到 [Proxy Group]"))?;
-        let proxy_groups = Self::parse_comment(proxy_groups, Self::parse_proxy_group, |group, comment| {
-            group.comment = comment
-        })?;
-        Ok(proxy_groups)
+    pub fn parse_proxy_groups(
+        section: impl IntoIterator<Item = impl AsRef<str>>,
+    ) -> color_eyre::Result<Vec<ProxyGroup>> {
+        Self::parse_comment(section, Self::parse_proxy_group, ProxyGroup::set_comment)
     }
 
     #[instrument(skip_all)]
@@ -187,12 +203,8 @@ impl SurgeParser {
     }
 
     #[instrument(skip_all)]
-    pub fn parse_rules(sections: &mut IndexMap<&str, Vec<&str>>) -> color_eyre::Result<Vec<Rule>> {
-        let rules = sections
-            .shift_remove(RULE_SECTION)
-            .ok_or_else(|| eyre!("没有找到 [Rule]"))?;
-        let rules = Self::parse_comment(rules, Self::parse_rule, |rule, comment| rule.comment = comment)?;
-        Ok(rules)
+    pub fn parse_rules(section: impl IntoIterator<Item = impl AsRef<str>>) -> color_eyre::Result<Vec<Rule>> {
+        Self::parse_comment(section, Self::parse_rule, Rule::set_comment)
     }
 
     #[instrument(skip_all)]
@@ -231,38 +243,41 @@ impl SurgeParser {
     }
 
     #[instrument(skip_all)]
-    pub fn parse_url_rewrite(sections: &mut IndexMap<&str, Vec<&str>>) -> color_eyre::Result<Vec<String>> {
-        sections
-            .shift_remove(URL_REWRITE_SECTION)
-            .map(|section| section.into_iter().map(str::to_owned).collect())
-            .ok_or_else(|| eyre!("没有找到 [URL Rewrite]"))
-    }
-
-    #[instrument(skip_all)]
-    fn parse_comment<T, F, C>(contents: Vec<&str>, parse: F, set_comment: C) -> color_eyre::Result<Vec<T>>
+    fn parse_comment<R, F, C>(
+        contents: impl IntoIterator<Item = impl AsRef<str>>,
+        parse: F,
+        set_comment: C,
+    ) -> color_eyre::Result<Vec<R>>
     where
-        F: Fn(&str) -> color_eyre::Result<T>,
-        C: Fn(&mut T, Option<String>),
+        F: Fn(&str) -> color_eyre::Result<R>,
+        C: Fn(&mut R, Option<String>),
     {
+        let mut items = vec![];
         let mut comment: Option<String> = None;
-        let items = contents
-            .into_iter()
-            .filter_map(|line| {
-                let line = line.trim();
-                let is_comment = line.starts_with('#') || line.starts_with(';') || line.starts_with("//");
-                if line.is_empty() || is_comment {
-                    if let Some(comment) = comment.as_mut() {
-                        write!(comment, "\n{}", line).expect("解析时无法写入注释");
-                    } else {
-                        comment = Some(line.to_owned());
+        for line in contents {
+            let line = line.as_ref().trim();
+            match line {
+                line if line.is_empty() || line.starts_with('#') || line.starts_with(';') || line.starts_with("//") => {
+                    match comment.as_mut() {
+                        None => comment = Some(line.to_string()),
+                        Some(comment) => writeln!(comment, "{}", line)?,
                     }
-                } else if let Ok(mut item) = parse(&line) {
-                    set_comment(&mut item, comment.take());
-                    return Some(item);
                 }
-                None
-            })
-            .collect::<Vec<_>>();
+                _ => match parse(line) {
+                    Ok(mut item) => {
+                        set_comment(&mut item, comment.take());
+                        items.push(item)
+                    }
+                    Err(e) => {
+                        match comment.as_mut() {
+                            None => comment = Some(line.to_string()),
+                            Some(comment) => writeln!(comment, "{}", line)?,
+                        }
+                        trace!("{e}")
+                    }
+                },
+            }
+        }
         Ok(items)
     }
 

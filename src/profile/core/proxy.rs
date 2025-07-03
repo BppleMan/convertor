@@ -17,3 +17,9 @@ pub struct Proxy {
     #[serde(skip)]
     pub comment: Option<String>,
 }
+
+impl Proxy {
+    pub fn set_comment(&mut self, comment: Option<String>) {
+        self.comment = comment;
+    }
+}

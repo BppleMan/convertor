@@ -60,7 +60,7 @@ pub async fn root() -> Result<(), AppError> {
     Ok(())
 }
 
-#[instrument(skip(state))]
+#[instrument(skip_all)]
 pub async fn profile(
     State(state): State<Arc<AppState>>,
     Query(query): Query<ProfileQuery>,
@@ -81,7 +81,7 @@ pub async fn profile(
     Ok(profile)
 }
 
-#[instrument(skip(state))]
+#[instrument(skip_all)]
 pub async fn rule_set(
     State(state): State<Arc<AppState>>,
     // Query(query): Query<ProfileQuery>,

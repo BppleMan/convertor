@@ -8,7 +8,7 @@ use color_eyre::Result;
 use std::sync::Arc;
 use tracing::instrument;
 
-#[instrument(skip(_state, url_builder, raw_profile))]
+#[instrument(skip_all)]
 pub(super) async fn profile_impl(
     _state: Arc<AppState>,
     url_builder: UrlBuilder,

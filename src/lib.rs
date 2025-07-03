@@ -51,13 +51,10 @@ pub fn init_log(base_dir: impl AsRef<Path>) {
 
         let stdout_layer = tracing_subscriber::fmt::layer().pretty();
 
-        let span_tree = tracing_span_tree::span_tree().aggregate(true);
-
         tracing_subscriber::registry()
             .with(filter)
             .with(file_layer)
             .with(stdout_layer)
-            .with(span_tree)
             .init();
     });
 }

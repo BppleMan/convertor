@@ -11,7 +11,6 @@ use convertor::profile::renderer::surge_renderer::SurgeRenderer;
 use convertor::profile::surge_profile::SurgeProfile;
 use convertor::subscription::url_builder::UrlBuilder;
 use http_body_util::BodyExt;
-use indexmap::IndexMap;
 use std::collections::HashMap;
 use tower::ServiceExt;
 
@@ -36,7 +35,7 @@ pub async fn test_surge_profile() -> color_eyre::Result<()> {
         .header("host", app_state.config.server_addr()?)
         .method("GET")
         .body(Body::empty())?;
-    let response = app.clone().oneshot(request).await?;
+    let response = app.oneshot(request).await?;
     let stream = String::from_utf8_lossy(&response.into_body().collect().await?.to_bytes()).to_string();
 
     let mut expect_profile = SurgeProfile::parse(SURGE_MOCK_STR.to_string())?;
@@ -81,9 +80,7 @@ pub async fn test_surge_rule_set() -> color_eyre::Result<()> {
     pretty_assertions::assert_str_eq!("[Rule]", lines[0]);
     pretty_assertions::assert_eq!(896, lines.len());
 
-    let mut section = IndexMap::from([("[Rule]", lines)]);
-    let rules = SurgeParser::parse_rules(&mut section)?;
-
+    let rules = SurgeParser::parse_rules(lines)?;
     for rule in rules {
         pretty_assertions::assert_eq!(&policy, &rule.policy);
     }
@@ -119,9 +116,7 @@ pub async fn test_surge_subscription_rule_set() -> color_eyre::Result<()> {
     pretty_assertions::assert_str_eq!("[Rule]", lines[0]);
     pretty_assertions::assert_eq!(2, lines.len());
 
-    let mut section = IndexMap::from([("[Rule]", lines)]);
-    let rules = SurgeParser::parse_rules(&mut section)?;
-
+    let rules = SurgeParser::parse_rules(lines)?;
     for rule in rules {
         pretty_assertions::assert_eq!(&RuleType::Domain, &rule.rule_type);
         pretty_assertions::assert_eq!(&policy, &rule.policy);
@@ -158,8 +153,7 @@ pub async fn test_surge_direct_rule_set() -> color_eyre::Result<()> {
     pretty_assertions::assert_str_eq!("[Rule]", lines[0]);
     pretty_assertions::assert_eq!(6, lines.len());
 
-    let mut section = IndexMap::from([("[Rule]", lines)]);
-    let rules = SurgeParser::parse_rules(&mut section)?;
+    let rules = SurgeParser::parse_rules(lines)?;
     pretty_assertions::assert_eq!(1, rules.len());
     pretty_assertions::assert_eq!(&RuleType::Domain, &rules[0].rule_type);
     pretty_assertions::assert_eq!(&policy, &rules[0].policy);

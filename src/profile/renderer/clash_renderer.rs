@@ -5,12 +5,14 @@ use crate::profile::core::proxy_group::ProxyGroup;
 use crate::profile::core::rule::Rule;
 use crate::profile::core::rule_provider::RuleProvider;
 use std::fmt::Write;
+use tracing::instrument;
 
 pub const INDENT: usize = 4;
 
 pub struct ClashRenderer;
 
 impl ClashRenderer {
+    #[instrument(skip_all)]
     pub fn render_profile(output: &mut String, profile: &ClashProfile) -> color_eyre::Result<()> {
         let ClashProfile {
             proxies,
@@ -27,6 +29,7 @@ impl ClashRenderer {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     pub fn render_general(output: &mut String, profile: &ClashProfile) -> color_eyre::Result<()> {
         writeln!(output, "port: {}", profile.port)?;
         writeln!(output, "socks-port: {}", profile.socks_port)?;
@@ -40,6 +43,7 @@ impl ClashRenderer {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     pub fn render_proxies(output: &mut String, proxies: &[Proxy]) -> color_eyre::Result<()> {
         writeln!(output, "proxies:")?;
         for proxy in proxies {
@@ -55,6 +59,7 @@ impl ClashRenderer {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     pub fn render_proxy_groups(output: &mut String, proxy_groups: &[ProxyGroup]) -> color_eyre::Result<()> {
         writeln!(output, "proxy-groups:")?;
         for group in proxy_groups {
@@ -70,6 +75,7 @@ impl ClashRenderer {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     pub fn render_rule_providers(
         output: &mut String,
         rule_providers: &[(String, RuleProvider)],
@@ -88,6 +94,7 @@ impl ClashRenderer {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     pub fn render_rules(output: &mut String, rules: &[Rule]) -> color_eyre::Result<()> {
         writeln!(output, "rules:")?;
         for rule in rules {
@@ -102,6 +109,7 @@ impl ClashRenderer {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     pub fn render_rule_provider_payload(output: &mut String, rules: &[&Rule]) -> color_eyre::Result<()> {
         writeln!(output, "payload:")?;
         for rule in rules {
@@ -116,6 +124,7 @@ impl ClashRenderer {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     fn render_proxy(proxy: &Proxy) -> color_eyre::Result<String> {
         let mut output = String::new();
         write!(output, "{{")?;
@@ -143,6 +152,7 @@ impl ClashRenderer {
         Ok(output)
     }
 
+    #[instrument(skip_all)]
     fn render_proxy_group(group: &ProxyGroup) -> color_eyre::Result<String> {
         let mut output = String::new();
         write!(output, "{{")?;
@@ -153,6 +163,7 @@ impl ClashRenderer {
         Ok(output)
     }
 
+    #[instrument(skip_all)]
     fn render_rule_provider(provider: &RuleProvider) -> color_eyre::Result<String> {
         let mut output = String::new();
         write!(output, "{{")?;
@@ -167,6 +178,7 @@ impl ClashRenderer {
         Ok(output)
     }
 
+    #[instrument(skip_all)]
     fn render_rule(rule: &Rule) -> color_eyre::Result<String> {
         let mut output = String::new();
         write!(output, "{}", rule.rule_type.as_str())?;
@@ -180,6 +192,7 @@ impl ClashRenderer {
         Ok(output)
     }
 
+    #[instrument(skip_all)]
     pub fn render_policy_for_provider(policy: &Policy) -> String {
         let mut output = String::new();
         write!(output, "{}", policy.name).expect("无法写入 Clash 规则集名称");

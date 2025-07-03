@@ -3,32 +3,42 @@ use axum::routing::get;
 use axum::Router;
 use convertor::client::Client;
 use convertor::config::convertor_config::ConvertorConfig;
+use convertor::init_backtrace;
 use convertor::server::router::{profile, root, rule_set, subscription, AppState};
 use convertor::subscription::subscription_api::boslife_api::BosLifeApi;
 use convertor::subscription::subscription_config::ServiceConfig;
-use convertor::{init_backtrace, init_log};
 use httpmock::Method::{GET, POST};
 use httpmock::MockServer;
-use std::sync::Arc;
+use std::path::PathBuf;
+use std::sync::{Arc, Once};
 use tower_http::trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer};
 use tower_http::LatencyUnit;
+use tracing_profile::init_tracing;
 
 pub mod server_test;
 
 pub(crate) const CLASH_MOCK_STR: &str = include_str!("../test-assets/clash/mock.yaml");
 pub(crate) const SURGE_MOCK_STR: &str = include_str!("../test-assets/surge/mock.conf");
 
-pub fn init_test_base_dir() -> std::path::PathBuf {
+static INITIALIZED_TEST: Once = Once::new();
+
+pub fn init_test_base_dir() -> PathBuf {
     std::env::current_dir().unwrap().join(".convertor.test")
+}
+
+pub fn init_test() -> PathBuf {
+    let base_dir = init_test_base_dir();
+    INITIALIZED_TEST.call_once(|| {
+        init_backtrace();
+    });
+    base_dir
 }
 
 pub async fn start_server_with_config(
     client: Client,
     config: Option<ConvertorConfig>,
 ) -> color_eyre::Result<ServerContext> {
-    let base_dir = init_test_base_dir();
-    init_backtrace();
-    init_log(&base_dir);
+    let base_dir = init_test();
 
     let mut config = config
         .map(color_eyre::Result::Ok)
@@ -36,28 +46,24 @@ pub async fn start_server_with_config(
     let mock_server = start_mock_service_server(client, &config.service_config).await?;
     config.service_config.base_url = mock_server.base_url();
 
-    let service = BosLifeApi::new(&base_dir, reqwest::Client::new(), config.service_config.clone());
-
-    let app_state = Arc::new(AppState {
-        config: config,
-        api: service,
-    });
+    let api = BosLifeApi::new(&base_dir, reqwest::Client::new(), config.service_config.clone());
+    let app_state = Arc::new(AppState { config, api });
     let app: Router = Router::new()
         .route("/", get(root))
         .route("/profile", get(profile))
         .route("/rule-set", get(rule_set))
         .route("/sub-log", get(subscription::subscription_logs))
-        .with_state(app_state.clone())
-        .layer(
-            TraceLayer::new_for_http()
-                .make_span_with(DefaultMakeSpan::new().include_headers(true))
-                .on_request(DefaultOnRequest::new().level(tracing::Level::INFO))
-                .on_response(
-                    DefaultOnResponse::new()
-                        .level(tracing::Level::INFO)
-                        .latency_unit(LatencyUnit::Millis),
-                ),
-        );
+        .with_state(app_state.clone());
+    // .layer(
+    //     TraceLayer::new_for_http()
+    //         .make_span_with(DefaultMakeSpan::new().include_headers(true))
+    //         .on_request(DefaultOnRequest::new().level(tracing::Level::INFO))
+    //         .on_response(
+    //             DefaultOnResponse::new()
+    //                 .level(tracing::Level::INFO)
+    //                 .latency_unit(LatencyUnit::Millis),
+    //         ),
+    // );
 
     Ok(ServerContext {
         app,
@@ -71,9 +77,7 @@ pub async fn start_server(client: Client) -> color_eyre::Result<ServerContext> {
 }
 
 pub async fn start_mock_service_server(client: Client, config: &ServiceConfig) -> color_eyre::Result<MockServer> {
-    let base_dir = init_test_base_dir();
-    init_backtrace();
-    init_log(&base_dir);
+    let _base_dir = init_test();
 
     let mock_server = MockServer::start_async().await;
     mock_server

@@ -4,3 +4,5 @@
 **/logs
 **/convertor.toml
 **/.convertor.*/
+!.convertor.bench
+!.convertor.test

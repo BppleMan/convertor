@@ -22,7 +22,7 @@ pub struct SurgeProfile {
 }
 
 impl SurgeProfile {
-    #[instrument(skip())]
+    #[instrument(skip_all)]
     pub fn parse(content: String) -> color_eyre::Result<Self> {
         SurgeParser::parse_profile(content)
     }

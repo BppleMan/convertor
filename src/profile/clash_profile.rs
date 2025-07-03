@@ -10,7 +10,7 @@ use crate::subscription::url_builder::UrlBuilder;
 use serde::Deserialize;
 use std::collections::HashSet;
 use std::str::FromStr;
-use tracing::warn;
+use tracing::{instrument, warn};
 
 const TEMPLATE_STR: &str = include_str!("../../assets/clash/template.yaml");
 
@@ -39,21 +39,24 @@ pub struct ClashProfile {
 }
 
 impl ClashProfile {
+    #[instrument(skip_all)]
     pub fn parse(content: String) -> color_eyre::Result<Self> {
         Ok(serde_yaml::from_str(&content)?)
     }
 
+    #[instrument(skip_all)]
     pub fn template() -> color_eyre::Result<Self> {
         Ok(serde_yaml::from_str(TEMPLATE_STR)?)
     }
 
+    #[instrument(skip_all)]
     pub fn merge(
         &mut self,
         raw_profile: String,
         url_builder: &UrlBuilder,
         secret: impl AsRef<str>,
     ) -> color_eyre::Result<()> {
-        let raw_profile: ClashProfile = serde_yaml::from_str(&raw_profile)?;
+        let raw_profile = ClashProfile::parse(raw_profile)?;
         let sub_host = url_builder.sub_host()?;
         self.proxies = raw_profile.proxies;
         self.rules = raw_profile.rules;

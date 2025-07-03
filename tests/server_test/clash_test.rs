@@ -5,6 +5,7 @@ use axum::extract::Request;
 use convertor::client::Client;
 use convertor::subscription::url_builder::UrlBuilder;
 use http_body_util::BodyExt;
+use std::collections::HashMap;
 use tower::ServiceExt;
 
 #[tokio::test]
@@ -19,9 +20,12 @@ pub async fn test_clash_profile() -> color_eyre::Result<()> {
         app_state.config.secret.clone(),
         app_state.api.get_raw_subscription_url().await?,
     )?;
+
     let url = url_builder.build_convertor_url(Client::Clash)?;
+    let query_pairs = serde_qs::to_string(&url.query_pairs().collect::<HashMap<_, _>>())?;
+    let uri = format!("{}?{}", url.path(), query_pairs);
     let request = Request::builder()
-        .uri(format!("{}?{}", url.path(), url.query().unwrap_or("raw_url=")))
+        .uri(&uri)
         .header("host", app_state.config.server_addr()?)
         .method("GET")
         .body(Body::empty())?;

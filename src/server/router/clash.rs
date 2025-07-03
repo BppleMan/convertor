@@ -8,6 +8,7 @@ use color_eyre::Result;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use std::sync::Arc;
+use tracing::instrument;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ClashQuery {
@@ -18,6 +19,7 @@ pub struct ClashQuery {
     pub boslife: Option<bool>,
 }
 
+#[instrument(skip_all)]
 pub(super) async fn profile_impl(state: Arc<AppState>, url_builder: UrlBuilder, raw_profile: String) -> Result<String> {
     let mut template = ClashProfile::template()?;
     template.merge(raw_profile, &url_builder, &state.config.secret)?;
@@ -26,6 +28,7 @@ pub(super) async fn profile_impl(state: Arc<AppState>, url_builder: UrlBuilder, 
     Ok(profile)
 }
 
+#[instrument(skip_all)]
 pub(super) async fn rule_set_impl(
     _state: Arc<AppState>,
     url_builder: UrlBuilder,

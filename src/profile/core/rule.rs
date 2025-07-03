@@ -35,6 +35,10 @@ impl Rule {
             comment: None,
         }
     }
+
+    pub fn set_comment(&mut self, comment: Option<String>) {
+        self.comment = comment;
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
