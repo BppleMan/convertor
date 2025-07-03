@@ -195,10 +195,13 @@ impl ClashRenderer {
     #[instrument(skip_all)]
     pub fn render_policy_for_provider(policy: &Policy) -> String {
         let mut output = String::new();
-        write!(output, "{}", policy.name).expect("无法写入 Clash 规则集名称");
-        if let Some(option) = policy.option.as_ref() {
-            write!(output, "-{}", option).expect("无法写入 Clash 规则集选项");
-        }
-        output
+        write!(
+            output,
+            "{}_{}",
+            policy.name,
+            policy.option.as_ref().unwrap_or(&"policy".to_string())
+        )
+        .expect("无法写入 Clash 规则集名称");
+        output.replace("-", "_")
     }
 }

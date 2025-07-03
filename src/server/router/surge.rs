@@ -27,10 +27,7 @@ pub(super) async fn rule_set_impl(
     policy: Policy,
 ) -> Result<String> {
     let profile = SurgeProfile::parse(raw_profile)?;
-    let sub_host = url_builder
-        .service_url
-        .host_str()
-        .ok_or(eyre!("错误的订阅 URL, 未能解析出 host"))?;
+    let sub_host = url_builder.sub_host()?;
     let rules = profile.rules_for_provider(policy, sub_host);
     let output = SurgeRenderer::render_rules(&rules)?;
     Ok(output)

@@ -11,9 +11,6 @@ use httpmock::Method::{GET, POST};
 use httpmock::MockServer;
 use std::path::PathBuf;
 use std::sync::{Arc, Once};
-use tower_http::trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer};
-use tower_http::LatencyUnit;
-use tracing_profile::init_tracing;
 
 pub mod server_test;
 
@@ -30,7 +27,6 @@ pub fn init_test() -> PathBuf {
     let base_dir = init_test_base_dir();
     INITIALIZED_TEST.call_once(|| {
         init_backtrace();
-        tracing_span_tree::span_tree().aggregate(true).enable();
     });
     base_dir
 }
@@ -55,16 +51,6 @@ pub async fn start_server_with_config(
         .route("/rule-set", get(rule_set))
         .route("/sub-log", get(subscription::subscription_logs))
         .with_state(app_state.clone());
-    // .layer(
-    //     TraceLayer::new_for_http()
-    //         .make_span_with(DefaultMakeSpan::new().include_headers(true))
-    //         .on_request(DefaultOnRequest::new().level(tracing::Level::INFO))
-    //         .on_response(
-    //             DefaultOnResponse::new()
-    //                 .level(tracing::Level::INFO)
-    //                 .latency_unit(LatencyUnit::Millis),
-    //         ),
-    // );
 
     Ok(ServerContext {
         app,

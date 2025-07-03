@@ -111,6 +111,7 @@ pub async fn test_surge_subscription_rule_set() -> color_eyre::Result<()> {
         .body(Body::empty())?;
     let response = app.oneshot(request).await?;
     let stream = String::from_utf8_lossy(&response.into_body().collect().await?.to_bytes()).to_string();
+    println!("{}", stream);
     let lines = stream.lines().collect::<Vec<_>>();
 
     pretty_assertions::assert_str_eq!("[Rule]", lines[0]);

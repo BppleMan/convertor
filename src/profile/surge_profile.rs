@@ -82,6 +82,7 @@ impl SurgeProfile {
             .iter()
             .filter(|rule| {
                 if policy == Policy::subscription_policy() {
+                    println!("{:?}, {}", rule.value, sub_host.as_ref());
                     rule.value.as_ref().map(|v| v.contains(sub_host.as_ref())) == Some(true)
                 } else if !matches!(rule.rule_type, RuleType::Final | RuleType::GeoIP | RuleType::Match) {
                     policy == rule.policy

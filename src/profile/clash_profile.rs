@@ -113,6 +113,7 @@ impl ClashProfile {
                     return None;
                 }
                 let value = rule.value.as_ref()?;
+                println!("{}, {}", value, sub_host.as_ref());
                 let policy = if value.contains(sub_host.as_ref()) {
                     Policy::subscription_policy()
                 } else {
