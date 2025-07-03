@@ -39,8 +39,8 @@ pub async fn start_server_with_config(
     let service = BosLifeApi::new(&base_dir, reqwest::Client::new(), config.service_config.clone());
 
     let app_state = Arc::new(AppState {
-        convertor_config: config,
-        subscription_api: service,
+        config: config,
+        api: service,
     });
     let app: Router = Router::new()
         .route("/", get(root))

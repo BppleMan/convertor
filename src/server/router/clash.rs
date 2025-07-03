@@ -20,7 +20,7 @@ pub struct ClashQuery {
 
 pub(super) async fn profile_impl(state: Arc<AppState>, url_builder: UrlBuilder, raw_profile: String) -> Result<String> {
     let mut template = ClashProfile::template()?;
-    template.merge(raw_profile, &url_builder, &state.convertor_config.secret)?;
+    template.merge(raw_profile, &url_builder, &state.config.secret)?;
     let mut profile = String::new();
     ClashRenderer::render_profile(&mut profile, &template)?;
     Ok(profile)

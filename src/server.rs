@@ -20,8 +20,8 @@ pub async fn start_server(
     info!("服务启动，使用 Ctrl+C 或 SIGTERM 关闭服务");
     let listener = tokio::net::TcpListener::bind(listen_addr).await?;
     let app_state = AppState {
-        convertor_config,
-        subscription_api,
+        config: convertor_config,
+        api: subscription_api,
     };
     axum::serve(listener, router(app_state))
         .with_graceful_shutdown(shutdown_signal())

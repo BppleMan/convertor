@@ -37,7 +37,7 @@ impl Rule {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum RuleType {
     #[serde(rename = "DOMAIN")]
     Domain,
@@ -45,6 +45,10 @@ pub enum RuleType {
     DomainSuffix,
     #[serde(rename = "DOMAIN-KEYWORD")]
     DomainKeyword,
+    #[serde(rename = "PROCESS-NAME")]
+    ProcessName,
+    #[serde(rename = "USER-AGENT")]
+    UserAgent,
     #[serde(rename = "RULE-SET")]
     RuleSet,
     #[serde(rename = "GEOIP")]
@@ -65,6 +69,8 @@ impl RuleType {
             RuleType::Domain => "DOMAIN",
             RuleType::DomainSuffix => "DOMAIN-SUFFIX",
             RuleType::DomainKeyword => "DOMAIN-KEYWORD",
+            RuleType::ProcessName => "PROCESS-NAME",
+            RuleType::UserAgent => "USER-AGENT",
             RuleType::RuleSet => "RULE-SET",
             RuleType::GeoIP => "GEOIP",
             RuleType::IpCIDR => "IP-CIDR",
@@ -89,6 +95,8 @@ impl FromStr for RuleType {
             "DOMAIN" => Ok(RuleType::Domain),
             "DOMAIN-SUFFIX" => Ok(RuleType::DomainSuffix),
             "DOMAIN-KEYWORD" => Ok(RuleType::DomainKeyword),
+            "PROCESS-NAME" => Ok(RuleType::ProcessName),
+            "USER-AGENT" => Ok(RuleType::UserAgent),
             "RULE-SET" => Ok(RuleType::RuleSet),
             "IP-CIDR" => Ok(RuleType::IpCIDR),
             "IP-CIDR6" => Ok(RuleType::IpCIDR6),

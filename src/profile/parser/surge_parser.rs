@@ -5,17 +5,12 @@ use crate::profile::core::rule::{Rule, RuleType};
 use crate::profile::surge_profile::SurgeProfile;
 use color_eyre::eyre::eyre;
 use indexmap::IndexMap;
-use once_cell::sync::Lazy;
-use regex::Regex;
 use std::fmt::Write;
 use tracing::instrument;
 
-#[allow(unused)]
-pub const SECTION_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"^\[[^\[\]]+]$"#).unwrap());
-#[allow(unused)]
-pub const COMMENT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\s*(;|#|//)").unwrap());
-#[allow(unused)]
-pub const INLINE_COMMENT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"(;|#|//).*$").unwrap());
+// pub const SECTION_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"^\[[^\[\]]+]$"#).unwrap());
+// pub const COMMENT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\s*(;|#|//)").unwrap());
+// pub const INLINE_COMMENT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"(;|#|//).*$").unwrap());
 
 pub const MANAGED_CONFIG_HEADER: &str = "MANAGED-CONFIG";
 pub const GENERAL_SECTION: &str = "[General]";
@@ -50,33 +45,6 @@ impl SurgeParser {
             misc,
         })
     }
-
-    // #[instrument(skip_all)]
-    // pub fn parse_raw(content: String) -> IndexMap<String, Vec<String>> {
-    //     let mut contents = content.lines().map(|s| s.to_string()).collect::<VecDeque<String>>();
-    //     let mut sections = IndexMap::new();
-    //
-    //     let mut section = MANAGED_CONFIG_HEADER.to_string();
-    //     let mut cursor = 0;
-    //     while cursor < contents.len() {
-    //         let line = &contents[cursor];
-    //         if line.starts_with('[') && line.ends_with(']') {
-    //             let new_section = line.to_string();
-    //             // 跳过 [Section] 所在行
-    //             contents.pop_front();
-    //             cursor -= 1;
-    //             sections.insert(
-    //                 std::mem::replace(&mut section, new_section),
-    //                 contents.drain(0..cursor).collect::<Vec<_>>(),
-    //             );
-    //             cursor = 0;
-    //         }
-    //         cursor += 1;
-    //     }
-    //     sections.insert(section, contents.into_iter().collect());
-    //
-    //     sections
-    // }
 
     #[instrument(skip_all)]
     pub fn parse_raw(content: &str) -> IndexMap<&str, Vec<&str>> {
@@ -124,46 +92,6 @@ impl SurgeParser {
         let proxies = Self::parse_comment(proxies, Self::parse_proxy, |proxy, comment| proxy.comment = comment)?;
         Ok(proxies)
     }
-
-    // #[instrument(skip_all)]
-    // pub fn parse_proxy(line: &str) -> color_eyre::Result<Proxy> {
-    //     let line = Self::trim_line_comment(line);
-    //     let Some((name, value)) = line.split_once('=') else {
-    //         return Err(eyre!("Proxy 格式错误: {}", line));
-    //     };
-    //     let name = name.trim().to_string();
-    //     let mut fields = value
-    //         .split(',')
-    //         .map(|field| field.trim().to_owned())
-    //         .collect::<VecDeque<_>>();
-    //     let Some(r#type) = fields.pop_front() else {
-    //         return Err(eyre!("Proxy type 缺失: {}", line));
-    //     };
-    //     let Some(server) = fields.pop_front() else {
-    //         return Err(eyre!("Proxy server 缺失: {}", line));
-    //     };
-    //     let Some(port) = fields.pop_front().and_then(|p| p.parse::<u16>().ok()) else {
-    //         return Err(eyre!("Proxy port 缺失: {}", line));
-    //     };
-    //     let mut field_map = fields
-    //         .into_iter()
-    //         .filter_map(|f| {
-    //             f.split_once('=')
-    //                 .map(|(k, v)| (k.trim().to_owned(), v.trim().to_owned()))
-    //         })
-    //         .collect::<HashMap<_, _>>();
-    //     let Some(password) = field_map.remove("password") else {
-    //         return Err(eyre!("Proxy password 缺失: {}", line));
-    //     };
-    //     let udp = field_map.remove("udp-replay").and_then(|u| u.parse::<bool>().ok());
-    //     let tfo = field_map.remove("tfo").and_then(|t| t.parse::<bool>().ok());
-    //     let cipher = field_map.remove("encrypt-method");
-    //     let sni = field_map.remove("sni");
-    //     let skip_cert_verify = field_map.get("skip-cert-verify").and_then(|s| s.parse::<bool>().ok());
-    //     #[rustfmt::skip]
-    //     let proxy = Proxy { name, r#type, server, port, password, udp, tfo, cipher, sni, skip_cert_verify, comment: None, };
-    //     Ok(proxy)
-    // }
 
     #[instrument(skip_all)]
     pub fn parse_proxy(line: &str) -> color_eyre::Result<Proxy> {

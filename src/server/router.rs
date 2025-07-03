@@ -1,7 +1,7 @@
 use crate::client::Client;
 use crate::config::convertor_config::ConvertorConfig;
 use crate::error::AppError;
-use crate::profile::core::policy::{Policy, QueryPolicy};
+use crate::profile::core::policy::QueryPolicy;
 use crate::subscription::subscription_api::boslife_api::BosLifeApi;
 use crate::subscription::url_builder::UrlBuilder;
 use axum::body::Body;
@@ -23,8 +23,8 @@ pub mod surge;
 pub mod subscription;
 
 pub struct AppState {
-    pub convertor_config: ConvertorConfig,
-    pub subscription_api: BosLifeApi,
+    pub config: ConvertorConfig,
+    pub api: BosLifeApi,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -68,14 +68,11 @@ pub async fn profile(
 ) -> Result<String, AppError> {
     // info!("请求配置文件");
     // info!("从 request 中解码 url_builder");
-    let url_builder = UrlBuilder::decode_from_request(&request, &state.convertor_config.secret)?;
+    let url_builder = UrlBuilder::decode_from_request(&request, &state.config.secret)?;
     // info!("构建订阅 url");
     let raw_subscription_url = url_builder.build_subscription_url(query.client)?;
     // info!("获取原始订阅内容");
-    let raw_profile = state
-        .subscription_api
-        .get_raw_profile(raw_subscription_url, query.client)
-        .await?;
+    let raw_profile = state.api.get_raw_profile(raw_subscription_url, query.client).await?;
     // info!("整理订阅内容");
     let profile = match query.client {
         Client::Surge => surge::profile_impl(state, url_builder, raw_profile).await,
@@ -91,7 +88,7 @@ pub async fn rule_set(
     RawQuery(query): RawQuery,
     request: Request<Body>,
 ) -> Result<String, AppError> {
-    let url_builder = UrlBuilder::decode_from_request(&request, &state.convertor_config.secret)?;
+    let url_builder = UrlBuilder::decode_from_request(&request, &state.config.secret)?;
     let query = query
         .as_ref()
         .map(|q| percent_decode_str(&q))
@@ -100,10 +97,7 @@ pub async fn rule_set(
         .map_err(|e| eyre!(e))?;
     let query = serde_qs::from_str::<ProfileQuery>(&query).map_err(|e| eyre!(e))?;
     let raw_subscription_url = url_builder.build_subscription_url(query.client)?;
-    let raw_profile = state
-        .subscription_api
-        .get_raw_profile(raw_subscription_url, query.client)
-        .await?;
+    let raw_profile = state.api.get_raw_profile(raw_subscription_url, query.client).await?;
     match (query.client, query.policy) {
         (Client::Surge, Some(policy)) => surge::rule_set_impl(state, url_builder, raw_profile, policy.into()).await,
         (Client::Clash, Some(policy)) => clash::rule_set_impl(state, url_builder, raw_profile, policy.into()).await,

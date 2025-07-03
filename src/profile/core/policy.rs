@@ -19,6 +19,14 @@ impl Policy {
         }
     }
 
+    pub fn direct_policy() -> Self {
+        Policy {
+            name: "DIRECT".to_string(),
+            option: None,
+            is_subscription: false,
+        }
+    }
+
     pub fn is_subscription_policy(&self) -> bool {
         self.is_subscription && self.name == "DIRECT"
     }
