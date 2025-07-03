@@ -9,11 +9,11 @@ fn main() -> color_eyre::Result<()> {
     tracing_span_tree::span_tree().aggregate(true).enable();
     // tracing_profile::init_tracing()?;
 
-    let file = std::fs::read_to_string(base_dir.join("mock.conf"))?;
-    SurgeProfile::parse(file)?;
-
     let file = std::fs::read_to_string(base_dir.join("mock.yaml"))?;
     ClashProfile::parse(file)?;
+
+    let file = std::fs::read_to_string(base_dir.join("mock.conf"))?;
+    SurgeProfile::parse(file)?;
 
     Ok(())
 }

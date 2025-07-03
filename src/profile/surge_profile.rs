@@ -24,7 +24,7 @@ pub struct SurgeProfile {
 impl SurgeProfile {
     #[instrument(skip_all)]
     pub fn parse(content: String) -> color_eyre::Result<Self> {
-        SurgeParser::parse_profile(content)
+        Ok(SurgeParser::parse_profile(content)?)
     }
 
     pub fn optimize(&mut self, url_builder: UrlBuilder) -> color_eyre::Result<()> {

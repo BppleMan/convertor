@@ -30,6 +30,7 @@ pub fn init_test() -> PathBuf {
     let base_dir = init_test_base_dir();
     INITIALIZED_TEST.call_once(|| {
         init_backtrace();
+        tracing_span_tree::span_tree().aggregate(true).enable();
     });
     base_dir
 }

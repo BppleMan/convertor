@@ -1,8 +1,7 @@
 use crate::profile::core::policy::Policy;
+use crate::profile::error::ParseError;
 use crate::profile::renderer::clash_renderer::ClashRenderer;
 use crate::profile::renderer::surge_renderer::SurgeRenderer;
-use color_eyre::eyre::eyre;
-use color_eyre::Report;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
@@ -92,7 +91,7 @@ impl Display for RuleType {
 }
 
 impl FromStr for RuleType {
-    type Err = Report;
+    type Err = ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_uppercase().as_str() {
@@ -107,7 +106,10 @@ impl FromStr for RuleType {
             "GEOIP" => Ok(RuleType::GeoIP),
             "FINAL" => Ok(RuleType::Final),
             "MATCH" => Ok(RuleType::Match),
-            _ => Err(eyre!("Unknown rule type: {}", s)),
+            _ => Err(ParseError::RuleType {
+                line: 0,
+                reason: format!("未知的规则类型: {}", s),
+            }),
         }
     }
 }

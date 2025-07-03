@@ -2,15 +2,17 @@ use crate::profile::core::policy::Policy;
 use crate::profile::core::proxy::Proxy;
 use crate::profile::core::proxy_group::{ProxyGroup, ProxyGroupType};
 use crate::profile::core::rule::{Rule, RuleType};
+use crate::profile::error::ParseError;
 use crate::profile::surge_profile::SurgeProfile;
-use color_eyre::eyre::eyre;
 use std::collections::HashMap;
 use std::fmt::Write;
+use std::str::FromStr;
 use tracing::{instrument, trace};
-
 // pub const SECTION_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"^\[[^\[\]]+]$"#).unwrap());
 // pub const COMMENT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\s*(;|#|//)").unwrap());
 // pub const INLINE_COMMENT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"(;|#|//).*$").unwrap());
+
+pub type Result<T> = core::result::Result<T, ParseError>;
 
 pub const MANAGED_CONFIG_HEADER: &str = "MANAGED-CONFIG";
 pub const GENERAL_SECTION: &str = "[General]";
@@ -23,32 +25,32 @@ pub struct SurgeParser;
 
 impl SurgeParser {
     #[instrument(skip_all)]
-    pub fn parse_profile(content: String) -> color_eyre::Result<SurgeProfile> {
+    pub fn parse_profile(content: String) -> Result<SurgeProfile> {
         let mut sections = Self::parse_raw(&content);
         let header = if let Some(section) = sections.remove(MANAGED_CONFIG_HEADER) {
             Self::parse_header(section)?
         } else {
-            return Err(eyre!("没有找到 MANAGED-CONFIG 部分"));
+            return Err(ParseError::SectionMissing(MANAGED_CONFIG_HEADER));
         };
         let general = if let Some(section) = sections.remove(GENERAL_SECTION) {
             Self::parse_general(section)?
         } else {
-            return Err(eyre!("没有找到 [General] 部分"));
+            return Err(ParseError::SectionMissing(GENERAL_SECTION));
         };
         let proxies = if let Some(section) = sections.remove(PROXY_SECTION) {
             Self::parse_proxies(section)?
         } else {
-            return Err(eyre!("没有找到 [Proxy] 部分"));
+            return Err(ParseError::SectionMissing(PROXY_SECTION));
         };
         let proxy_groups = if let Some(section) = sections.remove(PROXY_GROUP_SECTION) {
             Self::parse_proxy_groups(section)?
         } else {
-            return Err(eyre!("没有找到 [Proxy Group] 部分"));
+            return Err(ParseError::SectionMissing(PROXY_GROUP_SECTION));
         };
         let rules = if let Some(section) = sections.remove(RULE_SECTION) {
             Self::parse_rules(section)?
         } else {
-            return Err(eyre!("没有找到 [Rule] 部分"));
+            return Err(ParseError::SectionMissing(RULE_SECTION));
         };
         let url_rewrite = if let Some(section) = sections.remove(URL_REWRITE_SECTION) {
             Self::parse_url_rewrite(section)?
@@ -59,6 +61,7 @@ impl SurgeParser {
             .into_iter()
             .map(|(k, v)| (k.to_owned(), v.into_iter().map(str::to_owned).collect()))
             .collect();
+
         Ok(SurgeProfile {
             header,
             general,
@@ -90,7 +93,7 @@ impl SurgeParser {
     }
 
     #[instrument(skip_all)]
-    pub fn parse_header(section: impl IntoIterator<Item = impl AsRef<str>>) -> color_eyre::Result<String> {
+    pub fn parse_header(section: impl IntoIterator<Item = impl AsRef<str>>) -> Result<String> {
         let mut output = String::new();
         for line in section {
             writeln!(output, "{}", line.as_ref())?;
@@ -99,36 +102,48 @@ impl SurgeParser {
     }
 
     #[instrument(skip_all)]
-    pub fn parse_general(section: impl IntoIterator<Item = impl AsRef<str>>) -> color_eyre::Result<Vec<String>> {
+    pub fn parse_general(section: impl IntoIterator<Item = impl AsRef<str>>) -> Result<Vec<String>> {
         Ok(section.into_iter().map(|s| s.as_ref().to_owned()).collect())
     }
 
     #[instrument(skip_all)]
-    pub fn parse_url_rewrite(section: impl IntoIterator<Item = impl AsRef<str>>) -> color_eyre::Result<Vec<String>> {
+    pub fn parse_url_rewrite(section: impl IntoIterator<Item = impl AsRef<str>>) -> Result<Vec<String>> {
         Ok(section.into_iter().map(|s| s.as_ref().to_owned()).collect())
     }
 
     #[instrument(skip_all)]
-    pub fn parse_proxies(section: impl IntoIterator<Item = impl AsRef<str>>) -> color_eyre::Result<Vec<Proxy>> {
+    pub fn parse_proxies(section: impl IntoIterator<Item = impl AsRef<str>>) -> Result<Vec<Proxy>> {
         Self::parse_comment(section, Self::parse_proxy, Proxy::set_comment)
     }
 
     #[instrument(skip_all)]
-    pub fn parse_proxy(line: &str) -> color_eyre::Result<Proxy> {
+    pub fn parse_proxy(line: &str) -> Result<Proxy> {
         let line = Self::trim_line_comment(line);
 
-        let (name, value) = line.split_once('=').ok_or_else(|| eyre!("Proxy 格式错误: {line}"))?;
+        let (name, value) = line.split_once('=').ok_or_else(|| ParseError::Proxy {
+            line: 0,
+            reason: format!("Proxy 格式错误, 应该为`name=value`: {line}"),
+        })?;
 
         let name = name.trim();
 
         let mut fields = value.split(',').map(str::trim);
 
-        let r#type = fields.next().ok_or_else(|| eyre!("Proxy type 缺失: {line}"))?;
-        let server = fields.next().ok_or_else(|| eyre!("Proxy server 缺失: {line}"))?;
+        let r#type = fields.next().ok_or_else(|| ParseError::Proxy {
+            line: 0,
+            reason: format!("Proxy 缺失 type: {line}"),
+        })?;
+        let server = fields.next().ok_or_else(|| ParseError::Proxy {
+            line: 0,
+            reason: format!("Proxy 缺失 server: {line}"),
+        })?;
         let port = fields
             .next()
             .and_then(|p| p.parse::<u16>().ok())
-            .ok_or_else(|| eyre!("Proxy port 缺失或非法: {line}"))?;
+            .ok_or_else(|| ParseError::Proxy {
+                line: 0,
+                reason: format!("Proxy 缺失 port 或格式错误: {line}"),
+            })?;
 
         // 避免 HashMap，直接解构
         let mut password = None;
@@ -154,7 +169,10 @@ impl SurgeParser {
             }
         }
 
-        let password = password.ok_or_else(|| eyre!("Proxy password 缺失: {line}"))?;
+        let password = password.ok_or_else(|| ParseError::Proxy {
+            line: 0,
+            reason: format!("Proxy 缺失 password: {line}"),
+        })?;
 
         Ok(Proxy {
             name: name.to_string(),
@@ -172,17 +190,18 @@ impl SurgeParser {
     }
 
     #[instrument(skip_all)]
-    pub fn parse_proxy_groups(
-        section: impl IntoIterator<Item = impl AsRef<str>>,
-    ) -> color_eyre::Result<Vec<ProxyGroup>> {
+    pub fn parse_proxy_groups(section: impl IntoIterator<Item = impl AsRef<str>>) -> Result<Vec<ProxyGroup>> {
         Self::parse_comment(section, Self::parse_proxy_group, ProxyGroup::set_comment)
     }
 
     #[instrument(skip_all)]
-    pub fn parse_proxy_group(line: &str) -> color_eyre::Result<ProxyGroup> {
+    pub fn parse_proxy_group(line: &str) -> Result<ProxyGroup> {
         let line = Self::trim_line_comment(line.as_ref());
         let Some((name, value)) = line.split_once('=') else {
-            return Err(eyre!("Proxy Group 格式错误: {}", line));
+            return Err(ParseError::ProxyGroup {
+                line: 0,
+                reason: format!("Proxy Group 格式错误, 应该为`name=value`: {line}"),
+            });
         };
         let mut fields = value.split(',');
         let Some(r#type) = fields
@@ -190,7 +209,10 @@ impl SurgeParser {
             .map(str::trim)
             .and_then(|t| t.parse::<ProxyGroupType>().ok())
         else {
-            return Err(eyre!("Proxy Group type 缺失: {}", line));
+            return Err(ParseError::ProxyGroup {
+                line: 0,
+                reason: format!("Proxy Group 缺失 type 或格式错误: {line}"),
+            });
         };
         let proxies = fields.map(str::trim).map(str::to_string).collect::<Vec<_>>();
         let proxy_group = ProxyGroup {
@@ -203,36 +225,51 @@ impl SurgeParser {
     }
 
     #[instrument(skip_all)]
-    pub fn parse_rules(section: impl IntoIterator<Item = impl AsRef<str>>) -> color_eyre::Result<Vec<Rule>> {
+    pub fn parse_rules(section: impl IntoIterator<Item = impl AsRef<str>>) -> Result<Vec<Rule>> {
         Self::parse_comment(section, Self::parse_rule, Rule::set_comment)
     }
 
     #[instrument(skip_all)]
-    pub fn parse_rule(line: &str) -> color_eyre::Result<Rule> {
+    pub fn parse_rule(line: &str) -> Result<Rule> {
         let line = Self::trim_line_comment(line.as_ref());
         let fields = line.split(',').collect::<Vec<_>>();
         if fields.len() < 2 {
-            return Err(eyre!("规则类型缺失或格式错误: {}", line));
+            return Err(ParseError::Rule {
+                line: 0,
+                reason: format!("规则格式错误, 应该为`type,value[,policy[,option]]`: {line}"),
+            });
         }
-        let Ok(rule_type) = fields[0].trim().parse::<RuleType>() else {
-            return Err(eyre!("规则类型缺失或格式错误: {}", line));
+        let (value, policy) = match fields.len() {
+            0 | 1 => {
+                return Err(ParseError::Rule {
+                    line: 0,
+                    reason: format!("规则格式错误, 应该为`type,value[,policy[,option]]`: {line}"),
+                })
+            }
+            2 => {
+                let policy = Policy {
+                    name: fields[1].trim().to_owned(),
+                    option: None,
+                    is_subscription: false,
+                };
+                (None, policy)
+            }
+            _ => {
+                let value = fields[1].trim().to_string();
+                let policy = Policy {
+                    name: fields[2].trim().to_owned(),
+                    option: fields.get(3).map(|o| o.to_string()),
+                    is_subscription: false,
+                };
+                (Some(value), policy)
+            }
         };
-        let (value, policy) = if fields.len() == 2 {
-            let policy = Policy {
-                name: fields[1].trim().to_owned(),
-                option: None,
-                is_subscription: false,
-            };
-            (None, policy)
-        } else {
-            let value = fields[1].trim().to_string();
-            let policy = Policy {
-                name: fields[2].trim().to_owned(),
-                option: fields.get(3).map(|o| o.to_string()),
-                is_subscription: false,
-            };
-            (Some(value), policy)
+
+        let rule_type = match RuleType::from_str(fields[0].trim()) {
+            Ok(rule_type) => rule_type,
+            Err(e) => return Err(e),
         };
+
         let rule = Rule {
             rule_type,
             value,
@@ -247,9 +284,9 @@ impl SurgeParser {
         contents: impl IntoIterator<Item = impl AsRef<str>>,
         parse: F,
         set_comment: C,
-    ) -> color_eyre::Result<Vec<R>>
+    ) -> Result<Vec<R>>
     where
-        F: Fn(&str) -> color_eyre::Result<R>,
+        F: Fn(&str) -> Result<R>,
         C: Fn(&mut R, Option<String>),
     {
         let mut items = vec![];
