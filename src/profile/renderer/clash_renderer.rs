@@ -117,7 +117,7 @@ impl ClashRenderer {
     }
 
     #[instrument(skip_all)]
-    pub fn render_rule_provider_payload(rules: &[&Rule]) -> Result<String> {
+    pub fn render_rule_provider_payload(rules: &[Rule]) -> Result<String> {
         let mut output = String::new();
         writeln!(&mut output, "payload:")?;
         for rule in rules {
@@ -194,9 +194,15 @@ impl ClashRenderer {
         if let Some(value) = &rule.value {
             write!(output, ",{}", value)?;
         }
-        write!(output, ",{}", rule.policy.name)?;
-        if let Some(option) = &rule.policy.option {
-            write!(output, ",{}", option)?;
+        write!(output, "{}", Self::render_policy(&rule.policy)?)?;
+        Ok(output)
+    }
+
+    pub fn render_policy(policy: &Policy) -> Result<String> {
+        let mut output = String::new();
+        write!(&mut output, ",{}", policy.name)?;
+        if let Some(option) = &policy.option {
+            write!(&mut output, ",{}", option)?;
         }
         Ok(output)
     }

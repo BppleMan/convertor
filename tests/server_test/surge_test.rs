@@ -1,5 +1,5 @@
 use crate::server_test::ServerContext;
-use crate::{mock_profile, start_server};
+use crate::{count_rule_lines, mock_profile, start_server};
 use axum::body::Body;
 use axum::extract::Request;
 use convertor::client::Client;
@@ -78,6 +78,7 @@ pub async fn test_surge_rule_set() -> color_eyre::Result<()> {
     pretty_assertions::assert_eq!(896, lines.len());
 
     let rules = SurgeParser::parse_rules(lines)?;
+    pretty_assertions::assert_eq!(count_rule_lines(Client::Surge, &policy), rules.len());
     for rule in rules {
         pretty_assertions::assert_eq!(&policy, &rule.policy);
     }
@@ -104,13 +105,13 @@ pub async fn test_surge_subscription_rule_set() -> color_eyre::Result<()> {
         .body(Body::empty())?;
     let response = app.oneshot(request).await?;
     let stream = String::from_utf8_lossy(&response.into_body().collect().await?.to_bytes()).to_string();
-    println!("{}", stream);
     let lines = stream.lines().collect::<Vec<_>>();
 
     pretty_assertions::assert_str_eq!("[Rule]", lines[0]);
     pretty_assertions::assert_eq!(3, lines.len());
 
     let rules = SurgeParser::parse_rules(lines)?;
+    pretty_assertions::assert_eq!(1, rules.len());
     for rule in rules {
         pretty_assertions::assert_eq!(&RuleType::Domain, &rule.rule_type);
         pretty_assertions::assert_eq!(&policy.name, &rule.policy.name);
@@ -142,10 +143,10 @@ pub async fn test_surge_direct_rule_set() -> color_eyre::Result<()> {
     let lines = stream.lines().collect::<Vec<_>>();
 
     pretty_assertions::assert_str_eq!("[Rule]", lines[0]);
-    pretty_assertions::assert_eq!(7, lines.len());
+    pretty_assertions::assert_eq!(6, lines.len());
 
     let rules = SurgeParser::parse_rules(lines)?;
-    pretty_assertions::assert_eq!(2, rules.len());
+    pretty_assertions::assert_eq!(1, rules.len());
     for rule in rules {
         pretty_assertions::assert_eq!(&RuleType::Domain, &rule.rule_type);
         pretty_assertions::assert_eq!(&policy.name, &rule.policy.name);

@@ -18,9 +18,9 @@ use tower_http::trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, Tr
 use tower_http::LatencyUnit;
 use tracing::instrument;
 
-pub mod clash;
-pub mod surge;
-pub mod subscription;
+pub mod clash_router;
+pub mod surge_router;
+pub mod subscription_router;
 
 pub struct AppState {
     pub config: ConvertorConfig,
@@ -40,7 +40,7 @@ pub fn router(app_state: AppState) -> Router {
         .route("/", get(root))
         .route("/profile", get(profile))
         .route("/rule-set", get(rule_set))
-        .route("/sub-log", get(subscription::subscription_logs))
+        .route("/sub-log", get(subscription_router::subscription_logs))
         .with_state(Arc::new(app_state))
         .layer(
             TraceLayer::new_for_http()
@@ -75,8 +75,8 @@ pub async fn profile(
     let raw_profile = state.api.get_raw_profile(raw_subscription_url, query.client).await?;
     // info!("整理订阅内容");
     let profile = match query.client {
-        Client::Surge => surge::profile_impl(state, url_builder, raw_profile).await,
-        Client::Clash => clash::profile_impl(state, url_builder, raw_profile).await,
+        Client::Surge => surge_router::profile_impl(state, url_builder, raw_profile).await,
+        Client::Clash => clash_router::profile_impl(state, url_builder, raw_profile).await,
     }?;
     Ok(profile)
 }
@@ -84,7 +84,6 @@ pub async fn profile(
 #[instrument(skip_all)]
 pub async fn rule_set(
     State(state): State<Arc<AppState>>,
-    // Query(query): Query<ProfileQuery>,
     RawQuery(query): RawQuery,
     request: Request<Body>,
 ) -> Result<String, AppError> {
@@ -99,8 +98,12 @@ pub async fn rule_set(
     let raw_subscription_url = url_builder.build_subscription_url(query.client)?;
     let raw_profile = state.api.get_raw_profile(raw_subscription_url, query.client).await?;
     match (query.client, query.policy) {
-        (Client::Surge, Some(policy)) => surge::rule_set_impl(state, url_builder, raw_profile, policy.into()).await,
-        (Client::Clash, Some(policy)) => clash::rule_set_impl(state, url_builder, raw_profile, policy.into()).await,
+        (Client::Surge, Some(policy)) => {
+            surge_router::rule_set_impl(state, url_builder, raw_profile, policy.into()).await
+        }
+        (Client::Clash, Some(policy)) => {
+            clash_router::rule_set_impl(state, url_builder, raw_profile, policy.into()).await
+        }
         _ => Err(eyre!("错误的 client 或 policy 参数")),
     }
     .map_err(Into::into)

@@ -195,7 +195,7 @@ impl SurgeParser {
 
     #[instrument(skip_all)]
     pub fn parse_proxy_group(line: &str) -> Result<ProxyGroup> {
-        let line = Self::trim_line_comment(line.as_ref());
+        let line = Self::trim_line_comment(line);
         let Some((name, value)) = line.split_once('=') else {
             return Err(ParseError::ProxyGroup {
                 line: 0,
@@ -230,7 +230,7 @@ impl SurgeParser {
 
     #[instrument(skip_all)]
     pub fn parse_rule(line: &str) -> Result<Rule> {
-        let line = Self::trim_line_comment(line.as_ref());
+        let line = Self::trim_line_comment(line);
         let fields = line.split(',').collect::<Vec<_>>();
         if fields.len() < 2 {
             return Err(ParseError::Rule {
@@ -264,10 +264,7 @@ impl SurgeParser {
             }
         };
 
-        let rule_type = match RuleType::from_str(fields[0].trim()) {
-            Ok(rule_type) => rule_type,
-            Err(e) => return Err(e),
-        };
+        let rule_type = RuleType::from_str(fields[0].trim())?;
 
         let rule = Rule {
             rule_type,

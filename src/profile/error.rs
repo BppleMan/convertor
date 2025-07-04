@@ -23,6 +23,9 @@ pub enum ParseError {
 
     #[error(transparent)]
     FmtError(#[from] std::fmt::Error),
+
+    #[error(transparent)]
+    YamlError(#[from] serde_yaml::Error),
 }
 
 #[derive(Debug, Error)]

@@ -5,6 +5,7 @@ use crate::profile::core::proxy_group::{ProxyGroup, ProxyGroupType};
 use crate::profile::core::rule::{Rule, RuleType};
 use crate::profile::core::rule_provider::RuleProvider;
 use crate::profile::core::{extract_policies, group_by_region};
+use crate::profile::parser::clash_parser::ClashParser;
 use crate::profile::renderer::clash_renderer::ClashRenderer;
 use crate::subscription::url_builder::UrlBuilder;
 use serde::Deserialize;
@@ -41,12 +42,12 @@ pub struct ClashProfile {
 impl ClashProfile {
     #[instrument(skip_all)]
     pub fn parse(content: String) -> color_eyre::Result<Self> {
-        Ok(serde_yaml::from_str(&content)?)
+        Ok(ClashParser::parse(content)?)
     }
 
     #[instrument(skip_all)]
     pub fn template() -> color_eyre::Result<Self> {
-        Ok(serde_yaml::from_str(TEMPLATE_STR)?)
+        Ok(ClashParser::parse(TEMPLATE_STR)?)
     }
 
     #[instrument(skip_all)]
@@ -150,9 +151,9 @@ impl ClashProfile {
                 if policy == Policy::subscription_policy() {
                     // Subscription 策略只包括机场订阅链接
                     rule.value.as_ref().map(|v| v.contains(sub_host.as_ref())) == Some(true)
-                } else if !matches!(rule.rule_type, RuleType::Final | RuleType::Match) {
+                } else if !matches!(rule.rule_type, RuleType::Final | RuleType::GeoIP | RuleType::Match) {
                     // 对于其他策略，检查规则的 policies 是否匹配，但不能是 Final 或 Match 类型
-                    rule.policy == policy
+                    rule.policy == policy && rule.value.as_ref().map(|v| v.contains(sub_host.as_ref())) != Some(true)
                 } else {
                     false
                 }
@@ -171,6 +172,6 @@ impl FromStr for ClashProfile {
     type Err = color_eyre::Report;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(serde_yaml::from_str(s)?)
+        Ok(ClashParser::parse(s)?)
     }
 }

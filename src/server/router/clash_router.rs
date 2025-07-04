@@ -34,5 +34,5 @@ pub(super) async fn rule_set_impl(
 ) -> Result<String> {
     let raw_profile = ClashProfile::from_str(&raw_profile)?;
     let rules = raw_profile.rules_for_provider(policy, url_builder.sub_host()?)?;
-    Ok(ClashRenderer::render_rules(&rules)?)
+    Ok(ClashRenderer::render_rule_provider_payload(&rules)?)
 }

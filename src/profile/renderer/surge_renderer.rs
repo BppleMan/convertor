@@ -128,8 +128,14 @@ impl SurgeRenderer {
         if let Some(value) = &rule.value {
             write!(&mut output, ",{}", value)?;
         }
-        write!(&mut output, ",{}", rule.policy.name)?;
-        if let Some(option) = &rule.policy.option {
+        write!(&mut output, "{}", Self::render_policy(&rule.policy)?)?;
+        Ok(output)
+    }
+
+    pub fn render_policy(policy: &Policy) -> Result<String> {
+        let mut output = String::new();
+        write!(&mut output, ",{}", policy.name)?;
+        if let Some(option) = &policy.option {
             write!(&mut output, ",{}", option)?;
         }
         Ok(output)

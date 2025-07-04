@@ -8,7 +8,7 @@ use convertor::profile::core::policy::Policy;
 use convertor::profile::core::rule::{Rule, RuleType};
 use convertor::profile::renderer::clash_renderer::ClashRenderer;
 use convertor::profile::renderer::surge_renderer::SurgeRenderer;
-use convertor::server::router::{profile, root, rule_set, subscription, AppState};
+use convertor::server::router::{profile, root, rule_set, subscription_router, AppState};
 use convertor::subscription::subscription_api::boslife_api::BosLifeApi;
 use convertor::subscription::subscription_config::ServiceConfig;
 use httpmock::Method::{GET, POST};
@@ -53,7 +53,7 @@ pub async fn start_server_with_config(
         .route("/", get(root))
         .route("/profile", get(profile))
         .route("/rule-set", get(rule_set))
-        .route("/sub-log", get(subscription::subscription_logs))
+        .route("/sub-log", get(subscription_router::subscription_logs))
         .with_state(app_state.clone());
 
     Ok(ServerContext {
@@ -130,20 +130,49 @@ pub fn mock_profile(client: Client, mock_server: &MockServer) -> color_eyre::Res
         Client::Surge => {
             let mut lines = SURGE_MOCK_STR.lines().collect::<Vec<_>>();
             let rule_line = SurgeRenderer::render_rule(&rule)?;
-            lines
-                .iter()
-                .position(|l| l.starts_with("[Rule]"))
-                .map(|i| lines.insert(i + 1, &rule_line));
+            if let Some(i) = lines.iter().position(|l| l.starts_with("[Rule]")) {
+                lines.insert(i + 1, &rule_line)
+            }
             Ok(lines.join("\n"))
         }
         Client::Clash => {
             let mut lines = CLASH_MOCK_STR.lines().collect::<Vec<_>>();
             let rule_line = format!("    - {}", ClashRenderer::render_rule(&rule)?);
+            if let Some(i) = lines.iter().position(|l| l.starts_with("rules:")) {
+                lines.insert(i + 1, &rule_line)
+            }
+            Ok(lines.join("\n"))
+        }
+    }
+}
+
+pub fn count_rule_lines(client: Client, policy: &Policy) -> usize {
+    match client {
+        Client::Surge => {
+            let expect_policy = SurgeRenderer::render_policy(policy).expect("无法渲染 Surge 策略");
+            let lines = SURGE_MOCK_STR.lines().collect::<Vec<_>>();
             lines
                 .iter()
-                .position(|l| l.starts_with("rules:"))
-                .map(|i| lines.insert(i + 1, &rule_line));
-            Ok(lines.join("\n"))
+                .filter(|line| {
+                    !line.starts_with("//")
+                        && !line.starts_with("#")
+                        && !line.starts_with(";")
+                        && line.ends_with(&expect_policy)
+                })
+                .count()
+        }
+        Client::Clash => {
+            let expect_policy = ClashRenderer::render_policy(policy).expect("无法渲染 Clash 策略");
+            let lines = CLASH_MOCK_STR.lines().collect::<Vec<_>>();
+            lines
+                .iter()
+                .filter(|line| {
+                    !line.starts_with("//")
+                        && !line.starts_with("#")
+                        && !line.starts_with(";")
+                        && line.ends_with(&format!("{expect_policy}'"))
+                })
+                .count()
         }
     }
 }

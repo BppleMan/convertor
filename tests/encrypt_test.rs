@@ -9,11 +9,9 @@ fn test_encrypt_decrypt() -> color_eyre::Result<()> {
 
     // 加密
     let encrypted = encrypt(secret, message)?;
-    println!("Encrypted: {}", encrypted);
 
     // 解密
     let decrypted = decrypt(secret, &encrypted)?;
-    println!("Decrypted: {}", decrypted);
 
     assert_eq!(message, decrypted);
 
