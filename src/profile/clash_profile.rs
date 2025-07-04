@@ -50,10 +50,10 @@ impl ClashProfile {
     }
 
     #[instrument(skip_all)]
-    pub fn merge(
+    pub fn optimize(
         &mut self,
-        raw_profile: String,
         url_builder: &UrlBuilder,
+        raw_profile: String,
         secret: impl AsRef<str>,
     ) -> color_eyre::Result<()> {
         let raw_profile = ClashProfile::parse(raw_profile)?;
@@ -113,7 +113,6 @@ impl ClashProfile {
                     return None;
                 }
                 let value = rule.value.as_ref()?;
-                println!("{}, {}", value, sub_host.as_ref());
                 let policy = if value.contains(sub_host.as_ref()) {
                     Policy::subscription_policy()
                 } else {

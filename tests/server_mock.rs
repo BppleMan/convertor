@@ -138,7 +138,7 @@ pub fn mock_profile(client: Client, mock_server: &MockServer) -> color_eyre::Res
         }
         Client::Clash => {
             let mut lines = CLASH_MOCK_STR.lines().collect::<Vec<_>>();
-            let rule_line = ClashRenderer::render_rule(&rule)?;
+            let rule_line = format!("    - {}", ClashRenderer::render_rule(&rule)?);
             lines
                 .iter()
                 .position(|l| l.starts_with("rules:"))

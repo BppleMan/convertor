@@ -21,10 +21,8 @@ pub struct ClashQuery {
 #[instrument(skip_all)]
 pub(super) async fn profile_impl(state: Arc<AppState>, url_builder: UrlBuilder, raw_profile: String) -> Result<String> {
     let mut template = ClashProfile::template()?;
-    template.merge(raw_profile, &url_builder, &state.config.secret)?;
-    let mut profile = String::new();
-    ClashRenderer::render_profile(&mut profile, &template)?;
-    Ok(profile)
+    template.optimize(&url_builder, raw_profile, &state.config.secret)?;
+    Ok(ClashRenderer::render_profile(&template)?)
 }
 
 #[instrument(skip_all)]
@@ -36,7 +34,5 @@ pub(super) async fn rule_set_impl(
 ) -> Result<String> {
     let raw_profile = ClashProfile::from_str(&raw_profile)?;
     let rules = raw_profile.rules_for_provider(policy, url_builder.sub_host()?)?;
-    let mut output = String::new();
-    ClashRenderer::render_rules(&mut output, &rules)?;
-    Ok(output)
+    Ok(ClashRenderer::render_rules(&rules)?)
 }

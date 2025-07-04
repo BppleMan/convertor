@@ -1,8 +1,10 @@
 use crate::server_test::ServerContext;
-use crate::start_server;
+use crate::{mock_profile, start_server};
 use axum::body::Body;
 use axum::extract::Request;
 use convertor::client::Client;
+use convertor::profile::clash_profile::ClashProfile;
+use convertor::profile::renderer::clash_renderer::ClashRenderer;
 use convertor::subscription::url_builder::UrlBuilder;
 use http_body_util::BodyExt;
 use std::collections::HashMap;
@@ -10,7 +12,12 @@ use tower::ServiceExt;
 
 #[tokio::test]
 pub async fn test_clash_profile() -> color_eyre::Result<()> {
-    let ServerContext { app, app_state, .. } = start_server(Client::Clash).await?;
+    let ServerContext {
+        app,
+        app_state,
+        mock_server,
+        ..
+    } = start_server(Client::Clash).await?;
     let url_builder = UrlBuilder::new(
         app_state.config.server.clone(),
         app_state.config.secret.clone(),
@@ -26,8 +33,14 @@ pub async fn test_clash_profile() -> color_eyre::Result<()> {
         .method("GET")
         .body(Body::empty())?;
     let response = app.oneshot(request).await?;
-    let body = String::from_utf8_lossy(&response.into_body().collect().await?.to_bytes()).into_owned();
-    println!("Clash Profile Response:\n{}", body);
+    let stream = String::from_utf8_lossy(&response.into_body().collect().await?.to_bytes()).into_owned();
+
+    let raw_profile = mock_profile(Client::Clash, &mock_server)?;
+    let mut expect_profile = ClashProfile::template()?;
+    expect_profile.optimize(&url_builder, raw_profile, &app_state.config.secret)?;
+    let expect = ClashRenderer::render_profile(&expect_profile)?;
+
+    pretty_assertions::assert_str_eq!(expect, stream);
     Ok(())
 }
 

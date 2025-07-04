@@ -14,7 +14,7 @@ pub struct ClashRenderer;
 
 impl ClashRenderer {
     #[instrument(skip_all)]
-    pub fn render_profile(output: &mut String, profile: &ClashProfile) -> Result<()> {
+    pub fn render_profile(profile: &ClashProfile) -> Result<String> {
         let ClashProfile {
             proxies,
             proxy_groups,
@@ -22,104 +22,115 @@ impl ClashRenderer {
             rule_providers,
             ..
         } = &profile;
-        Self::render_general(output, profile)?;
-        Self::render_proxies(output, proxies)?;
-        Self::render_proxy_groups(output, proxy_groups)?;
-        Self::render_rule_providers(output, rule_providers)?;
-        Self::render_rules(output, rules)?;
-        Ok(())
+        let lines = vec![
+            Self::render_general(profile)?,
+            Self::render_proxies(proxies)?,
+            Self::render_proxy_groups(proxy_groups)?,
+            Self::render_rule_providers(rule_providers)?,
+            Self::render_rules(rules)?,
+        ]
+        .join("\n");
+        Ok(lines)
     }
 
     #[instrument(skip_all)]
-    pub fn render_general(output: &mut String, profile: &ClashProfile) -> Result<()> {
-        writeln!(output, "port: {}", profile.port)?;
-        writeln!(output, "socks-port: {}", profile.socks_port)?;
-        writeln!(output, "redir-port: {}", profile.redir_port)?;
-        writeln!(output, "allow-lan: {}", profile.allow_lan)?;
-        writeln!(output, "mode: {}", profile.mode)?;
-        writeln!(output, "log-level: {}", profile.log_level)?;
-        writeln!(output, r#"external-controller: "{}""#, profile.external_controller)?;
-        writeln!(output, r#"secret: "{}""#, profile.secret)?;
-        writeln!(output)?;
-        Ok(())
+    pub fn render_general(profile: &ClashProfile) -> Result<String> {
+        let mut output = String::new();
+        writeln!(&mut output, "port: {}", profile.port)?;
+        writeln!(&mut output, "socks-port: {}", profile.socks_port)?;
+        writeln!(&mut output, "redir-port: {}", profile.redir_port)?;
+        writeln!(&mut output, "allow-lan: {}", profile.allow_lan)?;
+        writeln!(&mut output, "mode: {}", profile.mode)?;
+        writeln!(&mut output, "log-level: {}", profile.log_level)?;
+        writeln!(&mut output, r#"external-controller: "{}""#, profile.external_controller)?;
+        writeln!(&mut output, r#"secret: "{}""#, profile.secret)?;
+        writeln!(&mut output)?;
+        Ok(output)
     }
 
     #[instrument(skip_all)]
-    pub fn render_proxies(output: &mut String, proxies: &[Proxy]) -> Result<()> {
-        writeln!(output, "proxies:")?;
+    pub fn render_proxies(proxies: &[Proxy]) -> Result<String> {
+        let mut output = String::new();
+        writeln!(&mut output, "proxies:")?;
         for proxy in proxies {
             writeln!(
-                output,
+                &mut output,
                 "{:indent$}{}",
                 "",
                 format_args!("- {}", Self::render_proxy(proxy)?),
                 indent = INDENT,
             )?;
         }
-        writeln!(output)?;
-        Ok(())
+        writeln!(&mut output)?;
+        Ok(output)
     }
 
     #[instrument(skip_all)]
-    pub fn render_proxy_groups(output: &mut String, proxy_groups: &[ProxyGroup]) -> Result<()> {
-        writeln!(output, "proxy-groups:")?;
+    pub fn render_proxy_groups(proxy_groups: &[ProxyGroup]) -> Result<String> {
+        let mut output = String::new();
+        writeln!(&mut output, "proxy-groups:")?;
         for group in proxy_groups {
             writeln!(
-                output,
+                &mut output,
                 "{:indent$}{}",
                 "",
                 format_args!("- {}", Self::render_proxy_group(group)?),
                 indent = INDENT,
             )?;
         }
-        writeln!(output)?;
-        Ok(())
+        writeln!(&mut output)?;
+        Ok(output)
     }
 
     #[instrument(skip_all)]
-    pub fn render_rule_providers(output: &mut String, rule_providers: &[(String, RuleProvider)]) -> Result<()> {
-        writeln!(output, "rule-providers:")?;
+    pub fn render_rule_providers(rule_providers: &[(String, RuleProvider)]) -> Result<String> {
+        let mut output = String::new();
+        writeln!(&mut output, "rule-providers:")?;
         for provider in rule_providers {
             writeln!(
-                output,
+                &mut output,
                 "{:indent$}{}",
                 "",
                 format_args!("{}: {}", provider.0, Self::render_rule_provider(&provider.1)?),
                 indent = INDENT,
             )?;
         }
-        writeln!(output)?;
-        Ok(())
+        writeln!(&mut output)?;
+        Ok(output)
     }
 
     #[instrument(skip_all)]
-    pub fn render_rules(output: &mut String, rules: &[Rule]) -> Result<()> {
-        writeln!(output, "rules:")?;
+    pub fn render_rules(rules: &[Rule]) -> Result<String> {
+        let mut output = String::new();
+        writeln!(&mut output, "rules:")?;
         for rule in rules {
             writeln!(
-                output,
+                &mut output,
                 "{:indent$}{}",
                 "",
                 format_args!(r#"- "{}""#, Self::render_rule(rule)?),
                 indent = INDENT,
             )?;
         }
-        Ok(())
+        writeln!(&mut output)?;
+        Ok(output)
     }
 
     #[instrument(skip_all)]
-    pub fn render_rule_provider_payload(output: &mut String, rules: &[&Rule]) -> Result<()> {
-        writeln!(output, "payload:")?;
+    pub fn render_rule_provider_payload(rules: &[&Rule]) -> Result<String> {
+        let mut output = String::new();
+        writeln!(&mut output, "payload:")?;
         for rule in rules {
             writeln!(
-                output,
+                &mut output,
                 "{:indent$}{}",
                 "",
                 format_args!(r#"- "{}""#, Self::render_rule(rule)?),
                 indent = INDENT,
             )?;
         }
-        Ok(())
+        writeln!(&mut output)?;
+        Ok(output)
     }
 
     #[instrument(skip_all)]
