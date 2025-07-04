@@ -3,6 +3,7 @@ use crate::profile::core::proxy::Proxy;
 use crate::profile::core::proxy_group::{ProxyGroup, ProxyGroupType};
 use crate::profile::core::rule::{Rule, RuleType};
 use crate::profile::error::ParseError;
+use crate::profile::parser::Result;
 use crate::profile::surge_profile::SurgeProfile;
 use std::collections::HashMap;
 use std::fmt::Write;
@@ -11,8 +12,6 @@ use tracing::{instrument, trace};
 // pub const SECTION_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"^\[[^\[\]]+]$"#).unwrap());
 // pub const COMMENT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\s*(;|#|//)").unwrap());
 // pub const INLINE_COMMENT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"(;|#|//).*$").unwrap());
-
-pub type Result<T> = core::result::Result<T, ParseError>;
 
 pub const MANAGED_CONFIG_HEADER: &str = "MANAGED-CONFIG";
 pub const GENERAL_SECTION: &str = "[General]";

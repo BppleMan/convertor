@@ -2,8 +2,8 @@ use crate::profile::core::policy::Policy;
 use crate::profile::core::proxy::Proxy;
 use crate::profile::core::proxy_group::ProxyGroup;
 use crate::profile::core::rule::Rule;
+use crate::profile::renderer::Result;
 use crate::profile::surge_profile::SurgeProfile;
-use color_eyre::eyre::eyre;
 use indexmap::IndexMap;
 use std::fmt::Write;
 use tracing::instrument;
@@ -12,7 +12,7 @@ pub struct SurgeRenderer;
 
 impl SurgeRenderer {
     #[instrument(skip_all)]
-    pub fn render_profile(profile: &SurgeProfile) -> color_eyre::Result<String> {
+    pub fn render_profile(profile: &SurgeProfile) -> Result<String> {
         let SurgeProfile {
             header,
             general,
@@ -38,7 +38,7 @@ impl SurgeRenderer {
     }
 
     #[instrument(skip_all)]
-    pub fn render_header(header: &str) -> color_eyre::Result<String> {
+    pub fn render_header(header: &str) -> Result<String> {
         let mut output = String::new();
         writeln!(&mut output, "{}", header)?;
         writeln!(&mut output)?;
@@ -46,7 +46,7 @@ impl SurgeRenderer {
     }
 
     #[instrument(skip_all)]
-    pub fn render_general(general: &[String]) -> color_eyre::Result<String> {
+    pub fn render_general(general: &[String]) -> Result<String> {
         let mut output = String::new();
         writeln!(&mut output, "[General]")?;
         for line in general {
@@ -57,7 +57,7 @@ impl SurgeRenderer {
     }
 
     #[instrument(skip_all)]
-    pub fn render_proxies(proxies: &[Proxy]) -> color_eyre::Result<String> {
+    pub fn render_proxies(proxies: &[Proxy]) -> Result<String> {
         let mut output = String::new();
         writeln!(&mut output, "[Proxy]")?;
         for proxy in proxies {
@@ -91,7 +91,7 @@ impl SurgeRenderer {
     }
 
     #[instrument(skip_all)]
-    pub fn render_proxy_groups(proxy_groups: &[ProxyGroup]) -> color_eyre::Result<String> {
+    pub fn render_proxy_groups(proxy_groups: &[ProxyGroup]) -> Result<String> {
         let mut output = String::new();
         writeln!(&mut output, "[Proxy Group]")?;
         for group in proxy_groups {
@@ -109,42 +109,47 @@ impl SurgeRenderer {
     }
 
     #[instrument(skip_all)]
-    pub fn render_rules(rules: &[Rule]) -> color_eyre::Result<String> {
+    pub fn render_rules(rules: &[Rule]) -> Result<String> {
         let mut output = String::new();
         writeln!(&mut output, "[Rule]")?;
         for rule in rules {
-            if let Some(comment) = &rule.comment {
-                writeln!(&mut output, "{}", comment)?;
-            }
-            write!(&mut output, "{}", rule.rule_type.as_str())?;
-            if let Some(value) = &rule.value {
-                write!(&mut output, ",{}", value)?;
-            }
-            write!(&mut output, ",{}", rule.policy.name)?;
-            if let Some(option) = &rule.policy.option {
-                write!(&mut output, ",{}", option)?;
-            }
-            writeln!(&mut output)?;
+            writeln!(&mut output, "{}", Self::render_rule(rule)?)?;
         }
         writeln!(&mut output)?;
         Ok(output)
     }
 
+    pub fn render_rule(rule: &Rule) -> Result<String> {
+        let mut output = String::new();
+        if let Some(comment) = &rule.comment {
+            writeln!(&mut output, "{}", comment)?;
+        }
+        write!(&mut output, "{}", rule.rule_type.as_str())?;
+        if let Some(value) = &rule.value {
+            write!(&mut output, ",{}", value)?;
+        }
+        write!(&mut output, ",{}", rule.policy.name)?;
+        if let Some(option) = &rule.policy.option {
+            write!(&mut output, ",{}", option)?;
+        }
+        Ok(output)
+    }
+
     // 渲染规则集中的单个规则，这是不需要带 policy 的
     #[instrument(skip_all)]
-    pub fn render_rule_set(rule: &Rule) -> color_eyre::Result<String> {
+    pub fn render_rule_set(rule: &Rule) -> Result<String> {
         let mut output = String::new();
         write!(
             &mut output,
             "{},{}",
             rule.rule_type.as_str(),
-            rule.value.as_ref().ok_or(eyre!("规则集中的规则必须有 value"))?
+            rule.value.as_ref().expect("规则集中的规则必须有 value")
         )?;
         Ok(output)
     }
 
     #[instrument(skip_all)]
-    pub fn render_url_rewrite(url_rewrite: &[String]) -> color_eyre::Result<String> {
+    pub fn render_url_rewrite(url_rewrite: &[String]) -> Result<String> {
         let mut output = String::new();
         writeln!(&mut output, "[URL Rewrite]")?;
         for line in url_rewrite {
@@ -155,7 +160,7 @@ impl SurgeRenderer {
     }
 
     #[instrument(skip_all)]
-    pub fn render_misc(misc: &IndexMap<String, Vec<String>>) -> color_eyre::Result<String> {
+    pub fn render_misc(misc: &IndexMap<String, Vec<String>>) -> Result<String> {
         let mut output = String::new();
         for (key, values) in misc {
             writeln!(&mut output, "{}", key)?;

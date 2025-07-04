@@ -10,11 +10,7 @@ use tower::ServiceExt;
 
 #[tokio::test]
 pub async fn test_clash_profile() -> color_eyre::Result<()> {
-    let ServerContext {
-        app,
-        app_state,
-        base_dir: _base_dir,
-    } = start_server(Client::Clash).await?;
+    let ServerContext { app, app_state, .. } = start_server(Client::Clash).await?;
     let url_builder = UrlBuilder::new(
         app_state.config.server.clone(),
         app_state.config.secret.clone(),

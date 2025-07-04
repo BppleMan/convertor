@@ -28,15 +28,27 @@ impl SurgeProfile {
     }
 
     pub fn optimize(&mut self, url_builder: UrlBuilder) -> color_eyre::Result<()> {
-        self.replace_header(url_builder)?;
+        self.replace_header(&url_builder)?;
         self.optimize_proxies();
+        self.optimize_rules(url_builder.sub_host()?);
         Ok(())
     }
 
-    fn replace_header(&mut self, url_builder: UrlBuilder) -> color_eyre::Result<()> {
+    fn replace_header(&mut self, url_builder: &UrlBuilder) -> color_eyre::Result<()> {
         let url = url_builder.build_convertor_url(Client::Surge)?;
         self.header = SurgeConfig::build_managed_config_header(url);
         Ok(())
+    }
+
+    fn optimize_rules(&mut self, sub_host: String) {
+        if self.rules.is_empty() {
+            return;
+        }
+        self.rules.iter_mut().for_each(|rule| {
+            if rule.value.as_ref().map(|v| v.contains(sub_host.as_str())) == Some(true) {
+                rule.policy.is_subscription = true;
+            }
+        })
     }
 
     fn optimize_proxies(&mut self) {
@@ -90,7 +102,11 @@ impl SurgeProfile {
                     false
                 }
             })
-            .cloned()
+            .map(|rule| {
+                let mut rule = rule.clone();
+                rule.policy.is_subscription = true;
+                rule
+            })
             .collect::<Vec<_>>()
     }
 }

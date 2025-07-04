@@ -4,6 +4,10 @@ use axum::Router;
 use convertor::client::Client;
 use convertor::config::convertor_config::ConvertorConfig;
 use convertor::init_backtrace;
+use convertor::profile::core::policy::Policy;
+use convertor::profile::core::rule::{Rule, RuleType};
+use convertor::profile::renderer::clash_renderer::ClashRenderer;
+use convertor::profile::renderer::surge_renderer::SurgeRenderer;
 use convertor::server::router::{profile, root, rule_set, subscription, AppState};
 use convertor::subscription::subscription_api::boslife_api::BosLifeApi;
 use convertor::subscription::subscription_config::ServiceConfig;
@@ -14,8 +18,8 @@ use std::sync::{Arc, Once};
 
 pub mod server_test;
 
-pub(crate) const CLASH_MOCK_STR: &str = include_str!("../test-assets/clash/mock.yaml");
-pub(crate) const SURGE_MOCK_STR: &str = include_str!("../test-assets/surge/mock.conf");
+const CLASH_MOCK_STR: &str = include_str!("../test-assets/clash/mock.yaml");
+const SURGE_MOCK_STR: &str = include_str!("../test-assets/surge/mock.conf");
 
 static INITIALIZED_TEST: Once = Once::new();
 
@@ -55,6 +59,7 @@ pub async fn start_server_with_config(
     Ok(ServerContext {
         app,
         app_state,
+        mock_server,
         base_dir,
     })
 }
@@ -83,6 +88,7 @@ pub async fn start_mock_service_server(client: Client, config: &ServiceConfig) -
         .await;
 
     let get_subscription_api_path = format!("{}{}", config.prefix_path, config.get_subscription_api.api_path);
+    // 将订阅地址导航至 mock server 的 /subscription 路径
     mock_server
         .mock_async(|when, then| {
             when.method(GET).path(get_subscription_api_path);
@@ -96,16 +102,14 @@ pub async fn start_mock_service_server(client: Client, config: &ServiceConfig) -
                 .header("Content-Type", "application/json");
         })
         .await;
+    // hook mock server 的 /subscription 路径，返回相应的 mock 数据
     mock_server
         .mock_async(|when, then| {
             when.method(GET)
                 .path("/subscription")
                 .query_param("flag", client.as_str())
                 .query_param("token", "bppleman");
-            let body = match client {
-                Client::Surge => SURGE_MOCK_STR,
-                Client::Clash => CLASH_MOCK_STR,
-            };
+            let body = mock_profile(client, &mock_server).expect("无法生成 mock 配置文件");
             then.status(200)
                 .body(body)
                 .header("Content-Type", "text/plain; charset=utf-8");
@@ -113,4 +117,33 @@ pub async fn start_mock_service_server(client: Client, config: &ServiceConfig) -
         .await;
 
     Ok(mock_server)
+}
+
+pub fn mock_profile(client: Client, mock_server: &MockServer) -> color_eyre::Result<String> {
+    let rule = Rule {
+        rule_type: RuleType::Domain,
+        value: Some(mock_server.url("")),
+        policy: Policy::subscription_policy(),
+        comment: None,
+    };
+    match client {
+        Client::Surge => {
+            let mut lines = SURGE_MOCK_STR.lines().collect::<Vec<_>>();
+            let rule_line = SurgeRenderer::render_rule(&rule)?;
+            lines
+                .iter()
+                .position(|l| l.starts_with("[Rule]"))
+                .map(|i| lines.insert(i + 1, &rule_line));
+            Ok(lines.join("\n"))
+        }
+        Client::Clash => {
+            let mut lines = CLASH_MOCK_STR.lines().collect::<Vec<_>>();
+            let rule_line = ClashRenderer::render_rule(&rule)?;
+            lines
+                .iter()
+                .position(|l| l.starts_with("rules:"))
+                .map(|i| lines.insert(i + 1, &rule_line));
+            Ok(lines.join("\n"))
+        }
+    }
 }

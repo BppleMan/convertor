@@ -1,5 +1,5 @@
 use crate::server_test::ServerContext;
-use crate::{start_server, SURGE_MOCK_STR};
+use crate::{mock_profile, start_server};
 use axum::body::Body;
 use axum::extract::Request;
 use convertor::client::Client;
@@ -19,7 +19,8 @@ pub async fn test_surge_profile() -> color_eyre::Result<()> {
     let ServerContext {
         app,
         app_state,
-        base_dir: _base_dir,
+        mock_server,
+        ..
     } = start_server(Client::Surge).await?;
     let url_builder = UrlBuilder::new(
         app_state.config.server.clone(),
@@ -38,7 +39,7 @@ pub async fn test_surge_profile() -> color_eyre::Result<()> {
     let response = app.oneshot(request).await?;
     let stream = String::from_utf8_lossy(&response.into_body().collect().await?.to_bytes()).to_string();
 
-    let mut expect_profile = SurgeProfile::parse(SURGE_MOCK_STR.to_string())?;
+    let mut expect_profile = SurgeProfile::parse(mock_profile(Client::Surge, &mock_server)?)?;
     expect_profile.header = SurgeConfig::build_managed_config_header(url_builder.build_convertor_url(Client::Surge)?);
     expect_profile.optimize(url_builder)?;
     let expect = SurgeRenderer::render_profile(&expect_profile)?;
@@ -49,11 +50,7 @@ pub async fn test_surge_profile() -> color_eyre::Result<()> {
 
 #[tokio::test]
 pub async fn test_surge_rule_set() -> color_eyre::Result<()> {
-    let ServerContext {
-        app,
-        app_state,
-        base_dir: _base_dir,
-    } = start_server(Client::Surge).await?;
+    let ServerContext { app, app_state, .. } = start_server(Client::Surge).await?;
     let url_builder = UrlBuilder::new(
         app_state.config.server.clone(),
         app_state.config.secret.clone(),
@@ -89,11 +86,7 @@ pub async fn test_surge_rule_set() -> color_eyre::Result<()> {
 
 #[tokio::test]
 pub async fn test_surge_subscription_rule_set() -> color_eyre::Result<()> {
-    let ServerContext {
-        app,
-        app_state,
-        base_dir: _base_dir,
-    } = start_server(Client::Surge).await?;
+    let ServerContext { app, app_state, .. } = start_server(Client::Surge).await?;
     let url_builder = UrlBuilder::new(
         app_state.config.server.clone(),
         app_state.config.secret.clone(),
@@ -115,23 +108,20 @@ pub async fn test_surge_subscription_rule_set() -> color_eyre::Result<()> {
     let lines = stream.lines().collect::<Vec<_>>();
 
     pretty_assertions::assert_str_eq!("[Rule]", lines[0]);
-    pretty_assertions::assert_eq!(2, lines.len());
+    pretty_assertions::assert_eq!(3, lines.len());
 
     let rules = SurgeParser::parse_rules(lines)?;
     for rule in rules {
         pretty_assertions::assert_eq!(&RuleType::Domain, &rule.rule_type);
-        pretty_assertions::assert_eq!(&policy, &rule.policy);
+        pretty_assertions::assert_eq!(&policy.name, &rule.policy.name);
+        pretty_assertions::assert_eq!(&policy.option, &rule.policy.option);
     }
     Ok(())
 }
 
 #[tokio::test]
 pub async fn test_surge_direct_rule_set() -> color_eyre::Result<()> {
-    let ServerContext {
-        app,
-        app_state,
-        base_dir: _base_dir,
-    } = start_server(Client::Surge).await?;
+    let ServerContext { app, app_state, .. } = start_server(Client::Surge).await?;
     let url_builder = UrlBuilder::new(
         app_state.config.server.clone(),
         app_state.config.secret.clone(),
@@ -152,11 +142,14 @@ pub async fn test_surge_direct_rule_set() -> color_eyre::Result<()> {
     let lines = stream.lines().collect::<Vec<_>>();
 
     pretty_assertions::assert_str_eq!("[Rule]", lines[0]);
-    pretty_assertions::assert_eq!(6, lines.len());
+    pretty_assertions::assert_eq!(7, lines.len());
 
     let rules = SurgeParser::parse_rules(lines)?;
-    pretty_assertions::assert_eq!(1, rules.len());
-    pretty_assertions::assert_eq!(&RuleType::Domain, &rules[0].rule_type);
-    pretty_assertions::assert_eq!(&policy, &rules[0].policy);
+    pretty_assertions::assert_eq!(2, rules.len());
+    for rule in rules {
+        pretty_assertions::assert_eq!(&RuleType::Domain, &rule.rule_type);
+        pretty_assertions::assert_eq!(&policy.name, &rule.policy.name);
+        pretty_assertions::assert_eq!(&policy.option, &rule.policy.option);
+    }
     Ok(())
 }

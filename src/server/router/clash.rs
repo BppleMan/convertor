@@ -3,7 +3,6 @@ use crate::profile::core::policy::Policy;
 use crate::profile::renderer::clash_renderer::ClashRenderer;
 use crate::server::router::AppState;
 use crate::subscription::url_builder::UrlBuilder;
-use color_eyre::eyre::eyre;
 use color_eyre::Result;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
@@ -36,9 +35,8 @@ pub(super) async fn rule_set_impl(
     policy: Policy,
 ) -> Result<String> {
     let raw_profile = ClashProfile::from_str(&raw_profile)?;
-    let sub_host = url_builder
-        .service_url
-        .host_str()
-        .ok_or(eyre!("错误的订阅 URL, 未能解析出 host"))?;
-    raw_profile.rules_for_provider(policy, sub_host)
+    let rules = raw_profile.rules_for_provider(policy, url_builder.sub_host()?)?;
+    let mut output = String::new();
+    ClashRenderer::render_rules(&mut output, &rules)?;
+    Ok(output)
 }

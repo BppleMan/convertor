@@ -143,8 +143,8 @@ impl ClashProfile {
             .collect::<Vec<(_, _)>>();
     }
 
-    pub fn rules_for_provider(&self, policy: Policy, sub_host: impl AsRef<str>) -> color_eyre::Result<String> {
-        let matched_rules = self
+    pub fn rules_for_provider(&self, policy: Policy, sub_host: impl AsRef<str>) -> color_eyre::Result<Vec<Rule>> {
+        let rules = self
             .rules
             .iter()
             .filter(|rule| {
@@ -158,10 +158,13 @@ impl ClashProfile {
                     false
                 }
             })
+            .map(|rule| {
+                let mut rule = rule.clone();
+                rule.policy.is_subscription = true;
+                rule
+            })
             .collect::<Vec<_>>();
-        let mut payload = String::new();
-        ClashRenderer::render_rule_provider_payload(&mut payload, &matched_rules)?;
-        Ok(payload)
+        Ok(rules)
     }
 }
 
