@@ -18,8 +18,8 @@ use std::sync::{Arc, Once};
 
 pub mod server_test;
 
-const CLASH_MOCK_STR: &str = include_str!("../test-assets/clash/mock.yaml");
-const SURGE_MOCK_STR: &str = include_str!("../test-assets/surge/mock.conf");
+const CLASH_MOCK_STR: &str = include_str!("../.convertor.test/mock.yaml");
+const SURGE_MOCK_STR: &str = include_str!("../.convertor.test/mock.conf");
 
 static INITIALIZED_TEST: Once = Once::new();
 
