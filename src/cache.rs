@@ -11,6 +11,11 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tracing::{debug, error};
 
+pub const CACHED_AUTH_TOKEN_KEY: &str = "CACHED_AUTH_TOKEN";
+pub const CACHED_PROFILE_KEY: &str = "CACHED_PROFILE";
+pub const CACHED_RAW_SUB_URL_KEY: &str = "CACHED_RAW_SUB_URL";
+pub const CACHED_SUB_LOGS_KEY: &str = "CACHED_SUB_LOGS";
+
 #[derive(Clone)]
 pub struct Cache<K, V>
 where

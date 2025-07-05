@@ -71,7 +71,7 @@ impl ClashProfile {
         let (region_map, infos) = group_by_region(&self.proxies);
         // 一个包含了所有地区组的大型代理组
         let region_list = region_map.keys().map(|r| r.policy_name()).collect::<Vec<_>>();
-        let policies = extract_policies(&self.rules);
+        let policies = extract_policies(&self.rules, true);
         let policy_groups = policies
             .iter()
             .map(|policy| {

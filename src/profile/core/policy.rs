@@ -1,9 +1,10 @@
 use color_eyre::eyre::eyre;
 use color_eyre::Report;
 use serde::{Deserialize, Deserializer, Serialize};
+use std::cmp::Ordering;
 use std::str::FromStr;
 
-#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, PartialOrd, Eq, PartialEq, Hash)]
 pub struct Policy {
     pub name: String,
     pub option: Option<String>,
@@ -49,6 +50,15 @@ impl FromStr for Policy {
             option: parts.get(1).map(|part| part.to_string()),
             is_subscription: false,
         })
+    }
+}
+
+impl Ord for Policy {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.name
+            .cmp(&other.name)
+            .then_with(|| self.option.cmp(&other.option))
+            .then_with(|| self.is_subscription.cmp(&other.is_subscription))
     }
 }
 

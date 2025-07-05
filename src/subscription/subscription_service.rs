@@ -9,7 +9,7 @@ use crate::subscription::url_builder::UrlBuilder;
 
 pub struct SubscriptionService {
     pub config: ConvertorConfig,
-    pub service: BosLifeApi,
+    pub api: BosLifeApi,
 }
 
 impl SubscriptionService {
@@ -17,17 +17,17 @@ impl SubscriptionService {
         let SubCommonArgs { client, .. } = command.args();
         let client = *client;
         let url_builder = self.generate_url_builder(&command).await?;
-        let raw_subscription_url = url_builder.build_subscription_url(client)?;
-        let raw_profile_content = self.service.get_raw_profile(raw_subscription_url, client).await?;
+        let raw_sub_url = url_builder.build_subscription_url(client)?;
+        let raw_profile_content = self.api.get_raw_profile(raw_sub_url, client).await?;
         match client {
             Client::Surge => {
                 let raw_profile = SurgeProfile::parse(raw_profile_content)?;
-                let policies = profile::core::extract_policies(&raw_profile.rules);
+                let policies = profile::core::extract_policies(&raw_profile.rules, false);
                 println!("{:#?}", policies);
             }
             Client::Clash => {
                 let raw_profile = ClashProfile::parse(raw_profile_content)?;
-                let policies = profile::core::extract_policies(&raw_profile.rules);
+                let policies = profile::core::extract_policies(&raw_profile.rules, false);
                 println!("{:#?}", policies);
             }
         }
@@ -47,16 +47,18 @@ impl SubscriptionService {
         let url_builder = match command {
             SubscriptionCommand::Get(_) => {
                 let raw_url = self
-                    .service
+                    .api
                     .get_raw_sub_url(self.config.service_config.base_url.clone(), client)
                     .await?;
                 UrlBuilder::new(server, self.config.secret.clone(), raw_url)?
             }
             SubscriptionCommand::Update { reset_token, .. } => {
                 let raw_url = if *reset_token {
-                    self.service.reset_raw_sub_url().await?
+                    self.api
+                        .reset_raw_sub_url(self.config.service_config.base_url.clone())
+                        .await?
                 } else {
-                    self.service
+                    self.api
                         .get_raw_sub_url(self.config.service_config.base_url.clone(), client)
                         .await?
                 };

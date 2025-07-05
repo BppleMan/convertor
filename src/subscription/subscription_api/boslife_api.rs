@@ -40,20 +40,21 @@ impl BosLifeApi {
         }
     }
 
-    pub async fn get_raw_profile(&self, url: Url, client: Client) -> color_eyre::Result<String> {
-        ServiceApi::get_raw_profile(self, url, client).await
+    /// sub_url 是订阅地址并且应该指定客户端
+    pub async fn get_raw_profile(&self, sub_url: Url, client: Client) -> color_eyre::Result<String> {
+        ServiceApi::get_raw_profile(self, sub_url, client).await
     }
 
-    pub async fn get_raw_sub_url(&self, url: Url, client: Client) -> color_eyre::Result<Url> {
-        ServiceApi::get_raw_sub_url(self, url, client).await
+    pub async fn get_raw_sub_url(&self, base_url: Url, client: Client) -> color_eyre::Result<Url> {
+        ServiceApi::get_raw_sub_url(self, base_url, client).await
     }
 
-    pub async fn reset_raw_sub_url(&self) -> color_eyre::Result<Url> {
-        ServiceApi::reset_raw_sub_url(self).await
+    pub async fn reset_raw_sub_url(&self, base_url: Url) -> color_eyre::Result<Url> {
+        ServiceApi::reset_raw_sub_url(self, base_url).await
     }
 
-    pub async fn get_sub_logs(&self) -> color_eyre::Result<Vec<SubscriptionLog>> {
-        ServiceApi::get_sub_logs(self).await
+    pub async fn get_sub_logs(&self, base_url: Url) -> color_eyre::Result<Vec<SubscriptionLog>> {
+        ServiceApi::get_sub_logs(self, base_url).await
     }
 }
 

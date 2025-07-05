@@ -28,17 +28,22 @@ pub(super) fn group_by_region(proxies: &[Proxy]) -> (IndexMap<&'static Region, V
         })
 }
 
-pub fn extract_policies(rules: &[Rule]) -> Vec<Policy> {
-    rules
+pub fn extract_policies(rules: &[Rule], for_proxy_group: bool) -> Vec<Policy> {
+    let mut policies = rules
         .iter()
         .map(|rule| {
             let mut policy = rule.policy.clone();
-            policy.option = None;
-            policy.is_subscription = false;
+            if for_proxy_group {
+                policy.option = None;
+                policy.is_subscription = false;
+            }
             policy
         })
         .collect::<HashSet<_>>()
         .into_iter()
-        .filter(|policy| !policy.is_built_in())
-        .collect()
+        // 如果 `for_proxy_group` 为 `true`，则不包含内置策略
+        .filter(|policy| !for_proxy_group || !policy.is_built_in())
+        .collect::<Vec<_>>();
+    policies.sort();
+    policies
 }
