@@ -13,14 +13,14 @@ password = "bppleman"
 api_path = "passport/auth/login"
 json_path = "$.data.auth_data"
 
-[service_config.reset_subscription_api]
+[service_config.reset_sub_api]
 api_path = "user/resetSecurity"
 json_path = "$.data"
 
-[service_config.get_subscription_api]
+[service_config.get_sub_api]
 api_path = "user/getSubscribe"
 json_path = "$.data.subscribe_url"
 
-[service_config.get_subscription_logs_api]
+[service_config.get_sub_logs_api]
 api_path = "user/stat/getSubscribeLog"
 json_path = "$.data"

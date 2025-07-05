@@ -1,10 +1,11 @@
+use clap::ValueEnum;
 use color_eyre::eyre::eyre;
 use color_eyre::Report;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, ValueEnum, Serialize, Deserialize)]
 pub enum Client {
     #[serde(rename = "surge")]
     Surge,

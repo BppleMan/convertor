@@ -21,19 +21,19 @@ pub(crate) trait ServiceApi {
 
     fn login_request(&self) -> color_eyre::Result<Request>;
 
-    fn get_subscription_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request>;
+    fn get_sub_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request>;
 
-    fn reset_subscription_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request>;
+    fn reset_sub_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request>;
 
-    fn get_subscription_logs_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request>;
+    fn get_sub_logs_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request>;
 
     fn cached_auth_token(&self) -> &MokaCache<String, String>;
 
     fn cached_profile(&self) -> &Cache<Url, String>;
 
-    fn cached_raw_subscription_url(&self) -> &MokaCache<String, Url>;
+    fn cached_raw_sub_url(&self) -> &Cache<Url, String>;
 
-    fn cached_subscription_logs(&self) -> &MokaCache<String, Vec<SubscriptionLog>>;
+    fn cached_sub_logs(&self) -> &MokaCache<String, Vec<SubscriptionLog>>;
 
     async fn execute(&self, mut request: Request) -> color_eyre::Result<Response> {
         request
@@ -54,7 +54,7 @@ pub(crate) trait ServiceApi {
                         .remove(0);
                     Ok(auth_token)
                 } else {
-                    Err(eyre!("Login failed: {}", response.status()))
+                    Err(eyre!("登陆服务商失败: {}", response.status()))
                 }
             })
             .await
@@ -77,60 +77,48 @@ pub(crate) trait ServiceApi {
             .map_err(|e| eyre!(e))
     }
 
-    async fn get_raw_subscription_url(&self) -> color_eyre::Result<Url> {
-        let auth_token = self.login().await?;
-        let request = self.get_subscription_request(auth_token)?;
-        self.cached_raw_subscription_url()
-            .try_get_with(
-                format!("{}_{}", CACHED_RAW_SUBSCRIPTION_URL_KEY, request.url().as_str()),
-                async {
-                    let response = self.execute(request).await?;
-                    if response.status().is_success() {
-                        let json_response = response.text().await?;
-                        let url_str: String =
-                            jsonpath_lib::select_as(&json_response, &self.config().get_subscription_api.json_path)
-                                .wrap_err_with(|| {
-                                    format!(
-                                        "failed to select json_path: {}",
-                                        self.config().get_subscription_api.json_path
-                                    )
-                                })?
-                                .remove(0);
-                        Url::parse(&url_str).map_err(|e| e.into())
-                    } else {
-                        Err(eyre!("Get raw subscription URL failed: {}", response.status()))
-                    }
-                },
-            )
+    async fn get_raw_sub_url(&self, url: Url, client: Client) -> color_eyre::Result<Url> {
+        let key = CacheKey::new(CACHED_RAW_SUBSCRIPTION_URL_KEY, url.clone(), client);
+        self.cached_raw_sub_url()
+            .try_get_with(key, async {
+                let auth_token = self.login().await?;
+                let request = self.get_sub_request(auth_token)?;
+                let response = self.execute(request).await?;
+                if response.status().is_success() {
+                    let json_response = response.text().await?;
+                    let json_path = &self.config().get_sub_api.json_path;
+                    let url_str: String = jsonpath_lib::select_as(&json_response, json_path)
+                        .wrap_err_with(|| format!("failed to select json_path: {}", json_path))?
+                        .remove(0);
+                    Ok(url_str)
+                } else {
+                    Err(eyre!("请求服务商订阅配置失败: {}", response.status(),))
+                }
+            })
             .await
-            .map_err(|e| eyre!(e))
+            .map(|s| Ok(Url::parse(&s)?))
+            .map_err(|e| eyre!(e))?
     }
 
-    async fn reset_raw_subscription_url(&self) -> color_eyre::Result<Url> {
+    async fn reset_raw_sub_url(&self) -> color_eyre::Result<Url> {
         let auth_token = self.login().await?;
-        let request = self.reset_subscription_request(auth_token)?;
+        let request = self.reset_sub_request(auth_token)?;
         let response = self.execute(request).await?;
         if response.status().is_success() {
             let json_response = response.text().await?;
-            let url_str: String =
-                jsonpath_lib::select_as(&json_response, &self.config().reset_subscription_api.json_path)
-                    .wrap_err_with(|| {
-                        format!(
-                            "failed to select json_path: {}",
-                            self.config().reset_subscription_api.json_path
-                        )
-                    })?
-                    .remove(0);
+            let url_str: String = jsonpath_lib::select_as(&json_response, &self.config().reset_sub_api.json_path)
+                .wrap_err_with(|| format!("failed to select json_path: {}", self.config().reset_sub_api.json_path))?
+                .remove(0);
             Url::parse(&url_str).map_err(|e| e.into())
         } else {
             Err(eyre!("Reset raw subscription URL failed: {}", response.status()))
         }
     }
 
-    async fn get_subscription_logs(&self) -> color_eyre::Result<Vec<SubscriptionLog>> {
+    async fn get_sub_logs(&self) -> color_eyre::Result<Vec<SubscriptionLog>> {
         let auth_token = self.login().await?;
-        let request = self.get_subscription_logs_request(auth_token)?;
-        self.cached_subscription_logs()
+        let request = self.get_sub_logs_request(auth_token)?;
+        self.cached_sub_logs()
             .try_get_with(
                 format!("{}_{}", CACHED_SUBSCRIPTION_LOGS_KEY, request.url().as_str()),
                 async {
@@ -138,8 +126,7 @@ pub(crate) trait ServiceApi {
                     if response.status().is_success() {
                         let response = response.text().await?;
                         let response: Vec<SubscriptionLog> =
-                            jsonpath_lib::select_as(&response, &self.config().get_subscription_logs_api.json_path)?
-                                .remove(0);
+                            jsonpath_lib::select_as(&response, &self.config().get_sub_logs_api.json_path)?.remove(0);
                         Ok(response)
                     } else {
                         Err(eyre!("Get subscription log failed: {}", response.status()))

@@ -11,24 +11,21 @@ use std::path::Path;
 pub struct BosLifeApi {
     pub config: ServiceConfig,
     pub client: reqwest::Client,
-    pub cached_file: Cache<Url, String>,
-    pub cached_string: MokaCache<String, String>,
-    pub cached_raw_subscription_url: MokaCache<String, Url>,
-    pub cached_subscription_logs: MokaCache<String, Vec<SubscriptionLog>>,
+    pub cached_auth_token: MokaCache<String, String>,
+    pub cached_sub_profile: Cache<Url, String>,
+    pub cached_raw_sub_url: Cache<Url, String>,
+    pub cached_sub_logs: MokaCache<String, Vec<SubscriptionLog>>,
 }
 
 impl BosLifeApi {
     pub fn new(base_dir: impl AsRef<Path>, client: reqwest::Client, config: ServiceConfig) -> Self {
         let duration = std::time::Duration::from_secs(60 * 10); // 10 minutes
-        let cached_file = Cache::new(10, base_dir, duration.clone());
+        let cached_file = Cache::new(10, base_dir.as_ref(), duration.clone());
         let cached_string = MokaCache::builder()
             .max_capacity(10)
             .time_to_live(duration.clone()) // 10 minutes
             .build();
-        let cached_raw_subscription_url = MokaCache::builder()
-            .max_capacity(10)
-            .time_to_live(duration.clone()) // 10 minutes
-            .build();
+        let cached_raw_subscription_url = Cache::new(10, base_dir.as_ref(), duration.clone());
         let cached_subscription_logs = MokaCache::builder()
             .max_capacity(10)
             .time_to_live(duration.clone()) // 10 minutes
@@ -36,10 +33,10 @@ impl BosLifeApi {
         Self {
             config,
             client,
-            cached_file,
-            cached_string,
-            cached_raw_subscription_url,
-            cached_subscription_logs,
+            cached_auth_token: cached_string,
+            cached_sub_profile: cached_file,
+            cached_raw_sub_url: cached_raw_subscription_url,
+            cached_sub_logs: cached_subscription_logs,
         }
     }
 
@@ -47,16 +44,16 @@ impl BosLifeApi {
         ServiceApi::get_raw_profile(self, url, client).await
     }
 
-    pub async fn get_raw_subscription_url(&self) -> color_eyre::Result<Url> {
-        ServiceApi::get_raw_subscription_url(self).await
+    pub async fn get_raw_sub_url(&self, url: Url, client: Client) -> color_eyre::Result<Url> {
+        ServiceApi::get_raw_sub_url(self, url, client).await
     }
 
-    pub async fn reset_raw_subscription_url(&self) -> color_eyre::Result<Url> {
-        ServiceApi::reset_raw_subscription_url(self).await
+    pub async fn reset_raw_sub_url(&self) -> color_eyre::Result<Url> {
+        ServiceApi::reset_raw_sub_url(self).await
     }
 
-    pub async fn get_subscription_logs(&self) -> color_eyre::Result<Vec<SubscriptionLog>> {
-        ServiceApi::get_subscription_logs(self).await
+    pub async fn get_sub_logs(&self) -> color_eyre::Result<Vec<SubscriptionLog>> {
+        ServiceApi::get_sub_logs(self).await
     }
 }
 
@@ -81,8 +78,8 @@ impl ServiceApi for BosLifeApi {
             .build()?)
     }
 
-    fn get_subscription_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request> {
-        let url = self.config.build_get_subscription_url()?;
+    fn get_sub_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request> {
+        let url = self.config.build_get_sub_url()?;
         Ok(self
             .client
             .request(Method::GET, url)
@@ -90,8 +87,8 @@ impl ServiceApi for BosLifeApi {
             .build()?)
     }
 
-    fn reset_subscription_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request> {
-        let url = self.config.build_reset_subscription_url()?;
+    fn reset_sub_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request> {
+        let url = self.config.build_reset_sub_url()?;
         Ok(self
             .client
             .request(Method::POST, url)
@@ -99,8 +96,8 @@ impl ServiceApi for BosLifeApi {
             .build()?)
     }
 
-    fn get_subscription_logs_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request> {
-        let url = self.config.build_get_subscription_logs_url()?;
+    fn get_sub_logs_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request> {
+        let url = self.config.build_get_sub_logs_url()?;
         Ok(self
             .client
             .request(Method::GET, url)
@@ -109,18 +106,18 @@ impl ServiceApi for BosLifeApi {
     }
 
     fn cached_auth_token(&self) -> &MokaCache<String, String> {
-        &self.cached_string
+        &self.cached_auth_token
     }
 
     fn cached_profile(&self) -> &Cache<Url, String> {
-        &self.cached_file
+        &self.cached_sub_profile
     }
 
-    fn cached_raw_subscription_url(&self) -> &MokaCache<String, Url> {
-        &self.cached_raw_subscription_url
+    fn cached_raw_sub_url(&self) -> &Cache<Url, String> {
+        &self.cached_raw_sub_url
     }
 
-    fn cached_subscription_logs(&self) -> &MokaCache<String, Vec<SubscriptionLog>> {
-        &self.cached_subscription_logs
+    fn cached_sub_logs(&self) -> &MokaCache<String, Vec<SubscriptionLog>> {
+        &self.cached_sub_logs
     }
 }

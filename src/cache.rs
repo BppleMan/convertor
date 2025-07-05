@@ -60,6 +60,7 @@ where
         let now = Self::now_ts();
 
         if let Some(path) = self.find_valid_cache_file(key, now).await? {
+            debug!("命中缓存文件: {}", path.display());
             let raw = tokio::fs::read_to_string(path).await?;
             return Ok(V::from(raw));
         }

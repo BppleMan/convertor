@@ -21,10 +21,15 @@ pub async fn test_clash_profile() -> color_eyre::Result<()> {
         mock_server,
         ..
     } = start_server(Client::Clash).await?;
+    let service_config = &app_state.config.service_config;
+    let raw_sub_url = app_state
+        .api
+        .get_raw_sub_url(service_config.base_url.clone(), Client::Clash)
+        .await?;
     let url_builder = UrlBuilder::new(
         app_state.config.server.clone(),
         app_state.config.secret.clone(),
-        app_state.api.get_raw_subscription_url().await?,
+        raw_sub_url,
     )?;
 
     let url = url_builder.build_convertor_url(Client::Clash)?;
@@ -50,10 +55,15 @@ pub async fn test_clash_profile() -> color_eyre::Result<()> {
 #[tokio::test]
 pub async fn test_clash_rule_set() -> color_eyre::Result<()> {
     let ServerContext { app, app_state, .. } = start_server(Client::Clash).await?;
+    let service_config = &app_state.config.service_config;
+    let raw_sub_url = app_state
+        .api
+        .get_raw_sub_url(service_config.base_url.clone(), Client::Clash)
+        .await?;
     let url_builder = UrlBuilder::new(
         app_state.config.server.clone(),
         app_state.config.secret.clone(),
-        app_state.api.get_raw_subscription_url().await?,
+        raw_sub_url,
     )?;
     let policy = Policy {
         name: "BosLife".to_string(),
@@ -87,10 +97,15 @@ pub async fn test_clash_rule_set() -> color_eyre::Result<()> {
 #[tokio::test]
 pub async fn test_clash_subscription_rule_set() -> color_eyre::Result<()> {
     let ServerContext { app, app_state, .. } = start_server(Client::Clash).await?;
+    let service_config = &app_state.config.service_config;
+    let raw_sub_url = app_state
+        .api
+        .get_raw_sub_url(service_config.base_url.clone(), Client::Clash)
+        .await?;
     let url_builder = UrlBuilder::new(
         app_state.config.server.clone(),
         app_state.config.secret.clone(),
-        app_state.api.get_raw_subscription_url().await?,
+        raw_sub_url,
     )?;
     let policy = Policy::subscription_policy();
     let url = url_builder.build_rule_set_url(Client::Clash, &policy)?;
@@ -122,10 +137,15 @@ pub async fn test_clash_subscription_rule_set() -> color_eyre::Result<()> {
 #[tokio::test]
 pub async fn test_clash_direct_rule_set() -> color_eyre::Result<()> {
     let ServerContext { app, app_state, .. } = start_server(Client::Clash).await?;
+    let service_config = &app_state.config.service_config;
+    let raw_sub_url = app_state
+        .api
+        .get_raw_sub_url(service_config.base_url.clone(), Client::Clash)
+        .await?;
     let url_builder = UrlBuilder::new(
         app_state.config.server.clone(),
         app_state.config.secret.clone(),
-        app_state.api.get_raw_subscription_url().await?,
+        raw_sub_url,
     )?;
     let policy = Policy::direct_policy();
     let url = url_builder.build_rule_set_url(Client::Clash, &policy)?;

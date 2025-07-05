@@ -9,7 +9,6 @@ use convertor::server::start_server;
 use convertor::subscription::subscription_api::boslife_api::BosLifeApi;
 use convertor::subscription::subscription_service::SubscriptionService;
 use convertor::{init_backtrace, init_base_dir, init_log};
-use url::Url;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -24,14 +23,9 @@ async fn main() -> Result<()> {
 
     match cli.command {
         None => start_server(cli.listen, config, service, &base_dir).await?,
-        Some(ConvertorCommand::Subscription {
-            command,
-            server,
-            client,
-        }) => {
+        Some(ConvertorCommand::Subscription { command }) => {
             let mut subscription_service = SubscriptionService { config, service };
-            let server = server.map(|s| Url::parse(&s)).transpose()?;
-            subscription_service.execute(command, server, client).await?;
+            subscription_service.execute(command).await?;
         }
         Some(ConvertorCommand::InstallService { name }) => install_service(name, service).await?,
     }

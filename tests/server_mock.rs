@@ -15,6 +15,7 @@ use httpmock::Method::{GET, POST};
 use httpmock::MockServer;
 use std::path::PathBuf;
 use std::sync::{Arc, Once};
+use url::Url;
 
 pub mod server_test;
 
@@ -42,10 +43,10 @@ pub async fn start_server_with_config(
     let base_dir = init_test();
 
     let mut config = config
-        .map(color_eyre::Result::Ok)
+        .map(|config| Ok(config))
         .unwrap_or_else(|| ConvertorConfig::search(&base_dir, Option::<&str>::None))?;
     let mock_server = start_mock_service_server(client, &config.service_config).await?;
-    config.service_config.base_url = mock_server.base_url();
+    config.service_config.base_url = Url::parse(&mock_server.base_url())?;
 
     let api = BosLifeApi::new(&base_dir, reqwest::Client::new(), config.service_config.clone());
     let app_state = Arc::new(AppState { config, api });
@@ -87,7 +88,7 @@ pub async fn start_mock_service_server(client: Client, config: &ServiceConfig) -
         })
         .await;
 
-    let get_subscription_api_path = format!("{}{}", config.prefix_path, config.get_subscription_api.api_path);
+    let get_subscription_api_path = format!("{}{}", config.prefix_path, config.get_sub_api.api_path);
     // 将订阅地址导航至 mock server 的 /subscription 路径
     mock_server
         .mock_async(|when, then| {
