@@ -90,7 +90,7 @@ pub async fn rule_set(
     let url_builder = UrlBuilder::decode_from_request(&request, &state.config.secret)?;
     let query = query
         .as_ref()
-        .map(|q| percent_decode_str(&q))
+        .map(|q| percent_decode_str(q))
         .ok_or_else(|| eyre!("缺少查询参数"))?
         .decode_utf8()
         .map_err(|e| eyre!(e))?;

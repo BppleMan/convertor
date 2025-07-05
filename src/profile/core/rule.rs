@@ -29,7 +29,7 @@ impl Rule {
     pub fn clash_rule_set(policy: &Policy) -> Self {
         Self {
             rule_type: RuleType::RuleSet,
-            value: Some(ClashRenderer::render_policy_for_provider(&policy)),
+            value: Some(ClashRenderer::render_policy_for_provider(policy)),
             policy: policy.clone(),
             comment: None,
         }
@@ -86,7 +86,7 @@ impl RuleType {
 
 impl Display for RuleType {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.as_str().to_string())
+        write!(f, "{}", self.as_str())
     }
 }
 

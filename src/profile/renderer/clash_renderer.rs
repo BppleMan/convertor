@@ -22,7 +22,7 @@ impl ClashRenderer {
             rule_providers,
             ..
         } = &profile;
-        let lines = vec![
+        let lines = [
             Self::render_general(profile)?,
             Self::render_proxies(proxies)?,
             Self::render_proxy_groups(proxy_groups)?,

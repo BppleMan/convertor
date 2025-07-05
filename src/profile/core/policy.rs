@@ -4,7 +4,7 @@ use serde::{Deserialize, Deserializer, Serialize};
 use std::cmp::Ordering;
 use std::str::FromStr;
 
-#[derive(Debug, Clone, PartialOrd, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Policy {
     pub name: String,
     pub option: Option<String>,
@@ -53,12 +53,18 @@ impl FromStr for Policy {
     }
 }
 
+impl PartialOrd<Policy> for Policy {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
 impl Ord for Policy {
     fn cmp(&self, other: &Self) -> Ordering {
         self.name
             .cmp(&other.name)
-            .then_with(|| self.option.cmp(&other.option))
-            .then_with(|| self.is_subscription.cmp(&other.is_subscription))
+            .then(self.option.cmp(&other.option))
+            .then(self.is_subscription.cmp(&other.is_subscription))
     }
 }
 

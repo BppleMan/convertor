@@ -23,7 +23,7 @@ impl SurgeRenderer {
             misc,
         } = profile;
 
-        let output = vec![
+        let output = [
             Self::render_header(header)?,
             Self::render_general(general)?,
             Self::render_proxies(proxies)?,

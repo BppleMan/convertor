@@ -20,15 +20,15 @@ pub struct BosLifeApi {
 impl BosLifeApi {
     pub fn new(base_dir: impl AsRef<Path>, client: reqwest::Client, config: ServiceConfig) -> Self {
         let duration = std::time::Duration::from_secs(60 * 10); // 10 minutes
-        let cached_file = Cache::new(10, base_dir.as_ref(), duration.clone());
+        let cached_file = Cache::new(10, base_dir.as_ref(), duration);
         let cached_string = MokaCache::builder()
             .max_capacity(10)
-            .time_to_live(duration.clone()) // 10 minutes
+            .time_to_live(duration) // 10 minutes
             .build();
-        let cached_raw_subscription_url = Cache::new(10, base_dir.as_ref(), duration.clone());
+        let cached_raw_subscription_url = Cache::new(10, base_dir.as_ref(), duration);
         let cached_subscription_logs = MokaCache::builder()
             .max_capacity(10)
-            .time_to_live(duration.clone()) // 10 minutes
+            .time_to_live(duration) // 10 minutes
             .build();
         Self {
             config,
