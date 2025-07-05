@@ -2,11 +2,12 @@ use crate::config::convertor_config::ConvertorConfig;
 use crate::server::router::{router, AppState};
 use crate::shutdown_signal;
 use crate::subscription::subscription_api::boslife_api::BosLifeApi;
-use std::net::SocketAddrV4;
+use std::net::{SocketAddr, SocketAddrV4};
 use std::path::Path;
 use tracing::{info, warn};
 
 pub mod router;
+pub mod query;
 
 pub async fn start_server(
     listen_addr: SocketAddrV4,
@@ -23,7 +24,8 @@ pub async fn start_server(
         config: convertor_config,
         api: subscription_api,
     };
-    axum::serve(listener, router(app_state))
+    let app = router(app_state);
+    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
         .with_graceful_shutdown(shutdown_signal())
         .await?;
     info!("服务关闭");

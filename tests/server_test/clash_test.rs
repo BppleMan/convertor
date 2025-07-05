@@ -10,7 +10,6 @@ use convertor::profile::parser::clash_parser::ClashParser;
 use convertor::profile::renderer::clash_renderer::ClashRenderer;
 use convertor::subscription::url_builder::UrlBuilder;
 use http_body_util::BodyExt;
-use std::collections::HashMap;
 use tower::ServiceExt;
 
 #[tokio::test]
@@ -33,10 +32,9 @@ pub async fn test_clash_profile() -> color_eyre::Result<()> {
     )?;
 
     let url = url_builder.build_convertor_url(Client::Clash)?;
-    let query_pairs = serde_qs::to_string(&url.query_pairs().collect::<HashMap<_, _>>())?;
-    let uri = format!("{}?{}", url.path(), query_pairs);
+    let uri = format!("{}?{}", url.path(), url.query().expect("必须有查询参数"));
     let request = Request::builder()
-        .uri(&uri)
+        .uri(uri)
         .header("host", app_state.config.server_addr()?)
         .method("GET")
         .body(Body::empty())?;
@@ -53,7 +51,7 @@ pub async fn test_clash_profile() -> color_eyre::Result<()> {
 }
 
 #[tokio::test]
-pub async fn test_clash_rule_set() -> color_eyre::Result<()> {
+pub async fn test_clash_rule_provider() -> color_eyre::Result<()> {
     let ServerContext { app, app_state, .. } = start_server(Client::Clash).await?;
     let service_config = &app_state.config.service_config;
     let raw_sub_url = app_state
@@ -70,12 +68,11 @@ pub async fn test_clash_rule_set() -> color_eyre::Result<()> {
         option: None,
         is_subscription: false,
     };
-    let url = url_builder.build_rule_set_url(Client::Clash, &policy)?;
+    let url = url_builder.build_rule_provider_url(Client::Clash, &policy)?;
 
-    let query_pairs = serde_qs::to_string(&url.query_pairs().collect::<HashMap<_, _>>())?;
-    let uri = format!("{}?{}", url.path(), query_pairs);
+    let uri = format!("{}?{}", url.path(), url.query().expect("必须有查询参数"));
     let request = Request::builder()
-        .uri(&uri)
+        .uri(uri)
         .header("host", app_state.config.server_addr()?)
         .method("GET")
         .body(Body::empty())?;
@@ -95,7 +92,7 @@ pub async fn test_clash_rule_set() -> color_eyre::Result<()> {
 }
 
 #[tokio::test]
-pub async fn test_clash_subscription_rule_set() -> color_eyre::Result<()> {
+pub async fn test_clash_subscription_rule_provider() -> color_eyre::Result<()> {
     let ServerContext { app, app_state, .. } = start_server(Client::Clash).await?;
     let service_config = &app_state.config.service_config;
     let raw_sub_url = app_state
@@ -108,12 +105,11 @@ pub async fn test_clash_subscription_rule_set() -> color_eyre::Result<()> {
         raw_sub_url,
     )?;
     let policy = Policy::subscription_policy();
-    let url = url_builder.build_rule_set_url(Client::Clash, &policy)?;
+    let url = url_builder.build_rule_provider_url(Client::Clash, &policy)?;
 
-    let query_pairs = serde_qs::to_string(&url.query_pairs().collect::<HashMap<_, _>>())?;
-    let uri = format!("{}?{}", url.path(), query_pairs);
+    let uri = format!("{}?{}", url.path(), url.query().expect("必须有查询参数"));
     let request = Request::builder()
-        .uri(&uri)
+        .uri(uri)
         .header("host", app_state.config.server_addr()?)
         .method("GET")
         .body(Body::empty())?;
@@ -135,7 +131,7 @@ pub async fn test_clash_subscription_rule_set() -> color_eyre::Result<()> {
 }
 
 #[tokio::test]
-pub async fn test_clash_direct_rule_set() -> color_eyre::Result<()> {
+pub async fn test_clash_direct_rule_provider() -> color_eyre::Result<()> {
     let ServerContext { app, app_state, .. } = start_server(Client::Clash).await?;
     let service_config = &app_state.config.service_config;
     let raw_sub_url = app_state
@@ -148,12 +144,11 @@ pub async fn test_clash_direct_rule_set() -> color_eyre::Result<()> {
         raw_sub_url,
     )?;
     let policy = Policy::direct_policy();
-    let url = url_builder.build_rule_set_url(Client::Clash, &policy)?;
+    let url = url_builder.build_rule_provider_url(Client::Clash, &policy)?;
 
-    let query_pairs = serde_qs::to_string(&url.query_pairs().collect::<HashMap<_, _>>())?;
-    let uri = format!("{}?{}", url.path(), query_pairs);
+    let uri = format!("{}?{}", url.path(), url.query().expect("必须有查询参数"));
     let request = Request::builder()
-        .uri(&uri)
+        .uri(uri)
         .header("host", app_state.config.server_addr()?)
         .method("GET")
         .body(Body::empty())?;

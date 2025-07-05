@@ -210,6 +210,9 @@ impl ClashRenderer {
     #[instrument(skip_all)]
     pub fn render_policy_for_provider(policy: &Policy) -> String {
         let mut output = String::new();
+        if policy == &Policy::subscription_policy() {
+            return "Subscription".to_string();
+        }
         write!(
             output,
             "{}_{}",

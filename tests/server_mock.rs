@@ -8,7 +8,8 @@ use convertor::profile::core::policy::Policy;
 use convertor::profile::core::rule::{Rule, RuleType};
 use convertor::profile::renderer::clash_renderer::ClashRenderer;
 use convertor::profile::renderer::surge_renderer::SurgeRenderer;
-use convertor::server::router::{profile, root, rule_set, subscription_router, AppState};
+use convertor::server::router::subscription_router::subscription_logs;
+use convertor::server::router::{profile, rule_provider, AppState};
 use convertor::subscription::subscription_api::boslife_api::BosLifeApi;
 use convertor::subscription::subscription_config::ServiceConfig;
 use httpmock::Method::{GET, POST};
@@ -51,10 +52,9 @@ pub async fn start_server_with_config(
     let api = BosLifeApi::new(&base_dir, reqwest::Client::new(), config.service_config.clone());
     let app_state = Arc::new(AppState { config, api });
     let app: Router = Router::new()
-        .route("/", get(root))
         .route("/profile", get(profile))
-        .route("/rule-set", get(rule_set))
-        .route("/sub-log", get(subscription_router::subscription_logs))
+        .route("/rule-provider", get(rule_provider))
+        .route("/sub-logs", get(subscription_logs))
         .with_state(app_state.clone());
 
     Ok(ServerContext {

@@ -52,14 +52,14 @@ impl SurgeConfig {
         Ok(())
     }
 
-    pub async fn update_surge_rule_set(&self, url_builder: &UrlBuilder, policies: &[Policy]) -> Result<()> {
+    pub async fn update_surge_rule_provider(&self, url_builder: &UrlBuilder, policies: &[Policy]) -> Result<()> {
         let content = tokio::fs::read_to_string(&self.rules_config_path).await?;
         let mut lines = content.lines().map(Cow::Borrowed).collect::<Vec<_>>();
 
         let position_of_policy = policies
             .iter()
             .map(|policy| {
-                let comment = SurgeRenderer::render_policy_for_comment(policy);
+                let comment = SurgeRenderer::render_policy_for_provider(policy);
                 let pos = lines.iter().position(|l| l.contains(&comment));
                 (pos, policy)
             })
@@ -68,10 +68,10 @@ impl SurgeConfig {
         for (pos, policy) in position_of_policy {
             match pos {
                 Some(pos) => {
-                    let rule_set_url = url_builder.build_rule_set_url(Client::Surge, policy)?;
-                    let rule_set = Rule::surge_rule_set(policy, rule_set_url);
-                    lines[pos] = Cow::Owned(rule_set.comment.clone().expect("此处必须有注释"));
-                    let rule = SurgeRenderer::render_rule_set(&rule_set)?;
+                    let rule_provider_url = url_builder.build_rule_provider_url(Client::Surge, policy)?;
+                    let rule_provider = Rule::surge_rule_provider(policy, rule_provider_url);
+                    lines[pos] = Cow::Owned(rule_provider.comment.clone().expect("此处必须有注释"));
+                    let rule = SurgeRenderer::render_rule_set(&rule_provider)?;
                     lines[pos + 1] = Cow::Owned(rule);
                 }
                 None => warn!("未找到 {:?} 的位置", policy),

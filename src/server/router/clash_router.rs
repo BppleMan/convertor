@@ -26,7 +26,7 @@ pub(super) async fn profile_impl(state: Arc<AppState>, url_builder: UrlBuilder, 
 }
 
 #[instrument(skip_all)]
-pub(super) async fn rule_set_impl(
+pub(super) async fn rule_provider_impl(
     _state: Arc<AppState>,
     url_builder: UrlBuilder,
     raw_profile: String,

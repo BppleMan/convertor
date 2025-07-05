@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Run local" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+  <configuration default="false" name="Run sub get clash" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
     <option name="buildProfileId" value="dev" />
-    <option name="command" value="run --package convertor --bin convertor -- 127.0.0.1:8001" />
+    <option name="command" value="run --package convertor --bin convertor -- sub get clash" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$" />
     <envs />
     <option name="emulateTerminal" value="true" />

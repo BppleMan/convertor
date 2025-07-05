@@ -180,7 +180,7 @@ impl SurgeRenderer {
     }
 
     #[instrument(skip_all)]
-    pub fn render_policy_for_comment(policy: &Policy) -> String {
+    pub fn render_policy_for_provider(policy: &Policy) -> String {
         let mut output = String::new();
         write!(output, "[").expect("无法写入 Surge 注释");
         if policy.is_subscription {

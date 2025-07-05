@@ -71,7 +71,7 @@ impl ClashProfile {
         let (region_map, infos) = group_by_region(&self.proxies);
         // 一个包含了所有地区组的大型代理组
         let region_list = region_map.keys().map(|r| r.policy_name()).collect::<Vec<_>>();
-        let policies = extract_policies(&self.rules, true);
+        let policies = extract_policies(&self.rules);
         let policy_groups = policies
             .iter()
             .map(|policy| {
@@ -126,15 +126,15 @@ impl ClashProfile {
         let mut policy_list = policy_set.into_iter().collect::<Vec<_>>();
         policy_list.sort();
 
-        let mut rules = policy_list.iter().map(Rule::clash_rule_set).collect::<Vec<_>>();
+        let mut rules = policy_list.iter().map(Rule::clash_rule_provider).collect::<Vec<_>>();
         rules.extend(retain);
         self.rules.extend(rules);
 
         self.rule_providers = policy_list
             .into_iter()
             .filter_map(|policy| {
-                let Ok(url) = url_builder.build_rule_set_url(Client::Clash, &policy) else {
-                    warn!("无法构建规则集 URL, 可能是订阅 URL 错误");
+                let Ok(url) = url_builder.build_rule_provider_url(Client::Clash, &policy) else {
+                    warn!("无法构建 Rule Provider URL, 可能是订阅 URL 错误");
                     return None;
                 };
                 let provider_name = ClashRenderer::render_policy_for_provider(&policy);

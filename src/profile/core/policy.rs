@@ -1,6 +1,6 @@
 use color_eyre::eyre::eyre;
 use color_eyre::Report;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Deserializer};
 use std::cmp::Ordering;
 use std::str::FromStr;
 
@@ -91,32 +91,5 @@ impl<'de> Deserialize<'de> for Policy {
         }
 
         deserializer.deserialize_str(PolicyVisitor)
-    }
-}
-
-#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct QueryPolicy {
-    pub name: String,
-    pub option: Option<String>,
-    pub is_subscription: bool,
-}
-
-impl From<Policy> for QueryPolicy {
-    fn from(policy: Policy) -> Self {
-        QueryPolicy {
-            name: policy.name,
-            option: policy.option,
-            is_subscription: policy.is_subscription,
-        }
-    }
-}
-
-impl From<QueryPolicy> for Policy {
-    fn from(query_policy: QueryPolicy) -> Self {
-        Policy {
-            name: query_policy.name,
-            option: query_policy.option,
-            is_subscription: query_policy.is_subscription,
-        }
     }
 }

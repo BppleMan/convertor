@@ -28,21 +28,45 @@ pub(super) fn group_by_region(proxies: &[Proxy]) -> (IndexMap<&'static Region, V
         })
 }
 
-pub fn extract_policies(rules: &[Rule], for_proxy_group: bool) -> Vec<Policy> {
+pub fn extract_policies(rules: &[Rule]) -> Vec<Policy> {
     let mut policies = rules
         .iter()
-        .map(|rule| {
-            let mut policy = rule.policy.clone();
-            if for_proxy_group {
+        .filter_map(|rule| {
+            if rule.policy.is_built_in() {
+                None
+            } else {
+                let mut policy = rule.policy.clone();
                 policy.option = None;
                 policy.is_subscription = false;
+                Some(policy)
             }
-            policy
         })
         .collect::<HashSet<_>>()
         .into_iter()
-        // 如果 `for_proxy_group` 为 `true`，则不包含内置策略
-        .filter(|policy| !for_proxy_group || !policy.is_built_in())
+        .collect::<Vec<_>>();
+    policies.sort();
+    policies
+}
+
+pub fn extract_policies_for_rule_provider(rules: &[Rule], sub_host: impl AsRef<str>) -> Vec<Policy> {
+    let mut policies = rules
+        .iter()
+        .filter_map(|rule| {
+            if rule
+                .value
+                .as_ref()
+                .map(|v| v.contains(sub_host.as_ref()))
+                .unwrap_or(false)
+            {
+                Some(Policy::subscription_policy())
+            } else if !rule.policy.is_built_in() {
+                Some(rule.policy.clone())
+            } else {
+                None
+            }
+        })
+        .collect::<HashSet<_>>()
+        .into_iter()
         .collect::<Vec<_>>();
     policies.sort();
     policies

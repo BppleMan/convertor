@@ -17,16 +17,16 @@ pub struct Rule {
 }
 
 impl Rule {
-    pub fn surge_rule_set(policy: &Policy, url: Url) -> Self {
+    pub fn surge_rule_provider(policy: &Policy, url: Url) -> Self {
         Self {
             rule_type: RuleType::RuleSet,
             value: Some(url.to_string()),
             policy: policy.clone(),
-            comment: Some(SurgeRenderer::render_policy_for_comment(policy)),
+            comment: Some(SurgeRenderer::render_policy_for_provider(policy)),
         }
     }
 
-    pub fn clash_rule_set(policy: &Policy) -> Self {
+    pub fn clash_rule_provider(policy: &Policy) -> Self {
         Self {
             rule_type: RuleType::RuleSet,
             value: Some(ClashRenderer::render_policy_for_provider(policy)),
