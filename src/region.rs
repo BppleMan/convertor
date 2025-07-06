@@ -1,9 +1,9 @@
-use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
+use std::sync::LazyLock;
 
 const REGIONS_CONTENT: &str = include_str!("../assets/regions.json");
 
-static REGIONS: Lazy<Vec<Region>> = Lazy::new(|| serde_json::from_str(REGIONS_CONTENT).unwrap());
+static REGIONS: LazyLock<Vec<Region>> = LazyLock::new(|| serde_json::from_str(REGIONS_CONTENT).unwrap());
 
 #[derive(Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Region {
