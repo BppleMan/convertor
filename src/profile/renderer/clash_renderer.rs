@@ -117,7 +117,7 @@ impl ClashRenderer {
     }
 
     #[instrument(skip_all)]
-    pub fn render_rule_provider_payload(rules: &[Rule]) -> Result<String> {
+    pub fn render_rules_with_payload(rules: &[Rule]) -> Result<String> {
         let mut output = String::new();
         writeln!(&mut output, "payload:")?;
         for rule in rules {
@@ -125,11 +125,31 @@ impl ClashRenderer {
                 &mut output,
                 "{:indent$}{}",
                 "",
-                format_args!(r#"- "{}""#, Self::render_rule(rule)?),
+                format_args!(r#"- "{}""#, Self::render_rule_without_policy(rule)?),
                 indent = INDENT,
             )?;
         }
         writeln!(&mut output)?;
+        Ok(output)
+    }
+
+    #[instrument(skip_all)]
+    pub fn render_rule(rule: &Rule) -> Result<String> {
+        let mut output = String::new();
+        write!(output, "{}", rule.rule_type.as_str())?;
+        if let Some(value) = &rule.value {
+            write!(output, ",{}", value)?;
+        }
+        write!(output, "{}", Self::render_policy(&rule.policy)?)?;
+        Ok(output)
+    }
+
+    pub fn render_rule_without_policy(rule: &Rule) -> Result<String> {
+        let mut output = String::new();
+        write!(output, "{}", rule.rule_type.as_str())?;
+        if let Some(value) = &rule.value {
+            write!(output, ",{}", value)?;
+        }
         Ok(output)
     }
 
@@ -184,17 +204,6 @@ impl ClashRenderer {
         write!(output, r#", format: "{}""#, provider.format)?;
         write!(output, r#", behavior: "{}""#, provider.behavior)?;
         write!(output, "}}")?;
-        Ok(output)
-    }
-
-    #[instrument(skip_all)]
-    pub fn render_rule(rule: &Rule) -> Result<String> {
-        let mut output = String::new();
-        write!(output, "{}", rule.rule_type.as_str())?;
-        if let Some(value) = &rule.value {
-            write!(output, ",{}", value)?;
-        }
-        write!(output, "{}", Self::render_policy(&rule.policy)?)?;
         Ok(output)
     }
 

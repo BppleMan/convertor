@@ -171,6 +171,15 @@ impl SurgeRenderer {
         Ok(output)
     }
 
+    pub fn render_rules_without_section(rules: &[Rule]) -> Result<String> {
+        let mut output = String::new();
+        for rule in rules {
+            writeln!(&mut output, "{}", Self::render_rule_without_policy(rule)?)?;
+        }
+        writeln!(&mut output)?;
+        Ok(output)
+    }
+
     #[instrument(skip_all)]
     pub fn render_url_rewrite(url_rewrite: &[String]) -> Result<String> {
         let mut output = String::new();

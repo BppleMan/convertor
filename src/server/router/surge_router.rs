@@ -27,6 +27,6 @@ pub(super) async fn rule_provider_impl(
 ) -> Result<String> {
     let profile = SurgeProfile::parse(raw_profile)?;
     let rules = profile.rules_for_provider(policy, url_builder.sub_host()?);
-    let output = SurgeRenderer::render_rules(&rules)?;
+    let output = SurgeRenderer::render_rules_without_section(&rules)?;
     Ok(output)
 }
