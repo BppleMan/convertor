@@ -22,7 +22,7 @@ pub struct SubscriptionService {
 }
 
 impl SubscriptionService {
-    pub async fn execute(&mut self, args: SubscriptionArgs) -> color_eyre::Result<UrlBuilder> {
+    pub async fn execute(&mut self, args: SubscriptionArgs) -> color_eyre::Result<()> {
         let client = args.client;
         let url_builder = self.generate_url_builder(&args).await?;
         let raw_sub_url = url_builder.build_subscription_url(client)?;
@@ -39,6 +39,10 @@ impl SubscriptionService {
         };
         if Client::Surge == client && args.update {
             let surge_config = SurgeConfig::try_new()?;
+            surge_config.update_surge_config(&url_builder).await?;
+            surge_config
+                .update_surge_sub_logs_url(url_builder.build_sub_logs_url(&self.config.secret)?)
+                .await?;
             surge_config
                 .update_surge_rule_providers(&url_builder, &policies)
                 .await?;
@@ -56,7 +60,8 @@ impl SubscriptionService {
             }
             println!("{}", url_builder.build_rule_provider_url(client, &policy)?)
         }
-        Ok(url_builder)
+
+        Ok(())
     }
 
     async fn generate_url_builder(&self, args: &SubscriptionArgs) -> color_eyre::Result<UrlBuilder> {
@@ -68,7 +73,7 @@ impl SubscriptionService {
             convertor_url,
             ..
         } = args;
-        let server = server.as_ref().unwrap_or_else(|| &self.config.server).clone();
+        let server = server.as_ref().unwrap_or(&self.config.server).clone();
         let url_builder = if let Some(raw_sub_url) = raw_sub_url {
             UrlBuilder::new(server.clone(), self.config.secret.clone(), raw_sub_url.clone())?
         } else if let Some(convertor_url) = convertor_url {

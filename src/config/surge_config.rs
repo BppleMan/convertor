@@ -2,11 +2,12 @@ use crate::client::Client;
 use crate::profile::core::policy::Policy;
 use crate::profile::core::rule::Rule;
 use crate::profile::renderer::surge_renderer::{
-    SurgeRenderer, SURGE_RULE_PROVIDER_COMMENT_END, SURGE_RULE_PROVIDER_COMMENT_START,
+    SURGE_RULE_PROVIDER_COMMENT_END, SURGE_RULE_PROVIDER_COMMENT_START, SurgeRenderer,
 };
 use crate::subscription::url_builder::UrlBuilder;
-use color_eyre::eyre::OptionExt;
 use color_eyre::Result;
+use color_eyre::eyre::OptionExt;
+use reqwest::IntoUrl;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
@@ -18,6 +19,7 @@ pub struct SurgeConfig {
     pub main_config_path: PathBuf,
     pub default_config_path: PathBuf,
     pub rules_config_path: PathBuf,
+    pub sub_logs_path: PathBuf,
 }
 
 impl SurgeConfig {
@@ -32,11 +34,13 @@ impl SurgeConfig {
         let main_config_path = ns_surge_path.join("surge").join("surge.conf");
         let default_config_path = ns_surge_path.join("surge").join("BosLife.conf");
         let rules_config_path = ns_surge_path.join("surge").join("rules.dconf");
+        let sub_logs_path = ns_surge_path.join("surge").join("subscription_logs.js");
         Ok(Self {
             surge_dir: ns_surge_path,
             main_config_path,
             default_config_path,
             rules_config_path,
+            sub_logs_path,
         })
     }
 
@@ -82,6 +86,15 @@ impl SurgeConfig {
         lines.splice(range_of_rule_providers, output);
         let content = lines.join("\n");
         tokio::fs::write(&self.rules_config_path, &content).await?;
+        Ok(())
+    }
+
+    pub async fn update_surge_sub_logs_url(&self, sub_logs_url: impl IntoUrl) -> Result<()> {
+        let content = tokio::fs::read_to_string(&self.sub_logs_path).await?;
+        let mut lines = content.lines().map(Cow::Borrowed).collect::<Vec<_>>();
+        lines[0] = Cow::Owned(format!(r#"const sub_logs_url = "{}""#, sub_logs_url.as_str()));
+        let content = lines.join("\n");
+        tokio::fs::write(&self.sub_logs_path, &content).await?;
         Ok(())
     }
 

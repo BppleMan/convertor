@@ -69,7 +69,7 @@ impl SurgeRenderer {
             }
             write!(
                 &mut output,
-                "{}={},{},{},{}",
+                "{}={},{},{},password={}",
                 proxy.name, proxy.r#type, proxy.server, proxy.port, proxy.password
             )?;
             if let Some(cipher) = &proxy.cipher {
