@@ -7,7 +7,7 @@ use convertor::config::convertor_config::ConvertorConfig;
 use convertor::install_service::install_service;
 use convertor::server::start_server;
 use convertor::subscription::subscription_api::boslife_api::BosLifeApi;
-use convertor::subscription::subscription_service::SubscriptionService;
+use convertor::subscription::SubscriptionService;
 use convertor::{init_backtrace, init_base_dir, init_log};
 
 #[tokio::main(flavor = "multi_thread")]
@@ -23,9 +23,9 @@ async fn main() -> Result<()> {
 
     match cli.command {
         None => start_server(cli.listen, config, service, &base_dir).await?,
-        Some(ConvertorCommand::Subscription { command }) => {
+        Some(ConvertorCommand::Subscription(args)) => {
             let mut subscription_service = SubscriptionService { config, api: service };
-            subscription_service.execute(command).await?;
+            subscription_service.execute(*args).await?;
         }
         Some(ConvertorCommand::InstallService { name }) => install_service(name, service).await?,
     }

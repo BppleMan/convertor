@@ -17,22 +17,22 @@ pub struct Rule {
 }
 
 impl Rule {
-    pub fn surge_rule_provider(policy: &Policy, url: Url) -> Self {
-        Self {
+    pub fn surge_rule_provider(policy: &Policy, url: Url) -> color_eyre::Result<Self> {
+        Ok(Self {
             rule_type: RuleType::RuleSet,
             value: Some(url.to_string()),
             policy: policy.clone(),
-            comment: Some(SurgeRenderer::render_policy_for_provider(policy)),
-        }
+            comment: Some(SurgeRenderer::render_provider_comment_from_policy(policy)?),
+        })
     }
 
-    pub fn clash_rule_provider(policy: &Policy) -> Self {
-        Self {
+    pub fn clash_rule_provider(policy: &Policy) -> color_eyre::Result<Self> {
+        Ok(Self {
             rule_type: RuleType::RuleSet,
-            value: Some(ClashRenderer::render_policy_for_provider(policy)),
+            value: Some(ClashRenderer::render_provider_name_from_policy(policy)?),
             policy: policy.clone(),
             comment: None,
-        }
+        })
     }
 
     pub fn set_comment(&mut self, comment: Option<String>) {

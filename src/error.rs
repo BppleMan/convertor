@@ -5,6 +5,9 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum AppError {
+    #[error("Unauthorized: {0}")]
+    Unauthorized(String),
+
     #[error(transparent)]
     Eyre(#[from] color_eyre::eyre::Error),
 

@@ -2,8 +2,9 @@ use crate::client::Client;
 use crate::encrypt::{decrypt, encrypt};
 use crate::profile::core::policy::Policy;
 use crate::server::query::{ProfileQuery, QueryPolicy};
-use color_eyre::eyre::{eyre, ContextCompat, WrapErr};
-use percent_encoding::{percent_decode_str, utf8_percent_encode, CONTROLS, NON_ALPHANUMERIC};
+use crate::server::router::subscription_router::SubLogQuery;
+use color_eyre::eyre::{eyre, WrapErr};
+use percent_encoding::{percent_decode_str, utf8_percent_encode, PercentDecode, CONTROLS, NON_ALPHANUMERIC};
 use reqwest::{IntoUrl, Url};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -34,8 +35,13 @@ impl UrlBuilder {
         let convertor_url = convertor_url.into_url()?;
         let profile_query = convertor_url
             .query()
-            .map(serde_qs::from_str::<ProfileQuery>)
-            .wrap_err("无法解析 Convertor URL 查询参数")??;
+            .map(percent_decode_str)
+            .map(PercentDecode::decode_utf8)
+            .ok_or_else(|| eyre!("Convertor url 必须包含查询参数"))?
+            .map(|cow| cow.into_owned())
+            .map(|query| serde_qs::from_str::<ProfileQuery>(&query))
+            .wrap_err_with(|| eyre!("Convertor url 查询参数无法解码"))?
+            .wrap_err_with(|| eyre!("Convertor url 查询参数无法反序列化"))?;
         Self::decode_from_query(&profile_query, convertor_secret)
     }
 
@@ -92,7 +98,7 @@ impl UrlBuilder {
         Ok(url)
     }
 
-    /// 构建一个规则集的 URL，用于获取机场的规则集
+    /// 用于获取机场的规则集的 URL
     pub fn build_rule_provider_url(&self, client: Client, policy: &Policy) -> color_eyre::Result<Url> {
         let mut url = self.server.clone();
         {
@@ -107,7 +113,26 @@ impl UrlBuilder {
         Ok(url)
     }
 
-    /// 构建一个服务的 URL，用于获取机场订阅
+    /// 用于获取机场订阅日志的 URL
+    pub fn build_sub_logs_url(&self, secret: impl AsRef<str>) -> color_eyre::Result<Url> {
+        let mut url = self.server.clone();
+        {
+            let mut path = url.path_segments_mut().map_err(|()| eyre!("无法获取路径段"))?;
+            path.push("sub-logs");
+        }
+        let encrypted_secret = encrypt(secret.as_ref().as_bytes(), secret.as_ref())?;
+        let encoded_secret = utf8_percent_encode(&encrypted_secret, NON_ALPHANUMERIC).to_string();
+        let sub_log_query = SubLogQuery {
+            secret: encoded_secret,
+            page_current: Some(1),
+            page_size: Some(10),
+        };
+        let query_string = serde_qs::to_string(&sub_log_query)?;
+        url.set_query(Some(&query_string));
+        Ok(url)
+    }
+
+    /// 用于获取机场订阅的 URL
     pub fn build_subscription_url(&self, client: Client) -> color_eyre::Result<Url> {
         let mut url = self.raw_sub_url.clone();
         // BosLife 的字段是 `flag` 不可改为client

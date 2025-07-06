@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use convertor::subscription::subscription_command::SubscriptionCommand;
+use convertor::subscription::subscription_args::SubscriptionArgs;
 use std::net::SocketAddrV4;
 use std::path::PathBuf;
 
@@ -21,10 +21,7 @@ pub struct ConvertorCli {
 pub enum ConvertorCommand {
     /// 服务商订阅配置
     #[command(name = "sub")]
-    Subscription {
-        #[command(subcommand)]
-        command: SubscriptionCommand,
-    },
+    Subscription(Box<SubscriptionArgs>),
 
     /// 安装服务
     #[command(name = "install")]

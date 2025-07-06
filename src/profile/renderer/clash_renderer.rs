@@ -208,18 +208,17 @@ impl ClashRenderer {
     }
 
     #[instrument(skip_all)]
-    pub fn render_policy_for_provider(policy: &Policy) -> String {
-        let mut output = String::new();
+    pub fn render_provider_name_from_policy(policy: &Policy) -> Result<String> {
         if policy == &Policy::subscription_policy() {
-            return "Subscription".to_string();
+            return Ok("Subscription".to_string());
         }
+        let mut output = String::new();
         write!(
             output,
             "{}_{}",
             policy.name,
             policy.option.as_ref().unwrap_or(&"policy".to_string())
-        )
-        .expect("无法写入 Clash 规则集名称");
-        output.replace("-", "_")
+        )?;
+        Ok(output.replace("-", "_"))
     }
 }

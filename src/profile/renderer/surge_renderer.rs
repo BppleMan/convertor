@@ -8,6 +8,9 @@ use indexmap::IndexMap;
 use std::fmt::Write;
 use tracing::instrument;
 
+pub const SURGE_RULE_PROVIDER_COMMENT_START: &str = "# Rule Provider from convertor";
+pub const SURGE_RULE_PROVIDER_COMMENT_END: &str = "# End of Rule Provider";
+
 pub struct SurgeRenderer;
 
 impl SurgeRenderer {
@@ -141,9 +144,23 @@ impl SurgeRenderer {
         Ok(output)
     }
 
-    // 渲染规则集中的单个规则，这是不需要带 policy 的
+    /// 渲染不带 comment 的 rule
     #[instrument(skip_all)]
-    pub fn render_rule_set(rule: &Rule) -> Result<String> {
+    pub fn render_rule_without_comment(rule: &Rule) -> Result<String> {
+        let mut output = String::new();
+        write!(
+            &mut output,
+            "{},{}{}",
+            rule.rule_type.as_str(),
+            rule.value.as_ref().expect("规则集中的规则必须有 value"),
+            Self::render_policy(&rule.policy)?,
+        )?;
+        Ok(output)
+    }
+
+    /// 渲染不带 policy 的 rule
+    #[instrument(skip_all)]
+    pub fn render_rule_without_policy(rule: &Rule) -> Result<String> {
         let mut output = String::new();
         write!(
             &mut output,
@@ -179,19 +196,30 @@ impl SurgeRenderer {
         Ok(output)
     }
 
+    pub fn render_rule_providers_with_comment(rule_providers: &[Rule]) -> Result<Vec<String>> {
+        let mut output = vec![];
+        output.push(SURGE_RULE_PROVIDER_COMMENT_START.to_string());
+        for rule_provider in rule_providers {
+            output.push(Self::render_provider_comment_from_policy(&rule_provider.policy)?);
+            output.push(Self::render_rule_without_comment(rule_provider)?);
+        }
+        output.push(SURGE_RULE_PROVIDER_COMMENT_END.to_string());
+        Ok(output)
+    }
+
     #[instrument(skip_all)]
-    pub fn render_policy_for_provider(policy: &Policy) -> String {
+    pub fn render_provider_comment_from_policy(policy: &Policy) -> Result<String> {
         let mut output = String::new();
-        write!(output, "[").expect("无法写入 Surge 注释");
+        write!(output, "// [")?;
         if policy.is_subscription {
-            write!(output, "Subscription").expect("无法写入 Surge 注释");
+            write!(output, "Subscription")?;
         } else {
-            write!(output, "{}", policy.name).expect("无法写入 Surge 注释");
+            write!(output, "{}", policy.name)?;
         }
         if let Some(option) = policy.option.as_ref() {
-            write!(output, ": {}", option).expect("无法写入 Surge 注释");
+            write!(output, ": {}", option)?;
         }
-        write!(output, "]").expect("无法写入 Surge 注释");
-        output
+        write!(output, "] by convertor/{}", env!("CARGO_PKG_VERSION"))?;
+        Ok(output)
     }
 }

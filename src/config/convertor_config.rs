@@ -20,7 +20,9 @@ impl ConvertorConfig {
             return Self::from_file(path);
         }
         let mut current = cwd.as_ref().to_path_buf().canonicalize()?;
-        assert!(current.is_dir(), "{}", format!("{} 不是一个目录", current.display()));
+        if !current.is_dir() {
+            return Err(eyre!("{} 不是一个目录", current.display()));
+        }
         loop {
             let file = current.join("convertor.toml");
             if file.exists() {
@@ -40,7 +42,9 @@ impl ConvertorConfig {
 
     pub fn from_file(path: impl AsRef<Path>) -> color_eyre::Result<Self> {
         let path = path.as_ref();
-        assert!(path.is_file(), "{}", format!("{} 不是一个文件", path.display()));
+        if !path.is_file() {
+            return Err(eyre!("{} 不是一个文件", path.display()));
+        }
         let content = std::fs::read_to_string(path).wrap_err_with(|| eyre!("读取配置文件失败: {}", path.display()))?;
         let config: ConvertorConfig =
             toml::from_str(&content).wrap_err_with(|| format!("解析配置文件失败: {}", path.display()))?;

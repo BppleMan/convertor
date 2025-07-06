@@ -63,7 +63,7 @@ impl ClashProfile {
         self.rules = raw_profile.rules;
         self.secret = secret.as_ref().to_string();
         self.optimize_proxies();
-        self.optimize_rules(sub_host, url_builder);
+        self.optimize_rules(sub_host, url_builder)?;
         Ok(())
     }
 
@@ -102,7 +102,7 @@ impl ClashProfile {
         self.proxy_groups.extend(region_groups);
     }
 
-    fn optimize_rules(&mut self, sub_host: impl AsRef<str>, url_builder: &UrlBuilder) {
+    fn optimize_rules(&mut self, sub_host: impl AsRef<str>, url_builder: &UrlBuilder) -> color_eyre::Result<()> {
         let mut retain = vec![];
         let policy_set = self
             .rules
@@ -126,7 +126,10 @@ impl ClashProfile {
         let mut policy_list = policy_set.into_iter().collect::<Vec<_>>();
         policy_list.sort();
 
-        let mut rules = policy_list.iter().map(Rule::clash_rule_provider).collect::<Vec<_>>();
+        let mut rules = policy_list
+            .iter()
+            .map(Rule::clash_rule_provider)
+            .collect::<color_eyre::Result<Vec<_>>>()?;
         rules.extend(retain);
         self.rules.extend(rules);
 
@@ -137,10 +140,12 @@ impl ClashProfile {
                     warn!("无法构建 Rule Provider URL, 可能是订阅 URL 错误");
                     return None;
                 };
-                let provider_name = ClashRenderer::render_policy_for_provider(&policy);
+                let provider_name = ClashRenderer::render_provider_name_from_policy(&policy).ok()?;
                 Some((provider_name.clone(), RuleProvider::new(url, provider_name)))
             })
             .collect::<Vec<(_, _)>>();
+
+        Ok(())
     }
 
     pub fn rules_for_provider(&self, policy: Policy, sub_host: impl AsRef<str>) -> color_eyre::Result<Vec<Rule>> {
