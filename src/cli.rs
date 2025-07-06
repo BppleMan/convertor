@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
-use convertor::subscription::subscription_command::SubscriptionCommand;
+use convertor::subscription::subscription_args::SubscriptionArgs;
+use std::net::SocketAddrV4;
 use std::path::PathBuf;
 
 #[derive(Debug, Parser)]
@@ -7,7 +8,7 @@ use std::path::PathBuf;
 pub struct ConvertorCli {
     /// 监听地址, 不需要指定协议
     #[arg(default_value = "127.0.0.1:8001")]
-    pub listen: String,
+    pub listen: SocketAddrV4,
 
     #[arg(short)]
     pub config: Option<PathBuf>,
@@ -18,21 +19,9 @@ pub struct ConvertorCli {
 
 #[derive(Debug, Subcommand)]
 pub enum ConvertorCommand {
-    /// 操作 boslife 订阅配置
+    /// 服务商订阅配置
     #[command(name = "sub")]
-    Subscription {
-        #[command(subcommand)]
-        command: SubscriptionCommand,
-
-        /// convertor 所在服务器的地址
-        /// 格式为 `http://ip:port`
-        #[arg(short, long)]
-        server: Option<String>,
-
-        /// 构造适用于 surge/clash 的订阅地址
-        #[arg()]
-        flag: String,
-    },
+    Subscription(Box<SubscriptionArgs>),
 
     /// 安装服务
     #[command(name = "install")]

@@ -1,5 +1,8 @@
 .idea
 .DS_Store
 /target
-logs
+**/logs
 **/convertor.toml
+**/.convertor.*/
+!.convertor.bench
+!.convertor.test
