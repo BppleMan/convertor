@@ -1,6 +1,8 @@
 use crate::subscription::subscription_config::ServiceConfig;
-use color_eyre::eyre::{eyre, WrapErr};
+use crate::subscription::url_builder::UrlBuilder;
 use color_eyre::Report;
+use color_eyre::eyre::{WrapErr, eyre};
+use reqwest::IntoUrl;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::path::Path;
@@ -64,6 +66,10 @@ impl ConvertorConfig {
             .ascii_serialization()
             .parse()
             .wrap_err("服务器地址无效")
+    }
+
+    pub fn create_url_builder(&self, raw_sub_url: impl IntoUrl) -> color_eyre::Result<UrlBuilder> {
+        UrlBuilder::new(self.server.clone(), self.secret.clone(), raw_sub_url.into_url()?)
     }
 }
 

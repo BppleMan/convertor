@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use convertor::install_service::ServiceName;
 use convertor::subscription::subscription_args::SubscriptionArgs;
 use std::net::SocketAddrV4;
 use std::path::PathBuf;
@@ -26,8 +27,8 @@ pub enum ConvertorCommand {
     /// 安装服务
     #[command(name = "install")]
     InstallService {
-        /// 服务名称 [mihomo, convertor]
-        #[arg(default_value = "convertor")]
-        name: String,
+        /// 服务名称
+        #[arg(value_enum, default_value = "convertor")]
+        name: ServiceName,
     },
 }
