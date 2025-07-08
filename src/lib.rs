@@ -1,16 +1,16 @@
 use std::path::{Path, PathBuf};
 use std::sync::Once;
 use tokio::signal;
+use tracing_subscriber::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-use tracing_subscriber::EnvFilter;
 
 pub mod error;
 pub mod profile;
 pub mod region;
 pub mod encrypt;
 pub mod config;
-pub mod server;
+pub mod router;
 pub mod install_service;
 pub mod subscription;
 pub mod client;

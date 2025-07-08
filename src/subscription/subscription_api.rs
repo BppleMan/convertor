@@ -1,10 +1,10 @@
 use crate::cache::{
-    Cache, CacheKey, CACHED_AUTH_TOKEN_KEY, CACHED_PROFILE_KEY, CACHED_RAW_SUB_URL_KEY, CACHED_SUB_LOGS_KEY,
+    CACHED_AUTH_TOKEN_KEY, CACHED_PROFILE_KEY, CACHED_RAW_SUB_URL_KEY, CACHED_SUB_LOGS_KEY, Cache, CacheKey,
 };
 use crate::client::Client;
 use crate::subscription::subscription_config::ServiceConfig;
 use crate::subscription::subscription_log::SubscriptionLog;
-use color_eyre::eyre::{eyre, WrapErr};
+use color_eyre::eyre::{WrapErr, eyre};
 use moka::future::Cache as MokaCache;
 use reqwest::{IntoUrl, Method, Request, Response, Url};
 
@@ -60,6 +60,11 @@ pub(crate) trait ServiceApi {
         self.cached_auth_token()
             .try_get_with(format!("{}_{}", CACHED_AUTH_TOKEN_KEY, base_url.as_str()), async {
                 let request = self.login_request()?;
+                println!("{:#?}", request);
+                println!(
+                    "{}",
+                    String::from_utf8_lossy(request.body().unwrap().as_bytes().unwrap())
+                );
                 let response = self.execute(request).await?;
                 if response.status().is_success() {
                     let json_response = response.text().await?;

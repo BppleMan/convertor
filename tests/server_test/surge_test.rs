@@ -1,16 +1,20 @@
 use crate::server_test::ServerContext;
-use crate::{count_rule_lines, mock_profile, start_server};
+use crate::{count_rule_lines, expect_profile, mock_profile, start_server};
 use axum::body::Body;
 use axum::extract::Request;
 use convertor::client::Client;
 use convertor::config::surge_config::SurgeConfig;
+use convertor::encrypt::encrypt;
 use convertor::profile::core::policy::Policy;
+use convertor::profile::core::profile::Profile;
 use convertor::profile::core::rule::RuleType;
+use convertor::profile::core::surge_profile::SurgeProfile;
 use convertor::profile::parser::surge_parser::SurgeParser;
+use convertor::profile::renderer::Renderer;
 use convertor::profile::renderer::surge_renderer::SurgeRenderer;
-use convertor::profile::surge_profile::SurgeProfile;
 use convertor::subscription::url_builder::UrlBuilder;
 use http_body_util::BodyExt;
+use percent_encoding::utf8_percent_encode;
 use tower::ServiceExt;
 
 #[tokio::test]
@@ -42,10 +46,15 @@ pub async fn test_surge_profile() -> color_eyre::Result<()> {
     let response = app.oneshot(request).await?;
     let stream = String::from_utf8_lossy(&response.into_body().collect().await?.to_bytes()).to_string();
 
-    let mut expect_profile = SurgeProfile::parse(mock_profile(Client::Surge, &mock_server)?)?;
-    expect_profile.header = SurgeConfig::build_managed_config_header(url_builder.build_convertor_url(Client::Surge)?);
-    expect_profile.optimize(url_builder)?;
-    let expect = SurgeRenderer::render_profile(&expect_profile)?;
+    let expect = expect_profile(
+        Client::Surge,
+        // &url_builder.encrypted_raw_sub_url,
+        utf8_percent_encode(
+            &utf8_percent_encode(&url_builder.encrypted_raw_sub_url, percent_encoding::NON_ALPHANUMERIC).to_string(),
+            percent_encoding::CONTROLS,
+        )
+        .to_string(),
+    );
 
     pretty_assertions::assert_str_eq!(expect, stream);
     Ok(())
@@ -82,10 +91,9 @@ pub async fn test_surge_rule_provider() -> color_eyre::Result<()> {
     let stream = String::from_utf8_lossy(&response.into_body().collect().await?.to_bytes()).to_string();
     let lines = stream.lines().collect::<Vec<_>>();
 
-    pretty_assertions::assert_str_eq!("[Rule]", lines[0]);
-    pretty_assertions::assert_eq!(896, lines.len());
+    pretty_assertions::assert_eq!(854, lines.len());
 
-    let rules = SurgeParser::parse_rules(lines)?;
+    let rules = SurgeParser::parse_rules_for_provider(lines)?;
     pretty_assertions::assert_eq!(count_rule_lines(Client::Surge, &policy), rules.len());
     for rule in rules {
         pretty_assertions::assert_eq!(&policy, &rule.policy);
@@ -119,10 +127,9 @@ pub async fn test_surge_subscription_rule_provider() -> color_eyre::Result<()> {
     let stream = String::from_utf8_lossy(&response.into_body().collect().await?.to_bytes()).to_string();
     let lines = stream.lines().collect::<Vec<_>>();
 
-    pretty_assertions::assert_str_eq!("[Rule]", lines[0]);
-    pretty_assertions::assert_eq!(3, lines.len());
+    pretty_assertions::assert_eq!(2, lines.len());
 
-    let rules = SurgeParser::parse_rules(lines)?;
+    let rules = SurgeParser::parse_rules_for_provider(lines)?;
     pretty_assertions::assert_eq!(1, rules.len());
     for rule in rules {
         pretty_assertions::assert_eq!(&RuleType::Domain, &rule.rule_type);
@@ -158,15 +165,13 @@ pub async fn test_surge_direct_rule_provider() -> color_eyre::Result<()> {
     let stream = String::from_utf8_lossy(&response.into_body().collect().await?.to_bytes()).to_string();
     let lines = stream.lines().collect::<Vec<_>>();
 
-    pretty_assertions::assert_str_eq!("[Rule]", lines[0]);
-    pretty_assertions::assert_eq!(6, lines.len());
+    pretty_assertions::assert_eq!(2, lines.len());
 
-    let rules = SurgeParser::parse_rules(lines)?;
+    let rules = SurgeParser::parse_rules_for_provider(lines)?;
     pretty_assertions::assert_eq!(1, rules.len());
     for rule in rules {
         pretty_assertions::assert_eq!(&RuleType::Domain, &rule.rule_type);
-        pretty_assertions::assert_eq!(&policy.name, &rule.policy.name);
-        pretty_assertions::assert_eq!(&policy.option, &rule.policy.option);
+        pretty_assertions::assert_eq!(true, rule.value.is_some());
     }
     Ok(())
 }

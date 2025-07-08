@@ -1,10 +1,10 @@
 use crate::client::Client;
 use crate::encrypt::{decrypt, encrypt};
 use crate::profile::core::policy::Policy;
-use crate::server::query::{ProfileQuery, QueryPolicy};
-use crate::server::router::subscription_router::SubLogQuery;
-use color_eyre::eyre::{eyre, WrapErr};
-use percent_encoding::{percent_decode_str, utf8_percent_encode, PercentDecode, CONTROLS, NON_ALPHANUMERIC};
+use crate::router::query::{ProfileQuery, QueryPolicy};
+use crate::router::subscription_router::SubLogQuery;
+use color_eyre::eyre::{WrapErr, eyre};
+use percent_encoding::{CONTROLS, PercentDecode, percent_decode_str, utf8_percent_encode};
 use reqwest::{IntoUrl, Url};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -93,7 +93,7 @@ impl UrlBuilder {
         }
         let profile_query = self.encode_to_profile_query(client, Option::<QueryPolicy>::None)?;
         let query_string = serde_qs::to_string(&profile_query)?;
-        let encoded_query = utf8_percent_encode(&query_string, NON_ALPHANUMERIC).to_string();
+        let encoded_query = utf8_percent_encode(&query_string, CONTROLS).to_string();
         url.set_query(Some(&encoded_query));
         Ok(url)
     }
@@ -108,7 +108,7 @@ impl UrlBuilder {
 
         let profile_query = self.encode_to_profile_query(client, Some(policy.clone()))?;
         let query_string = serde_qs::to_string(&profile_query)?;
-        let encoded_query = utf8_percent_encode(&query_string, NON_ALPHANUMERIC).to_string();
+        let encoded_query = utf8_percent_encode(&query_string, CONTROLS).to_string();
         url.set_query(Some(&encoded_query));
         Ok(url)
     }
@@ -121,7 +121,7 @@ impl UrlBuilder {
             path.push("sub-logs");
         }
         let encrypted_secret = encrypt(secret.as_ref().as_bytes(), secret.as_ref())?;
-        let encoded_secret = utf8_percent_encode(&encrypted_secret, NON_ALPHANUMERIC).to_string();
+        let encoded_secret = utf8_percent_encode(&encrypted_secret, CONTROLS).to_string();
         let sub_log_query = SubLogQuery {
             secret: encoded_secret,
             page_current: Some(1),

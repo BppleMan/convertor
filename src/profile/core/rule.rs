@@ -1,8 +1,8 @@
 use crate::profile::core::policy::Policy;
 use crate::profile::error::ParseError;
-use crate::profile::renderer::clash_renderer::ClashRenderer;
-use crate::profile::renderer::surge_renderer::SurgeRenderer;
-use serde::{Deserialize, Deserializer, Serialize};
+use color_eyre::Report;
+use color_eyre::eyre::eyre;
+use serde::{Deserialize, Deserializer};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use url::Url;
@@ -17,19 +17,23 @@ pub struct Rule {
 }
 
 impl Rule {
-    pub fn surge_rule_provider(policy: &Policy, url: Url) -> color_eyre::Result<Self> {
+    pub fn is_built_in(&self) -> bool {
+        matches!(self.rule_type, RuleType::GeoIP | RuleType::Final | RuleType::Match)
+    }
+
+    pub fn surge_rule_provider(policy: &Policy, name: impl AsRef<str>, url: Url) -> color_eyre::Result<Self> {
         Ok(Self {
             rule_type: RuleType::RuleSet,
             value: Some(url.to_string()),
             policy: policy.clone(),
-            comment: Some(SurgeRenderer::render_provider_comment_from_policy(policy)?),
+            comment: Some(name.as_ref().to_string()),
         })
     }
 
-    pub fn clash_rule_provider(policy: &Policy) -> color_eyre::Result<Self> {
+    pub fn clash_rule_provider(policy: &Policy, name: impl AsRef<str>) -> color_eyre::Result<Self> {
         Ok(Self {
             rule_type: RuleType::RuleSet,
-            value: Some(ClashRenderer::render_provider_name_from_policy(policy)?),
+            value: Some(name.as_ref().to_string()),
             policy: policy.clone(),
             comment: None,
         })
@@ -40,7 +44,26 @@ impl Rule {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
+pub struct ProviderRule {
+    pub rule_type: RuleType,
+    pub value: String,
+    pub comment: Option<String>,
+}
+
+impl TryFrom<Rule> for ProviderRule {
+    type Error = Report;
+
+    fn try_from(rule: Rule) -> Result<Self, Self::Error> {
+        Ok(ProviderRule {
+            rule_type: rule.rule_type,
+            value: rule.value.ok_or(eyre!("ProviderRule 的 value 不能为空"))?,
+            comment: rule.comment,
+        })
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
 pub enum RuleType {
     #[serde(rename = "DOMAIN")]
     Domain,

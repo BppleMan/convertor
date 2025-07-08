@@ -1,10 +1,10 @@
 use crate::profile::core::policy::Policy;
 use crate::profile::core::proxy::Proxy;
 use crate::profile::core::proxy_group::ProxyGroup;
-use crate::profile::core::rule::Rule;
-use crate::profile::renderer::Result;
-use crate::profile::surge_profile::SurgeProfile;
-use indexmap::IndexMap;
+use crate::profile::core::rule::{ProviderRule, Rule};
+use crate::profile::core::rule_provider::RuleProvider;
+use crate::profile::core::surge_profile::SurgeProfile;
+use crate::profile::renderer::{Renderer, Result};
 use std::fmt::Write;
 use tracing::instrument;
 
@@ -13,211 +13,137 @@ pub const SURGE_RULE_PROVIDER_COMMENT_END: &str = "# End of Rule Provider";
 
 pub struct SurgeRenderer;
 
-impl SurgeRenderer {
-    #[instrument(skip_all)]
-    pub fn render_profile(profile: &SurgeProfile) -> Result<String> {
-        let SurgeProfile {
-            header,
-            general,
-            proxies,
-            proxy_groups,
-            rules,
-            url_rewrite,
-            misc,
-        } = profile;
+impl Renderer for SurgeRenderer {
+    type PROFILE = SurgeProfile;
 
-        let output = [
-            Self::render_header(header)?,
-            Self::render_general(general)?,
-            Self::render_proxies(proxies)?,
-            Self::render_proxy_groups(proxy_groups)?,
-            Self::render_rules(rules)?,
-            Self::render_url_rewrite(url_rewrite)?,
-            Self::render_misc(misc)?,
-        ]
-        .join("\n");
-
-        Ok(output)
+    fn client() -> crate::client::Client {
+        crate::client::Client::Surge
     }
 
-    #[instrument(skip_all)]
-    pub fn render_header(header: &str) -> Result<String> {
+    fn render_profile(profile: &Self::PROFILE) -> Result<String> {
         let mut output = String::new();
-        writeln!(&mut output, "{}", header)?;
-        writeln!(&mut output)?;
-        Ok(output)
-    }
 
-    #[instrument(skip_all)]
-    pub fn render_general(general: &[String]) -> Result<String> {
-        let mut output = String::new();
-        writeln!(&mut output, "[General]")?;
-        for line in general {
-            writeln!(&mut output, "{}", line)?;
+        let header = Self::render_header(profile)?;
+        writeln!(output, "{}", header.trim())?;
+        writeln!(output)?;
+
+        let general = Self::render_general(profile)?;
+        writeln!(output, "[General]")?;
+        writeln!(output, "{}", general.trim())?;
+        writeln!(output)?;
+
+        let proxies = Self::render_proxies(&profile.proxies)?;
+        writeln!(output, "[Proxy]")?;
+        writeln!(output, "{}", proxies.trim())?;
+        writeln!(output)?;
+
+        let proxy_groups = Self::render_proxy_groups(&profile.proxy_groups)?;
+        writeln!(output, "[Proxy Group]")?;
+        writeln!(output, "{}", proxy_groups.trim())?;
+        writeln!(output)?;
+
+        let rules = Self::render_rules(&profile.rules)?;
+        writeln!(output, "[Rule]")?;
+        writeln!(output, "{}", rules.trim())?;
+        writeln!(output)?;
+
+        let url_rewrite = Self::render_url_rewrite(&profile.url_rewrite)?;
+        writeln!(output, "[URL Rewrite]")?;
+        writeln!(output, "{}", url_rewrite.trim())?;
+        writeln!(output)?;
+
+        let misc = Self::render_misc(&profile.misc)?;
+        if !misc.trim().is_empty() {
+            writeln!(output, "{}", misc.trim())?;
         }
-        writeln!(&mut output)?;
+
         Ok(output)
     }
 
-    #[instrument(skip_all)]
-    pub fn render_proxies(proxies: &[Proxy]) -> Result<String> {
+    fn render_general(profile: &Self::PROFILE) -> Result<String> {
+        Self::render_lines(&profile.general, |line| Ok(line.clone()))
+    }
+
+    fn render_proxy(proxy: &Proxy) -> Result<String> {
         let mut output = String::new();
-        writeln!(&mut output, "[Proxy]")?;
-        for proxy in proxies {
-            if let Some(comment) = &proxy.comment {
-                writeln!(&mut output, "{}", comment)?;
-            }
-            write!(
-                &mut output,
-                "{}={},{},{},password={}",
-                proxy.name, proxy.r#type, proxy.server, proxy.port, proxy.password
-            )?;
-            if let Some(cipher) = &proxy.cipher {
-                write!(&mut output, ",encrypt-method={}", cipher)?;
-            }
-            if let Some(udp) = proxy.udp {
-                write!(&mut output, ",udp-replay={}", udp)?;
-            }
-            if let Some(tfo) = proxy.tfo {
-                write!(&mut output, ",tfo={}", tfo)?;
-            }
-            if let Some(sni) = &proxy.sni {
-                write!(&mut output, ",sni={}", sni)?;
-            }
-            if let Some(skip_cert_verify) = proxy.skip_cert_verify {
-                write!(&mut output, ",skip-cert-verify={}", skip_cert_verify)?;
-            }
-            writeln!(&mut output)?;
+        if let Some(comment) = &proxy.comment {
+            writeln!(output, "{}", comment)?;
         }
-        writeln!(&mut output)?;
+        write!(
+            output,
+            "{}={},{},{},password={}",
+            proxy.name, proxy.r#type, proxy.server, proxy.port, proxy.password
+        )?;
+        if let Some(cipher) = &proxy.cipher {
+            write!(output, ",encrypt-method={}", cipher)?;
+        }
+        if let Some(udp) = proxy.udp {
+            write!(output, ",udp-replay={}", udp)?;
+        }
+        if let Some(tfo) = proxy.tfo {
+            write!(output, ",tfo={}", tfo)?;
+        }
+        if let Some(sni) = &proxy.sni {
+            write!(output, ",sni={}", sni)?;
+        }
+        if let Some(skip_cert_verify) = proxy.skip_cert_verify {
+            write!(output, ",skip-cert-verify={}", skip_cert_verify)?;
+        }
         Ok(output)
     }
 
-    #[instrument(skip_all)]
-    pub fn render_proxy_groups(proxy_groups: &[ProxyGroup]) -> Result<String> {
+    fn render_proxy_group(proxy_group: &ProxyGroup) -> Result<String> {
         let mut output = String::new();
-        writeln!(&mut output, "[Proxy Group]")?;
-        for group in proxy_groups {
-            if let Some(comment) = &group.comment {
-                writeln!(&mut output, "{}", comment)?;
-            }
-            write!(&mut output, "{}={}", group.name, group.r#type.as_str())?;
-            if !group.proxies.is_empty() {
-                write!(&mut output, ",{}", group.proxies.join(","))?;
-            }
-            writeln!(&mut output)?;
+        if let Some(comment) = &proxy_group.comment {
+            writeln!(output, "{}", comment)?;
         }
-        writeln!(&mut output)?;
+        write!(output, "{}={}", proxy_group.name, proxy_group.r#type.as_str())?;
+        if !proxy_group.proxies.is_empty() {
+            write!(output, ",{}", proxy_group.proxies.join(","))?;
+        }
         Ok(output)
     }
 
-    #[instrument(skip_all)]
-    pub fn render_rules(rules: &[Rule]) -> Result<String> {
-        let mut output = String::new();
-        writeln!(&mut output, "[Rule]")?;
-        for rule in rules {
-            writeln!(&mut output, "{}", Self::render_rule(rule)?)?;
-        }
-        writeln!(&mut output)?;
-        Ok(output)
-    }
-
-    pub fn render_rule(rule: &Rule) -> Result<String> {
+    fn render_rule(rule: &Rule) -> Result<String> {
         let mut output = String::new();
         if let Some(comment) = &rule.comment {
-            writeln!(&mut output, "{}", comment)?;
+            writeln!(output, "{}", comment)?;
         }
-        write!(&mut output, "{}", rule.rule_type.as_str())?;
+        write!(output, "{}", rule.rule_type.as_str())?;
         if let Some(value) = &rule.value {
-            write!(&mut output, ",{}", value)?;
+            write!(output, ",{}", value)?;
         }
-        write!(&mut output, "{}", Self::render_policy(&rule.policy)?)?;
+        write!(output, ",{}", Self::render_policy(&rule.policy)?)?;
         Ok(output)
     }
 
-    pub fn render_policy(policy: &Policy) -> Result<String> {
-        let mut output = String::new();
-        write!(&mut output, ",{}", policy.name)?;
-        if let Some(option) = &policy.option {
-            write!(&mut output, ",{}", option)?;
-        }
-        Ok(output)
-    }
-
-    /// 渲染不带 comment 的 rule
-    #[instrument(skip_all)]
-    pub fn render_rule_without_comment(rule: &Rule) -> Result<String> {
-        let mut output = String::new();
-        write!(
-            &mut output,
-            "{},{}{}",
+    fn render_rule_for_provider(rule: &Rule) -> Result<String> {
+        Ok(format!(
+            "{},{},{}",
             rule.rule_type.as_str(),
             rule.value.as_ref().expect("规则集中的规则必须有 value"),
             Self::render_policy(&rule.policy)?,
-        )?;
-        Ok(output)
+        ))
     }
 
-    /// 渲染不带 policy 的 rule
-    #[instrument(skip_all)]
-    pub fn render_rule_without_policy(rule: &Rule) -> Result<String> {
+    fn render_provider_rule(rule: &ProviderRule) -> Result<String> {
         let mut output = String::new();
-        write!(
-            &mut output,
-            "{},{}",
-            rule.rule_type.as_str(),
-            rule.value.as_ref().expect("规则集中的规则必须有 value")
-        )?;
-        Ok(output)
-    }
-
-    pub fn render_rules_without_section(rules: &[Rule]) -> Result<String> {
-        let mut output = String::new();
-        for rule in rules {
-            writeln!(&mut output, "{}", Self::render_rule_without_policy(rule)?)?;
+        if let Some(comment) = &rule.comment {
+            writeln!(output, "{}", comment)?;
         }
-        writeln!(&mut output)?;
+        write!(output, "{},{}", rule.rule_type.as_str(), rule.value)?;
         Ok(output)
     }
 
-    #[instrument(skip_all)]
-    pub fn render_url_rewrite(url_rewrite: &[String]) -> Result<String> {
-        let mut output = String::new();
-        writeln!(&mut output, "[URL Rewrite]")?;
-        for line in url_rewrite {
-            writeln!(&mut output, "{}", line)?;
-        }
-        writeln!(&mut output)?;
-        Ok(output)
+    fn render_rule_providers(_: &[(String, RuleProvider)]) -> Result<String> {
+        todo!("SurgeRenderer 不会渲染 [RuleProvider]");
     }
 
-    #[instrument(skip_all)]
-    pub fn render_misc(misc: &IndexMap<String, Vec<String>>) -> Result<String> {
-        let mut output = String::new();
-        for (key, values) in misc {
-            writeln!(&mut output, "{}", key)?;
-            for value in values {
-                writeln!(&mut output, "{}", value)?;
-            }
-            writeln!(&mut output)?;
-        }
-        writeln!(&mut output)?;
-        Ok(output)
+    fn render_rule_provider(_: &(String, RuleProvider)) -> Result<String> {
+        todo!("SurgeRenderer 不会渲染 RuleProvider");
     }
 
-    pub fn render_rule_providers_with_comment(rule_providers: &[Rule]) -> Result<Vec<String>> {
-        let mut output = vec![];
-        output.push(SURGE_RULE_PROVIDER_COMMENT_START.to_string());
-        for rule_provider in rule_providers {
-            output.push(Self::render_provider_comment_from_policy(&rule_provider.policy)?);
-            output.push(Self::render_rule_without_comment(rule_provider)?);
-        }
-        output.push(SURGE_RULE_PROVIDER_COMMENT_END.to_string());
-        Ok(output)
-    }
-
-    #[instrument(skip_all)]
-    pub fn render_provider_comment_from_policy(policy: &Policy) -> Result<String> {
+    fn render_provider_name_for_policy(policy: &Policy) -> Result<String> {
         let mut output = String::new();
         write!(output, "// [")?;
         if policy.is_subscription {
@@ -231,4 +157,206 @@ impl SurgeRenderer {
         write!(output, "] by convertor/{}", env!("CARGO_PKG_VERSION"))?;
         Ok(output)
     }
+}
+
+impl SurgeRenderer {
+    #[instrument(skip_all)]
+    pub fn render_header(profile: &SurgeProfile) -> Result<String> {
+        Ok(profile.header.to_string())
+    }
+
+    #[instrument(skip_all)]
+    pub fn render_url_rewrite(url_rewrite: &[String]) -> Result<String> {
+        Self::render_lines(url_rewrite, |line| Ok(line.clone()))
+    }
+
+    #[instrument(skip_all)]
+    pub fn render_misc(misc: &[(String, Vec<String>)]) -> Result<String> {
+        let mut output = String::new();
+        for (key, values) in misc {
+            writeln!(output, "{}", key)?;
+            let lines = Self::render_lines(values, |value| Ok(value.clone()))?;
+            writeln!(output, "{}", lines)?;
+            // for value in values {
+            //     writeln!(output, "{}", value)?;
+            // }
+            // writeln!(output)?;
+        }
+        Ok(output)
+    }
+
+    // #[instrument(skip_all)]
+    // pub fn render_profile(profile: &SurgeProfile) -> Result<String> {
+    //
+    //     let output = [
+    //         Self::render_header(header)?,
+    //         Self::render_general(general)?,
+    //         Self::render_proxies(proxies)?,
+    //         Self::render_proxy_groups(proxy_groups)?,
+    //         Self::render_rules(rules)?,
+    //         Self::render_url_rewrite(url_rewrite)?,
+    //         Self::render_misc(misc)?,
+    //     ]
+    //     .join("\n");
+    //
+    //     Ok(output)
+    // }
+    // #[instrument(skip_all)]
+    // pub fn render_general(general: &[String]) -> Result<String> {
+    //     let mut output = String::new();
+    //     writeln!(output, "[General]")?;
+    //     for line in general {
+    //         writeln!(output, "{}", line)?;
+    //     }
+    //     writeln!(output)?;
+    //     Ok(output)
+    // }
+    //
+    // #[instrument(skip_all)]
+    // pub fn render_proxies(proxies: &[Proxy]) -> Result<String> {
+    //     let mut output = String::new();
+    //     writeln!(output, "[Proxy]")?;
+    //     for proxy in proxies {
+    //         if let Some(comment) = &proxy.comment {
+    //             writeln!(output, "{}", comment)?;
+    //         }
+    //         write!(
+    //             output,
+    //             "{}={},{},{},password={}",
+    //             proxy.name, proxy.r#type, proxy.server, proxy.port, proxy.password
+    //         )?;
+    //         if let Some(cipher) = &proxy.cipher {
+    //             write!(output, ",encrypt-method={}", cipher)?;
+    //         }
+    //         if let Some(udp) = proxy.udp {
+    //             write!(output, ",udp-replay={}", udp)?;
+    //         }
+    //         if let Some(tfo) = proxy.tfo {
+    //             write!(output, ",tfo={}", tfo)?;
+    //         }
+    //         if let Some(sni) = &proxy.sni {
+    //             write!(output, ",sni={}", sni)?;
+    //         }
+    //         if let Some(skip_cert_verify) = proxy.skip_cert_verify {
+    //             write!(output, ",skip-cert-verify={}", skip_cert_verify)?;
+    //         }
+    //         writeln!(output)?;
+    //     }
+    //     writeln!(output)?;
+    //     Ok(output)
+    // }
+    //
+    // #[instrument(skip_all)]
+    // pub fn render_proxy_groups(proxy_groups: &[ProxyGroup]) -> Result<String> {
+    //     let mut output = String::new();
+    //     writeln!(output, "[Proxy Group]")?;
+    //     for group in proxy_groups {
+    //         if let Some(comment) = &group.comment {
+    //             writeln!(output, "{}", comment)?;
+    //         }
+    //         write!(output, "{}={}", group.name, group.r#type.as_str())?;
+    //         if !group.proxies.is_empty() {
+    //             write!(output, ",{}", group.proxies.join(","))?;
+    //         }
+    //         writeln!(output)?;
+    //     }
+    //     writeln!(output)?;
+    //     Ok(output)
+    // }
+    //
+    // #[instrument(skip_all)]
+    // pub fn render_rules(rules: &[Rule]) -> Result<String> {
+    //     let mut output = String::new();
+    //     writeln!(output, "[Rule]")?;
+    //     for rule in rules {
+    //         writeln!(output, "{}", Self::render_rule(rule)?)?;
+    //     }
+    //     writeln!(output)?;
+    //     Ok(output)
+    // }
+    //
+    // pub fn render_rule(rule: &Rule) -> Result<String> {
+    //     let mut output = String::new();
+    //     if let Some(comment) = &rule.comment {
+    //         writeln!(output, "{}", comment)?;
+    //     }
+    //     write!(output, "{}", rule.rule_type.as_str())?;
+    //     if let Some(value) = &rule.value {
+    //         write!(output, ",{}", value)?;
+    //     }
+    //     write!(output, "{}", Self::render_policy(&rule.policy)?)?;
+    //     Ok(output)
+    // }
+    //
+    // pub fn render_policy(policy: &Policy) -> Result<String> {
+    //     let mut output = String::new();
+    //     write!(output, ",{}", policy.name)?;
+    //     if let Some(option) = &policy.option {
+    //         write!(output, ",{}", option)?;
+    //     }
+    //     Ok(output)
+    // }
+    //
+    // /// 渲染不带 comment 的 rule
+    // #[instrument(skip_all)]
+    // pub fn render_rule_without_comment(rule: &Rule) -> Result<String> {
+    //     let mut output = String::new();
+    //     write!(
+    //         output,
+    //         "{},{}{}",
+    //         rule.rule_type.as_str(),
+    //         rule.value.as_ref().expect("规则集中的规则必须有 value"),
+    //         Self::render_policy(&rule.policy)?,
+    //     )?;
+    //     Ok(output)
+    // }
+    //
+    // /// 渲染不带 policy 的 rule
+    // #[instrument(skip_all)]
+    // pub fn render_rule_without_policy(rule: &Rule) -> Result<String> {
+    //     let mut output = String::new();
+    //     write!(
+    //         output,
+    //         "{},{}",
+    //         rule.rule_type.as_str(),
+    //         rule.value.as_ref().expect("规则集中的规则必须有 value")
+    //     )?;
+    //     Ok(output)
+    // }
+    //
+    // pub fn render_rules_without_section(rules: &[Rule]) -> Result<String> {
+    //     let mut output = String::new();
+    //     for rule in rules {
+    //         writeln!(output, "{}", Self::render_rule_without_policy(rule)?)?;
+    //     }
+    //     writeln!(output)?;
+    //     Ok(output)
+    // }
+    //
+    // pub fn render_rule_providers_with_comment(rule_providers: &[Rule]) -> Result<Vec<String>> {
+    //     let mut output = vec![];
+    //     output.push(SURGE_RULE_PROVIDER_COMMENT_START.to_string());
+    //     for rule_provider in rule_providers {
+    //         output.push(Self::render_provider_comment_from_policy(&rule_provider.policy)?);
+    //         output.push(Self::render_rule_without_comment(rule_provider)?);
+    //     }
+    //     output.push(SURGE_RULE_PROVIDER_COMMENT_END.to_string());
+    //     Ok(output)
+    // }
+    //
+    // #[instrument(skip_all)]
+    // pub fn render_provider_comment_from_policy(policy: &Policy) -> Result<String> {
+    //     let mut output = String::new();
+    //     write!(output, "// [")?;
+    //     if policy.is_subscription {
+    //         write!(output, "Subscription")?;
+    //     } else {
+    //         write!(output, "{}", policy.name)?;
+    //     }
+    //     if let Some(option) = policy.option.as_ref() {
+    //         write!(output, ": {}", option)?;
+    //     }
+    //     write!(output, "] by convertor/{}", env!("CARGO_PKG_VERSION"))?;
+    //     Ok(output)
+    // }
 }

@@ -1,23 +1,51 @@
 use crate::client::Client;
 use crate::config::convertor_config::ConvertorConfig;
 use crate::error::AppError;
-use crate::server::query::ProfileQuery;
-use crate::server::router::subscription_router::subscription_logs;
+use crate::router::query::ProfileQuery;
+use crate::router::subscription_router::subscription_logs;
+use crate::shutdown_signal;
 use crate::subscription::subscription_api::boslife_api::BosLifeApi;
 use crate::subscription::url_builder::UrlBuilder;
+use axum::Router;
 use axum::extract::{RawQuery, State};
 use axum::routing::get;
-use axum::Router;
-use color_eyre::eyre::{eyre, WrapErr};
 use color_eyre::Result;
+use color_eyre::eyre::{WrapErr, eyre};
+use std::net::{SocketAddr, SocketAddrV4};
+use std::path::Path;
 use std::sync::Arc;
-use tower_http::trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer};
 use tower_http::LatencyUnit;
+use tower_http::trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer};
 use tracing::instrument;
+use tracing::{info, warn};
 
+pub mod query;
 pub mod clash_router;
 pub mod surge_router;
 pub mod subscription_router;
+
+pub async fn start_server(
+    listen_addr: SocketAddrV4,
+    convertor_config: ConvertorConfig,
+    subscription_api: BosLifeApi,
+    base_dir: impl AsRef<Path>,
+) -> Result<()> {
+    info!("base_dir: {}", base_dir.as_ref().display());
+    info!("监听中: {}", &listen_addr);
+    warn!("建议使用 nginx 等网关进行反向代理，以开启 HTTPS 支持");
+    info!("服务启动，使用 Ctrl+C 或 SIGTERM 关闭服务");
+    let listener = tokio::net::TcpListener::bind(listen_addr).await?;
+    let app_state = AppState {
+        config: convertor_config,
+        api: subscription_api,
+    };
+    let app = router(app_state);
+    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
+        .with_graceful_shutdown(shutdown_signal())
+        .await?;
+    info!("服务关闭");
+    Ok(())
+}
 
 pub struct AppState {
     pub config: ConvertorConfig,
@@ -56,7 +84,7 @@ pub async fn profile(State(state): State<Arc<AppState>>, RawQuery(query): RawQue
         .get_raw_profile(raw_subscription_url, profile_query.client)
         .await?;
     let profile = match profile_query.client {
-        Client::Surge => surge_router::profile_impl(state, url_builder, raw_profile).await,
+        Client::Surge => surge_router::profile_impl(url_builder, raw_profile).await,
         Client::Clash => clash_router::profile_impl(state, url_builder, raw_profile).await,
     }?;
     Ok(profile)
@@ -76,12 +104,8 @@ pub async fn rule_provider(State(state): State<Arc<AppState>>, RawQuery(query): 
         .get_raw_profile(raw_subscription_url, profile_query.client)
         .await?;
     match (profile_query.client, profile_query.policy) {
-        (Client::Surge, Some(policy)) => {
-            surge_router::rule_provider_impl(state, url_builder, raw_profile, policy.into()).await
-        }
-        (Client::Clash, Some(policy)) => {
-            clash_router::rule_provider_impl(state, url_builder, raw_profile, policy.into()).await
-        }
+        (Client::Surge, Some(policy)) => surge_router::rule_provider_impl(raw_profile, policy.into()).await,
+        (Client::Clash, Some(policy)) => clash_router::rule_provider_impl(raw_profile, policy.into()).await,
         _ => Err(eyre!("错误的 client 或 policy 参数")),
     }
     .map_err(Into::into)

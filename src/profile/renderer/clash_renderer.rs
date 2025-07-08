@@ -1,40 +1,48 @@
-use crate::profile::clash_profile::ClashProfile;
+use crate::profile::core::clash_profile::ClashProfile;
 use crate::profile::core::policy::Policy;
 use crate::profile::core::proxy::Proxy;
 use crate::profile::core::proxy_group::ProxyGroup;
-use crate::profile::core::rule::Rule;
+use crate::profile::core::rule::{ProviderRule, Rule};
 use crate::profile::core::rule_provider::RuleProvider;
-use crate::profile::renderer::Result;
+use crate::profile::renderer::{INDENT, Renderer, Result};
 use std::fmt::Write;
 use tracing::instrument;
 
-pub const INDENT: usize = 4;
-
 pub struct ClashRenderer;
 
-impl ClashRenderer {
-    #[instrument(skip_all)]
-    pub fn render_profile(profile: &ClashProfile) -> Result<String> {
-        let ClashProfile {
-            proxies,
-            proxy_groups,
-            rules,
-            rule_providers,
-            ..
-        } = &profile;
-        let lines = [
-            Self::render_general(profile)?,
-            Self::render_proxies(proxies)?,
-            Self::render_proxy_groups(proxy_groups)?,
-            Self::render_rule_providers(rule_providers)?,
-            Self::render_rules(rules)?,
-        ]
-        .join("\n");
-        Ok(lines)
+impl Renderer for ClashRenderer {
+    type PROFILE = ClashProfile;
+
+    fn client() -> crate::client::Client {
+        crate::client::Client::Clash
     }
 
     #[instrument(skip_all)]
-    pub fn render_general(profile: &ClashProfile) -> Result<String> {
+    fn render_profile(profile: &Self::PROFILE) -> Result<String> {
+        let mut output = String::new();
+        writeln!(&mut output, "{}", Self::render_general(profile)?)?;
+
+        let proxies = Self::render_proxies(&profile.proxies)?;
+        writeln!(&mut output, "proxies:")?;
+        writeln!(&mut output, "{}", proxies)?;
+
+        let proxy_groups = Self::render_proxy_groups(&profile.proxy_groups)?;
+        writeln!(&mut output, "proxy-groups")?;
+        writeln!(&mut output, "{}", proxy_groups)?;
+
+        let rule_providers = Self::render_rule_providers(&profile.rule_providers)?;
+        writeln!(&mut output, "rule-providers:")?;
+        writeln!(&mut output, "{}", rule_providers)?;
+
+        let rules = Self::render_rules(&profile.rules)?;
+        writeln!(&mut output, "rules:")?;
+        writeln!(&mut output, "{}", rules)?;
+
+        Ok(output)
+    }
+
+    #[instrument(skip_all)]
+    fn render_general(profile: &Self::PROFILE) -> Result<String> {
         let mut output = String::new();
         writeln!(&mut output, "port: {}", profile.port)?;
         writeln!(&mut output, "socks-port: {}", profile.socks_port)?;
@@ -44,117 +52,10 @@ impl ClashRenderer {
         writeln!(&mut output, "log-level: {}", profile.log_level)?;
         writeln!(&mut output, r#"external-controller: "{}""#, profile.external_controller)?;
         writeln!(&mut output, r#"secret: "{}""#, profile.secret)?;
-        writeln!(&mut output)?;
         Ok(output)
     }
 
-    #[instrument(skip_all)]
-    pub fn render_proxies(proxies: &[Proxy]) -> Result<String> {
-        let mut output = String::new();
-        writeln!(&mut output, "proxies:")?;
-        for proxy in proxies {
-            writeln!(
-                &mut output,
-                "{:indent$}{}",
-                "",
-                format_args!("- {}", Self::render_proxy(proxy)?),
-                indent = INDENT,
-            )?;
-        }
-        writeln!(&mut output)?;
-        Ok(output)
-    }
-
-    #[instrument(skip_all)]
-    pub fn render_proxy_groups(proxy_groups: &[ProxyGroup]) -> Result<String> {
-        let mut output = String::new();
-        writeln!(&mut output, "proxy-groups:")?;
-        for group in proxy_groups {
-            writeln!(
-                &mut output,
-                "{:indent$}{}",
-                "",
-                format_args!("- {}", Self::render_proxy_group(group)?),
-                indent = INDENT,
-            )?;
-        }
-        writeln!(&mut output)?;
-        Ok(output)
-    }
-
-    #[instrument(skip_all)]
-    pub fn render_rule_providers(rule_providers: &[(String, RuleProvider)]) -> Result<String> {
-        let mut output = String::new();
-        writeln!(&mut output, "rule-providers:")?;
-        for provider in rule_providers {
-            writeln!(
-                &mut output,
-                "{:indent$}{}",
-                "",
-                format_args!("{}: {}", provider.0, Self::render_rule_provider(&provider.1)?),
-                indent = INDENT,
-            )?;
-        }
-        writeln!(&mut output)?;
-        Ok(output)
-    }
-
-    #[instrument(skip_all)]
-    pub fn render_rules(rules: &[Rule]) -> Result<String> {
-        let mut output = String::new();
-        writeln!(&mut output, "rules:")?;
-        for rule in rules {
-            writeln!(
-                &mut output,
-                "{:indent$}{}",
-                "",
-                format_args!(r#"- "{}""#, Self::render_rule(rule)?),
-                indent = INDENT,
-            )?;
-        }
-        writeln!(&mut output)?;
-        Ok(output)
-    }
-
-    #[instrument(skip_all)]
-    pub fn render_rules_with_payload(rules: &[Rule]) -> Result<String> {
-        let mut output = String::new();
-        writeln!(&mut output, "payload:")?;
-        for rule in rules {
-            writeln!(
-                &mut output,
-                "{:indent$}{}",
-                "",
-                format_args!(r#"- "{}""#, Self::render_rule_without_policy(rule)?),
-                indent = INDENT,
-            )?;
-        }
-        writeln!(&mut output)?;
-        Ok(output)
-    }
-
-    #[instrument(skip_all)]
-    pub fn render_rule(rule: &Rule) -> Result<String> {
-        let mut output = String::new();
-        write!(output, "{}", rule.rule_type.as_str())?;
-        if let Some(value) = &rule.value {
-            write!(output, ",{}", value)?;
-        }
-        write!(output, "{}", Self::render_policy(&rule.policy)?)?;
-        Ok(output)
-    }
-
-    pub fn render_rule_without_policy(rule: &Rule) -> Result<String> {
-        let mut output = String::new();
-        write!(output, "{}", rule.rule_type.as_str())?;
-        if let Some(value) = &rule.value {
-            write!(output, ",{}", value)?;
-        }
-        Ok(output)
-    }
-
-    #[instrument(skip_all)]
-    pub fn render_proxy(proxy: &Proxy) -> Result<String> {
+    fn render_proxy(proxy: &Proxy) -> Result<String> {
         let mut output = String::new();
         write!(output, "{{")?;
         write!(output, r#"name: "{}""#, &proxy.name)?;
@@ -181,53 +82,289 @@ impl ClashRenderer {
         Ok(output)
     }
 
-    #[instrument(skip_all)]
-    pub fn render_proxy_group(group: &ProxyGroup) -> Result<String> {
+    fn render_proxy_group(proxy_group: &ProxyGroup) -> Result<String> {
         let mut output = String::new();
         write!(output, "{{")?;
-        write!(output, r#"name: "{}""#, group.name)?;
-        write!(output, r#", type: "{}""#, group.r#type.as_str())?;
-        write!(output, r#", proxies: [{}]"#, group.proxies.join(", "))?;
+        write!(output, r#"name: "{}""#, proxy_group.name)?;
+        write!(output, r#", type: "{}""#, proxy_group.r#type.as_str())?;
+        write!(output, r#", proxies: [{}]"#, proxy_group.proxies.join(", "))?;
         write!(output, "}}")?;
         Ok(output)
     }
 
-    #[instrument(skip_all)]
-    pub fn render_rule_provider(provider: &RuleProvider) -> Result<String> {
+    fn render_rule(rule: &Rule) -> Result<String> {
         let mut output = String::new();
-        write!(output, "{{")?;
-        write!(output, r#"type: "{}""#, provider.r#type)?;
-        write!(output, r#", url: "{}""#, provider.url)?;
-        write!(output, r#", path: "{}""#, provider.path)?;
-        write!(output, r#", interval: {}"#, provider.interval)?;
-        write!(output, r#", size-limit: {}"#, provider.size_limit)?;
-        write!(output, r#", format: "{}""#, provider.format)?;
-        write!(output, r#", behavior: "{}""#, provider.behavior)?;
-        write!(output, "}}")?;
-        Ok(output)
-    }
-
-    pub fn render_policy(policy: &Policy) -> Result<String> {
-        let mut output = String::new();
-        write!(&mut output, ",{}", policy.name)?;
-        if let Some(option) = &policy.option {
-            write!(&mut output, ",{}", option)?;
+        write!(&mut output, "{}", rule.rule_type.as_str())?;
+        if let Some(value) = &rule.value {
+            write!(&mut output, ",{}", value)?;
         }
+        write!(&mut output, ",{}", Self::render_policy(&rule.policy)?)?;
         Ok(output)
     }
 
+    fn render_rule_for_provider(rule: &Rule) -> Result<String> {
+        Self::render_rule(rule)
+    }
+
+    fn render_provider_rule(rule: &ProviderRule) -> Result<String> {
+        Ok(format!("{},{}", rule.rule_type.as_str(), rule.value))
+    }
+
     #[instrument(skip_all)]
-    pub fn render_provider_name_from_policy(policy: &Policy) -> Result<String> {
+    fn render_rule_providers(rule_providers: &[(String, RuleProvider)]) -> Result<String> {
+        let output = rule_providers
+            .iter()
+            .map(Self::render_rule_provider)
+            .map(|line| line.map(|line| format!("{:indent$}{}", "", line, indent = INDENT)))
+            .collect::<Result<Vec<_>>>()?
+            .join("\n");
+        Ok(output)
+    }
+
+    fn render_rule_provider(rule_provider: &(String, RuleProvider)) -> Result<String> {
+        let (name, rule_provider) = rule_provider;
+        Ok(format!(
+            r#"{}: {{ type: "{}", url: "{}", path: "{}", interval: {}, size-limit: {}, format: "{}", behavior: "{}" }}"#,
+            name,
+            rule_provider.r#type,
+            rule_provider.url,
+            rule_provider.path,
+            rule_provider.interval,
+            rule_provider.size_limit,
+            rule_provider.format,
+            rule_provider.behavior
+        ))
+    }
+
+    fn render_provider_name_for_policy(policy: &Policy) -> Result<String> {
         if policy == &Policy::subscription_policy() {
             return Ok("Subscription".to_string());
         }
-        let mut output = String::new();
-        write!(
-            output,
+        let output = format!(
             "{}_{}",
             policy.name,
             policy.option.as_ref().unwrap_or(&"policy".to_string())
-        )?;
+        );
         Ok(output.replace("-", "_"))
     }
 }
+
+// impl ClashRenderer {
+//     #[instrument(skip_all)]
+//     pub fn render_profile(profile: &ClashProfile) -> Result<String> {
+//         let ClashProfile {
+//             proxies,
+//             proxy_groups,
+//             rules,
+//             rule_providers,
+//             ..
+//         } = &profile;
+//         let lines = [
+//             Self::render_general(profile)?,
+//             Self::render_proxies(proxies)?,
+//             Self::render_proxy_groups(proxy_groups)?,
+//             Self::render_rule_providers(rule_providers)?,
+//             Self::render_rules(rules)?,
+//         ]
+//         .join("\n");
+//         Ok(lines)
+//     }
+//
+//     #[instrument(skip_all)]
+//     pub fn render_general(profile: &ClashProfile) -> Result<String> {
+//         let mut output = String::new();
+//         writeln!(&mut output, "port: {}", profile.port)?;
+//         writeln!(&mut output, "socks-port: {}", profile.socks_port)?;
+//         writeln!(&mut output, "redir-port: {}", profile.redir_port)?;
+//         writeln!(&mut output, "allow-lan: {}", profile.allow_lan)?;
+//         writeln!(&mut output, "mode: {}", profile.mode)?;
+//         writeln!(&mut output, "log-level: {}", profile.log_level)?;
+//         writeln!(&mut output, r#"external-controller: "{}""#, profile.external_controller)?;
+//         writeln!(&mut output, r#"secret: "{}""#, profile.secret)?;
+//         writeln!(&mut output)?;
+//         Ok(output)
+//     }
+//
+//     #[instrument(skip_all)]
+//     pub fn render_proxies(proxies: &[Proxy]) -> Result<String> {
+//         let mut output = String::new();
+//         writeln!(&mut output, "proxies:")?;
+//         for proxy in proxies {
+//             writeln!(
+//                 &mut output,
+//                 "{:indent$}{}",
+//                 "",
+//                 format_args!("- {}", Self::render_proxy(proxy)?),
+//                 indent = INDENT,
+//             )?;
+//         }
+//         writeln!(&mut output)?;
+//         Ok(output)
+//     }
+//
+//     #[instrument(skip_all)]
+//     pub fn render_proxy_groups(proxy_groups: &[ProxyGroup]) -> Result<String> {
+//         let mut output = String::new();
+//         writeln!(&mut output, "proxy-groups:")?;
+//         for group in proxy_groups {
+//             writeln!(
+//                 &mut output,
+//                 "{:indent$}{}",
+//                 "",
+//                 format_args!("- {}", Self::render_proxy_group(group)?),
+//                 indent = INDENT,
+//             )?;
+//         }
+//         writeln!(&mut output)?;
+//         Ok(output)
+//     }
+//
+//     #[instrument(skip_all)]
+//     pub fn render_rule_providers(rule_providers: &[(String, RuleProvider)]) -> Result<String> {
+//         let mut output = String::new();
+//         writeln!(&mut output, "rule-providers:")?;
+//         for provider in rule_providers {
+//             writeln!(
+//                 &mut output,
+//                 "{:indent$}{}",
+//                 "",
+//                 format_args!("{}: {}", provider.0, Self::render_rule_provider(&provider.1)?),
+//                 indent = INDENT,
+//             )?;
+//         }
+//         writeln!(&mut output)?;
+//         Ok(output)
+//     }
+//
+//     #[instrument(skip_all)]
+//     pub fn render_rules(rules: &[Rule]) -> Result<String> {
+//         let mut output = String::new();
+//         writeln!(&mut output, "rules:")?;
+//         for rule in rules {
+//             writeln!(
+//                 &mut output,
+//                 "{:indent$}{}",
+//                 "",
+//                 format_args!(r#"- "{}""#, Self::render_rule(rule)?),
+//                 indent = INDENT,
+//             )?;
+//         }
+//         writeln!(&mut output)?;
+//         Ok(output)
+//     }
+//
+//     #[instrument(skip_all)]
+//     pub fn render_rules_with_payload(rules: &[Rule]) -> Result<String> {
+//         let mut output = String::new();
+//         writeln!(&mut output, "payload:")?;
+//         for rule in rules {
+//             writeln!(
+//                 &mut output,
+//                 "{:indent$}{}",
+//                 "",
+//                 format_args!(r#"- "{}""#, Self::render_rule_without_policy(rule)?),
+//                 indent = INDENT,
+//             )?;
+//         }
+//         writeln!(&mut output)?;
+//         Ok(output)
+//     }
+//
+//     #[instrument(skip_all)]
+//     pub fn render_rule(rule: &Rule) -> Result<String> {
+//         let mut output = String::new();
+//         write!(output, "{}", rule.rule_type.as_str())?;
+//         if let Some(value) = &rule.value {
+//             write!(output, ",{}", value)?;
+//         }
+//         write!(output, "{}", Self::render_policy(&rule.policy)?)?;
+//         Ok(output)
+//     }
+//
+//     pub fn render_rule_without_policy(rule: &Rule) -> Result<String> {
+//         let mut output = String::new();
+//         write!(output, "{}", rule.rule_type.as_str())?;
+//         if let Some(value) = &rule.value {
+//             write!(output, ",{}", value)?;
+//         }
+//         Ok(output)
+//     }
+//
+//     #[instrument(skip_all)]
+//     pub fn render_proxy(proxy: &Proxy) -> Result<String> {
+//         let mut output = String::new();
+//         write!(output, "{{")?;
+//         write!(output, r#"name: "{}""#, &proxy.name)?;
+//         write!(output, r#", type: "{}""#, &proxy.r#type)?;
+//         write!(output, r#", server: "{}""#, &proxy.server)?;
+//         write!(output, r#", port: {}"#, &proxy.port)?;
+//         write!(output, r#", password: "{}""#, &proxy.password)?;
+//         if let Some(udp) = &proxy.udp {
+//             write!(output, r#", udp: {}"#, udp)?;
+//         }
+//         if let Some(tfo) = &proxy.tfo {
+//             write!(output, r#", tfo: {}"#, tfo)?;
+//         }
+//         if let Some(cipher) = &proxy.cipher {
+//             write!(output, r#", cipher: {}"#, cipher)?;
+//         }
+//         if let Some(sni) = &proxy.sni {
+//             write!(output, r#", sni: "{}""#, sni)?;
+//         }
+//         if let Some(skip_cert_verify) = &proxy.skip_cert_verify {
+//             write!(output, r#", skip-cert-verify: {}"#, skip_cert_verify)?;
+//         }
+//         write!(output, "}}")?;
+//         Ok(output)
+//     }
+//
+//     #[instrument(skip_all)]
+//     pub fn render_proxy_group(group: &ProxyGroup) -> Result<String> {
+//         let mut output = String::new();
+//         write!(output, "{{")?;
+//         write!(output, r#"name: "{}""#, group.name)?;
+//         write!(output, r#", type: "{}""#, group.r#type.as_str())?;
+//         write!(output, r#", proxies: [{}]"#, group.proxies.join(", "))?;
+//         write!(output, "}}")?;
+//         Ok(output)
+//     }
+//
+//     #[instrument(skip_all)]
+//     pub fn render_rule_provider(provider: &RuleProvider) -> Result<String> {
+//         let mut output = String::new();
+//         write!(output, "{{")?;
+//         write!(output, r#"type: "{}""#, provider.r#type)?;
+//         write!(output, r#", url: "{}""#, provider.url)?;
+//         write!(output, r#", path: "{}""#, provider.path)?;
+//         write!(output, r#", interval: {}"#, provider.interval)?;
+//         write!(output, r#", size-limit: {}"#, provider.size_limit)?;
+//         write!(output, r#", format: "{}""#, provider.format)?;
+//         write!(output, r#", behavior: "{}""#, provider.behavior)?;
+//         write!(output, "}}")?;
+//         Ok(output)
+//     }
+//
+//     pub fn render_policy(policy: &Policy) -> Result<String> {
+//         let mut output = String::new();
+//         write!(&mut output, ",{}", policy.name)?;
+//         if let Some(option) = &policy.option {
+//             write!(&mut output, ",{}", option)?;
+//         }
+//         Ok(output)
+//     }
+//
+//     #[instrument(skip_all)]
+//     pub fn render_provider_name_from_policy(policy: &Policy) -> Result<String> {
+//         if policy == &Policy::subscription_policy() {
+//             return Ok("Subscription".to_string());
+//         }
+//         let mut output = String::new();
+//         write!(
+//             output,
+//             "{}_{}",
+//             policy.name,
+//             policy.option.as_ref().unwrap_or(&"policy".to_string())
+//         )?;
+//         Ok(output.replace("-", "_"))
+//     }
+// }

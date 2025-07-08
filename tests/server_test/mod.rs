@@ -1,5 +1,5 @@
 use axum::Router;
-use convertor::server::router::AppState;
+use convertor::router::AppState;
 use httpmock::MockServer;
 use std::path::PathBuf;
 use std::sync::Arc;

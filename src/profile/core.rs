@@ -12,6 +12,9 @@ pub mod proxy_group;
 pub mod rule;
 pub mod rule_provider;
 pub mod policy;
+pub mod profile;
+pub mod surge_profile;
+pub mod clash_profile;
 
 pub(super) fn group_by_region(proxies: &[Proxy]) -> (IndexMap<&'static Region, Vec<&Proxy>>, Vec<&Proxy>) {
     let match_number = Regex::new(r"^\d+$").unwrap();

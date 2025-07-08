@@ -1,4 +1,4 @@
-use crate::profile::clash_profile::ClashProfile;
+use crate::profile::core::clash_profile::ClashProfile;
 use crate::profile::core::rule::Rule;
 use crate::profile::error::ParseError;
 use crate::profile::parser::Result;
@@ -52,4 +52,11 @@ impl ClashParser {
         }?;
         Ok(rules)
     }
+
+    // pub fn parse_rule(rule: impl AsRef<str>) -> Result<Rule> {
+    //     let rule = rule.as_ref();
+    // }
+
+    // provider 中的规则没有 section 和 policy
+    // pub fn parse_no_policy_rule(rule: impl AsRef<str>) -> Result<Rule> {}
 }
