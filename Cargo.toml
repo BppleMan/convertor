@@ -19,14 +19,14 @@ tokio = { version = "1.46.0", features = ["full"] }
 tokio-stream = { version = "0.1.17", default-features = false, features = ["fs"] }
 
 # error/result
-thiserror = "2.0.12"
-color-eyre = "0.6.5"
+thiserror = { version = "2.0.12" }
+color-eyre = { version = "0.6.5" }
 console = { version = "0.16.0", default-features = false, features = ["ansi-parsing"] }
 
 # tracing
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
-tracing-appender = "0.2.3"
+tracing-appender = { version = "0.2.3", default-features = false }
 tracing-span-tree = { version = "0.1.1", default-features = false, optional = true }
 tracing-profile = { version = "0.10.9", default-features = false, optional = true }
 
