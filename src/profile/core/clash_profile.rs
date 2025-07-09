@@ -8,7 +8,7 @@ use crate::profile::core::rule_provider::RuleProvider;
 use crate::profile::parser::clash_parser::ClashParser;
 use crate::profile::renderer::Renderer;
 use crate::profile::renderer::clash_renderer::ClashRenderer;
-use crate::subscription::url_builder::UrlBuilder;
+use crate::url_builder::UrlBuilder;
 use color_eyre::eyre::eyre;
 use serde::Deserialize;
 use std::collections::HashMap;

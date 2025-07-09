@@ -4,7 +4,7 @@ use crate::profile::core::profile::Profile;
 use crate::profile::renderer::Renderer;
 use crate::profile::renderer::clash_renderer::ClashRenderer;
 use crate::router::AppState;
-use crate::subscription::url_builder::UrlBuilder;
+use crate::url_builder::UrlBuilder;
 use color_eyre::Result;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -31,8 +31,13 @@ pub(in crate::router) async fn profile_impl(
 }
 
 #[instrument(skip_all)]
-pub(in crate::router) async fn rule_provider_impl(raw_profile: String, policy: Policy) -> Result<String> {
-    let profile = ClashProfile::parse(raw_profile)?;
+pub(in crate::router) async fn rule_provider_impl(
+    url_builder: UrlBuilder,
+    raw_profile: String,
+    policy: Policy,
+) -> Result<String> {
+    let mut profile = ClashProfile::parse(raw_profile)?;
+    profile.optimize_rules(&url_builder)?;
     match profile.get_provider_rules_with_policy(&policy) {
         None => Ok(String::new()),
         Some(provider_rules) => Ok(ClashRenderer::render_provider_rules(provider_rules)?),

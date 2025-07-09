@@ -1,8 +1,7 @@
 use crate::client::Client;
 use crate::encrypt::{decrypt, encrypt};
 use crate::profile::core::policy::Policy;
-use crate::router::query::{ProfileQuery, QueryPolicy};
-use crate::router::subscription_router::SubLogQuery;
+use crate::router::query::{ProfileQuery, QueryPolicy, SubLogQuery};
 use color_eyre::eyre::{WrapErr, eyre};
 use percent_encoding::{CONTROLS, PercentDecode, percent_decode_str, utf8_percent_encode};
 use reqwest::{IntoUrl, Url};
@@ -38,8 +37,7 @@ impl UrlBuilder {
             .map(percent_decode_str)
             .map(PercentDecode::decode_utf8)
             .ok_or_else(|| eyre!("Convertor url 必须包含查询参数"))?
-            .map(|cow| cow.into_owned())
-            .map(|query| serde_qs::from_str::<ProfileQuery>(&query))
+            .map(ProfileQuery::decode_from_query_string)
             .wrap_err_with(|| eyre!("Convertor url 查询参数无法解码"))?
             .wrap_err_with(|| eyre!("Convertor url 查询参数无法反序列化"))?;
         Self::decode_from_query(&profile_query, convertor_secret)
@@ -56,7 +54,8 @@ impl UrlBuilder {
         let encrypted_raw_sub_url = percent_decode_str(profile_query.raw_sub_url.as_str())
             .decode_utf8()?
             .to_string();
-        let decrypted_raw_sub_url = decrypt(convertor_secret.as_ref().as_bytes(), &encrypted_raw_sub_url)?;
+        let decrypted_raw_sub_url = decrypt(convertor_secret.as_ref().as_bytes(), &encrypted_raw_sub_url)
+            .wrap_err_with(|| "无法解密原始订阅链接")?;
         let raw_sub_url = Url::parse(&decrypted_raw_sub_url).wrap_err("raw_sub_url 无法解析为 url")?;
         Ok(Self {
             server,
@@ -92,9 +91,8 @@ impl UrlBuilder {
             path.push("profile");
         }
         let profile_query = self.encode_to_profile_query(client, Option::<QueryPolicy>::None)?;
-        let query_string = serde_qs::to_string(&profile_query)?;
-        let encoded_query = utf8_percent_encode(&query_string, CONTROLS).to_string();
-        url.set_query(Some(&encoded_query));
+        let query_string = profile_query.encode_to_query_string();
+        url.set_query(Some(&query_string));
         Ok(url)
     }
 
@@ -107,7 +105,7 @@ impl UrlBuilder {
         }
 
         let profile_query = self.encode_to_profile_query(client, Some(policy.clone()))?;
-        let query_string = serde_qs::to_string(&profile_query)?;
+        let query_string = profile_query.encode_to_query_string();
         let encoded_query = utf8_percent_encode(&query_string, CONTROLS).to_string();
         url.set_query(Some(&encoded_query));
         Ok(url)
@@ -127,7 +125,7 @@ impl UrlBuilder {
             page_current: Some(1),
             page_size: Some(10),
         };
-        let query_string = serde_qs::to_string(&sub_log_query)?;
+        let query_string = sub_log_query.encode_to_query_string();
         url.set_query(Some(&query_string));
         Ok(url)
     }
@@ -138,5 +136,9 @@ impl UrlBuilder {
         // BosLife 的字段是 `flag` 不可改为client
         url.query_pairs_mut().append_pair("flag", client.as_str());
         Ok(url)
+    }
+
+    pub fn encode_encrypted_raw_sub_url(&self) -> String {
+        utf8_percent_encode(&self.encrypted_raw_sub_url, CONTROLS).to_string()
     }
 }

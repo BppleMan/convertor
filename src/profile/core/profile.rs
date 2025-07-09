@@ -3,7 +3,7 @@ use crate::profile::core::proxy::Proxy;
 use crate::profile::core::proxy_group::{ProxyGroup, ProxyGroupType};
 use crate::profile::core::rule::{ProviderRule, Rule};
 use crate::profile::core::{extract_policies, group_by_region};
-use crate::subscription::url_builder::UrlBuilder;
+use crate::url_builder::UrlBuilder;
 use color_eyre::Result;
 use std::collections::HashMap;
 use tracing::{instrument, warn};

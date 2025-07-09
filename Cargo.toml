@@ -11,8 +11,8 @@ repository = "https://github.com/BppleMan/convertor"
 
 [dependencies]
 # http server
-axum = { version = "0.8.4", features = ["query"] }
-tower-http = { version = "0.6.6", features = ["trace"] }
+axum = { version = "0.8.4", features = ["query", "tower-log", "tracing"] }
+tower-http = { version = "0.6.6", features = ["trace", "tracing"] }
 
 # async runtime
 tokio = { version = "1.46.0", features = ["full"] }
@@ -34,8 +34,7 @@ tracing-profile = { version = "0.10.9", default-features = false, optional = tru
 serde = { version = "1.0.219", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0.140", default-features = false }
 serde_yaml = { version = "0.9.31", default-features = false }
-serde_qs = { version = "0.15.0", default-features = false }
-toml = { version = "0.8.23", default-features = false, features = ["parse"] }
+toml = { version = "0.9.0", default-features = false, features = ["parse", "serde"] }
 
 # encoding/decoding
 blake3 = { version = "1.8.2", default-features = false }

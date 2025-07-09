@@ -5,7 +5,7 @@ use convertor::profile::core::surge_profile::SurgeProfile;
 use convertor::profile::renderer::Renderer;
 use convertor::profile::renderer::surge_renderer::SurgeRenderer;
 use convertor::subscription::subscription_api::boslife_api::BosLifeApi;
-use convertor::subscription::url_builder::UrlBuilder;
+use convertor::url_builder::UrlBuilder;
 use convertor::{init_backtrace, init_base_dir};
 
 #[tokio::main(flavor = "multi_thread")]

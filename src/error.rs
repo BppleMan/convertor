@@ -1,5 +1,5 @@
-use axum::http::header::ToStrError;
 use axum::http::StatusCode;
+use axum::http::header::ToStrError;
 use axum::response::{IntoResponse, Response};
 use thiserror::Error;
 
@@ -16,9 +16,8 @@ pub enum AppError {
 
     #[error(transparent)]
     Utf8Error(#[from] std::str::Utf8Error),
-
-    #[error(transparent)]
-    SerdeQS(#[from] serde_qs::Error),
+    // #[error(transparent)]
+    // SerdeQS(#[from] serde_qs::Error),
 }
 
 impl IntoResponse for AppError {

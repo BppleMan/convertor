@@ -5,7 +5,7 @@ use crate::profile::renderer::Renderer;
 use crate::profile::renderer::surge_renderer::{
     SURGE_RULE_PROVIDER_COMMENT_END, SURGE_RULE_PROVIDER_COMMENT_START, SurgeRenderer,
 };
-use crate::subscription::url_builder::UrlBuilder;
+use crate::url_builder::UrlBuilder;
 use color_eyre::Result;
 use color_eyre::eyre::OptionExt;
 use reqwest::IntoUrl;

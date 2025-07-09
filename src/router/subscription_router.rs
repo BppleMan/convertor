@@ -1,19 +1,12 @@
 use crate::encrypt::decrypt;
 use crate::error::AppError;
 use crate::router::AppState;
+use crate::router::query::SubLogQuery;
 use crate::subscription::subscription_log::SubscriptionLog;
 use axum::Json;
 use axum::extract::{Query, State};
 use percent_encoding::percent_decode_str;
-use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct SubLogQuery {
-    pub secret: String,
-    pub page_current: Option<usize>,
-    pub page_size: Option<usize>,
-}
 
 pub async fn subscription_logs(
     State(state): State<Arc<AppState>>,

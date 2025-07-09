@@ -1,5 +1,5 @@
 use crate::subscription::subscription_config::ServiceConfig;
-use crate::subscription::url_builder::UrlBuilder;
+use crate::url_builder::UrlBuilder;
 use color_eyre::Report;
 use color_eyre::eyre::{WrapErr, eyre};
 use reqwest::IntoUrl;

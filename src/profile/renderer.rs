@@ -75,9 +75,9 @@ pub trait Renderer {
 
     fn render_policy(policy: &Policy) -> Result<String> {
         let mut output = String::new();
-        write!(&mut output, "{}", policy.name)?;
+        write!(output, "{}", policy.name)?;
         if let Some(option) = &policy.option {
-            write!(&mut output, ",{}", option)?;
+            write!(output, ",{}", option)?;
         }
         Ok(output)
     }
