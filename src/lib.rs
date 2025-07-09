@@ -21,7 +21,6 @@ static INITIALIZED_BACKTRACE: Once = Once::new();
 static INITIALIZED_LOG: Once = Once::new();
 
 pub fn init_base_dir() -> PathBuf {
-    println!("{}", cfg!(debug_assertions));
     #[cfg(debug_assertions)]
     let base_dir = std::env::current_dir().unwrap().join(".convertor.dev");
     #[cfg(not(debug_assertions))]

@@ -11,8 +11,8 @@ repository = "https://github.com/BppleMan/convertor"
 
 [dependencies]
 # http server
-axum = { version = "0.8.4", features = ["query", "tower-log", "tracing"] }
-tower-http = { version = "0.6.6", features = ["trace", "tracing"] }
+axum = { version = "0.8.4", features = ["query"] }
+tower-http = { version = "0.6.6", features = ["trace"] }
 
 # async runtime
 tokio = { version = "1.46.0", features = ["full"] }

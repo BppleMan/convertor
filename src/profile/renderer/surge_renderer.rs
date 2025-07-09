@@ -4,7 +4,8 @@ use crate::profile::core::proxy_group::ProxyGroup;
 use crate::profile::core::rule::{ProviderRule, Rule};
 use crate::profile::core::rule_provider::RuleProvider;
 use crate::profile::core::surge_profile::SurgeProfile;
-use crate::profile::renderer::{Renderer, Result};
+use crate::profile::renderer::Renderer;
+use crate::profile::result::RenderResult;
 use std::fmt::Write;
 use tracing::instrument;
 
@@ -20,7 +21,7 @@ impl Renderer for SurgeRenderer {
         crate::client::Client::Surge
     }
 
-    fn render_profile(profile: &Self::PROFILE) -> Result<String> {
+    fn render_profile(profile: &Self::PROFILE) -> RenderResult<String> {
         let mut output = String::new();
 
         let header = Self::render_header(profile)?;
@@ -60,11 +61,11 @@ impl Renderer for SurgeRenderer {
         Ok(output)
     }
 
-    fn render_general(profile: &Self::PROFILE) -> Result<String> {
+    fn render_general(profile: &Self::PROFILE) -> RenderResult<String> {
         Self::render_lines(&profile.general, |line| Ok(line.clone()))
     }
 
-    fn render_proxy(proxy: &Proxy) -> Result<String> {
+    fn render_proxy(proxy: &Proxy) -> RenderResult<String> {
         let mut output = String::new();
         if let Some(comment) = &proxy.comment {
             writeln!(output, "{}", comment)?;
@@ -92,7 +93,7 @@ impl Renderer for SurgeRenderer {
         Ok(output)
     }
 
-    fn render_proxy_group(proxy_group: &ProxyGroup) -> Result<String> {
+    fn render_proxy_group(proxy_group: &ProxyGroup) -> RenderResult<String> {
         let mut output = String::new();
         if let Some(comment) = &proxy_group.comment {
             writeln!(output, "{}", comment)?;
@@ -104,7 +105,7 @@ impl Renderer for SurgeRenderer {
         Ok(output)
     }
 
-    fn render_rule(rule: &Rule) -> Result<String> {
+    fn render_rule(rule: &Rule) -> RenderResult<String> {
         let mut output = String::new();
         if let Some(comment) = &rule.comment {
             writeln!(output, "{}", comment)?;
@@ -117,7 +118,7 @@ impl Renderer for SurgeRenderer {
         Ok(output)
     }
 
-    fn render_rule_for_provider(rule: &Rule) -> Result<String> {
+    fn render_rule_for_provider(rule: &Rule) -> RenderResult<String> {
         Ok(format!(
             "{},{},{}",
             rule.rule_type.as_str(),
@@ -126,7 +127,7 @@ impl Renderer for SurgeRenderer {
         ))
     }
 
-    fn render_provider_rule(rule: &ProviderRule) -> Result<String> {
+    fn render_provider_rule(rule: &ProviderRule) -> RenderResult<String> {
         let mut output = String::new();
         if let Some(comment) = &rule.comment {
             writeln!(output, "{}", comment)?;
@@ -135,15 +136,15 @@ impl Renderer for SurgeRenderer {
         Ok(output)
     }
 
-    fn render_rule_providers(_: &[(String, RuleProvider)]) -> Result<String> {
+    fn render_rule_providers(_: &[(String, RuleProvider)]) -> RenderResult<String> {
         todo!("SurgeRenderer 不会渲染 [RuleProvider]");
     }
 
-    fn render_rule_provider(_: &(String, RuleProvider)) -> Result<String> {
+    fn render_rule_provider(_: &(String, RuleProvider)) -> RenderResult<String> {
         todo!("SurgeRenderer 不会渲染 RuleProvider");
     }
 
-    fn render_provider_name_for_policy(policy: &Policy) -> Result<String> {
+    fn render_provider_name_for_policy(policy: &Policy) -> RenderResult<String> {
         let mut output = String::new();
         write!(output, "// [")?;
         if policy.is_subscription {
@@ -161,17 +162,17 @@ impl Renderer for SurgeRenderer {
 
 impl SurgeRenderer {
     #[instrument(skip_all)]
-    pub fn render_header(profile: &SurgeProfile) -> Result<String> {
+    pub fn render_header(profile: &SurgeProfile) -> RenderResult<String> {
         Ok(profile.header.to_string())
     }
 
     #[instrument(skip_all)]
-    pub fn render_url_rewrite(url_rewrite: &[String]) -> Result<String> {
+    pub fn render_url_rewrite(url_rewrite: &[String]) -> RenderResult<String> {
         Self::render_lines(url_rewrite, |line| Ok(line.clone()))
     }
 
     #[instrument(skip_all)]
-    pub fn render_misc(misc: &[(String, Vec<String>)]) -> Result<String> {
+    pub fn render_misc(misc: &[(String, Vec<String>)]) -> RenderResult<String> {
         let mut output = String::new();
         for (key, values) in misc {
             writeln!(output, "{}", key)?;

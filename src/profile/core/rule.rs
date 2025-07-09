@@ -1,10 +1,9 @@
 use crate::profile::core::policy::Policy;
 use crate::profile::error::ParseError;
-use color_eyre::Report;
-use color_eyre::eyre::eyre;
 use serde::{Deserialize, Deserializer};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
+use tracing::instrument;
 use url::Url;
 
 #[derive(Debug, Clone)]
@@ -21,26 +20,39 @@ impl Rule {
         matches!(self.rule_type, RuleType::GeoIP | RuleType::Final | RuleType::Match)
     }
 
-    pub fn surge_rule_provider(policy: &Policy, name: impl AsRef<str>, url: Url) -> color_eyre::Result<Self> {
-        Ok(Self {
+    pub fn surge_rule_provider(policy: &Policy, name: impl AsRef<str>, url: Url) -> Self {
+        Self {
             rule_type: RuleType::RuleSet,
             value: Some(url.to_string()),
             policy: policy.clone(),
             comment: Some(name.as_ref().to_string()),
-        })
+        }
     }
 
-    pub fn clash_rule_provider(policy: &Policy, name: impl AsRef<str>) -> color_eyre::Result<Self> {
-        Ok(Self {
+    pub fn clash_rule_provider(policy: &Policy, name: impl AsRef<str>) -> Self {
+        Self {
             rule_type: RuleType::RuleSet,
             value: Some(name.as_ref().to_string()),
             policy: policy.clone(),
             comment: None,
-        })
+        }
     }
 
     pub fn set_comment(&mut self, comment: Option<String>) {
         self.comment = comment;
+    }
+}
+
+impl Display for Rule {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        if let Some(comment) = &self.comment {
+            writeln!(f, "{}", comment)?;
+        }
+        write!(f, "{},{}", self.rule_type, self.policy.name)?;
+        if let Some(value) = &self.value {
+            write!(f, ",{}", value)?;
+        }
+        Ok(())
     }
 }
 
@@ -52,13 +64,14 @@ pub struct ProviderRule {
 }
 
 impl TryFrom<Rule> for ProviderRule {
-    type Error = Report;
+    type Error = ParseError;
 
+    #[instrument(skip_all)]
     fn try_from(rule: Rule) -> Result<Self, Self::Error> {
         Ok(ProviderRule {
-            rule_type: rule.rule_type,
-            value: rule.value.ok_or(eyre!("ProviderRule 的 value 不能为空"))?,
-            comment: rule.comment,
+            rule_type: rule.rule_type.clone(),
+            comment: rule.comment.clone(),
+            value: rule.value.clone().ok_or(ParseError::IntoProviderRule(rule))?,
         })
     }
 }
