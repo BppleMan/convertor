@@ -5,11 +5,12 @@ use crate::profile::core::proxy::Proxy;
 use crate::profile::core::proxy_group::ProxyGroup;
 use crate::profile::core::rule::{ProviderRule, Rule};
 use crate::profile::core::rule_provider::RuleProvider;
+use crate::profile::error::ParseError;
 use crate::profile::parser::clash_parser::ClashParser;
 use crate::profile::renderer::Renderer;
 use crate::profile::renderer::clash_renderer::ClashRenderer;
+use crate::profile::result::ParseResult;
 use crate::url_builder::UrlBuilder;
-use color_eyre::eyre::eyre;
 use serde::Deserialize;
 use std::collections::HashMap;
 use tracing::instrument;
@@ -77,7 +78,7 @@ impl Profile for ClashProfile {
         &mut self.policy_of_rules
     }
 
-    fn parse(content: String) -> color_eyre::Result<Self::PROFILE> {
+    fn parse(content: String) -> ParseResult<Self::PROFILE> {
         Ok(ClashParser::parse(content)?)
     }
 
@@ -86,12 +87,12 @@ impl Profile for ClashProfile {
         url_builder: &UrlBuilder,
         raw_profile: Option<String>,
         secret: Option<impl AsRef<str>>,
-    ) -> color_eyre::Result<()> {
+    ) -> ParseResult<()> {
         let Some(raw_profile) = raw_profile else {
-            return Err(eyre!("无法整理 Clash 配置文件: 缺少原始配置内容"));
+            return Err(ParseError::MissingRawProfile);
         };
         let Some(secret) = secret else {
-            return Err(eyre!("无法整理 Clash 配置文件: 缺少密钥"));
+            return Err(ParseError::MissingSecret);
         };
 
         let raw_profile = ClashProfile::parse(raw_profile)?;
@@ -103,12 +104,12 @@ impl Profile for ClashProfile {
         Ok(())
     }
 
-    fn append_rule_provider(&mut self, policy: &Policy, url_builder: &UrlBuilder) -> color_eyre::Result<()> {
+    fn append_rule_provider(&mut self, policy: &Policy, url_builder: &UrlBuilder) -> ParseResult<()> {
         let name = ClashRenderer::render_provider_name_for_policy(&policy)?;
         let url = url_builder.build_rule_provider_url(Client::Clash, &policy)?;
         let rule_provider = RuleProvider::new(url, name.clone());
         self.rule_providers.push((name.clone(), rule_provider));
-        let rule = Rule::clash_rule_provider(policy, name)?;
+        let rule = Rule::clash_rule_provider(policy, name);
         self.rules.push(rule);
         Ok(())
     }
@@ -116,12 +117,12 @@ impl Profile for ClashProfile {
 
 impl ClashProfile {
     #[instrument(skip_all)]
-    pub fn parse(content: String) -> color_eyre::Result<Self> {
+    pub fn parse(content: String) -> ParseResult<Self> {
         Ok(ClashParser::parse(content)?)
     }
 
     #[instrument(skip_all)]
-    pub fn template() -> color_eyre::Result<Self> {
+    pub fn template() -> ParseResult<Self> {
         Ok(ClashParser::parse(TEMPLATE_STR)?)
     }
 
@@ -160,7 +161,7 @@ impl ClashProfile {
     //     self.proxy_groups.extend(region_groups);
     // }
     //
-    // fn optimize_rules(&mut self, sub_host: impl AsRef<str>, url_builder: &UrlBuilder) -> color_eyre::Result<()> {
+    // fn optimize_rules(&mut self, sub_host: impl AsRef<str>, url_builder: &UrlBuilder) -> Result<()> {
     //     let mut retain = vec![];
     //     let policy_set = self
     //         .rules
@@ -187,7 +188,7 @@ impl ClashProfile {
     //     let mut rules = policy_list
     //         .iter()
     //         .map(Rule::clash_rule_provider)
-    //         .collect::<color_eyre::Result<Vec<_>>>()?;
+    //         .collect::<Result<Vec<_>>>()?;
     //     rules.extend(retain);
     //     self.rules.extend(rules);
     //
@@ -206,7 +207,7 @@ impl ClashProfile {
     //     Ok(())
     // }
     //
-    // pub fn rules_for_provider(&self, policy: Policy, sub_host: impl AsRef<str>) -> color_eyre::Result<Vec<Rule>> {
+    // pub fn rules_for_provider(&self, policy: Policy, sub_host: impl AsRef<str>) -> Result<Vec<Rule>> {
     //     let rules = self
     //         .rules
     //         .iter()

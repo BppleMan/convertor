@@ -118,14 +118,8 @@ impl UrlBuilder {
             let mut path = url.path_segments_mut().map_err(|()| eyre!("无法获取路径段"))?;
             path.push("sub-logs");
         }
-        let encrypted_secret = encrypt(secret.as_ref().as_bytes(), secret.as_ref())?;
-        let encoded_secret = utf8_percent_encode(&encrypted_secret, CONTROLS).to_string();
-        let sub_log_query = SubLogQuery {
-            secret: encoded_secret,
-            page_current: Some(1),
-            page_size: Some(10),
-        };
-        let query_string = sub_log_query.encode_to_query_string();
+        let sub_log_query = SubLogQuery::new(secret, Some(1), Some(10));
+        let query_string = sub_log_query.encode_to_query_string()?;
         url.set_query(Some(&query_string));
         Ok(url)
     }

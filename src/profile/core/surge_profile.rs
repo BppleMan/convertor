@@ -8,6 +8,7 @@ use crate::profile::core::rule::{ProviderRule, Rule};
 use crate::profile::parser::surge_parser::SurgeParser;
 use crate::profile::renderer::Renderer;
 use crate::profile::renderer::surge_renderer::SurgeRenderer;
+use crate::profile::result::ParseResult;
 use crate::url_builder::UrlBuilder;
 use std::collections::HashMap;
 use tracing::instrument;
@@ -60,17 +61,12 @@ impl Profile for SurgeProfile {
     }
 
     #[instrument(skip_all)]
-    fn parse(content: String) -> color_eyre::Result<Self::PROFILE> {
+    fn parse(content: String) -> ParseResult<Self::PROFILE> {
         Ok(SurgeParser::parse_profile(content)?)
     }
 
     #[instrument(skip_all)]
-    fn optimize(
-        &mut self,
-        url_builder: &UrlBuilder,
-        _: Option<String>,
-        _: Option<impl AsRef<str>>,
-    ) -> color_eyre::Result<()> {
+    fn optimize(&mut self, url_builder: &UrlBuilder, _: Option<String>, _: Option<impl AsRef<str>>) -> ParseResult<()> {
         self.replace_header(url_builder)?;
         self.optimize_proxies()?;
         self.optimize_rules(url_builder)?;
@@ -78,17 +74,18 @@ impl Profile for SurgeProfile {
     }
 
     #[instrument(skip_all)]
-    fn append_rule_provider(&mut self, policy: &Policy, url_builder: &UrlBuilder) -> color_eyre::Result<()> {
+    fn append_rule_provider(&mut self, policy: &Policy, url_builder: &UrlBuilder) -> ParseResult<()> {
         let name = SurgeRenderer::render_provider_name_for_policy(policy)?;
         let url = url_builder.build_rule_provider_url(Client::Surge, policy)?;
-        let rule = Rule::surge_rule_provider(policy, name, url)?;
+        let rule = Rule::surge_rule_provider(policy, name, url);
         self.rules.push(rule);
         Ok(())
     }
 }
 
 impl SurgeProfile {
-    fn replace_header(&mut self, url_builder: &UrlBuilder) -> color_eyre::Result<()> {
+    #[instrument(skip_all)]
+    fn replace_header(&mut self, url_builder: &UrlBuilder) -> ParseResult<()> {
         let url = url_builder.build_convertor_url(Client::Surge)?;
         self.header = SurgeConfig::build_managed_config_header(url);
         Ok(())

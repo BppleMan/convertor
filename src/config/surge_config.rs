@@ -5,6 +5,7 @@ use crate::profile::renderer::Renderer;
 use crate::profile::renderer::surge_renderer::{
     SURGE_RULE_PROVIDER_COMMENT_END, SURGE_RULE_PROVIDER_COMMENT_START, SurgeRenderer,
 };
+use crate::profile::result::ParseResult;
 use crate::url_builder::UrlBuilder;
 use color_eyre::Result;
 use color_eyre::eyre::OptionExt;
@@ -78,9 +79,9 @@ impl SurgeConfig {
             .map(|policy| {
                 let name = SurgeRenderer::render_provider_name_for_policy(policy)?;
                 let url = url_builder.build_rule_provider_url(Client::Surge, policy)?;
-                Rule::surge_rule_provider(policy, name, url)
+                Ok(Rule::surge_rule_provider(policy, name, url))
             })
-            .collect::<Result<Vec<_>>>()?;
+            .collect::<ParseResult<Vec<_>>>()?;
         let output = provider_rules
             .iter()
             .map(SurgeRenderer::render_rule)
