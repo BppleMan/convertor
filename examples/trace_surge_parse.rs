@@ -9,8 +9,8 @@ fn main() -> color_eyre::Result<()> {
     // 下面两种方案任选一
     #[cfg(feature = "bench")]
     tracing_span_tree::span_tree().aggregate(true).enable();
-    #[cfg(feature = "bench")]
-    tracing_profile::init_tracing()?;
+    // #[cfg(feature = "bench")]
+    // tracing_profile::init_tracing()?;
 
     let file = std::fs::read_to_string(base_dir.join("mock.yaml"))?;
     ClashProfile::parse(file)?;

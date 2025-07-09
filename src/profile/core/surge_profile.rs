@@ -8,7 +8,7 @@ use crate::profile::core::rule::{ProviderRule, Rule};
 use crate::profile::parser::surge_parser::SurgeParser;
 use crate::profile::renderer::Renderer;
 use crate::profile::renderer::surge_renderer::SurgeRenderer;
-use crate::subscription::url_builder::UrlBuilder;
+use crate::url_builder::UrlBuilder;
 use std::collections::HashMap;
 use tracing::instrument;
 

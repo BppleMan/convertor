@@ -10,9 +10,8 @@ use crate::profile::renderer::clash_renderer::ClashRenderer;
 use crate::profile::renderer::surge_renderer::SurgeRenderer;
 use crate::subscription::subscription_api::boslife_api::BosLifeApi;
 use crate::subscription::subscription_args::SubscriptionArgs;
-use crate::subscription::url_builder::UrlBuilder;
+use crate::url_builder::UrlBuilder;
 
-pub mod url_builder;
 pub mod subscription_log;
 pub mod subscription_api;
 pub mod subscription_args;

@@ -60,11 +60,6 @@ pub(crate) trait ServiceApi {
         self.cached_auth_token()
             .try_get_with(format!("{}_{}", CACHED_AUTH_TOKEN_KEY, base_url.as_str()), async {
                 let request = self.login_request()?;
-                println!("{:#?}", request);
-                println!(
-                    "{}",
-                    String::from_utf8_lossy(request.body().unwrap().as_bytes().unwrap())
-                );
                 let response = self.execute(request).await?;
                 if response.status().is_success() {
                     let json_response = response.text().await?;

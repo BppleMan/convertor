@@ -4,13 +4,14 @@ use crate::subscription::subscription_api::ServiceApi;
 use crate::subscription::subscription_config::ServiceConfig;
 use crate::subscription::subscription_log::SubscriptionLog;
 use moka::future::Cache as MokaCache;
+use reqwest::Client as ReqwestClient;
 use reqwest::{Method, Request, Url};
 use std::path::Path;
 
 #[derive(Clone)]
 pub struct BosLifeApi {
     pub config: ServiceConfig,
-    pub client: reqwest::Client,
+    pub client: ReqwestClient,
     pub cached_auth_token: MokaCache<String, String>,
     pub cached_sub_profile: Cache<Url, String>,
     pub cached_raw_sub_url: Cache<Url, String>,
@@ -18,7 +19,7 @@ pub struct BosLifeApi {
 }
 
 impl BosLifeApi {
-    pub fn new(base_dir: impl AsRef<Path>, client: reqwest::Client, config: ServiceConfig) -> Self {
+    pub fn new(base_dir: impl AsRef<Path>, client: ReqwestClient, config: ServiceConfig) -> Self {
         let duration = std::time::Duration::from_secs(60 * 60); // 10 minutes
         let cached_file = Cache::new(10, base_dir.as_ref(), duration);
         let cached_string = MokaCache::builder()
@@ -69,41 +70,45 @@ impl ServiceApi for BosLifeApi {
 
     fn login_request(&self) -> color_eyre::Result<Request> {
         let url = self.config.build_login_url()?;
-        Ok(self
+        let request = self
             .client
             .request(Method::POST, url)
             .form(&[
                 ("email", self.config.credential.username.clone()),
                 ("password", self.config.credential.password.clone()),
             ])
-            .build()?)
+            .build()?;
+        Ok(request)
     }
 
     fn get_sub_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request> {
         let url = self.config.build_get_sub_url()?;
-        Ok(self
+        let request = self
             .client
             .request(Method::GET, url)
             .header("Authorization", auth_token.as_ref())
-            .build()?)
+            .build()?;
+        Ok(request)
     }
 
     fn reset_sub_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request> {
         let url = self.config.build_reset_sub_url()?;
-        Ok(self
+        let request = self
             .client
             .request(Method::POST, url)
             .header("Authorization", auth_token.as_ref())
-            .build()?)
+            .build()?;
+        Ok(request)
     }
 
     fn get_sub_logs_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request> {
         let url = self.config.build_get_sub_logs_url()?;
-        Ok(self
+        let request = self
             .client
             .request(Method::GET, url)
             .header("Authorization", auth_token.as_ref())
-            .build()?)
+            .build()?;
+        Ok(request)
     }
 
     fn cached_auth_token(&self) -> &MokaCache<String, String> {

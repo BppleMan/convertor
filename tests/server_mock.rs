@@ -16,8 +16,6 @@ use convertor::subscription::subscription_config::ServiceConfig;
 use httpmock::Method::{GET, POST};
 use httpmock::MockServer;
 use include_dir::{Dir, include_dir};
-use regex::Regex;
-use reqwest::IntoUrl;
 use std::path::PathBuf;
 use std::sync::{Arc, Once};
 use url::Url;
@@ -160,36 +158,12 @@ pub fn expect_profile(client: Client, encrypted_raw_sub_url: impl AsRef<str>) ->
     get_included_str(client, "profile").replace("{raw_sub_url}", encrypted_raw_sub_url.as_ref())
 }
 
-pub fn count_rule_lines(client: Client, policy: &Policy) -> usize {
-    // match client {
-    //     Client::Surge => {
-    //         let expect_policy = SurgeRenderer::render_policy(policy).expect("无法渲染 Surge 策略");
-    //         let lines = SURGE_MOCK_STR.lines().collect::<Vec<_>>();
-    //         lines
-    //             .iter()
-    //             .filter(|line| {
-    //                 !line.starts_with("//")
-    //                     && !line.starts_with("#")
-    //                     && !line.starts_with(";")
-    //                     && line.ends_with(&expect_policy)
-    //             })
-    //             .count()
-    //     }
-    //     Client::Clash => {
-    //         let expect_policy = ClashRenderer::render_policy(policy).expect("无法渲染 Clash 策略");
-    //         let lines = CLASH_MOCK_STR.lines().collect::<Vec<_>>();
-    //         lines
-    //             .iter()
-    //             .filter(|line| {
-    //                 !line.starts_with("//")
-    //                     && !line.starts_with("#")
-    //                     && !line.starts_with(";")
-    //                     && line.ends_with(&format!("{expect_policy}'"))
-    //             })
-    //             .count()
-    //     }
-    // }
-    0
+pub fn expect_rule_provider(client: Client, policy: &Policy) -> String {
+    match client {
+        // 统一用 ClashRenderer 渲染策略名称, 作为文件名更方便
+        Client::Surge => get_included_str(client, ClashRenderer::render_provider_name_for_policy(policy).unwrap()),
+        Client::Clash => get_included_str(client, ClashRenderer::render_provider_name_for_policy(policy).unwrap()),
+    }
 }
 
 pub fn get_included_str(client: Client, file_name: impl AsRef<str>) -> String {

@@ -1,8 +1,12 @@
 use crate::client::Client;
 use crate::profile::core::policy::Policy;
-use color_eyre::eyre::WrapErr;
-use percent_encoding::percent_decode_str;
+use color_eyre::Report;
+use color_eyre::Result;
+use color_eyre::eyre::{OptionExt, WrapErr};
+use percent_encoding::{percent_decode_str, utf8_percent_encode};
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
+use std::collections::HashMap;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ProfileQuery {
@@ -13,13 +17,77 @@ pub struct ProfileQuery {
 }
 
 impl ProfileQuery {
-    pub fn decode_from_query_string(raw_query_string: impl AsRef<str>) -> color_eyre::Result<ProfileQuery> {
-        let query_string = percent_decode_str(raw_query_string.as_ref())
-            .decode_utf8()
-            .wrap_err("无法解码查询字符串")?
+    pub fn encode_to_query_string(&self) -> String {
+        let mut query_pairs = HashMap::new();
+        query_pairs.insert("client", self.client.as_str());
+        query_pairs.insert("original_host", self.original_host.as_str());
+        query_pairs.insert("raw_sub_url", &self.raw_sub_url);
+        if let Some(policy) = &self.policy {
+            query_pairs.insert("policy.name", &policy.name);
+            if let Some(option) = &policy.option {
+                query_pairs.insert("policy.option", option);
+            }
+            query_pairs.insert(
+                "policy.is_subscription",
+                if policy.is_subscription { "true" } else { "false" },
+            );
+        }
+
+        let mut query_paris = query_pairs
+            .into_iter()
+            .map(|(k, v)| {
+                format!(
+                    "{}={}",
+                    utf8_percent_encode(k, percent_encoding::CONTROLS),
+                    utf8_percent_encode(v, percent_encoding::CONTROLS)
+                )
+            })
+            .collect::<Vec<_>>();
+        query_paris.sort();
+        query_paris.join("&")
+    }
+
+    pub fn decode_from_query_string(query_string: impl AsRef<str>) -> Result<ProfileQuery> {
+        let query_pairs = query_string
+            .as_ref()
+            .split('&')
+            .filter_map(|p| p.split_once('='))
+            .map(|(k, v)| {
+                Ok::<_, Report>(percent_decode_str(k.trim()).decode_utf8()?)
+                    .and_then(|k| Ok::<_, Report>(percent_decode_str(v.trim()).decode_utf8()?).map(|v| (k, v)))
+            })
+            .collect::<Result<HashMap<Cow<'_, str>, Cow<'_, str>>, Report>>()?;
+        let client: Client = query_pairs.get("client").ok_or_eyre("缺少 client 参数")?.parse()?;
+        let original_host = query_pairs
+            .get("original_host")
+            .ok_or_eyre("缺少 original_host 参数")?
             .to_string();
-        println!("query_string: {}", query_string);
-        Ok(serde_qs::from_str(&query_string)?)
+        let raw_sub_url = query_pairs
+            .get("raw_sub_url")
+            .ok_or_eyre("缺少 raw_sub_url 参数")?
+            .to_string();
+        let policy_name = query_pairs.get("policy.name");
+        let policy_option = query_pairs.get("policy.option");
+        let is_subscription = query_pairs
+            .get("policy.is_subscription")
+            .map(|s| s.parse::<bool>())
+            .transpose()
+            .wrap_err_with(|| "policy.is_subscription 不是一个合法的 bool")?;
+        let policy = match (policy_name, is_subscription) {
+            (Some(name), Some(is_subscription)) => Some(QueryPolicy {
+                name: name.to_string(),
+                option: policy_option.map(Cow::<str>::to_string),
+                is_subscription,
+            }),
+            _ => None,
+        };
+
+        Ok(ProfileQuery {
+            client,
+            original_host,
+            raw_sub_url,
+            policy,
+        })
     }
 }
 
@@ -47,5 +115,52 @@ impl From<QueryPolicy> for Policy {
             option: query_policy.option,
             is_subscription: query_policy.is_subscription,
         }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SubLogQuery {
+    pub secret: String,
+    pub page_current: Option<usize>,
+    pub page_size: Option<usize>,
+}
+
+impl SubLogQuery {
+    pub fn encode_to_query_string(&self) -> String {
+        let mut query_pairs = vec![];
+        query_pairs.push(format!(
+            "secret={}",
+            utf8_percent_encode(&self.secret, percent_encoding::CONTROLS)
+        ));
+        if let Some(page_current) = self.page_current {
+            query_pairs.push(format!("page_current={}", page_current));
+        }
+        if let Some(page_size) = self.page_size {
+            query_pairs.push(format!("page_size={}", page_size));
+        }
+        query_pairs.sort();
+        query_pairs.join("&")
+    }
+
+    pub fn decode_from_query_string(query_string: impl AsRef<str>) -> Result<SubLogQuery> {
+        let query_pairs = query_string
+            .as_ref()
+            .split('&')
+            .filter_map(|p| p.split_once('='))
+            .collect::<HashMap<_, _>>();
+        let secret = query_pairs
+            .get("secret")
+            .map(|s| percent_decode_str(s).decode_utf8())
+            .transpose()?
+            .ok_or_eyre("缺少 secret 参数")?
+            .to_string();
+        let page_current = query_pairs.get("page_current").and_then(|s| s.parse::<usize>().ok());
+        let page_size = query_pairs.get("page_size").and_then(|s| s.parse::<usize>().ok());
+
+        Ok(SubLogQuery {
+            secret,
+            page_current,
+            page_size,
+        })
     }
 }
