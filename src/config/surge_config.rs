@@ -1,11 +1,11 @@
 use crate::client::Client;
-use crate::profile::core::policy::Policy;
-use crate::profile::core::rule::Rule;
-use crate::profile::renderer::Renderer;
-use crate::profile::renderer::surge_renderer::{
+use crate::core::profile::policy::Policy;
+use crate::core::profile::rule::Rule;
+use crate::core::renderer::Renderer;
+use crate::core::renderer::surge_renderer::{
     SURGE_RULE_PROVIDER_COMMENT_END, SURGE_RULE_PROVIDER_COMMENT_START, SurgeRenderer,
 };
-use crate::profile::result::ParseResult;
+use crate::core::result::ParseResult;
 use crate::url_builder::UrlBuilder;
 use color_eyre::Result;
 use color_eyre::eyre::OptionExt;
@@ -86,7 +86,7 @@ impl SurgeConfig {
             .iter()
             .map(SurgeRenderer::render_rule)
             .map(|l| Ok(l.map(Cow::Owned)?))
-            .collect::<color_eyre::Result<Vec<_>>>()?;
+            .collect::<Result<Vec<_>>>()?;
         lines.splice(range_of_rule_providers, output);
         let content = lines.join("\n");
         tokio::fs::write(&self.rules_config_path, &content).await?;

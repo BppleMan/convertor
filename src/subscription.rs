@@ -1,13 +1,12 @@
 use crate::client::Client;
 use crate::config::convertor_config::ConvertorConfig;
 use crate::config::surge_config::SurgeConfig;
-use crate::profile;
-use crate::profile::core::clash_profile::ClashProfile;
-use crate::profile::core::profile::Profile;
-use crate::profile::core::surge_profile::SurgeProfile;
-use crate::profile::renderer::Renderer;
-use crate::profile::renderer::clash_renderer::ClashRenderer;
-use crate::profile::renderer::surge_renderer::SurgeRenderer;
+use crate::core::profile::clash_profile::ClashProfile;
+use crate::core::profile::profile::Profile;
+use crate::core::profile::surge_profile::SurgeProfile;
+use crate::core::renderer::Renderer;
+use crate::core::renderer::clash_renderer::ClashRenderer;
+use crate::core::renderer::surge_renderer::SurgeRenderer;
 use crate::subscription::subscription_api::boslife_api::BosLifeApi;
 use crate::subscription::subscription_args::SubscriptionArgs;
 use crate::url_builder::UrlBuilder;
@@ -31,11 +30,11 @@ impl SubscriptionService {
         let policies = match client {
             Client::Surge => {
                 let raw_profile = SurgeProfile::parse(raw_profile_content)?;
-                profile::core::extract_policies_for_rule_provider(&raw_profile.rules, url_builder.sub_host()?)
+                crate::core::profile::extract_policies_for_rule_provider(&raw_profile.rules, url_builder.sub_host()?)
             }
             Client::Clash => {
                 let raw_profile = ClashProfile::parse(raw_profile_content)?;
-                profile::core::extract_policies_for_rule_provider(&raw_profile.rules, url_builder.sub_host()?)
+                crate::core::profile::extract_policies_for_rule_provider(&raw_profile.rules, url_builder.sub_host()?)
             }
         };
         if Client::Surge == client && args.update {

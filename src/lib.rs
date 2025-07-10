@@ -6,7 +6,6 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
 pub mod error;
-pub mod profile;
 pub mod region;
 pub mod encrypt;
 pub mod config;
@@ -16,11 +15,13 @@ pub mod subscription;
 pub mod client;
 pub mod cache;
 pub mod url_builder;
+pub mod core;
 
 static INITIALIZED_BACKTRACE: Once = Once::new();
 static INITIALIZED_LOG: Once = Once::new();
 
 pub fn init_base_dir() -> PathBuf {
+    println!("{}", cfg!(debug_assertions));
     #[cfg(debug_assertions)]
     let base_dir = std::env::current_dir().unwrap().join(".convertor.dev");
     #[cfg(not(debug_assertions))]

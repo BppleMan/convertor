@@ -1,8 +1,8 @@
-use crate::profile::core::policy::Policy;
-use crate::profile::core::profile::Profile;
-use crate::profile::core::surge_profile::SurgeProfile;
-use crate::profile::renderer::Renderer;
-use crate::profile::renderer::surge_renderer::SurgeRenderer;
+use crate::core::profile::policy::Policy;
+use crate::core::profile::profile::Profile;
+use crate::core::profile::surge_profile::SurgeProfile;
+use crate::core::renderer::Renderer;
+use crate::core::renderer::surge_renderer::SurgeRenderer;
 use crate::url_builder::UrlBuilder;
 use color_eyre::Result;
 use tracing::instrument;

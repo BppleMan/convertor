@@ -3,7 +3,7 @@ use crate::{expect_profile, expect_rule_provider, start_server};
 use axum::body::Body;
 use axum::extract::Request;
 use convertor::client::Client;
-use convertor::profile::core::policy::Policy;
+use convertor::core::profile::policy::Policy;
 use convertor::url_builder::UrlBuilder;
 use http_body_util::BodyExt;
 use tower::ServiceExt;

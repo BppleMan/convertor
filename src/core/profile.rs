@@ -1,6 +1,6 @@
-use crate::profile::core::policy::Policy;
-use crate::profile::core::proxy::Proxy;
-use crate::profile::core::rule::Rule;
+use crate::core::profile::policy::Policy;
+use crate::core::profile::proxy::Proxy;
+use crate::core::profile::rule::Rule;
 use crate::region::Region;
 use indexmap::IndexMap;
 use regex::Regex;

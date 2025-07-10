@@ -1,15 +1,14 @@
-use crate::profile::core::policy::Policy;
-use crate::profile::core::proxy::Proxy;
-use crate::profile::core::proxy_group::{ProxyGroup, ProxyGroupType};
-use crate::profile::core::rule::{Rule, RuleType};
-use crate::profile::core::surge_profile::SurgeProfile;
-use crate::profile::error::ParseError;
-use crate::profile::parser::Result;
+use crate::core::error::ParseError;
+use crate::core::profile::policy::Policy;
+use crate::core::profile::proxy::Proxy;
+use crate::core::profile::proxy_group::{ProxyGroup, ProxyGroupType};
+use crate::core::profile::rule::{Rule, RuleType};
+use crate::core::profile::surge_profile::SurgeProfile;
+use crate::core::result::ParseResult;
 use std::collections::HashMap;
 use std::fmt::Write;
 use std::str::FromStr;
 use tracing::{instrument, trace};
-
 // pub const SECTION_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"^\[[^\[\]]+]$"#).unwrap());
 // pub const COMMENT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\s*(;|#|//)").unwrap());
 // pub const INLINE_COMMENT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"(;|#|//).*$").unwrap());
@@ -25,7 +24,7 @@ pub struct SurgeParser;
 
 impl SurgeParser {
     #[instrument(skip_all)]
-    pub fn parse_profile(content: String) -> Result<SurgeProfile> {
+    pub fn parse_profile(content: String) -> ParseResult<SurgeProfile> {
         let mut sections = Self::parse_raw(&content);
         let header = if let Some(section) = sections.remove(MANAGED_CONFIG_HEADER) {
             Self::parse_header(section)?
@@ -94,7 +93,7 @@ impl SurgeParser {
     }
 
     #[instrument(skip_all)]
-    pub fn parse_header(section: impl IntoIterator<Item = impl AsRef<str>>) -> Result<String> {
+    pub fn parse_header(section: impl IntoIterator<Item = impl AsRef<str>>) -> ParseResult<String> {
         let mut output = String::new();
         for line in section {
             writeln!(output, "{}", line.as_ref())?;
@@ -103,22 +102,22 @@ impl SurgeParser {
     }
 
     #[instrument(skip_all)]
-    pub fn parse_general(section: impl IntoIterator<Item = impl AsRef<str>>) -> Result<Vec<String>> {
+    pub fn parse_general(section: impl IntoIterator<Item = impl AsRef<str>>) -> ParseResult<Vec<String>> {
         Ok(section.into_iter().map(|s| s.as_ref().to_owned()).collect())
     }
 
     #[instrument(skip_all)]
-    pub fn parse_url_rewrite(section: impl IntoIterator<Item = impl AsRef<str>>) -> Result<Vec<String>> {
+    pub fn parse_url_rewrite(section: impl IntoIterator<Item = impl AsRef<str>>) -> ParseResult<Vec<String>> {
         Ok(section.into_iter().map(|s| s.as_ref().to_owned()).collect())
     }
 
     #[instrument(skip_all)]
-    pub fn parse_proxies(section: impl IntoIterator<Item = impl AsRef<str>>) -> Result<Vec<Proxy>> {
+    pub fn parse_proxies(section: impl IntoIterator<Item = impl AsRef<str>>) -> ParseResult<Vec<Proxy>> {
         Self::parse_comment(section, Self::parse_proxy, Proxy::set_comment)
     }
 
     #[instrument(skip_all)]
-    pub fn parse_proxy(line: &str) -> Result<Proxy> {
+    pub fn parse_proxy(line: &str) -> ParseResult<Proxy> {
         let line = Self::trim_line_comment(line);
 
         let (name, value) = line.split_once('=').ok_or_else(|| ParseError::Proxy {
@@ -191,12 +190,12 @@ impl SurgeParser {
     }
 
     #[instrument(skip_all)]
-    pub fn parse_proxy_groups(section: impl IntoIterator<Item = impl AsRef<str>>) -> Result<Vec<ProxyGroup>> {
+    pub fn parse_proxy_groups(section: impl IntoIterator<Item = impl AsRef<str>>) -> ParseResult<Vec<ProxyGroup>> {
         Self::parse_comment(section, Self::parse_proxy_group, ProxyGroup::set_comment)
     }
 
     #[instrument(skip_all)]
-    pub fn parse_proxy_group(line: &str) -> Result<ProxyGroup> {
+    pub fn parse_proxy_group(line: &str) -> ParseResult<ProxyGroup> {
         let line = Self::trim_line_comment(line);
         let Some((name, value)) = line.split_once('=') else {
             return Err(ParseError::ProxyGroup {
@@ -226,12 +225,12 @@ impl SurgeParser {
     }
 
     #[instrument(skip_all)]
-    pub fn parse_rules(section: impl IntoIterator<Item = impl AsRef<str>>) -> Result<Vec<Rule>> {
+    pub fn parse_rules(section: impl IntoIterator<Item = impl AsRef<str>>) -> ParseResult<Vec<Rule>> {
         Self::parse_comment(section, Self::parse_rule, Rule::set_comment)
     }
 
     #[instrument(skip_all)]
-    pub fn parse_rule(line: &str) -> Result<Rule> {
+    pub fn parse_rule(line: &str) -> ParseResult<Rule> {
         let line = Self::trim_line_comment(line);
         let fields = line.split(',').collect::<Vec<_>>();
         let (value, policy) = match fields.len() {
@@ -276,9 +275,9 @@ impl SurgeParser {
         contents: impl IntoIterator<Item = impl AsRef<str>>,
         parse: F,
         set_comment: C,
-    ) -> Result<Vec<R>>
+    ) -> ParseResult<Vec<R>>
     where
-        F: Fn(&str) -> Result<R>,
+        F: Fn(&str) -> ParseResult<R>,
         C: Fn(&mut R, Option<String>),
     {
         let mut items = vec![];
@@ -311,7 +310,7 @@ impl SurgeParser {
     }
 
     /// provider 中的规则没有 section 和 policy
-    pub fn parse_rules_for_provider(lines: impl IntoIterator<Item = impl AsRef<str>>) -> Result<Vec<Rule>> {
+    pub fn parse_rules_for_provider(lines: impl IntoIterator<Item = impl AsRef<str>>) -> ParseResult<Vec<Rule>> {
         let rules = Self::parse_comment(
             lines,
             |line| {

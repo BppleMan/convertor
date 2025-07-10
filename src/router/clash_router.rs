@@ -1,8 +1,8 @@
-use crate::profile::core::clash_profile::ClashProfile;
-use crate::profile::core::policy::Policy;
-use crate::profile::core::profile::Profile;
-use crate::profile::renderer::Renderer;
-use crate::profile::renderer::clash_renderer::ClashRenderer;
+use crate::core::profile::clash_profile::ClashProfile;
+use crate::core::profile::policy::Policy;
+use crate::core::profile::profile::Profile;
+use crate::core::renderer::Renderer;
+use crate::core::renderer::clash_renderer::ClashRenderer;
 use crate::router::AppState;
 use crate::url_builder::UrlBuilder;
 use color_eyre::Result;

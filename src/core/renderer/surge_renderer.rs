@@ -1,11 +1,11 @@
-use crate::profile::core::policy::Policy;
-use crate::profile::core::proxy::Proxy;
-use crate::profile::core::proxy_group::ProxyGroup;
-use crate::profile::core::rule::{ProviderRule, Rule};
-use crate::profile::core::rule_provider::RuleProvider;
-use crate::profile::core::surge_profile::SurgeProfile;
-use crate::profile::renderer::Renderer;
-use crate::profile::result::RenderResult;
+use crate::core::profile::policy::Policy;
+use crate::core::profile::proxy::Proxy;
+use crate::core::profile::proxy_group::ProxyGroup;
+use crate::core::profile::rule::{ProviderRule, Rule};
+use crate::core::profile::rule_provider::RuleProvider;
+use crate::core::profile::surge_profile::SurgeProfile;
+use crate::core::renderer::Renderer;
+use crate::core::result::RenderResult;
 use std::fmt::Write;
 use tracing::instrument;
 

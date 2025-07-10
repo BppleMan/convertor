@@ -1,5 +1,5 @@
-use crate::profile::core::policy::Policy;
-use crate::profile::error::ParseError;
+use crate::core::error::ParseError;
+use crate::core::profile::policy::Policy;
 use serde::{Deserialize, Deserializer};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;

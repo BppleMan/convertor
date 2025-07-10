@@ -1,4 +1,4 @@
-use crate::profile::core::rule::Rule;
+use crate::core::profile::rule::Rule;
 use thiserror::Error;
 
 /// 所有解析失败场景的统一错误

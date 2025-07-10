@@ -1,6 +1,6 @@
 use crate::client::Client;
+use crate::core::profile::policy::Policy;
 use crate::encrypt::{decrypt, encrypt};
-use crate::profile::core::policy::Policy;
 use color_eyre::Report;
 use color_eyre::Result;
 use color_eyre::eyre::{OptionExt, WrapErr};
@@ -135,7 +135,7 @@ impl SubLogQuery {
         }
     }
 
-    pub fn encode_to_query_string(&self) -> color_eyre::Result<String> {
+    pub fn encode_to_query_string(&self) -> Result<String> {
         let mut query_pairs = vec![];
         let encrypted_secret = encrypt(self.secret.as_bytes(), self.secret.as_str())?;
         query_pairs.push(format!(
