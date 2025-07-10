@@ -1,8 +1,9 @@
-use crate::profile::core::clash_profile::ClashProfile;
-use crate::profile::core::policy::Policy;
-use crate::profile::core::profile::Profile;
-use crate::profile::renderer::Renderer;
-use crate::profile::renderer::clash_renderer::ClashRenderer;
+use crate::core::error::ParseError;
+use crate::core::profile::clash_profile::ClashProfile;
+use crate::core::profile::policy::Policy;
+use crate::core::profile::profile::Profile;
+use crate::core::renderer::Renderer;
+use crate::core::renderer::clash_renderer::ClashRenderer;
 use crate::router::AppState;
 use crate::url_builder::UrlBuilder;
 use color_eyre::Result;
@@ -25,21 +26,40 @@ pub(in crate::router) async fn profile_impl(
     url_builder: UrlBuilder,
     raw_profile: String,
 ) -> Result<String> {
-    let mut template = ClashProfile::template()?;
-    template.optimize(&url_builder, Some(raw_profile), Some(&state.config.secret))?;
-    Ok(ClashRenderer::render_profile(&template)?)
+    let profile = try_get_profile(state, url_builder, raw_profile).await?;
+    Ok(ClashRenderer::render_profile(&profile)?)
 }
 
 #[instrument(skip_all)]
 pub(in crate::router) async fn rule_provider_impl(
+    state: Arc<AppState>,
     url_builder: UrlBuilder,
     raw_profile: String,
     policy: Policy,
 ) -> Result<String> {
-    let mut profile = ClashProfile::parse(raw_profile)?;
-    profile.optimize_rules(&url_builder)?;
+    let profile = try_get_profile(state, url_builder, raw_profile).await?;
     match profile.get_provider_rules_with_policy(&policy) {
         None => Ok(String::new()),
         Some(provider_rules) => Ok(ClashRenderer::render_provider_rules(provider_rules)?),
     }
+}
+
+async fn try_get_profile(state: Arc<AppState>, url_builder: UrlBuilder, raw_profile: String) -> Result<ClashProfile> {
+    let profile = state
+        .clash_cache
+        .try_get_with("clash".to_string(), async {
+            let profile = ClashProfile::parse(raw_profile)?;
+            Ok::<_, Arc<ParseError>>(profile)
+        })
+        .await?;
+    let template = state
+        .clash_cache
+        .try_get_with("template".to_string(), async {
+            let mut template = ClashProfile::template()?;
+            template.merge(profile, &state.config.secret)?;
+            template.optimize(&url_builder).map_err(Arc::new)?;
+            Ok::<_, Arc<ParseError>>(template)
+        })
+        .await?;
+    Ok(template)
 }

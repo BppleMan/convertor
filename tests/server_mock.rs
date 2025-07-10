@@ -3,12 +3,12 @@ use axum::Router;
 use axum::routing::get;
 use convertor::client::Client;
 use convertor::config::convertor_config::ConvertorConfig;
+use convertor::core::profile::policy::Policy;
+use convertor::core::profile::rule::{Rule, RuleType};
+use convertor::core::renderer::Renderer;
+use convertor::core::renderer::clash_renderer::ClashRenderer;
+use convertor::core::renderer::surge_renderer::SurgeRenderer;
 use convertor::init_backtrace;
-use convertor::profile::core::policy::Policy;
-use convertor::profile::core::rule::{Rule, RuleType};
-use convertor::profile::renderer::Renderer;
-use convertor::profile::renderer::clash_renderer::ClashRenderer;
-use convertor::profile::renderer::surge_renderer::SurgeRenderer;
 use convertor::router::subscription_router::subscription_logs;
 use convertor::router::{AppState, profile, rule_provider};
 use convertor::subscription::subscription_api::boslife_api::BosLifeApi;
@@ -56,7 +56,7 @@ pub async fn start_server_with_config(
     config.service_config.base_url = Url::parse(&mock_server.base_url())?;
 
     let api = BosLifeApi::new(&base_dir, reqwest::Client::new(), config.service_config.clone());
-    let app_state = Arc::new(AppState { config, api });
+    let app_state = Arc::new(AppState::new(config, api));
     let app: Router = Router::new()
         .route("/profile", get(profile))
         .route("/rule-provider", get(rule_provider))

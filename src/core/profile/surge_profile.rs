@@ -1,19 +1,19 @@
 use crate::client::Client;
 use crate::config::surge_config::SurgeConfig;
-use crate::profile::core::policy::Policy;
-use crate::profile::core::profile::Profile;
-use crate::profile::core::proxy::Proxy;
-use crate::profile::core::proxy_group::ProxyGroup;
-use crate::profile::core::rule::{ProviderRule, Rule};
-use crate::profile::parser::surge_parser::SurgeParser;
-use crate::profile::renderer::Renderer;
-use crate::profile::renderer::surge_renderer::SurgeRenderer;
-use crate::profile::result::ParseResult;
+use crate::core::parser::surge_parser::SurgeParser;
+use crate::core::profile::policy::Policy;
+use crate::core::profile::profile::Profile;
+use crate::core::profile::proxy::Proxy;
+use crate::core::profile::proxy_group::ProxyGroup;
+use crate::core::profile::rule::{ProviderRule, Rule};
+use crate::core::renderer::Renderer;
+use crate::core::renderer::surge_renderer::SurgeRenderer;
+use crate::core::result::ParseResult;
 use crate::url_builder::UrlBuilder;
 use std::collections::HashMap;
 use tracing::instrument;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SurgeProfile {
     pub header: String,
     pub general: Vec<String>,
@@ -60,13 +60,17 @@ impl Profile for SurgeProfile {
         &mut self.policy_of_rules
     }
 
+    fn merge(&mut self, _: Self::PROFILE, _: impl AsRef<str>) -> ParseResult<()> {
+        Ok(())
+    }
+
     #[instrument(skip_all)]
     fn parse(content: String) -> ParseResult<Self::PROFILE> {
         Ok(SurgeParser::parse_profile(content)?)
     }
 
     #[instrument(skip_all)]
-    fn optimize(&mut self, url_builder: &UrlBuilder, _: Option<String>, _: Option<impl AsRef<str>>) -> ParseResult<()> {
+    fn optimize(&mut self, url_builder: &UrlBuilder) -> ParseResult<()> {
         self.replace_header(url_builder)?;
         self.optimize_proxies()?;
         self.optimize_rules(url_builder)?;

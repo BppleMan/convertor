@@ -1,8 +1,8 @@
 use convertor::client::Client;
 use convertor::config::convertor_config::ConvertorConfig;
+use convertor::core::profile::profile::Profile;
+use convertor::core::profile::surge_profile::SurgeProfile;
 use convertor::init_backtrace;
-use convertor::profile::core::profile::Profile;
-use convertor::profile::core::surge_profile::SurgeProfile;
 use convertor::subscription::subscription_api::boslife_api::BosLifeApi;
 use convertor::url_builder::UrlBuilder;
 use std::path::Path;
@@ -34,7 +34,7 @@ async fn main() -> color_eyre::Result<()> {
 
     let file = std::fs::read_to_string(base_dir.join("mock.conf"))?;
     let mut profile = SurgeProfile::parse(file)?;
-    profile.optimize(&url_builder, None, Option::<&str>::None)?;
+    profile.optimize(&url_builder)?;
 
     Ok(())
 }

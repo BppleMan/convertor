@@ -1,15 +1,15 @@
 use crate::client::Client;
-use crate::profile::core::policy::Policy;
-use crate::profile::core::profile::Profile;
-use crate::profile::core::proxy::Proxy;
-use crate::profile::core::proxy_group::ProxyGroup;
-use crate::profile::core::rule::{ProviderRule, Rule};
-use crate::profile::core::rule_provider::RuleProvider;
-use crate::profile::error::ParseError;
-use crate::profile::parser::clash_parser::ClashParser;
-use crate::profile::renderer::Renderer;
-use crate::profile::renderer::clash_renderer::ClashRenderer;
-use crate::profile::result::ParseResult;
+
+use crate::core::parser::clash_parser::ClashParser;
+use crate::core::profile::policy::Policy;
+use crate::core::profile::profile::Profile;
+use crate::core::profile::proxy::Proxy;
+use crate::core::profile::proxy_group::ProxyGroup;
+use crate::core::profile::rule::{ProviderRule, Rule};
+use crate::core::profile::rule_provider::RuleProvider;
+use crate::core::renderer::Renderer;
+use crate::core::renderer::clash_renderer::ClashRenderer;
+use crate::core::result::ParseResult;
 use crate::url_builder::UrlBuilder;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -17,7 +17,7 @@ use tracing::instrument;
 
 const TEMPLATE_STR: &str = include_str!("../../../assets/clash/template.yaml");
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct ClashProfile {
     pub port: u16,
     #[serde(rename = "socks-port")]
@@ -82,23 +82,15 @@ impl Profile for ClashProfile {
         Ok(ClashParser::parse(content)?)
     }
 
-    fn optimize(
-        &mut self,
-        url_builder: &UrlBuilder,
-        raw_profile: Option<String>,
-        secret: Option<impl AsRef<str>>,
-    ) -> ParseResult<()> {
-        let Some(raw_profile) = raw_profile else {
-            return Err(ParseError::MissingRawProfile);
-        };
-        let Some(secret) = secret else {
-            return Err(ParseError::MissingSecret);
-        };
-
-        let raw_profile = ClashProfile::parse(raw_profile)?;
-        self.proxies = raw_profile.proxies;
-        self.rules = raw_profile.rules;
+    fn merge(&mut self, profile: Self::PROFILE, secret: impl AsRef<str>) -> ParseResult<()> {
+        self.proxies = profile.proxies;
+        self.proxy_groups = profile.proxy_groups;
+        self.rules = profile.rules;
         self.secret = secret.as_ref().to_string();
+        Ok(())
+    }
+
+    fn optimize(&mut self, url_builder: &UrlBuilder) -> ParseResult<()> {
         self.optimize_proxies()?;
         self.optimize_rules(url_builder)?;
         Ok(())
