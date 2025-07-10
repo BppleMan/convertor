@@ -6,3 +6,4 @@
 **/.convertor.*/
 !.convertor.bench
 !.convertor.test
+**/config.toml
