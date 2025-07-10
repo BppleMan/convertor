@@ -4,7 +4,7 @@ release:
     cargo build --release
 
 linux:
-    cross build --release --target x86_64-unknown-linux-gnu
+    cross build --release --bin convertor --target x86_64-unknown-linux-gnu
 
 # 用法: just deploy user@host path/to/local/file /remote/path your-service-name
 deploy alias:

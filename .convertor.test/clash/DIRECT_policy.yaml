@@ -1,4 +1,4 @@
-payloads:
+payload:
     - DOMAIN,trdy.subiway.com:8888
     - IP-CIDR,127.0.0.0/8
     - IP-CIDR,192.168.0.0/16

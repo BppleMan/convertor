@@ -51,7 +51,8 @@ impl Renderer for ClashRenderer {
         writeln!(output, "allow-lan: {}", profile.allow_lan)?;
         writeln!(output, "mode: {}", profile.mode)?;
         writeln!(output, "log-level: {}", profile.log_level)?;
-        writeln!(output, r#"external-controller: "{}""#, profile.external_controller)?;
+        writeln!(output, r#"external-controller: {}"#, profile.external_controller)?;
+        writeln!(output, r#"external-ui: {}"#, profile.external_ui)?;
         writeln!(output, r#"secret: "{}""#, profile.secret)?;
         Ok(output)
     }

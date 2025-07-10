@@ -4,7 +4,8 @@ redir-port: 7892
 allow-lan: true
 mode: Rule
 log-level: info
-external-controller: '0.0.0.0:9090'
+external-controller: 0.0.0.0:9091
+external-ui: ui
 secret: ''
 
 proxies:
