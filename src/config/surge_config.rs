@@ -82,11 +82,13 @@ impl SurgeConfig {
                 Ok(Rule::surge_rule_provider(policy, name, url))
             })
             .collect::<ParseResult<Vec<_>>>()?;
-        let output = provider_rules
+        let mut output = provider_rules
             .iter()
             .map(SurgeRenderer::render_rule)
             .map(|l| Ok(l.map(Cow::Owned)?))
             .collect::<Result<Vec<_>>>()?;
+        output.insert(0, Cow::Borrowed(SURGE_RULE_PROVIDER_COMMENT_START));
+        output.push(Cow::Borrowed(SURGE_RULE_PROVIDER_COMMENT_END));
         lines.splice(range_of_rule_providers, output);
         let content = lines.join("\n");
         tokio::fs::write(&self.rules_config_path, &content).await?;

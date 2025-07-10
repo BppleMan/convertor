@@ -1,7 +1,7 @@
 #!/usr/bin/env just --justfile
 
-release:
-    cargo build --release
+install:
+    cargo install --bin convertor --path .
 
 linux:
     cross build --release --bin convertor --target x86_64-unknown-linux-gnu
@@ -13,28 +13,29 @@ deploy alias:
 
     echo "Uploading file..."
     scp target/x86_64-unknown-linux-gnu/release/convertor ubuntu:/root/.cargo/bin/convertor
+    scp ~/.convertor/convertor.toml ubuntu:/root/.convertor/convertor.toml
 
     echo "Restarting remote service..."
     ssh {{ alias }} "systemctl restart convertor"
     ssh {{ alias }} "systemctl status convertor"
 
-convertor:
-    cargo run --release --bin convertor
+push_config alias:
+    echo "Uploading file..."
+    scp ~/.convertor/convertor.toml ubuntu:/root/.convertor/convertor.toml
 
-refresh-token:
-    cargo run --release --bin convertor -- refresh-token
+    echo "Restarting remote service..."
+    ssh {{ alias }} "systemctl restart convertor"
+    ssh {{ alias }} "systemctl status convertor"
+
+pull_config alias:
+    echo "Downloading file..."
+    scp ubuntu:/root/.convertor/convertor.toml ~/.convertor/convertor.toml
 
 cert:
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
       -keyout cert/ip-key.pem \
       -out cert/ip-cert.pem \
       -config cert/ip-cert.cnf
-
-sync_toml:
-    scp ~/.convertor/convertor.toml ubuntu:/root/.convertor/convertor.toml
-
-sync_bin:
-    scp target/x86_64-unknown-linux-gnu/release/convertor ubuntu:/root
 
 container-name := "convertor-dev"
 
