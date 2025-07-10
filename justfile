@@ -6,6 +6,18 @@ release:
 linux:
     cross build --release --target x86_64-unknown-linux-gnu
 
+# 用法: just deploy user@host path/to/local/file /remote/path your-service-name
+deploy alias:
+    echo "Stopping remote service..."
+    ssh {{ alias }} "systemctl stop convertor"
+
+    echo "Uploading file..."
+    scp target/x86_64-unknown-linux-gnu/release/convertor ubuntu:/root/.cargo/bin/convertor
+
+    echo "Restarting remote service..."
+    ssh {{ alias }} "systemctl restart convertor"
+    ssh {{ alias }} "systemctl status convertor"
+
 convertor:
     cargo run --release --bin convertor
 
