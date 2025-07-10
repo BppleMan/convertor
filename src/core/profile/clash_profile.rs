@@ -31,6 +31,8 @@ pub struct ClashProfile {
     pub log_level: String,
     #[serde(rename = "external-controller")]
     pub external_controller: String,
+    #[serde(rename = "external-ui")]
+    pub external_ui: String,
     pub secret: String,
     pub proxies: Vec<Proxy>,
     #[serde(rename = "proxy-groups")]
@@ -45,6 +47,10 @@ pub struct ClashProfile {
 
 impl Profile for ClashProfile {
     type PROFILE = ClashProfile;
+
+    fn client() -> Client {
+        Client::Clash
+    }
 
     fn proxies(&self) -> &[Proxy] {
         &self.proxies
