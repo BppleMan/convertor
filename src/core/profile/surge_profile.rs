@@ -28,6 +28,10 @@ pub struct SurgeProfile {
 impl Profile for SurgeProfile {
     type PROFILE = SurgeProfile;
 
+    fn client() -> Client {
+        Client::Surge
+    }
+
     fn proxies(&self) -> &[Proxy] {
         &self.proxies
     }
@@ -60,13 +64,13 @@ impl Profile for SurgeProfile {
         &mut self.policy_of_rules
     }
 
-    fn merge(&mut self, _: Self::PROFILE, _: impl AsRef<str>) -> ParseResult<()> {
-        Ok(())
-    }
-
     #[instrument(skip_all)]
     fn parse(content: String) -> ParseResult<Self::PROFILE> {
         Ok(SurgeParser::parse_profile(content)?)
+    }
+
+    fn merge(&mut self, _: Self::PROFILE, _: impl AsRef<str>) -> ParseResult<()> {
+        Ok(())
     }
 
     #[instrument(skip_all)]

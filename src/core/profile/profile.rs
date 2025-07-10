@@ -1,3 +1,4 @@
+use crate::client::Client;
 use crate::core::error::ParseError;
 use crate::core::profile::policy::Policy;
 use crate::core::profile::proxy::Proxy;
@@ -11,6 +12,8 @@ use tracing::{instrument, span, warn};
 
 pub trait Profile {
     type PROFILE;
+
+    fn client() -> Client;
 
     fn proxies(&self) -> &[Proxy];
 
@@ -60,11 +63,12 @@ pub trait Profile {
             .into_iter()
             .map(|(region, proxies)| {
                 let name = format!("{} {}", region.icon, region.cn);
-                ProxyGroup::new(
-                    name,
-                    ProxyGroupType::Smart,
-                    proxies.into_iter().map(|p| p.name.to_string()).collect::<Vec<_>>(),
-                )
+                let proxy_group_type = match Self::client() {
+                    Client::Surge => ProxyGroupType::Smart,
+                    Client::Clash => ProxyGroupType::UrlTest,
+                };
+                let proxies = proxies.into_iter().map(|p| p.name.to_string()).collect::<Vec<_>>();
+                ProxyGroup::new(name, proxy_group_type, proxies)
             })
             .collect::<Vec<_>>();
         self.proxy_groups_mut().clear();
