@@ -57,7 +57,7 @@ pub trait Renderer {
                 writeln!(output, "{}", Self::render_lines(rules, Self::render_provider_rule)?)?;
             }
             Client::Clash => {
-                writeln!(output, "payloads:")?;
+                writeln!(output, "payload:")?;
                 writeln!(output, "{}", Self::render_lines(rules, Self::render_provider_rule)?)?;
             }
         }

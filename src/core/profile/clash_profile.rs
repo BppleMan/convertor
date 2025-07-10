@@ -31,7 +31,7 @@ pub struct ClashProfile {
     pub log_level: String,
     #[serde(rename = "external-controller")]
     pub external_controller: String,
-    #[serde(rename = "external-ui")]
+    #[serde(rename = "external-ui", default)]
     pub external_ui: String,
     pub secret: String,
     pub proxies: Vec<Proxy>,

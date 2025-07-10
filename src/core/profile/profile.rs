@@ -54,7 +54,7 @@ pub trait Profile {
             })
             .collect::<Vec<_>>();
         let convertor_group = ProxyGroup::new(
-            "Convertor".to_string(),
+            "Subscription Info".to_string(),
             ProxyGroupType::Select,
             infos.into_iter().map(|p| p.name.to_string()).collect::<Vec<_>>(),
         );
