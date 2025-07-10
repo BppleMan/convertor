@@ -1,9 +1,9 @@
-use color_eyre::eyre::eyre;
 use color_eyre::Report;
+use color_eyre::eyre::eyre;
 use serde::Deserialize;
 use std::str::FromStr;
 
-#[derive(Debug, Default, Deserialize)]
+#[derive(Default, Debug, Clone, Deserialize)]
 pub struct ProxyGroup {
     pub name: String,
     #[serde(rename = "type")]
@@ -28,7 +28,7 @@ impl ProxyGroup {
     }
 }
 
-#[derive(Debug, Default, Deserialize)]
+#[derive(Default, Debug, Clone, Deserialize)]
 pub enum ProxyGroupType {
     #[serde(rename = "select")]
     Select,

@@ -205,7 +205,6 @@ impl Installer {
         }
 
         println!("正在生成 mihomo 配置文件: {}", config_path.display());
-        let mut clash_profile = ClashProfile::template()?;
         let raw_sub_url = self
             .service_api
             .get_raw_sub_url(self.config.service_config.base_url.clone(), Client::Clash)
@@ -215,8 +214,12 @@ impl Installer {
             .service_api
             .get_raw_profile(url_builder.build_subscription_url(Client::Clash)?, Client::Clash)
             .await?;
-        clash_profile.optimize(&url_builder, Some(clash_profile_content), Some(&self.config.secret))?;
-        let config_content = ClashRenderer::render_profile(&clash_profile)?;
+        let profile = ClashProfile::parse(clash_profile_content)?;
+
+        let mut template = ClashProfile::template()?;
+        template.merge(profile, &self.config.secret)?;
+        template.optimize(&url_builder)?;
+        let config_content = ClashRenderer::render_profile(&template)?;
         tokio::fs::write(&config_path, &config_content).await?;
         println!("mihomo 配置文件生成成功: {}", config_path.display());
         Ok(())
