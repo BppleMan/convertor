@@ -56,7 +56,7 @@ pub async fn start_server_with_config(
     config.service_config.base_url = Url::parse(&mock_server.base_url())?;
 
     let api = BosLifeApi::new(&base_dir, reqwest::Client::new(), config.service_config.clone());
-    let app_state = Arc::new(AppState { config, api });
+    let app_state = Arc::new(AppState::new(config, api));
     let app: Router = Router::new()
         .route("/profile", get(profile))
         .route("/rule-provider", get(rule_provider))

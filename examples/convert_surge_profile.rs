@@ -30,7 +30,7 @@ async fn main() -> color_eyre::Result<()> {
     let sub_url = url_builder.build_subscription_url(Client::Surge)?;
     let raw_sub_content = api.get_raw_profile(sub_url, Client::Surge).await?;
     let mut profile = SurgeProfile::parse(raw_sub_content)?;
-    profile.optimize(&url_builder, None, Option::<&str>::None)?;
+    profile.optimize(&url_builder)?;
 
     let converted = SurgeRenderer::render_profile(&profile)?;
     println!("{}", converted);

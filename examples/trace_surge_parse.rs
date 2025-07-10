@@ -34,7 +34,7 @@ async fn main() -> color_eyre::Result<()> {
 
     let file = std::fs::read_to_string(base_dir.join("mock.conf"))?;
     let mut profile = SurgeProfile::parse(file)?;
-    profile.optimize(&url_builder, None, Option::<&str>::None)?;
+    profile.optimize(&url_builder)?;
 
     Ok(())
 }

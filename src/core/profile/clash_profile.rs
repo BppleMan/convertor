@@ -1,6 +1,5 @@
 use crate::client::Client;
 
-use crate::core::error::ParseError;
 use crate::core::parser::clash_parser::ClashParser;
 use crate::core::profile::policy::Policy;
 use crate::core::profile::profile::Profile;
@@ -18,7 +17,7 @@ use tracing::instrument;
 
 const TEMPLATE_STR: &str = include_str!("../../../assets/clash/template.yaml");
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct ClashProfile {
     pub port: u16,
     #[serde(rename = "socks-port")]
@@ -83,23 +82,15 @@ impl Profile for ClashProfile {
         Ok(ClashParser::parse(content)?)
     }
 
-    fn optimize(
-        &mut self,
-        url_builder: &UrlBuilder,
-        raw_profile: Option<String>,
-        secret: Option<impl AsRef<str>>,
-    ) -> ParseResult<()> {
-        let Some(raw_profile) = raw_profile else {
-            return Err(ParseError::MissingRawProfile);
-        };
-        let Some(secret) = secret else {
-            return Err(ParseError::MissingSecret);
-        };
-
-        let raw_profile = ClashProfile::parse(raw_profile)?;
-        self.proxies = raw_profile.proxies;
-        self.rules = raw_profile.rules;
+    fn merge(&mut self, profile: Self::PROFILE, secret: impl AsRef<str>) -> ParseResult<()> {
+        self.proxies = profile.proxies;
+        self.proxy_groups = profile.proxy_groups;
+        self.rules = profile.rules;
         self.secret = secret.as_ref().to_string();
+        Ok(())
+    }
+
+    fn optimize(&mut self, url_builder: &UrlBuilder) -> ParseResult<()> {
         self.optimize_proxies()?;
         self.optimize_rules(url_builder)?;
         Ok(())

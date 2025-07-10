@@ -13,7 +13,7 @@ use crate::url_builder::UrlBuilder;
 use std::collections::HashMap;
 use tracing::instrument;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SurgeProfile {
     pub header: String,
     pub general: Vec<String>,
@@ -60,13 +60,17 @@ impl Profile for SurgeProfile {
         &mut self.policy_of_rules
     }
 
+    fn merge(&mut self, _: Self::PROFILE, _: impl AsRef<str>) -> ParseResult<()> {
+        Ok(())
+    }
+
     #[instrument(skip_all)]
     fn parse(content: String) -> ParseResult<Self::PROFILE> {
         Ok(SurgeParser::parse_profile(content)?)
     }
 
     #[instrument(skip_all)]
-    fn optimize(&mut self, url_builder: &UrlBuilder, _: Option<String>, _: Option<impl AsRef<str>>) -> ParseResult<()> {
+    fn optimize(&mut self, url_builder: &UrlBuilder) -> ParseResult<()> {
         self.replace_header(url_builder)?;
         self.optimize_proxies()?;
         self.optimize_rules(url_builder)?;

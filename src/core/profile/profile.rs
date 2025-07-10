@@ -30,12 +30,9 @@ pub trait Profile {
 
     fn parse(content: String) -> ParseResult<Self::PROFILE>;
 
-    fn optimize(
-        &mut self,
-        url_builder: &UrlBuilder,
-        raw_profile: Option<String>,
-        secret: Option<impl AsRef<str>>,
-    ) -> ParseResult<()>;
+    fn merge(&mut self, profile: Self::PROFILE, secret: impl AsRef<str>) -> ParseResult<()>;
+
+    fn optimize(&mut self, url_builder: &UrlBuilder) -> ParseResult<()>;
 
     #[instrument(skip_all)]
     fn optimize_proxies(&mut self) -> ParseResult<()> {
