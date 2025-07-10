@@ -1,9 +1,0 @@
-version = "V3"
-project_dir = "/Users/bppleman/CLionProjects/convertor"
-modules = ["."]
-main_branch = "main"
-prod_branch = "main"
-protected_branches = [
-    "dev",
-    "main",
-]
