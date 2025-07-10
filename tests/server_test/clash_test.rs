@@ -99,7 +99,7 @@ pub async fn test_clash_subscription_rule_provider() -> color_eyre::Result<()> {
 
     let actual = String::from_utf8_lossy(&response.into_body().collect().await?.to_bytes()).to_string();
     pretty_assertions::assert_str_eq!(
-        format!("payloads:\n    - DOMAIN,http://{}", url_builder.sub_host()?),
+        format!("payload:\n    - DOMAIN,http://{}", url_builder.sub_host()?),
         actual.trim()
     );
 
