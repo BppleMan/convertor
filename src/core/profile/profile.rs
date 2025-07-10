@@ -1,10 +1,10 @@
-use crate::profile::core::policy::Policy;
-use crate::profile::core::proxy::Proxy;
-use crate::profile::core::proxy_group::{ProxyGroup, ProxyGroupType};
-use crate::profile::core::rule::{ProviderRule, Rule};
-use crate::profile::core::{extract_policies, group_by_region};
-use crate::profile::error::ParseError;
-use crate::profile::result::ParseResult;
+use crate::core::error::ParseError;
+use crate::core::profile::policy::Policy;
+use crate::core::profile::proxy::Proxy;
+use crate::core::profile::proxy_group::{ProxyGroup, ProxyGroupType};
+use crate::core::profile::rule::{ProviderRule, Rule};
+use crate::core::profile::{extract_policies, group_by_region};
+use crate::core::result::ParseResult;
 use crate::url_builder::UrlBuilder;
 use std::collections::HashMap;
 use tracing::{instrument, span, warn};

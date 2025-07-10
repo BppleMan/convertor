@@ -1,15 +1,16 @@
 use crate::client::Client;
-use crate::profile::core::policy::Policy;
-use crate::profile::core::profile::Profile;
-use crate::profile::core::proxy::Proxy;
-use crate::profile::core::proxy_group::ProxyGroup;
-use crate::profile::core::rule::{ProviderRule, Rule};
-use crate::profile::core::rule_provider::RuleProvider;
-use crate::profile::error::ParseError;
-use crate::profile::parser::clash_parser::ClashParser;
-use crate::profile::renderer::Renderer;
-use crate::profile::renderer::clash_renderer::ClashRenderer;
-use crate::profile::result::ParseResult;
+
+use crate::core::error::ParseError;
+use crate::core::parser::clash_parser::ClashParser;
+use crate::core::profile::policy::Policy;
+use crate::core::profile::profile::Profile;
+use crate::core::profile::proxy::Proxy;
+use crate::core::profile::proxy_group::ProxyGroup;
+use crate::core::profile::rule::{ProviderRule, Rule};
+use crate::core::profile::rule_provider::RuleProvider;
+use crate::core::renderer::Renderer;
+use crate::core::renderer::clash_renderer::ClashRenderer;
+use crate::core::result::ParseResult;
 use crate::url_builder::UrlBuilder;
 use serde::Deserialize;
 use std::collections::HashMap;

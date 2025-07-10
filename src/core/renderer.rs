@@ -1,13 +1,13 @@
 #![deny(unused, unused_variables)]
 
 use crate::client::Client;
-use crate::profile::core::policy::Policy;
-use crate::profile::core::profile::Profile;
-use crate::profile::core::proxy::Proxy;
-use crate::profile::core::proxy_group::ProxyGroup;
-use crate::profile::core::rule::{ProviderRule, Rule};
-use crate::profile::core::rule_provider::RuleProvider;
-use crate::profile::result::RenderResult;
+use crate::core::profile::policy::Policy;
+use crate::core::profile::profile::Profile;
+use crate::core::profile::proxy::Proxy;
+use crate::core::profile::proxy_group::ProxyGroup;
+use crate::core::profile::rule::{ProviderRule, Rule};
+use crate::core::profile::rule_provider::RuleProvider;
+use crate::core::result::RenderResult;
 use std::fmt::Write;
 use tracing::instrument;
 
@@ -45,11 +45,6 @@ pub trait Renderer {
     }
 
     fn render_rule(rule: &Rule) -> RenderResult<String>;
-
-    // #[instrument(skip_all)]
-    // fn render_rules_for_provider(rules: &[Rule]) -> Result<String> {
-    //     Ok(Self::render_lines(rules, Self::render_rule_for_provider)?)
-    // }
 
     /// 适用于渲染规则集类型的规则，不包含注释
     fn render_rule_for_provider(rule: &Rule) -> RenderResult<String>;

@@ -1,6 +1,6 @@
 use crate::client::Client;
+use crate::core::profile::policy::Policy;
 use crate::encrypt::{decrypt, encrypt};
-use crate::profile::core::policy::Policy;
 use crate::router::query::{ProfileQuery, QueryPolicy, SubLogQuery};
 use color_eyre::eyre::{WrapErr, eyre};
 use percent_encoding::{CONTROLS, PercentDecode, percent_decode_str, utf8_percent_encode};

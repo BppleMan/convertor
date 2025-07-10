@@ -1,7 +1,7 @@
-use crate::profile::core::clash_profile::ClashProfile;
-use crate::profile::core::rule::Rule;
-use crate::profile::error::ParseError;
-use crate::profile::parser::Result;
+use crate::core::error::ParseError;
+use crate::core::profile::clash_profile::ClashProfile;
+use crate::core::profile::rule::Rule;
+use crate::core::result::ParseResult;
 use serde_yaml::Value;
 use tracing::instrument;
 
@@ -9,18 +9,18 @@ pub struct ClashParser;
 
 impl ClashParser {
     #[instrument(skip_all)]
-    pub fn parse(raw_profile: impl AsRef<str>) -> Result<ClashProfile> {
+    pub fn parse(raw_profile: impl AsRef<str>) -> ParseResult<ClashProfile> {
         Ok(serde_yaml::from_str(raw_profile.as_ref())?)
     }
 
     #[instrument(skip_all)]
-    pub fn parse_rules(section: impl AsRef<str>) -> Result<Vec<Rule>> {
+    pub fn parse_rules(section: impl AsRef<str>) -> ParseResult<Vec<Rule>> {
         let value: Value = serde_yaml::from_str(section.as_ref())?;
         let rules = match value {
             Value::Sequence(rules) => rules
                 .into_iter()
                 .map(|r| Ok(serde_yaml::from_value(r)?))
-                .collect::<Result<Vec<Rule>>>(),
+                .collect::<ParseResult<Vec<Rule>>>(),
             Value::Mapping(mut rules) => {
                 if rules.contains_key("rules") {
                     rules
@@ -52,11 +52,4 @@ impl ClashParser {
         }?;
         Ok(rules)
     }
-
-    // pub fn parse_rule(rule: impl AsRef<str>) -> Result<Rule> {
-    //     let rule = rule.as_ref();
-    // }
-
-    // provider 中的规则没有 section 和 policy
-    // pub fn parse_no_policy_rule(rule: impl AsRef<str>) -> Result<Rule> {}
 }

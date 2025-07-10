@@ -1,11 +1,11 @@
-use crate::profile::core::clash_profile::ClashProfile;
-use crate::profile::core::policy::Policy;
-use crate::profile::core::proxy::Proxy;
-use crate::profile::core::proxy_group::ProxyGroup;
-use crate::profile::core::rule::{ProviderRule, Rule};
-use crate::profile::core::rule_provider::RuleProvider;
-use crate::profile::renderer::{INDENT, Renderer};
-use crate::profile::result::RenderResult;
+use crate::core::profile::clash_profile::ClashProfile;
+use crate::core::profile::policy::Policy;
+use crate::core::profile::proxy::Proxy;
+use crate::core::profile::proxy_group::ProxyGroup;
+use crate::core::profile::rule::{ProviderRule, Rule};
+use crate::core::profile::rule_provider::RuleProvider;
+use crate::core::renderer::{INDENT, Renderer};
+use crate::core::result::RenderResult;
 use std::fmt::Write;
 use tracing::instrument;
 

@@ -1,9 +1,9 @@
 use convertor::client::Client;
 use convertor::config::convertor_config::ConvertorConfig;
-use convertor::profile::core::profile::Profile;
-use convertor::profile::core::surge_profile::SurgeProfile;
-use convertor::profile::renderer::Renderer;
-use convertor::profile::renderer::surge_renderer::SurgeRenderer;
+use convertor::core::profile::profile::Profile;
+use convertor::core::profile::surge_profile::SurgeProfile;
+use convertor::core::renderer::Renderer;
+use convertor::core::renderer::surge_renderer::SurgeRenderer;
 use convertor::subscription::subscription_api::boslife_api::BosLifeApi;
 use convertor::url_builder::UrlBuilder;
 use convertor::{init_backtrace, init_base_dir};
