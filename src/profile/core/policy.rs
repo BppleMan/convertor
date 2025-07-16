@@ -1,10 +1,10 @@
-use color_eyre::eyre::eyre;
 use color_eyre::Report;
+use color_eyre::eyre::eyre;
 use serde::{Deserialize, Deserializer};
 use std::cmp::Ordering;
 use std::str::FromStr;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Default, Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Policy {
     pub name: String,
     pub option: Option<String>,

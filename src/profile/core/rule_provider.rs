@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use url::Url;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct RuleProvider {
     pub r#type: String,
     pub url: String,

@@ -3,10 +3,12 @@ use crate::{count_rule_lines, mock_profile, start_server};
 use axum::body::Body;
 use axum::extract::Request;
 use convertor::client::Client;
-use convertor::profile::clash_profile::ClashProfile;
+use convertor::profile::core::clash_profile::ClashProfile;
 use convertor::profile::core::policy::Policy;
+use convertor::profile::core::profile::Profile;
 use convertor::profile::core::rule::RuleType;
 use convertor::profile::parser::clash_parser::ClashParser;
+use convertor::profile::renderer::Renderer;
 use convertor::profile::renderer::clash_renderer::ClashRenderer;
 use convertor::subscription::url_builder::UrlBuilder;
 use http_body_util::BodyExt;
@@ -43,7 +45,7 @@ pub async fn test_clash_profile() -> color_eyre::Result<()> {
 
     let raw_profile = mock_profile(Client::Clash, &mock_server)?;
     let mut expect_profile = ClashProfile::template()?;
-    expect_profile.optimize(&url_builder, raw_profile, &app_state.config.secret)?;
+    expect_profile.optimize(&url_builder, Some(raw_profile), Some(&app_state.config.secret))?;
     let expect = ClashRenderer::render_profile(&expect_profile)?;
 
     pretty_assertions::assert_str_eq!(expect, stream);

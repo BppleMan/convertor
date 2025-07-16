@@ -2,7 +2,7 @@ use color_eyre::eyre::eyre;
 use convertor::client::Client;
 use convertor::encrypt::decrypt;
 use convertor::profile::core::policy::Policy;
-use convertor::server::query::ProfileQuery;
+use convertor::router::query::ProfileQuery;
 use convertor::subscription::url_builder::UrlBuilder;
 use tracing::warn;
 use url::Url;

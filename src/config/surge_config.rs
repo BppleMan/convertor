@@ -1,6 +1,7 @@
 use crate::client::Client;
 use crate::profile::core::policy::Policy;
 use crate::profile::core::rule::Rule;
+use crate::profile::renderer::Renderer;
 use crate::profile::renderer::surge_renderer::{
     SURGE_RULE_PROVIDER_COMMENT_END, SURGE_RULE_PROVIDER_COMMENT_START, SurgeRenderer,
 };
@@ -72,17 +73,19 @@ impl SurgeConfig {
             start..=end
         });
 
-        let rule_providers = policies
+        let provider_rules = policies
             .iter()
             .map(|policy| {
+                let name = SurgeRenderer::render_provider_name_for_policy(policy)?;
                 let url = url_builder.build_rule_provider_url(Client::Surge, policy)?;
-                Rule::surge_rule_provider(policy, url)
+                Rule::surge_rule_provider(policy, name, url)
             })
             .collect::<Result<Vec<_>>>()?;
-        let output = SurgeRenderer::render_rule_providers_with_comment(&rule_providers)?
-            .into_iter()
-            .map(Cow::Owned)
-            .collect::<Vec<_>>();
+        let output = provider_rules
+            .iter()
+            .map(SurgeRenderer::render_rule)
+            .map(|l| Ok(l.map(Cow::Owned)?))
+            .collect::<color_eyre::Result<Vec<_>>>()?;
         lines.splice(range_of_rule_providers, output);
         let content = lines.join("\n");
         tokio::fs::write(&self.rules_config_path, &content).await?;
@@ -107,7 +110,7 @@ impl SurgeConfig {
         Ok(())
     }
 
-    pub fn build_managed_config_header(url: impl AsRef<str>) -> String {
-        format!("#!MANAGED-CONFIG {} interval=259200 strict=true", url.as_ref())
+    pub fn build_managed_config_header(url: impl IntoUrl) -> String {
+        format!("#!MANAGED-CONFIG {} interval=259200 strict=true", url.as_str())
     }
 }

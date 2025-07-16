@@ -1,12 +1,13 @@
 use crate::client::Client;
 use crate::config::convertor_config::ConvertorConfig;
-use crate::profile::clash_profile::ClashProfile;
+use crate::profile::core::clash_profile::ClashProfile;
+use crate::profile::core::profile::Profile;
+use crate::profile::renderer::Renderer;
 use crate::profile::renderer::clash_renderer::ClashRenderer;
 use crate::subscription::subscription_api::boslife_api::BosLifeApi;
 use clap::ValueEnum;
 use color_eyre::eyre::{WrapErr, eyre};
 use flate2::bufread::GzDecoder;
-use futures_util::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
 use inquire::Confirm;
 use reqwest::{Method, StatusCode};
@@ -16,6 +17,7 @@ use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use tokio_stream::StreamExt;
 use url::Url;
 
 const SYSTEMD_DIR_STR: &str = "/etc/systemd/system";
@@ -213,7 +215,7 @@ impl Installer {
             .service_api
             .get_raw_profile(url_builder.build_subscription_url(Client::Clash)?, Client::Clash)
             .await?;
-        clash_profile.optimize(&url_builder, clash_profile_content, &self.config.secret)?;
+        clash_profile.optimize(&url_builder, Some(clash_profile_content), Some(&self.config.secret))?;
         let config_content = ClashRenderer::render_profile(&clash_profile)?;
         tokio::fs::write(&config_path, &config_content).await?;
         println!("mihomo 配置文件生成成功: {}", config_path.display());

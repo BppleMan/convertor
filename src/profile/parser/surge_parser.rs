@@ -2,13 +2,14 @@ use crate::profile::core::policy::Policy;
 use crate::profile::core::proxy::Proxy;
 use crate::profile::core::proxy_group::{ProxyGroup, ProxyGroupType};
 use crate::profile::core::rule::{Rule, RuleType};
+use crate::profile::core::surge_profile::SurgeProfile;
 use crate::profile::error::ParseError;
 use crate::profile::parser::Result;
-use crate::profile::surge_profile::SurgeProfile;
 use std::collections::HashMap;
 use std::fmt::Write;
 use std::str::FromStr;
 use tracing::{instrument, trace};
+
 // pub const SECTION_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"^\[[^\[\]]+]$"#).unwrap());
 // pub const COMMENT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\s*(;|#|//)").unwrap());
 // pub const INLINE_COMMENT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"(;|#|//).*$").unwrap());
@@ -69,6 +70,7 @@ impl SurgeParser {
             rules,
             url_rewrite,
             misc,
+            policy_of_rules: HashMap::new(),
         })
     }
 
@@ -232,18 +234,12 @@ impl SurgeParser {
     pub fn parse_rule(line: &str) -> Result<Rule> {
         let line = Self::trim_line_comment(line);
         let fields = line.split(',').collect::<Vec<_>>();
-        if fields.len() < 2 {
-            return Err(ParseError::Rule {
-                line: 0,
-                reason: format!("规则格式错误, 应该为`type,value[,policy[,option]]`: {line}"),
-            });
-        }
         let (value, policy) = match fields.len() {
             0 | 1 => {
                 return Err(ParseError::Rule {
                     line: 0,
                     reason: format!("规则格式错误, 应该为`type,value[,policy[,option]]`: {line}"),
-                })
+                });
             }
             2 => {
                 let policy = Policy {
@@ -312,6 +308,40 @@ impl SurgeParser {
             }
         }
         Ok(items)
+    }
+
+    /// provider 中的规则没有 section 和 policy
+    pub fn parse_rules_for_provider(lines: impl IntoIterator<Item = impl AsRef<str>>) -> Result<Vec<Rule>> {
+        let rules = Self::parse_comment(
+            lines,
+            |line| {
+                let line = Self::trim_line_comment(line.as_ref());
+                let fields = line.split(',').collect::<Vec<_>>();
+                match fields.len() {
+                    2 => {
+                        let rule_type = RuleType::from_str(fields[0].trim())?;
+                        let value = fields[1].trim().to_string();
+
+                        Ok(Rule {
+                            rule_type,
+                            value: Some(value),
+                            policy: Policy::default(),
+                            comment: None,
+                        })
+                    }
+                    _ => {
+                        return Err(ParseError::Rule {
+                            line: 0,
+                            reason: format!("规则格式错误, 应该为`type,value[,policy[,option]]`: {line}"),
+                        });
+                    }
+                }
+            },
+            |rule, comment| {
+                rule.set_comment(comment);
+            },
+        )?;
+        Ok(rules)
     }
 
     #[instrument(skip_all)]

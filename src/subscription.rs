@@ -2,10 +2,12 @@ use crate::client::Client;
 use crate::config::convertor_config::ConvertorConfig;
 use crate::config::surge_config::SurgeConfig;
 use crate::profile;
-use crate::profile::clash_profile::ClashProfile;
+use crate::profile::core::clash_profile::ClashProfile;
+use crate::profile::core::profile::Profile;
+use crate::profile::core::surge_profile::SurgeProfile;
+use crate::profile::renderer::Renderer;
 use crate::profile::renderer::clash_renderer::ClashRenderer;
 use crate::profile::renderer::surge_renderer::SurgeRenderer;
-use crate::profile::surge_profile::SurgeProfile;
 use crate::subscription::subscription_api::boslife_api::BosLifeApi;
 use crate::subscription::subscription_args::SubscriptionArgs;
 use crate::subscription::url_builder::UrlBuilder;
@@ -55,8 +57,8 @@ impl SubscriptionService {
         println!("{}", url_builder.build_sub_logs_url(&self.config.secret)?);
         for policy in policies {
             match client {
-                Client::Surge => println!("{}", SurgeRenderer::render_provider_comment_from_policy(&policy)?),
-                Client::Clash => println!("{}", ClashRenderer::render_provider_name_from_policy(&policy)?),
+                Client::Surge => println!("{}", SurgeRenderer::render_provider_name_for_policy(&policy)?),
+                Client::Clash => println!("{}", ClashRenderer::render_provider_name_for_policy(&policy)?),
             }
             println!("{}", url_builder.build_rule_provider_url(client, &policy)?)
         }

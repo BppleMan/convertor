@@ -1,27 +1,35 @@
 use crate::server_test::ServerContext;
-use axum::routing::get;
 use axum::Router;
+use axum::routing::get;
 use convertor::client::Client;
 use convertor::config::convertor_config::ConvertorConfig;
 use convertor::init_backtrace;
 use convertor::profile::core::policy::Policy;
 use convertor::profile::core::rule::{Rule, RuleType};
+use convertor::profile::renderer::Renderer;
 use convertor::profile::renderer::clash_renderer::ClashRenderer;
 use convertor::profile::renderer::surge_renderer::SurgeRenderer;
-use convertor::server::router::subscription_router::subscription_logs;
-use convertor::server::router::{profile, rule_provider, AppState};
+use convertor::router::subscription_router::subscription_logs;
+use convertor::router::{AppState, profile, rule_provider};
 use convertor::subscription::subscription_api::boslife_api::BosLifeApi;
 use convertor::subscription::subscription_config::ServiceConfig;
 use httpmock::Method::{GET, POST};
 use httpmock::MockServer;
+use include_dir::{Dir, include_dir};
+use regex::Regex;
+use reqwest::IntoUrl;
 use std::path::PathBuf;
 use std::sync::{Arc, Once};
 use url::Url;
 
 pub mod server_test;
 
-const CLASH_MOCK_STR: &str = include_str!("../.convertor.test/mock.yaml");
-const SURGE_MOCK_STR: &str = include_str!("../.convertor.test/mock.conf");
+// const CLASH_MOCK_STR: &str = include_str!("../.convertor.test/clash/mock.yaml");
+// const SURGE_MOCK_STR: &str = include_str!("../.convertor.test/surge/mock.conf");
+// const CLASH_EXPECT_STR: &str = include_str!("../.convertor.test/clash/expect.yaml");
+// const SURGE_EXPECT_STR: &str = include_str!("../.convertor.test/surge/expect.conf");
+const SURGE_MOCK_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/.convertor.test/surge");
+const CLASH_MOCK_DIR: Dir = include_dir!(".convertor.test/clash");
 
 static INITIALIZED_TEST: Once = Once::new();
 
@@ -44,7 +52,7 @@ pub async fn start_server_with_config(
     let base_dir = init_test();
 
     let mut config = config
-        .map(|config| Ok(config))
+        .map(Ok)
         .unwrap_or_else(|| ConvertorConfig::search(&base_dir, Option::<&str>::None))?;
     let mock_server = start_mock_service_server(client, &config.service_config).await?;
     config.service_config.base_url = Url::parse(&mock_server.base_url())?;
@@ -127,9 +135,10 @@ pub fn mock_profile(client: Client, mock_server: &MockServer) -> color_eyre::Res
         policy: Policy::subscription_policy(),
         comment: None,
     };
+    let content = get_included_str(client, "mock");
     match client {
         Client::Surge => {
-            let mut lines = SURGE_MOCK_STR.lines().collect::<Vec<_>>();
+            let mut lines = content.lines().collect::<Vec<_>>();
             let rule_line = SurgeRenderer::render_rule(&rule)?;
             if let Some(i) = lines.iter().position(|l| l.starts_with("[Rule]")) {
                 lines.insert(i + 1, &rule_line)
@@ -137,7 +146,7 @@ pub fn mock_profile(client: Client, mock_server: &MockServer) -> color_eyre::Res
             Ok(lines.join("\n"))
         }
         Client::Clash => {
-            let mut lines = CLASH_MOCK_STR.lines().collect::<Vec<_>>();
+            let mut lines = content.lines().collect::<Vec<_>>();
             let rule_line = format!("    - {}", ClashRenderer::render_rule(&rule)?);
             if let Some(i) = lines.iter().position(|l| l.starts_with("rules:")) {
                 lines.insert(i + 1, &rule_line)
@@ -147,33 +156,54 @@ pub fn mock_profile(client: Client, mock_server: &MockServer) -> color_eyre::Res
     }
 }
 
+pub fn expect_profile(client: Client, encrypted_raw_sub_url: impl AsRef<str>) -> String {
+    get_included_str(client, "profile").replace("{raw_sub_url}", encrypted_raw_sub_url.as_ref())
+}
+
 pub fn count_rule_lines(client: Client, policy: &Policy) -> usize {
+    // match client {
+    //     Client::Surge => {
+    //         let expect_policy = SurgeRenderer::render_policy(policy).expect("无法渲染 Surge 策略");
+    //         let lines = SURGE_MOCK_STR.lines().collect::<Vec<_>>();
+    //         lines
+    //             .iter()
+    //             .filter(|line| {
+    //                 !line.starts_with("//")
+    //                     && !line.starts_with("#")
+    //                     && !line.starts_with(";")
+    //                     && line.ends_with(&expect_policy)
+    //             })
+    //             .count()
+    //     }
+    //     Client::Clash => {
+    //         let expect_policy = ClashRenderer::render_policy(policy).expect("无法渲染 Clash 策略");
+    //         let lines = CLASH_MOCK_STR.lines().collect::<Vec<_>>();
+    //         lines
+    //             .iter()
+    //             .filter(|line| {
+    //                 !line.starts_with("//")
+    //                     && !line.starts_with("#")
+    //                     && !line.starts_with(";")
+    //                     && line.ends_with(&format!("{expect_policy}'"))
+    //             })
+    //             .count()
+    //     }
+    // }
+    0
+}
+
+pub fn get_included_str(client: Client, file_name: impl AsRef<str>) -> String {
+    let ext = match client {
+        Client::Surge => "conf",
+        Client::Clash => "yaml",
+    };
     match client {
-        Client::Surge => {
-            let expect_policy = SurgeRenderer::render_policy(policy).expect("无法渲染 Surge 策略");
-            let lines = SURGE_MOCK_STR.lines().collect::<Vec<_>>();
-            lines
-                .iter()
-                .filter(|line| {
-                    !line.starts_with("//")
-                        && !line.starts_with("#")
-                        && !line.starts_with(";")
-                        && line.ends_with(&expect_policy)
-                })
-                .count()
-        }
-        Client::Clash => {
-            let expect_policy = ClashRenderer::render_policy(policy).expect("无法渲染 Clash 策略");
-            let lines = CLASH_MOCK_STR.lines().collect::<Vec<_>>();
-            lines
-                .iter()
-                .filter(|line| {
-                    !line.starts_with("//")
-                        && !line.starts_with("#")
-                        && !line.starts_with(";")
-                        && line.ends_with(&format!("{expect_policy}'"))
-                })
-                .count()
-        }
+        Client::Surge => SURGE_MOCK_DIR,
+        Client::Clash => CLASH_MOCK_DIR,
     }
+    .get_file(format!("{}.{}", file_name.as_ref(), ext))
+    .unwrap_or_else(|| panic!("无法找到文件: {}", file_name.as_ref()))
+    .contents_utf8()
+    .unwrap_or_else(|| panic!("无法解析 {} 文件内容", file_name.as_ref()))
+    .to_string()
 }

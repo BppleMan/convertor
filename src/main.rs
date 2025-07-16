@@ -5,7 +5,7 @@ use clap::Parser;
 use color_eyre::Result;
 use convertor::config::convertor_config::ConvertorConfig;
 use convertor::install_service::Installer;
-use convertor::server::start_server;
+use convertor::router::start_server;
 use convertor::subscription::SubscriptionService;
 use convertor::subscription::subscription_api::boslife_api::BosLifeApi;
 use convertor::{init_backtrace, init_base_dir, init_log};

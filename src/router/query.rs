@@ -18,6 +18,7 @@ impl ProfileQuery {
             .decode_utf8()
             .wrap_err("无法解码查询字符串")?
             .to_string();
+        println!("query_string: {}", query_string);
         Ok(serde_qs::from_str(&query_string)?)
     }
 }
