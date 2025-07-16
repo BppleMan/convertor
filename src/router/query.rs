@@ -3,7 +3,7 @@ use crate::core::profile::policy::Policy;
 use crate::encrypt::{decrypt, encrypt};
 use color_eyre::Report;
 use color_eyre::Result;
-use color_eyre::eyre::{OptionExt, WrapErr};
+use color_eyre::eyre::{OptionExt, WrapErr, eyre};
 use percent_encoding::{percent_decode_str, utf8_percent_encode};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -14,15 +14,20 @@ pub struct ProfileQuery {
     pub client: Client,
     pub original_host: String,
     pub raw_sub_url: String,
+    pub interval: u64,
+    pub strict: bool,
     pub policy: Option<QueryPolicy>,
 }
 
 impl ProfileQuery {
     pub fn encode_to_query_string(&self) -> String {
+        let interval_str = self.interval.to_string();
         let mut query_pairs = HashMap::new();
         query_pairs.insert("client", self.client.as_str());
         query_pairs.insert("original_host", self.original_host.as_str());
         query_pairs.insert("raw_sub_url", &self.raw_sub_url);
+        query_pairs.insert("interval", &interval_str);
+        query_pairs.insert("strict", if self.strict { "true" } else { "false" });
         if let Some(policy) = &self.policy {
             query_pairs.insert("policy.name", &policy.name);
             if let Some(option) = &policy.option {
@@ -67,6 +72,18 @@ impl ProfileQuery {
             .get("raw_sub_url")
             .ok_or_eyre("缺少 raw_sub_url 参数")?
             .to_string();
+        let interval = query_pairs
+            .get("interval")
+            .map(|s| s.parse::<u64>())
+            .transpose()
+            .map_err(|e| eyre!("interval 不是一个合法的 u64: {}", e))?
+            .unwrap_or(86400);
+        let strict = query_pairs
+            .get("strict")
+            .map(|s| s.parse::<bool>())
+            .transpose()
+            .map_err(|e| eyre!("strict 不是一个合法的 bool: {}", e))?
+            .unwrap_or(true);
         let policy_name = query_pairs.get("policy.name");
         let policy_option = query_pairs.get("policy.option");
         let is_subscription = query_pairs
@@ -87,6 +104,8 @@ impl ProfileQuery {
             client,
             original_host,
             raw_sub_url,
+            interval,
+            strict,
             policy,
         })
     }

@@ -73,6 +73,8 @@ impl UrlBuilder {
             client,
             original_host: utf8_percent_encode(self.server.as_str(), CONTROLS).to_string(),
             raw_sub_url: utf8_percent_encode(self.encrypted_raw_sub_url.as_str(), CONTROLS).to_string(),
+            interval: 86400,
+            strict: true,
             policy: policy.map(|p| p.into()),
         })
     }
