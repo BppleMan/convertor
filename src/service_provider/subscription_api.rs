@@ -2,8 +2,8 @@ use crate::cache::{
     CACHED_AUTH_TOKEN_KEY, CACHED_PROFILE_KEY, CACHED_RAW_SUB_URL_KEY, CACHED_SUB_LOGS_KEY, Cache, CacheKey,
 };
 use crate::client::Client;
-use crate::subscription::subscription_config::ServiceConfig;
-use crate::subscription::subscription_log::SubscriptionLog;
+use crate::service_provider::subscription_config::ServiceConfig;
+use crate::service_provider::subscription_log::SubscriptionLog;
 use color_eyre::eyre::{WrapErr, eyre};
 use moka::future::Cache as MokaCache;
 use reqwest::{IntoUrl, Method, Request, Response, Url};

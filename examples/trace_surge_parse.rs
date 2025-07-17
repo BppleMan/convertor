@@ -3,8 +3,7 @@ use convertor::config::convertor_config::ConvertorConfig;
 use convertor::core::profile::profile::Profile;
 use convertor::core::profile::surge_profile::SurgeProfile;
 use convertor::init_backtrace;
-use convertor::subscription::subscription_api::boslife_api::BosLifeApi;
-use convertor::url_builder::UrlBuilder;
+use convertor::service_provider::subscription_api::boslife_api::BosLifeApi;
 use std::path::Path;
 
 #[tokio::main]
@@ -26,11 +25,7 @@ async fn main() -> color_eyre::Result<()> {
     let raw_sub_url = api
         .get_raw_sub_url(convertor_config.service_config.base_url.clone(), Client::Surge)
         .await?;
-    let url_builder = UrlBuilder::new(
-        convertor_config.server.clone(),
-        convertor_config.secret.clone(),
-        raw_sub_url,
-    )?;
+    let url_builder = convertor_config.create_url_builder(raw_sub_url)?;
 
     let file = std::fs::read_to_string(base_dir.join("mock.conf"))?;
     let mut profile = SurgeProfile::parse(file)?;

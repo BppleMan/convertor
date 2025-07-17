@@ -11,12 +11,20 @@ pub struct UrlBuilder {
     pub server: Url,
     pub raw_sub_url: Url,
     pub encrypted_raw_sub_url: String,
+    pub interval: u64,
+    pub strict: bool,
 }
 
 impl UrlBuilder {
     /// 传入服务器地址和服务的 URL，生成 ConvertorUrl 实例
     /// 服务的 URL 指的是机场的订阅地址，通常包含 token
-    pub fn new(server: Url, secret: impl AsRef<str>, raw_sub_url: impl IntoUrl) -> color_eyre::Result<Self> {
+    pub fn new(
+        server: Url,
+        secret: impl AsRef<str>,
+        raw_sub_url: impl IntoUrl,
+        interval: u64,
+        strict: bool,
+    ) -> color_eyre::Result<Self> {
         let secret = secret.as_ref().to_string();
         let raw_sub_url = raw_sub_url.into_url()?;
         let encrypted_raw_sub_url = encrypt(secret.as_bytes(), raw_sub_url.as_str())?;
@@ -24,6 +32,8 @@ impl UrlBuilder {
             server,
             raw_sub_url,
             encrypted_raw_sub_url,
+            interval,
+            strict,
         })
     }
 
@@ -61,10 +71,12 @@ impl UrlBuilder {
             server,
             raw_sub_url,
             encrypted_raw_sub_url,
+            interval: profile_query.interval,
+            strict: profile_query.strict,
         })
     }
 
-    pub fn encode_to_profile_query(
+    pub fn create_profile_query(
         &self,
         client: Client,
         policy: Option<impl Into<QueryPolicy>>,
@@ -92,7 +104,7 @@ impl UrlBuilder {
             let mut path = url.path_segments_mut().map_err(|()| eyre!("无法获取路径段"))?;
             path.push("profile");
         }
-        let profile_query = self.encode_to_profile_query(client, Option::<QueryPolicy>::None)?;
+        let profile_query = self.create_profile_query(client, Option::<QueryPolicy>::None)?;
         let query_string = profile_query.encode_to_query_string();
         url.set_query(Some(&query_string));
         Ok(url)
@@ -106,7 +118,7 @@ impl UrlBuilder {
             path.push("rule-provider");
         }
 
-        let profile_query = self.encode_to_profile_query(client, Some(policy.clone()))?;
+        let profile_query = self.create_profile_query(client, Some(policy.clone()))?;
         let query_string = profile_query.encode_to_query_string();
         let encoded_query = utf8_percent_encode(&query_string, CONTROLS).to_string();
         url.set_query(Some(&encoded_query));

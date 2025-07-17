@@ -14,12 +14,12 @@ pub struct RuleProvider {
 }
 
 impl RuleProvider {
-    pub fn new(url: Url, file_name: impl AsRef<str>) -> Self {
+    pub fn new(url: Url, file_name: impl AsRef<str>, interval: u64) -> Self {
         Self {
             r#type: "http".to_string(),
             url: url.to_string(),
             path: format!("./rule_providers/{}.yaml", file_name.as_ref()),
-            interval: 600,
+            interval,
             size_limit: 0,
             format: "yaml".to_string(),
             behavior: "classical".to_string(),

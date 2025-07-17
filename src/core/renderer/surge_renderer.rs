@@ -68,7 +68,7 @@ impl Renderer for SurgeRenderer {
     fn render_proxy(proxy: &Proxy) -> RenderResult<String> {
         let mut output = String::new();
         if let Some(comment) = &proxy.comment {
-            writeln!(output, "{}", comment)?;
+            writeln!(output, "{comment}")?;
         }
         write!(
             output,
@@ -76,19 +76,19 @@ impl Renderer for SurgeRenderer {
             proxy.name, proxy.r#type, proxy.server, proxy.port, proxy.password
         )?;
         if let Some(cipher) = &proxy.cipher {
-            write!(output, ",encrypt-method={}", cipher)?;
+            write!(output, ",encrypt-method={cipher}")?;
         }
         if let Some(udp) = proxy.udp {
-            write!(output, ",udp-replay={}", udp)?;
+            write!(output, ",udp-replay={udp}")?;
         }
         if let Some(tfo) = proxy.tfo {
-            write!(output, ",tfo={}", tfo)?;
+            write!(output, ",tfo={tfo}")?;
         }
         if let Some(sni) = &proxy.sni {
-            write!(output, ",sni={}", sni)?;
+            write!(output, ",sni={sni}")?;
         }
         if let Some(skip_cert_verify) = proxy.skip_cert_verify {
-            write!(output, ",skip-cert-verify={}", skip_cert_verify)?;
+            write!(output, ",skip-cert-verify={skip_cert_verify}")?;
         }
         Ok(output)
     }
@@ -96,7 +96,7 @@ impl Renderer for SurgeRenderer {
     fn render_proxy_group(proxy_group: &ProxyGroup) -> RenderResult<String> {
         let mut output = String::new();
         if let Some(comment) = &proxy_group.comment {
-            writeln!(output, "{}", comment)?;
+            writeln!(output, "{comment}")?;
         }
         write!(output, "{}={}", proxy_group.name, proxy_group.r#type.as_str())?;
         if !proxy_group.proxies.is_empty() {
@@ -108,11 +108,11 @@ impl Renderer for SurgeRenderer {
     fn render_rule(rule: &Rule) -> RenderResult<String> {
         let mut output = String::new();
         if let Some(comment) = &rule.comment {
-            writeln!(output, "{}", comment)?;
+            writeln!(output, "{comment}")?;
         }
         write!(output, "{}", rule.rule_type.as_str())?;
         if let Some(value) = &rule.value {
-            write!(output, ",{}", value)?;
+            write!(output, ",{value}")?;
         }
         write!(output, ",{}", Self::render_policy(&rule.policy)?)?;
         Ok(output)
@@ -130,7 +130,7 @@ impl Renderer for SurgeRenderer {
     fn render_provider_rule(rule: &ProviderRule) -> RenderResult<String> {
         let mut output = String::new();
         if let Some(comment) = &rule.comment {
-            writeln!(output, "{}", comment)?;
+            writeln!(output, "{comment}")?;
         }
         write!(output, "{},{}", rule.rule_type.as_str(), rule.value)?;
         Ok(output)
@@ -153,7 +153,7 @@ impl Renderer for SurgeRenderer {
             write!(output, "{}", policy.name)?;
         }
         if let Some(option) = policy.option.as_ref() {
-            write!(output, ": {}", option)?;
+            write!(output, ": {option}")?;
         }
         write!(output, "] by convertor/{}", env!("CARGO_PKG_VERSION"))?;
         Ok(output)
@@ -175,189 +175,10 @@ impl SurgeRenderer {
     pub fn render_misc(misc: &[(String, Vec<String>)]) -> RenderResult<String> {
         let mut output = String::new();
         for (key, values) in misc {
-            writeln!(output, "{}", key)?;
+            writeln!(output, "{key}")?;
             let lines = Self::render_lines(values, |value| Ok(value.clone()))?;
-            writeln!(output, "{}", lines)?;
-            // for value in values {
-            //     writeln!(output, "{}", value)?;
-            // }
-            // writeln!(output)?;
+            writeln!(output, "{lines}")?;
         }
         Ok(output)
     }
-
-    // #[instrument(skip_all)]
-    // pub fn render_profile(profile: &SurgeProfile) -> Result<String> {
-    //
-    //     let output = [
-    //         Self::render_header(header)?,
-    //         Self::render_general(general)?,
-    //         Self::render_proxies(proxies)?,
-    //         Self::render_proxy_groups(proxy_groups)?,
-    //         Self::render_rules(rules)?,
-    //         Self::render_url_rewrite(url_rewrite)?,
-    //         Self::render_misc(misc)?,
-    //     ]
-    //     .join("\n");
-    //
-    //     Ok(output)
-    // }
-    // #[instrument(skip_all)]
-    // pub fn render_general(general: &[String]) -> Result<String> {
-    //     let mut output = String::new();
-    //     writeln!(output, "[General]")?;
-    //     for line in general {
-    //         writeln!(output, "{}", line)?;
-    //     }
-    //     writeln!(output)?;
-    //     Ok(output)
-    // }
-    //
-    // #[instrument(skip_all)]
-    // pub fn render_proxies(proxies: &[Proxy]) -> Result<String> {
-    //     let mut output = String::new();
-    //     writeln!(output, "[Proxy]")?;
-    //     for proxy in proxies {
-    //         if let Some(comment) = &proxy.comment {
-    //             writeln!(output, "{}", comment)?;
-    //         }
-    //         write!(
-    //             output,
-    //             "{}={},{},{},password={}",
-    //             proxy.name, proxy.r#type, proxy.server, proxy.port, proxy.password
-    //         )?;
-    //         if let Some(cipher) = &proxy.cipher {
-    //             write!(output, ",encrypt-method={}", cipher)?;
-    //         }
-    //         if let Some(udp) = proxy.udp {
-    //             write!(output, ",udp-replay={}", udp)?;
-    //         }
-    //         if let Some(tfo) = proxy.tfo {
-    //             write!(output, ",tfo={}", tfo)?;
-    //         }
-    //         if let Some(sni) = &proxy.sni {
-    //             write!(output, ",sni={}", sni)?;
-    //         }
-    //         if let Some(skip_cert_verify) = proxy.skip_cert_verify {
-    //             write!(output, ",skip-cert-verify={}", skip_cert_verify)?;
-    //         }
-    //         writeln!(output)?;
-    //     }
-    //     writeln!(output)?;
-    //     Ok(output)
-    // }
-    //
-    // #[instrument(skip_all)]
-    // pub fn render_proxy_groups(proxy_groups: &[ProxyGroup]) -> Result<String> {
-    //     let mut output = String::new();
-    //     writeln!(output, "[Proxy Group]")?;
-    //     for group in proxy_groups {
-    //         if let Some(comment) = &group.comment {
-    //             writeln!(output, "{}", comment)?;
-    //         }
-    //         write!(output, "{}={}", group.name, group.r#type.as_str())?;
-    //         if !group.proxies.is_empty() {
-    //             write!(output, ",{}", group.proxies.join(","))?;
-    //         }
-    //         writeln!(output)?;
-    //     }
-    //     writeln!(output)?;
-    //     Ok(output)
-    // }
-    //
-    // #[instrument(skip_all)]
-    // pub fn render_rules(rules: &[Rule]) -> Result<String> {
-    //     let mut output = String::new();
-    //     writeln!(output, "[Rule]")?;
-    //     for rule in rules {
-    //         writeln!(output, "{}", Self::render_rule(rule)?)?;
-    //     }
-    //     writeln!(output)?;
-    //     Ok(output)
-    // }
-    //
-    // pub fn render_rule(rule: &Rule) -> Result<String> {
-    //     let mut output = String::new();
-    //     if let Some(comment) = &rule.comment {
-    //         writeln!(output, "{}", comment)?;
-    //     }
-    //     write!(output, "{}", rule.rule_type.as_str())?;
-    //     if let Some(value) = &rule.value {
-    //         write!(output, ",{}", value)?;
-    //     }
-    //     write!(output, "{}", Self::render_policy(&rule.policy)?)?;
-    //     Ok(output)
-    // }
-    //
-    // pub fn render_policy(policy: &Policy) -> Result<String> {
-    //     let mut output = String::new();
-    //     write!(output, ",{}", policy.name)?;
-    //     if let Some(option) = &policy.option {
-    //         write!(output, ",{}", option)?;
-    //     }
-    //     Ok(output)
-    // }
-    //
-    // /// 渲染不带 comment 的 rule
-    // #[instrument(skip_all)]
-    // pub fn render_rule_without_comment(rule: &Rule) -> Result<String> {
-    //     let mut output = String::new();
-    //     write!(
-    //         output,
-    //         "{},{}{}",
-    //         rule.rule_type.as_str(),
-    //         rule.value.as_ref().expect("规则集中的规则必须有 value"),
-    //         Self::render_policy(&rule.policy)?,
-    //     )?;
-    //     Ok(output)
-    // }
-    //
-    // /// 渲染不带 policy 的 rule
-    // #[instrument(skip_all)]
-    // pub fn render_rule_without_policy(rule: &Rule) -> Result<String> {
-    //     let mut output = String::new();
-    //     write!(
-    //         output,
-    //         "{},{}",
-    //         rule.rule_type.as_str(),
-    //         rule.value.as_ref().expect("规则集中的规则必须有 value")
-    //     )?;
-    //     Ok(output)
-    // }
-    //
-    // pub fn render_rules_without_section(rules: &[Rule]) -> Result<String> {
-    //     let mut output = String::new();
-    //     for rule in rules {
-    //         writeln!(output, "{}", Self::render_rule_without_policy(rule)?)?;
-    //     }
-    //     writeln!(output)?;
-    //     Ok(output)
-    // }
-    //
-    // pub fn render_rule_providers_with_comment(rule_providers: &[Rule]) -> Result<Vec<String>> {
-    //     let mut output = vec![];
-    //     output.push(SURGE_RULE_PROVIDER_COMMENT_START.to_string());
-    //     for rule_provider in rule_providers {
-    //         output.push(Self::render_provider_comment_from_policy(&rule_provider.policy)?);
-    //         output.push(Self::render_rule_without_comment(rule_provider)?);
-    //     }
-    //     output.push(SURGE_RULE_PROVIDER_COMMENT_END.to_string());
-    //     Ok(output)
-    // }
-    //
-    // #[instrument(skip_all)]
-    // pub fn render_provider_comment_from_policy(policy: &Policy) -> Result<String> {
-    //     let mut output = String::new();
-    //     write!(output, "// [")?;
-    //     if policy.is_subscription {
-    //         write!(output, "Subscription")?;
-    //     } else {
-    //         write!(output, "{}", policy.name)?;
-    //     }
-    //     if let Some(option) = policy.option.as_ref() {
-    //         write!(output, ": {}", option)?;
-    //     }
-    //     write!(output, "] by convertor/{}", env!("CARGO_PKG_VERSION"))?;
-    //     Ok(output)
-    // }
 }

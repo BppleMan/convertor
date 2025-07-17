@@ -1,5 +1,7 @@
 secret = "bppleman"
 server = "http://127.0.0.1:8001/"
+interval = 86400
+strict = true
 
 [service_config]
 base_url = "https://www.blnew.com"

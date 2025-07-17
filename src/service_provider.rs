@@ -8,8 +8,8 @@ use crate::core::profile::surge_profile::SurgeProfile;
 use crate::core::renderer::Renderer;
 use crate::core::renderer::clash_renderer::ClashRenderer;
 use crate::core::renderer::surge_renderer::SurgeRenderer;
-use crate::subscription::subscription_api::boslife_api::BosLifeApi;
-use crate::subscription::subscription_args::SubscriptionArgs;
+use crate::service_provider::subscription_api::boslife_api::BosLifeApi;
+use crate::service_provider::subscription_args::SubscriptionArgs;
 use crate::url_builder::UrlBuilder;
 use color_eyre::owo_colors::OwoColorize;
 
@@ -49,7 +49,7 @@ impl SubscriptionService {
                 );
                 if args.update {
                     let clash_config = self.update_clash_config(&url_builder, raw_profile).await?;
-                    println!("{}", clash_config);
+                    println!("{clash_config}");
                 }
                 polices
             }
@@ -91,7 +91,13 @@ impl SubscriptionService {
         } = args;
         let server = server.as_ref().unwrap_or(&self.config.server).clone();
         let url_builder = if let Some(raw_sub_url) = raw_sub_url {
-            UrlBuilder::new(server.clone(), self.config.secret.clone(), raw_sub_url.clone())?
+            UrlBuilder::new(
+                server.clone(),
+                self.config.secret.clone(),
+                raw_sub_url.clone(),
+                self.config.interval,
+                self.config.strict,
+            )?
         } else if let Some(convertor_url) = convertor_url {
             UrlBuilder::decode_from_convertor_url(convertor_url.clone(), &self.config.secret)?
         } else {
@@ -104,20 +110,24 @@ impl SubscriptionService {
                     .get_raw_sub_url(self.config.service_config.base_url.clone(), *client)
                     .await?
             };
-            UrlBuilder::new(server, self.config.secret.clone(), raw_sub_url)?
+            UrlBuilder::new(
+                server,
+                self.config.secret.clone(),
+                raw_sub_url,
+                self.config.interval,
+                self.config.strict,
+            )?
         };
         Ok(url_builder)
     }
 
     async fn update_surge_config(&self, url_builder: &UrlBuilder, policies: &[Policy]) -> color_eyre::Result<()> {
         let surge_config = SurgeConfig::try_new()?;
-        surge_config.update_surge_config(&url_builder).await?;
+        surge_config.update_surge_config(url_builder).await?;
         surge_config
             .update_surge_sub_logs_url(url_builder.build_sub_logs_url(&self.config.secret)?)
             .await?;
-        surge_config
-            .update_surge_rule_providers(&url_builder, &policies)
-            .await?;
+        surge_config.update_surge_rule_providers(url_builder, policies).await?;
         Ok(())
     }
 
@@ -128,7 +138,7 @@ impl SubscriptionService {
     ) -> color_eyre::Result<String> {
         let mut template = ClashProfile::template()?;
         template.merge(raw_profile, &self.config.secret)?;
-        template.optimize(&url_builder)?;
+        template.optimize(url_builder)?;
         let clash_config = ClashRenderer::render_profile(&template)?;
         Ok(clash_config)
     }

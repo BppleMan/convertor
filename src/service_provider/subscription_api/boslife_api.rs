@@ -1,8 +1,8 @@
 use crate::cache::Cache;
 use crate::client::Client;
-use crate::subscription::subscription_api::ServiceApi;
-use crate::subscription::subscription_config::ServiceConfig;
-use crate::subscription::subscription_log::SubscriptionLog;
+use crate::service_provider::subscription_api::ServiceApi;
+use crate::service_provider::subscription_config::ServiceConfig;
+use crate::service_provider::subscription_log::SubscriptionLog;
 use moka::future::Cache as MokaCache;
 use reqwest::Client as ReqwestClient;
 use reqwest::{Method, Request, Url};
@@ -107,6 +107,10 @@ impl ServiceApi for BosLifeApi {
             .client
             .request(Method::GET, url)
             .header("Authorization", auth_token.as_ref())
+            // .header(
+            //     "Cookie",
+            //     "e0316cbece4f4d4db93a60aaefef0a7=1aff78b71253e6ec7150eed441f4ad51",
+            // )
             .build()?;
         Ok(request)
     }

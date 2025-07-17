@@ -28,4 +28,14 @@ pub struct SubscriptionArgs {
     /// 格式为 `http://ip:port`
     #[arg(short, long)]
     pub server: Option<Url>,
+
+    /// 订阅更新的间隔时间，单位为秒
+    /// 默认为 86400 秒（24 小时）
+    #[arg(short, long, default_value_t = 86400)]
+    pub interval: u64,
+
+    /// 是否严格模式
+    /// 如果开启，订阅转换器将严格按照配置进行转换
+    #[arg(short, long, default_value_t = true)]
+    pub strict: bool,
 }
