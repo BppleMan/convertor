@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 use convertor::install_service::ServiceName;
-use convertor::subscription::subscription_args::SubscriptionArgs;
+use convertor::service_provider::subscription_args::SubscriptionArgs;
 use std::net::SocketAddrV4;
 use std::path::PathBuf;
 

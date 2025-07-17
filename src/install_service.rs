@@ -4,7 +4,7 @@ use crate::core::profile::clash_profile::ClashProfile;
 use crate::core::profile::profile::Profile;
 use crate::core::renderer::Renderer;
 use crate::core::renderer::clash_renderer::ClashRenderer;
-use crate::subscription::subscription_api::boslife_api::BosLifeApi;
+use crate::service_provider::subscription_api::boslife_api::BosLifeApi;
 use clap::ValueEnum;
 use color_eyre::eyre::{WrapErr, eyre};
 use flate2::bufread::GzDecoder;

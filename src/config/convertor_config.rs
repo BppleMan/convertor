@@ -1,4 +1,4 @@
-use crate::subscription::subscription_config::ServiceConfig;
+use crate::service_provider::subscription_config::ServiceConfig;
 use crate::url_builder::UrlBuilder;
 use color_eyre::Report;
 use color_eyre::eyre::{WrapErr, eyre};
@@ -13,6 +13,8 @@ use url::Url;
 pub struct ConvertorConfig {
     pub secret: String,
     pub server: Url,
+    pub interval: u64,
+    pub strict: bool,
     pub service_config: ServiceConfig,
 }
 
@@ -69,7 +71,13 @@ impl ConvertorConfig {
     }
 
     pub fn create_url_builder(&self, raw_sub_url: impl IntoUrl) -> color_eyre::Result<UrlBuilder> {
-        UrlBuilder::new(self.server.clone(), self.secret.clone(), raw_sub_url.into_url()?)
+        UrlBuilder::new(
+            self.server.clone(),
+            self.secret.clone(),
+            raw_sub_url.into_url()?,
+            self.interval,
+            self.strict,
+        )
     }
 }
 

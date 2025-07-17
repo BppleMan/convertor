@@ -11,7 +11,7 @@ pub mod encrypt;
 pub mod config;
 pub mod router;
 pub mod install_service;
-pub mod subscription;
+pub mod service_provider;
 pub mod client;
 pub mod cache;
 pub mod url_builder;

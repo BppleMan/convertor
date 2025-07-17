@@ -22,24 +22,25 @@ pub struct ProfileQuery {
 impl ProfileQuery {
     pub fn encode_to_query_string(&self) -> String {
         let interval_str = self.interval.to_string();
-        let mut query_pairs = HashMap::new();
-        query_pairs.insert("client", self.client.as_str());
-        query_pairs.insert("original_host", self.original_host.as_str());
-        query_pairs.insert("raw_sub_url", &self.raw_sub_url);
-        query_pairs.insert("interval", &interval_str);
-        query_pairs.insert("strict", if self.strict { "true" } else { "false" });
+        let mut query_pairs = vec![
+            ("client", self.client.as_str()),
+            ("original_host", &self.original_host),
+            ("interval", &interval_str),
+            ("strict", if self.strict { "true" } else { "false" }),
+        ];
         if let Some(policy) = &self.policy {
-            query_pairs.insert("policy.name", &policy.name);
+            query_pairs.push(("policy.name", &policy.name));
             if let Some(option) = &policy.option {
-                query_pairs.insert("policy.option", option);
+                query_pairs.push(("policy.option", option));
             }
-            query_pairs.insert(
+            query_pairs.push((
                 "policy.is_subscription",
                 if policy.is_subscription { "true" } else { "false" },
-            );
+            ));
         }
+        query_pairs.push(("raw_sub_url", &self.raw_sub_url));
 
-        let mut query_paris = query_pairs
+        query_pairs
             .into_iter()
             .map(|(k, v)| {
                 format!(
@@ -48,9 +49,8 @@ impl ProfileQuery {
                     utf8_percent_encode(v, percent_encoding::CONTROLS)
                 )
             })
-            .collect::<Vec<_>>();
-        query_paris.sort();
-        query_paris.join("&")
+            .collect::<Vec<_>>()
+            .join("&")
     }
 
     pub fn decode_from_query_string(query_string: impl AsRef<str>) -> Result<ProfileQuery> {

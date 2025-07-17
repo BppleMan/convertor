@@ -288,7 +288,7 @@ impl SurgeParser {
                 line if line.is_empty() || line.starts_with('#') || line.starts_with(';') || line.starts_with("//") => {
                     match comment.as_mut() {
                         None => comment = Some(line.to_string()),
-                        Some(comment) => writeln!(comment, "{}", line)?,
+                        Some(comment) => writeln!(comment, "{line}")?,
                     }
                 }
                 _ => match parse(line) {
@@ -299,7 +299,7 @@ impl SurgeParser {
                     Err(e) => {
                         match comment.as_mut() {
                             None => comment = Some(line.to_string()),
-                            Some(comment) => writeln!(comment, "{}", line)?,
+                            Some(comment) => writeln!(comment, "{line}")?,
                         }
                         trace!("{e}")
                     }
@@ -314,7 +314,7 @@ impl SurgeParser {
         let rules = Self::parse_comment(
             lines,
             |line| {
-                let line = Self::trim_line_comment(line.as_ref());
+                let line = Self::trim_line_comment(line);
                 let fields = line.split(',').collect::<Vec<_>>();
                 match fields.len() {
                     2 => {
@@ -328,12 +328,10 @@ impl SurgeParser {
                             comment: None,
                         })
                     }
-                    _ => {
-                        return Err(ParseError::Rule {
-                            line: 0,
-                            reason: format!("规则格式错误, 应该为`type,value[,policy[,option]]`: {line}"),
-                        });
-                    }
+                    _ => Err(ParseError::Rule {
+                        line: 0,
+                        reason: format!("规则格式错误, 应该为`type,value[,policy[,option]]`: {line}"),
+                    }),
                 }
             },
             |rule, comment| {

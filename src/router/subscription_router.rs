@@ -1,7 +1,7 @@
 use crate::error::AppError;
 use crate::router::AppState;
 use crate::router::query::SubLogQuery;
-use crate::subscription::subscription_log::SubscriptionLog;
+use crate::service_provider::subscription_log::SubscriptionLog;
 use axum::Json;
 use axum::extract::{RawQuery, State};
 use color_eyre::eyre::{OptionExt, eyre};

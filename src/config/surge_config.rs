@@ -46,14 +46,21 @@ impl SurgeConfig {
         })
     }
 
-    pub async fn update_surge_config(&self, convertor_url: &UrlBuilder) -> Result<()> {
+    pub async fn update_surge_config(&self, url_builder: &UrlBuilder) -> Result<()> {
         // update BosLife.conf subscription
-        let managed_config_header =
-            Self::build_managed_config_header(convertor_url.build_subscription_url(Client::Surge)?);
+        let managed_config_header = Self::build_managed_config_header(
+            url_builder.build_subscription_url(Client::Surge)?,
+            url_builder.interval,
+            url_builder.strict,
+        );
         Self::update_conf(&self.default_config_path, &managed_config_header).await?;
 
         // update surge.conf subscription
-        let surge_conf = Self::build_managed_config_header(convertor_url.build_convertor_url(Client::Surge)?);
+        let surge_conf = Self::build_managed_config_header(
+            url_builder.build_convertor_url(Client::Surge)?,
+            url_builder.interval,
+            url_builder.strict,
+        );
         Self::update_conf(&self.main_config_path, &surge_conf).await?;
 
         Ok(())
@@ -113,7 +120,7 @@ impl SurgeConfig {
         Ok(())
     }
 
-    pub fn build_managed_config_header(url: impl IntoUrl) -> String {
-        format!("#!MANAGED-CONFIG {} interval=259200 strict=true", url.as_str())
+    pub fn build_managed_config_header(url: impl IntoUrl, interval: u64, strict: bool) -> String {
+        format!("#!MANAGED-CONFIG {} interval={interval} strict={strict}", url.as_str())
     }
 }

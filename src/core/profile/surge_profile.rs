@@ -66,7 +66,7 @@ impl Profile for SurgeProfile {
 
     #[instrument(skip_all)]
     fn parse(content: String) -> ParseResult<Self::PROFILE> {
-        Ok(SurgeParser::parse_profile(content)?)
+        SurgeParser::parse_profile(content)
     }
 
     fn merge(&mut self, _: Self::PROFILE, _: impl AsRef<str>) -> ParseResult<()> {
@@ -95,7 +95,7 @@ impl SurgeProfile {
     #[instrument(skip_all)]
     fn replace_header(&mut self, url_builder: &UrlBuilder) -> ParseResult<()> {
         let url = url_builder.build_convertor_url(Client::Surge)?;
-        self.header = SurgeConfig::build_managed_config_header(url);
+        self.header = SurgeConfig::build_managed_config_header(url, url_builder.interval, url_builder.strict);
         Ok(())
     }
 }

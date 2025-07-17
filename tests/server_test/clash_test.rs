@@ -4,7 +4,6 @@ use axum::body::Body;
 use axum::extract::Request;
 use convertor::client::Client;
 use convertor::core::profile::policy::Policy;
-use convertor::url_builder::UrlBuilder;
 use http_body_util::BodyExt;
 use tower::ServiceExt;
 
@@ -16,11 +15,7 @@ pub async fn test_clash_profile() -> color_eyre::Result<()> {
         .api
         .get_raw_sub_url(service_config.base_url.clone(), Client::Clash)
         .await?;
-    let url_builder = UrlBuilder::new(
-        app_state.config.server.clone(),
-        app_state.config.secret.clone(),
-        raw_sub_url,
-    )?;
+    let url_builder = app_state.config.create_url_builder(raw_sub_url)?;
 
     let url = url_builder.build_convertor_url(Client::Clash)?;
     let uri = format!("{}?{}", url.path(), url.query().expect("必须有查询参数"));
@@ -32,7 +27,7 @@ pub async fn test_clash_profile() -> color_eyre::Result<()> {
     let response = app.oneshot(request).await?;
 
     let actual = String::from_utf8_lossy(&response.into_body().collect().await?.to_bytes()).to_string();
-    let expect = expect_profile(Client::Clash, &url_builder.encode_encrypted_raw_sub_url());
+    let expect = expect_profile(Client::Clash, url_builder.encode_encrypted_raw_sub_url());
     pretty_assertions::assert_str_eq!(expect, actual);
 
     Ok(())
@@ -46,11 +41,7 @@ pub async fn test_clash_boslife_policy_provider() -> color_eyre::Result<()> {
         .api
         .get_raw_sub_url(service_config.base_url.clone(), Client::Clash)
         .await?;
-    let url_builder = UrlBuilder::new(
-        app_state.config.server.clone(),
-        app_state.config.secret.clone(),
-        raw_sub_url,
-    )?;
+    let url_builder = app_state.config.create_url_builder(raw_sub_url)?;
     let policy = Policy {
         name: "BosLife".to_string(),
         option: None,
@@ -81,11 +72,7 @@ pub async fn test_clash_subscription_rule_provider() -> color_eyre::Result<()> {
         .api
         .get_raw_sub_url(service_config.base_url.clone(), Client::Clash)
         .await?;
-    let url_builder = UrlBuilder::new(
-        app_state.config.server.clone(),
-        app_state.config.secret.clone(),
-        raw_sub_url,
-    )?;
+    let url_builder = app_state.config.create_url_builder(raw_sub_url)?;
     let policy = Policy::subscription_policy();
 
     let url = url_builder.build_rule_provider_url(Client::Clash, &policy)?;
@@ -114,11 +101,7 @@ pub async fn test_clash_direct_rule_provider() -> color_eyre::Result<()> {
         .api
         .get_raw_sub_url(service_config.base_url.clone(), Client::Clash)
         .await?;
-    let url_builder = UrlBuilder::new(
-        app_state.config.server.clone(),
-        app_state.config.secret.clone(),
-        raw_sub_url,
-    )?;
+    let url_builder = app_state.config.create_url_builder(raw_sub_url)?;
     let policy = Policy::direct_policy();
     let url = url_builder.build_rule_provider_url(Client::Clash, &policy)?;
 
