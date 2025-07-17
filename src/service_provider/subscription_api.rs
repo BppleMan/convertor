@@ -117,8 +117,7 @@ pub(crate) trait ServiceApi {
     async fn get_sub_logs(&self, base_url: impl IntoUrl) -> color_eyre::Result<Vec<SubscriptionLog>> {
         self.cached_sub_logs()
             .try_get_with(format!("{}_{}", CACHED_SUB_LOGS_KEY, base_url.as_str()), async {
-                // let auth_token = self.login(base_url).await?;
-                let auth_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MTY1OTIsInNlc3Npb24iOiI0NzE2NGY2NThmNzI5N2M2NzRiOTJkYzcwNDU1NDAxYyJ9.oY2CvRy87Y7-mBB-2aSR88Itgbtvr_jR9PG1F5CBRag";
+                let auth_token = self.login(base_url).await?;
                 let request = self.get_sub_logs_request(auth_token)?;
                 let response = self.execute(request).await?;
                 if response.status().is_success() {
