@@ -76,7 +76,7 @@ impl UrlBuilder {
         })
     }
 
-    pub fn encode_to_profile_query(
+    pub fn create_profile_query(
         &self,
         client: Client,
         policy: Option<impl Into<QueryPolicy>>,
@@ -104,7 +104,7 @@ impl UrlBuilder {
             let mut path = url.path_segments_mut().map_err(|()| eyre!("无法获取路径段"))?;
             path.push("profile");
         }
-        let profile_query = self.encode_to_profile_query(client, Option::<QueryPolicy>::None)?;
+        let profile_query = self.create_profile_query(client, Option::<QueryPolicy>::None)?;
         let query_string = profile_query.encode_to_query_string();
         url.set_query(Some(&query_string));
         Ok(url)
@@ -118,7 +118,7 @@ impl UrlBuilder {
             path.push("rule-provider");
         }
 
-        let profile_query = self.encode_to_profile_query(client, Some(policy.clone()))?;
+        let profile_query = self.create_profile_query(client, Some(policy.clone()))?;
         let query_string = profile_query.encode_to_query_string();
         let encoded_query = utf8_percent_encode(&query_string, CONTROLS).to_string();
         url.set_query(Some(&encoded_query));
