@@ -1,8 +1,7 @@
 use crate::cache::Cache;
-use crate::client::Client;
-use crate::service_provider::subscription_api::ServiceApi;
-use crate::service_provider::subscription_config::ServiceConfig;
-use crate::service_provider::subscription_log::SubscriptionLog;
+use crate::service_provider::api::ServiceApiCommon;
+use crate::service_provider::api::subscription_log::SubscriptionLogs;
+use crate::service_provider::config::ServiceConfig;
 use moka::future::Cache as MokaCache;
 use reqwest::Client as ReqwestClient;
 use reqwest::{Method, Request, Url};
@@ -15,22 +14,19 @@ pub struct BosLifeApi {
     pub cached_auth_token: MokaCache<String, String>,
     pub cached_sub_profile: Cache<Url, String>,
     pub cached_raw_sub_url: Cache<Url, String>,
-    pub cached_sub_logs: MokaCache<String, Vec<SubscriptionLog>>,
+    pub cached_sub_logs: Cache<Url, SubscriptionLogs>,
 }
 
 impl BosLifeApi {
     pub fn new(base_dir: impl AsRef<Path>, client: ReqwestClient, config: ServiceConfig) -> Self {
-        let duration = std::time::Duration::from_secs(60 * 60); // 10 minutes
+        let duration = std::time::Duration::from_secs(1 * 60 * 60); // 1 hour
         let cached_file = Cache::new(10, base_dir.as_ref(), duration);
         let cached_string = MokaCache::builder()
             .max_capacity(10)
             .time_to_live(duration) // 10 minutes
             .build();
         let cached_raw_subscription_url = Cache::new(10, base_dir.as_ref(), duration);
-        let cached_subscription_logs = MokaCache::builder()
-            .max_capacity(10)
-            .time_to_live(duration) // 10 minutes
-            .build();
+        let cached_subscription_logs = Cache::new(10, base_dir.as_ref(), duration);
         Self {
             config,
             client,
@@ -40,26 +36,9 @@ impl BosLifeApi {
             cached_sub_logs: cached_subscription_logs,
         }
     }
-
-    /// sub_url 是订阅地址并且应该指定客户端
-    pub async fn get_raw_profile(&self, sub_url: Url, client: Client) -> color_eyre::Result<String> {
-        ServiceApi::get_raw_profile(self, sub_url, client).await
-    }
-
-    pub async fn get_raw_sub_url(&self, base_url: Url, client: Client) -> color_eyre::Result<Url> {
-        ServiceApi::get_raw_sub_url(self, base_url, client).await
-    }
-
-    pub async fn reset_raw_sub_url(&self, base_url: Url) -> color_eyre::Result<Url> {
-        ServiceApi::reset_raw_sub_url(self, base_url).await
-    }
-
-    pub async fn get_sub_logs(&self, base_url: Url) -> color_eyre::Result<Vec<SubscriptionLog>> {
-        ServiceApi::get_sub_logs(self, base_url).await
-    }
 }
 
-impl ServiceApi for BosLifeApi {
+impl ServiceApiCommon for BosLifeApi {
     fn config(&self) -> &ServiceConfig {
         &self.config
     }
@@ -107,10 +86,7 @@ impl ServiceApi for BosLifeApi {
             .client
             .request(Method::GET, url)
             .header("Authorization", auth_token.as_ref())
-            // .header(
-            //     "Cookie",
-            //     "e0316cbece4f4d4db93a60aaefef0a7=1aff78b71253e6ec7150eed441f4ad51",
-            // )
+            .header("Cookie", &self.config.cookie)
             .build()?;
         Ok(request)
     }
@@ -127,7 +103,7 @@ impl ServiceApi for BosLifeApi {
         &self.cached_raw_sub_url
     }
 
-    fn cached_sub_logs(&self) -> &MokaCache<String, Vec<SubscriptionLog>> {
+    fn cached_sub_logs(&self) -> &Cache<Url, SubscriptionLogs> {
         &self.cached_sub_logs
     }
 }

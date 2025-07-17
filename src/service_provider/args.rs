@@ -3,7 +3,7 @@ use clap::Args;
 use url::Url;
 
 #[derive(Debug, Args)]
-pub struct SubscriptionArgs {
+pub struct ServiceProviderArgs {
     /// 构造适用于不同客户端的订阅地址
     #[arg(value_enum)]
     pub client: Client,
@@ -31,11 +31,11 @@ pub struct SubscriptionArgs {
 
     /// 订阅更新的间隔时间，单位为秒
     /// 默认为 86400 秒（24 小时）
-    #[arg(short, long, default_value_t = 86400)]
-    pub interval: u64,
+    #[arg(short, long)]
+    pub interval: Option<u64>,
 
     /// 是否严格模式
     /// 如果开启，订阅转换器将严格按照配置进行转换
-    #[arg(short, long, default_value_t = true)]
-    pub strict: bool,
+    #[arg(long)]
+    pub strict: Option<bool>,
 }

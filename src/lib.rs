@@ -8,7 +8,6 @@ use tracing_subscriber::util::SubscriberInitExt;
 pub mod error;
 pub mod region;
 pub mod encrypt;
-pub mod config;
 pub mod router;
 pub mod install_service;
 pub mod service_provider;
@@ -16,6 +15,7 @@ pub mod client;
 pub mod cache;
 pub mod url_builder;
 pub mod core;
+pub mod convertor_config;
 
 static INITIALIZED_BACKTRACE: Once = Once::new();
 static INITIALIZED_LOG: Once = Once::new();

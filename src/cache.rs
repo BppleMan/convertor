@@ -86,7 +86,7 @@ where
     }
 
     async fn find_valid_cache_file(&self, key: &CacheKey<K>, now_ts: u64) -> Result<Option<PathBuf>, Report> {
-        use tokio_stream::{wrappers::ReadDirStream, StreamExt};
+        use tokio_stream::{StreamExt, wrappers::ReadDirStream};
 
         let target_dir = self.cache_dir.join(key.prefix_path());
         let hash_prefix = key.short_hash();
@@ -157,14 +157,14 @@ where
 pub struct CacheKey<H: Hash + Eq + Clone + Display + Send + Sync + 'static> {
     pub prefix: String,
     pub hash: H,
-    pub client: Client,
+    pub client: Option<Client>,
 }
 
 impl<H> CacheKey<H>
 where
     H: Hash + Eq + Clone + Display + Send + Sync + 'static,
 {
-    pub fn new(prefix: impl AsRef<str>, hash: H, client: Client) -> Self {
+    pub fn new(prefix: impl AsRef<str>, hash: H, client: Option<Client>) -> Self {
         Self {
             prefix: prefix.as_ref().to_owned(),
             hash,
@@ -181,7 +181,11 @@ where
     }
 
     pub fn prefix_path(&self) -> PathBuf {
-        PathBuf::from(&self.prefix).join(self.client.as_str())
+        let mut prefix_path = PathBuf::from(&self.prefix);
+        if let Some(client) = &self.client {
+            prefix_path = prefix_path.join(client.as_str())
+        };
+        prefix_path
     }
 
     /// 返回相对路径（不含 cache_dir）：<prefix>/<client>/<short_hash>__<expires>.txt
@@ -201,6 +205,10 @@ where
     H: Hash + Eq + Clone + Display + Send + Sync + 'static,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}::{}::{}", self.prefix, self.client, self.hash)
+        write!(f, "{}", self.prefix)?;
+        if let Some(client) = &self.client {
+            write!(f, "::{}", client.as_str())?;
+        }
+        write!(f, "::{}", self.hash)
     }
 }

@@ -1,7 +1,7 @@
 use crate::error::AppError;
 use crate::router::AppState;
 use crate::router::query::SubLogQuery;
-use crate::service_provider::subscription_log::SubscriptionLog;
+use crate::service_provider::api::subscription_log::SubscriptionLog;
 use axum::Json;
 use axum::extract::{RawQuery, State};
 use color_eyre::eyre::{OptionExt, eyre};
@@ -16,13 +16,13 @@ pub async fn subscription_logs(
     if sub_log_query.secret != state.config.secret {
         return Err(AppError::Unauthorized("Invalid secret".to_string()));
     }
-    let mut logs = state
-        .api
-        .get_sub_logs(state.config.service_config.base_url.clone())
-        .await?;
-    if let (Some(current), Some(size)) = (sub_log_query.page_current.take(), sub_log_query.page_size.take()) {
+    let logs = state.api.get_sub_logs().await?;
+    let logs = if let (Some(current), Some(size)) = (sub_log_query.page_current.take(), sub_log_query.page_size.take())
+    {
         let start = (current - 1) * size;
-        logs = logs.into_iter().skip(start).take(size).collect();
-    }
+        logs.0.into_iter().skip(start).take(size).collect()
+    } else {
+        logs.0
+    };
     Ok(Json(logs))
 }

@@ -1,8 +1,9 @@
 use crate::server_test::ServerContext;
 use axum::Router;
 use axum::routing::get;
+use color_eyre::eyre::eyre;
 use convertor::client::Client;
-use convertor::config::convertor_config::ConvertorConfig;
+use convertor::convertor_config::ConvertorConfig;
 use convertor::core::profile::policy::Policy;
 use convertor::core::profile::rule::{Rule, RuleType};
 use convertor::core::renderer::Renderer;
@@ -11,8 +12,8 @@ use convertor::core::renderer::surge_renderer::SurgeRenderer;
 use convertor::init_backtrace;
 use convertor::router::subscription_router::subscription_logs;
 use convertor::router::{AppState, profile, rule_provider};
-use convertor::service_provider::subscription_api::boslife_api::BosLifeApi;
-use convertor::service_provider::subscription_config::ServiceConfig;
+use convertor::service_provider::api::ServiceApi;
+use convertor::service_provider::config::ServiceConfig;
 use httpmock::Method::{GET, POST};
 use httpmock::MockServer;
 use include_dir::{Dir, include_dir};
@@ -52,10 +53,10 @@ pub async fn start_server_with_config(
     let mut config = config
         .map(Ok)
         .unwrap_or_else(|| ConvertorConfig::search(&base_dir, Option::<&str>::None))?;
-    let mock_server = start_mock_service_server(client, &config.service_config).await?;
-    config.service_config.base_url = Url::parse(&mock_server.base_url())?;
+    let mock_server = start_mock_service_server(client, &mut config.service_config).await?;
+    config.service_config.api_host = Url::parse(&mock_server.base_url())?;
 
-    let api = BosLifeApi::new(&base_dir, reqwest::Client::new(), config.service_config.clone());
+    let api = ServiceApi::get_service_provider_api(config.service_config.clone(), &base_dir, reqwest::Client::new());
     let app_state = Arc::new(AppState::new(config, api));
     let app: Router = Router::new()
         .route("/profile", get(profile))
@@ -75,14 +76,18 @@ pub async fn start_server(client: Client) -> color_eyre::Result<ServerContext> {
     start_server_with_config(client, None).await
 }
 
-pub async fn start_mock_service_server(client: Client, config: &ServiceConfig) -> color_eyre::Result<MockServer> {
+pub async fn start_mock_service_server(client: Client, config: &mut ServiceConfig) -> color_eyre::Result<MockServer> {
     let _base_dir = init_test();
 
     let mock_server = MockServer::start_async().await;
+    config
+        .raw_sub_url
+        .set_port(Some(mock_server.port()))
+        .map_err(|_| eyre!("无法设置 mock server 端口"))?;
     mock_server
         .mock_async(|when, then| {
             when.method(POST)
-                .path(format!("{}{}", config.prefix_path, config.login_api.api_path));
+                .path(format!("{}{}", config.api_prefix, config.login_api.api_path));
             let body = serde_json::json!({
                 "data": {
                     "auth_data": "mock_auth_token"
@@ -94,7 +99,7 @@ pub async fn start_mock_service_server(client: Client, config: &ServiceConfig) -
         })
         .await;
 
-    let get_subscription_api_path = format!("{}{}", config.prefix_path, config.get_sub_api.api_path);
+    let get_subscription_api_path = format!("{}{}", config.api_prefix, config.get_sub_api.api_path);
     // 将订阅地址导航至 mock server 的 /subscription 路径
     mock_server
         .mock_async(|when, then| {

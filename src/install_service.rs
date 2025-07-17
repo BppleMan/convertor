@@ -1,10 +1,11 @@
 use crate::client::Client;
-use crate::config::convertor_config::ConvertorConfig;
+use crate::convertor_config::ConvertorConfig;
 use crate::core::profile::clash_profile::ClashProfile;
 use crate::core::profile::profile::Profile;
 use crate::core::renderer::Renderer;
 use crate::core::renderer::clash_renderer::ClashRenderer;
-use crate::service_provider::subscription_api::boslife_api::BosLifeApi;
+use crate::service_provider::api::ServiceApi;
+use crate::service_provider::api::common::ServiceApiCommon;
 use clap::ValueEnum;
 use color_eyre::eyre::{WrapErr, eyre};
 use flate2::bufread::GzDecoder;
@@ -50,16 +51,16 @@ pub struct Installer {
     pub name: ServiceName,
     pub base_dir: PathBuf,
     pub config: ConvertorConfig,
-    pub service_api: BosLifeApi,
+    pub api: ServiceApi,
 }
 
 impl Installer {
-    pub fn new(name: ServiceName, base_dir: PathBuf, config: ConvertorConfig, service_api: BosLifeApi) -> Self {
+    pub fn new(name: ServiceName, base_dir: PathBuf, config: ConvertorConfig, api: ServiceApi) -> Self {
         Installer {
             name,
             base_dir,
             config,
-            service_api,
+            api,
         }
     }
 
@@ -98,8 +99,8 @@ impl Installer {
         let version_txt_url = Url::parse(&format!("{}/version.txt", latest_url))?;
 
         let http_response = self
-            .service_api
-            .client
+            .api
+            .client()
             .request(Method::GET, version_txt_url)
             .send()
             .await?
@@ -118,8 +119,8 @@ impl Installer {
             println!("正在下载 {} ...", &compressed_name);
             let download_url = format!("{}/{}", latest_url, compressed_name);
             let http_response = self
-                .service_api
-                .client
+                .api
+                .client()
                 .request(Method::GET, &download_url)
                 .send()
                 .await?
@@ -205,15 +206,8 @@ impl Installer {
         }
 
         println!("正在生成 mihomo 配置文件: {}", config_path.display());
-        let raw_sub_url = self
-            .service_api
-            .get_raw_sub_url(self.config.service_config.base_url.clone(), Client::Clash)
-            .await?;
-        let url_builder = self.config.create_url_builder(raw_sub_url)?;
-        let clash_profile_content = self
-            .service_api
-            .get_raw_profile(url_builder.build_subscription_url(Client::Clash)?, Client::Clash)
-            .await?;
+        let url_builder = self.config.create_url_builder()?;
+        let clash_profile_content = self.api.get_raw_profile(Client::Clash).await?;
         let profile = ClashProfile::parse(clash_profile_content)?;
 
         let mut template = ClashProfile::template()?;

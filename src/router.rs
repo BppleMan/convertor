@@ -1,11 +1,11 @@
 use crate::client::Client;
-use crate::config::convertor_config::ConvertorConfig;
+use crate::convertor_config::ConvertorConfig;
 use crate::core::profile::clash_profile::ClashProfile;
 use crate::core::profile::surge_profile::SurgeProfile;
 use crate::error::AppError;
 use crate::router::query::ProfileQuery;
 use crate::router::subscription_router::subscription_logs;
-use crate::service_provider::subscription_api::boslife_api::BosLifeApi;
+use crate::service_provider::api::ServiceApi;
 use crate::shutdown_signal;
 use crate::url_builder::UrlBuilder;
 use axum::Router;
@@ -29,13 +29,13 @@ pub mod subscription_router;
 
 pub struct AppState {
     pub config: ConvertorConfig,
-    pub api: BosLifeApi,
+    pub api: ServiceApi,
     pub surge_cache: Cache<String, SurgeProfile>,
     pub clash_cache: Cache<String, ClashProfile>,
 }
 
 impl AppState {
-    pub fn new(config: ConvertorConfig, api: BosLifeApi) -> Self {
+    pub fn new(config: ConvertorConfig, api: ServiceApi) -> Self {
         let surge_cache = Cache::builder()
             .max_capacity(100)
             .time_to_live(std::time::Duration::from_secs(60 * 60))
@@ -55,8 +55,8 @@ impl AppState {
 
 pub async fn start_server(
     listen_addr: SocketAddrV4,
-    convertor_config: ConvertorConfig,
-    subscription_api: BosLifeApi,
+    config: ConvertorConfig,
+    api: ServiceApi,
     base_dir: impl AsRef<Path>,
 ) -> Result<()> {
     info!("base_dir: {}", base_dir.as_ref().display());
@@ -65,7 +65,7 @@ pub async fn start_server(
     info!("服务启动，使用 Ctrl+C 或 SIGTERM 关闭服务");
     let listener = tokio::net::TcpListener::bind(listen_addr).await?;
 
-    let app_state = AppState::new(convertor_config, subscription_api);
+    let app_state = AppState::new(config, api);
     let app = router(app_state);
     axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
         .with_graceful_shutdown(shutdown_signal())
@@ -99,11 +99,7 @@ pub async fn profile(State(state): State<Arc<AppState>>, RawQuery(query): RawQue
         .ok_or_else(|| eyre!("查询参数不能为空"))?
         .wrap_err("解析查询字符串失败")?;
     let url_builder = UrlBuilder::decode_from_query(&profile_query, &state.config.secret)?;
-    let raw_subscription_url = url_builder.build_subscription_url(profile_query.client)?;
-    let raw_profile = state
-        .api
-        .get_raw_profile(raw_subscription_url, profile_query.client)
-        .await?;
+    let raw_profile = state.api.get_raw_profile(profile_query.client).await?;
     let profile = match profile_query.client {
         Client::Surge => surge_router::profile_impl(state, url_builder, raw_profile).await,
         Client::Clash => clash_router::profile_impl(state, url_builder, raw_profile).await,
@@ -118,11 +114,7 @@ pub async fn rule_provider(State(state): State<Arc<AppState>>, RawQuery(query): 
         .ok_or_else(|| eyre!("查询参数不能为空"))?
         .wrap_err("解析查询字符串失败")?;
     let url_builder = UrlBuilder::decode_from_query(&profile_query, &state.config.secret)?;
-    let raw_subscription_url = url_builder.build_subscription_url(profile_query.client)?;
-    let raw_profile = state
-        .api
-        .get_raw_profile(raw_subscription_url, profile_query.client)
-        .await?;
+    let raw_profile = state.api.get_raw_profile(profile_query.client).await?;
     match (profile_query.client, profile_query.policy) {
         (Client::Surge, Some(policy)) => {
             surge_router::rule_provider_impl(state, url_builder, raw_profile, policy.into()).await

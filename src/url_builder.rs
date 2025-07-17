@@ -139,7 +139,7 @@ impl UrlBuilder {
     }
 
     /// 用于获取机场订阅的 URL
-    pub fn build_subscription_url(&self, client: Client) -> color_eyre::Result<Url> {
+    pub fn build_raw_sub_url(&self, client: Client) -> color_eyre::Result<Url> {
         let mut url = self.raw_sub_url.clone();
         // BosLife 的字段是 `flag` 不可改为client
         url.query_pairs_mut().append_pair("flag", client.as_str());
