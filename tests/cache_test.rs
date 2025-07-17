@@ -10,7 +10,7 @@ async fn test_cache_file_roundtrip() {
     let key = CacheKey {
         prefix: "unit_test".to_string(),
         hash: "mykey".to_string(),
-        client: Client::Surge,
+        client: Some(Client::Surge),
     };
 
     let tmp_dir = tempdir().unwrap();

@@ -16,7 +16,7 @@ pub fn test_url_builder() -> color_eyre::Result<()> {
     let url_builder = UrlBuilder::new(server.clone(), secret, raw_sub_url.clone(), 86400, true)?;
     let encoded_raw_sub_url = url_builder.encode_encrypted_raw_sub_url();
 
-    let raw_sub_url = url_builder.build_subscription_url(Client::Surge)?;
+    let raw_sub_url = url_builder.build_raw_sub_url(Client::Surge)?;
     pretty_assertions::assert_str_eq!(
         "https://example.com/subscription?token=12345&flag=surge",
         raw_sub_url.as_str()

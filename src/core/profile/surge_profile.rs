@@ -1,5 +1,4 @@
 use crate::client::Client;
-use crate::config::surge_config::SurgeConfig;
 use crate::core::parser::surge_parser::SurgeParser;
 use crate::core::profile::policy::Policy;
 use crate::core::profile::profile::Profile;
@@ -10,6 +9,7 @@ use crate::core::renderer::Renderer;
 use crate::core::renderer::surge_renderer::SurgeRenderer;
 use crate::core::result::ParseResult;
 use crate::url_builder::UrlBuilder;
+use reqwest::IntoUrl;
 use std::collections::HashMap;
 use tracing::instrument;
 
@@ -95,7 +95,11 @@ impl SurgeProfile {
     #[instrument(skip_all)]
     fn replace_header(&mut self, url_builder: &UrlBuilder) -> ParseResult<()> {
         let url = url_builder.build_convertor_url(Client::Surge)?;
-        self.header = SurgeConfig::build_managed_config_header(url, url_builder.interval, url_builder.strict);
+        self.header = Self::build_managed_config_header(url, url_builder.interval, url_builder.strict);
         Ok(())
+    }
+
+    pub fn build_managed_config_header(url: impl IntoUrl, interval: u64, strict: bool) -> String {
+        format!("#!MANAGED-CONFIG {} interval={interval} strict={strict}", url.as_str())
     }
 }

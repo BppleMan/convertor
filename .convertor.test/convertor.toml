@@ -4,8 +4,12 @@ interval = 86400
 strict = true
 
 [service_config]
-base_url = "https://www.blnew.com"
-prefix_path = "/proxy/"
+service_provider = "BosLife"
+raw_sub_url = "http://127.0.0.1:8001/subscription?token=bppleman"
+auth_token = ""
+cookie = ""
+api_host = "https://www.blnew.com"
+api_prefix = "/proxy/"
 
 [service_config.credential]
 username = "bppleman"
