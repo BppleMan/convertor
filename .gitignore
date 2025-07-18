@@ -2,8 +2,9 @@
 .DS_Store
 /target
 **/logs
+**/config.toml
 **/convertor.toml
 **/.convertor.*/
-!.convertor.bench
-!.convertor.test
-**/config.toml
+**/.convertor/
+!convertor-core/.convertor.bench
+!convertor-server/.convertor
