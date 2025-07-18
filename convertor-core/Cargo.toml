@@ -1,0 +1,55 @@
+[package]
+name = "convertor-core"
+description.workspace = true
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+# async runtime
+tokio = { workspace = true, features = ["fs", "rt-multi-thread", "macros"] }
+tokio-stream.workspace = true
+
+# error/result
+thiserror.workspace = true
+color-eyre.workspace = true
+console.workspace = true
+
+# tracing
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tracing-appender.workspace = true
+
+# serialization
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+toml.workspace = true
+
+# encoding/decoding
+blake3.workspace = true
+base64.workspace = true
+percent-encoding.workspace = true
+
+clap = { workspace = true, features = ["derive"] }
+reqwest.workspace = true
+url.workspace = true
+regex.workspace = true
+indexmap.workspace = true
+chacha20poly1305.workspace = true
+moka.workspace = true
+chrono.workspace = true
+jsonpath_lib.workspace = true
+
+tracing-span-tree = { workspace = true, optional = true }
+tracing-profile = { workspace = true, optional = true }
+
+[dev-dependencies]
+pretty_assertions.workspace = true
+tempfile.workspace = true
+
+
+[features]
+bench = ["tracing-span-tree", "tracing-profile"]
