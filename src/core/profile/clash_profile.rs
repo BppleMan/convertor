@@ -33,7 +33,8 @@ pub struct ClashProfile {
     pub external_controller: String,
     #[serde(rename = "external-ui", default)]
     pub external_ui: String,
-    pub secret: String,
+    #[serde(default)]
+    pub secret: Option<String>,
     pub proxies: Vec<Proxy>,
     #[serde(rename = "proxy-groups")]
     pub proxy_groups: Vec<ProxyGroup>,
@@ -85,15 +86,7 @@ impl Profile for ClashProfile {
     }
 
     fn parse(content: String) -> ParseResult<Self::PROFILE> {
-        Ok(ClashParser::parse(content)?)
-    }
-
-    fn merge(&mut self, profile: Self::PROFILE, secret: impl AsRef<str>) -> ParseResult<()> {
-        self.proxies = profile.proxies;
-        self.proxy_groups = profile.proxy_groups;
-        self.rules = profile.rules;
-        self.secret = secret.as_ref().to_string();
-        Ok(())
+        ClashParser::parse(content)
     }
 
     fn optimize(&mut self, url_builder: &UrlBuilder) -> ParseResult<()> {
@@ -116,116 +109,18 @@ impl Profile for ClashProfile {
 impl ClashProfile {
     #[instrument(skip_all)]
     pub fn parse(content: String) -> ParseResult<Self> {
-        Ok(ClashParser::parse(content)?)
+        ClashParser::parse(content)
     }
 
     #[instrument(skip_all)]
     pub fn template() -> ParseResult<Self> {
-        Ok(ClashParser::parse(TEMPLATE_STR)?)
+        ClashParser::parse(TEMPLATE_STR)
     }
 
-    // fn optimize_proxies(&mut self) {
-    //     let (region_map, infos) = group_by_region(&self.proxies);
-    //     // 一个包含了所有地区组的大型代理组
-    //     let region_list = region_map.keys().map(|r| r.policy_name()).collect::<Vec<_>>();
-    //     let policies = extract_policies(&self.rules);
-    //     let policy_groups = policies
-    //         .iter()
-    //         .map(|policy| {
-    //             let name = policy.name.clone();
-    //             ProxyGroup::new(name, ProxyGroupType::Select, region_list.clone())
-    //         })
-    //         .collect::<Vec<_>>();
-    //     let subscription_info = ProxyGroup::new(
-    //         "Subscription Info".to_string(),
-    //         ProxyGroupType::Select,
-    //         infos.into_iter().map(|p| p.name.to_string()).collect::<Vec<_>>(),
-    //     );
-    //     // 每个地区的地区代理组
-    //     let region_groups = region_map
-    //         .into_iter()
-    //         .map(|(region, proxies)| {
-    //             let name = format!("{} {}", region.icon, region.cn);
-    //             ProxyGroup::new(
-    //                 name,
-    //                 ProxyGroupType::UrlTest,
-    //                 proxies.into_iter().map(|p| p.name.to_string()).collect::<Vec<_>>(),
-    //             )
-    //         })
-    //         .collect::<Vec<_>>();
-    //     self.proxy_groups.clear();
-    //     self.proxy_groups.extend(policy_groups);
-    //     self.proxy_groups.push(subscription_info);
-    //     self.proxy_groups.extend(region_groups);
-    // }
-    //
-    // fn optimize_rules(&mut self, sub_host: impl AsRef<str>, url_builder: &UrlBuilder) -> Result<()> {
-    //     let mut retain = vec![];
-    //     let policy_set = self
-    //         .rules
-    //         .drain(..)
-    //         .filter_map(|rule| {
-    //             if matches!(rule.rule_type, RuleType::GeoIP | RuleType::Final | RuleType::Match) || rule.value.is_none()
-    //             {
-    //                 retain.push(rule);
-    //                 return None;
-    //             }
-    //             let value = rule.value.as_ref()?;
-    //             let policy = if value.contains(sub_host.as_ref()) {
-    //                 Policy::subscription_policy()
-    //             } else {
-    //                 rule.policy
-    //             };
-    //             Some(policy)
-    //         })
-    //         .collect::<HashSet<_>>();
-    //
-    //     let mut policy_list = policy_set.into_iter().collect::<Vec<_>>();
-    //     policy_list.sort();
-    //
-    //     let mut rules = policy_list
-    //         .iter()
-    //         .map(Rule::clash_rule_provider)
-    //         .collect::<Result<Vec<_>>>()?;
-    //     rules.extend(retain);
-    //     self.rules.extend(rules);
-    //
-    //     self.rule_providers = policy_list
-    //         .into_iter()
-    //         .filter_map(|policy| {
-    //             let Ok(url) = url_builder.build_rule_provider_url(Client::Clash, &policy) else {
-    //                 warn!("无法构建 Rule Provider URL, 可能是订阅 URL 错误");
-    //                 return None;
-    //             };
-    //             let provider_name = ClashRenderer::render_provider_name_from_policy(&policy).ok()?;
-    //             Some((provider_name.clone(), RuleProvider::new(url, provider_name)))
-    //         })
-    //         .collect::<Vec<(_, _)>>();
-    //
-    //     Ok(())
-    // }
-    //
-    // pub fn rules_for_provider(&self, policy: Policy, sub_host: impl AsRef<str>) -> Result<Vec<Rule>> {
-    //     let rules = self
-    //         .rules
-    //         .iter()
-    //         .filter(|rule| {
-    //             if policy == Policy::subscription_policy() {
-    //                 // Subscription 策略只包括机场订阅链接
-    //                 rule.value.as_ref().map(|v| v.contains(sub_host.as_ref())) == Some(true)
-    //             } else if !matches!(rule.rule_type, RuleType::Final | RuleType::GeoIP | RuleType::Match) {
-    //                 // 对于其他策略，检查规则的 policies 是否匹配，但不能是 Final 或 Match 类型
-    //                 rule.policy == policy && rule.value.as_ref().map(|v| v.contains(sub_host.as_ref())) != Some(true)
-    //             } else {
-    //                 false
-    //             }
-    //         })
-    //         .map(|rule| {
-    //             let mut rule = rule.clone();
-    //             rule.policy.is_subscription = true;
-    //             rule
-    //         })
-    //         .collect::<Vec<_>>();
-    //     Ok(rules)
-    // }
+    pub fn merge(&mut self, profile: ClashProfile) -> ParseResult<()> {
+        self.proxies = profile.proxies;
+        self.proxy_groups = profile.proxy_groups;
+        self.rules = profile.rules;
+        Ok(())
+    }
 }

@@ -1,4 +1,4 @@
-use convertor::convertor_config::ConvertorConfig;
+use convertor::config::ConvertorConfig;
 use convertor::service_provider::api::ServiceApi;
 use convertor::{init_backtrace, init_base_dir};
 

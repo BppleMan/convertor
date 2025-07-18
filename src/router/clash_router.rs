@@ -50,7 +50,7 @@ async fn try_get_profile(state: Arc<AppState>, url_builder: UrlBuilder, raw_prof
         .try_get_with(url_builder.clone(), async {
             let profile = ClashProfile::parse(raw_profile)?;
             let mut template = ClashProfile::template()?;
-            template.merge(profile, &state.config.secret)?;
+            template.merge(profile)?;
             template.optimize(&url_builder).map_err(Arc::new)?;
             Ok::<_, Arc<ParseError>>(template)
         })

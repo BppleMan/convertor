@@ -69,10 +69,6 @@ impl Profile for SurgeProfile {
         SurgeParser::parse_profile(content)
     }
 
-    fn merge(&mut self, _: Self::PROFILE, _: impl AsRef<str>) -> ParseResult<()> {
-        Ok(())
-    }
-
     #[instrument(skip_all)]
     fn optimize(&mut self, url_builder: &UrlBuilder) -> ParseResult<()> {
         self.replace_header(url_builder)?;

@@ -25,19 +25,19 @@ impl Renderer for ClashRenderer {
 
         let proxies = Self::render_proxies(&profile.proxies)?;
         writeln!(output, "proxies:")?;
-        writeln!(output, "{}", proxies)?;
+        writeln!(output, "{proxies}")?;
 
         let proxy_groups = Self::render_proxy_groups(&profile.proxy_groups)?;
         writeln!(output, "proxy-groups:")?;
-        writeln!(output, "{}", proxy_groups)?;
+        writeln!(output, "{proxy_groups}")?;
 
         let rule_providers = Self::render_rule_providers(&profile.rule_providers)?;
         writeln!(output, "rule-providers:")?;
-        writeln!(output, "{}", rule_providers)?;
+        writeln!(output, "{rule_providers}")?;
 
         let rules = Self::render_rules(&profile.rules)?;
         writeln!(output, "rules:")?;
-        writeln!(output, "{}", rules)?;
+        writeln!(output, "{rules}")?;
 
         Ok(output)
     }
@@ -53,7 +53,9 @@ impl Renderer for ClashRenderer {
         writeln!(output, "log-level: {}", profile.log_level)?;
         writeln!(output, r#"external-controller: {}"#, profile.external_controller)?;
         writeln!(output, r#"external-ui: {}"#, profile.external_ui)?;
-        writeln!(output, r#"secret: "{}""#, profile.secret)?;
+        if let Some(secret) = &profile.secret {
+            writeln!(output, r#"secret: "{secret}""#)?;
+        }
         Ok(output)
     }
 
@@ -66,19 +68,19 @@ impl Renderer for ClashRenderer {
         write!(output, r#", port: {}"#, &proxy.port)?;
         write!(output, r#", password: "{}""#, &proxy.password)?;
         if let Some(udp) = &proxy.udp {
-            write!(output, r#", udp: {}"#, udp)?;
+            write!(output, r#", udp: {udp}"#)?;
         }
         if let Some(tfo) = &proxy.tfo {
-            write!(output, r#", tfo: {}"#, tfo)?;
+            write!(output, r#", tfo: {tfo}"#)?;
         }
         if let Some(cipher) = &proxy.cipher {
-            write!(output, r#", cipher: {}"#, cipher)?;
+            write!(output, r#", cipher: {cipher}"#)?;
         }
         if let Some(sni) = &proxy.sni {
-            write!(output, r#", sni: "{}""#, sni)?;
+            write!(output, r#", sni: "{sni}""#)?;
         }
         if let Some(skip_cert_verify) = &proxy.skip_cert_verify {
-            write!(output, r#", skip-cert-verify: {}"#, skip_cert_verify)?;
+            write!(output, r#", skip-cert-verify: {skip_cert_verify}"#)?;
         }
         write!(output, " }}")?;
         Ok(output)
@@ -98,7 +100,7 @@ impl Renderer for ClashRenderer {
         let mut output = String::new();
         write!(output, "{}", rule.rule_type.as_str())?;
         if let Some(value) = &rule.value {
-            write!(output, ",{}", value)?;
+            write!(output, ",{value}")?;
         }
         write!(output, ",{}", Self::render_policy(&rule.policy)?)?;
         Ok(output)

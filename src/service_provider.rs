@@ -1,5 +1,5 @@
 use crate::client::Client;
-use crate::convertor_config::ConvertorConfig;
+use crate::config::ConvertorConfig;
 use crate::core::profile::clash_profile::ClashProfile;
 use crate::core::profile::extract_policies_for_rule_provider;
 use crate::core::profile::policy::Policy;
@@ -270,9 +270,15 @@ impl ClashConfig {
         secret: impl AsRef<str>,
     ) -> Result<()> {
         let mut template = ClashProfile::template()?;
-        template.merge(raw_profile, secret)?;
+        template.merge(raw_profile)?;
         template.optimize(url_builder)?;
+        template.secret = Some(secret.as_ref().to_string());
         let clash_config = ClashRenderer::render_profile(&template)?;
+        if !self.main_config_path.is_file() {
+            if let Some(parent) = self.main_config_path.parent() {
+                tokio::fs::create_dir_all(parent).await?;
+            }
+        }
         tokio::fs::write(&self.main_config_path, clash_config).await?;
         Ok(())
     }

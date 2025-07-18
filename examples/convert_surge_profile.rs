@@ -1,5 +1,5 @@
 use convertor::client::Client;
-use convertor::convertor_config::ConvertorConfig;
+use convertor::config::ConvertorConfig;
 use convertor::core::profile::profile::Profile;
 use convertor::core::profile::surge_profile::SurgeProfile;
 use convertor::core::renderer::Renderer;

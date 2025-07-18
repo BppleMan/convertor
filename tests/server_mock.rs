@@ -3,14 +3,14 @@ use axum::Router;
 use axum::routing::get;
 use color_eyre::eyre::eyre;
 use convertor::client::Client;
-use convertor::convertor_config::ConvertorConfig;
+use convertor::config::ConvertorConfig;
 use convertor::core::profile::policy::Policy;
 use convertor::core::profile::rule::{Rule, RuleType};
 use convertor::core::renderer::Renderer;
 use convertor::core::renderer::clash_renderer::ClashRenderer;
 use convertor::core::renderer::surge_renderer::SurgeRenderer;
 use convertor::init_backtrace;
-use convertor::router::subscription_router::subscription_logs;
+use convertor::router::surge_router::sub_logs;
 use convertor::router::{AppState, profile, rule_provider};
 use convertor::service_provider::api::ServiceApi;
 use convertor::service_provider::config::ServiceConfig;
@@ -61,7 +61,7 @@ pub async fn start_server_with_config(
     let app: Router = Router::new()
         .route("/profile", get(profile))
         .route("/rule-provider", get(rule_provider))
-        .route("/sub-logs", get(subscription_logs))
+        .route("/sub-logs", get(sub_logs))
         .with_state(app_state.clone());
 
     Ok(ServerContext {

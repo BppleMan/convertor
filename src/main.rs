@@ -3,7 +3,7 @@ mod cli;
 use crate::cli::{ConvertorCli, ConvertorCommand};
 use clap::Parser;
 use color_eyre::Result;
-use convertor::convertor_config::ConvertorConfig;
+use convertor::config::ConvertorConfig;
 use convertor::install_service::Installer;
 use convertor::router::start_server;
 use convertor::service_provider::SubscriptionService;

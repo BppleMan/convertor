@@ -15,7 +15,7 @@ pub mod client;
 pub mod cache;
 pub mod url_builder;
 pub mod core;
-pub mod convertor_config;
+pub mod config;
 
 static INITIALIZED_BACKTRACE: Once = Once::new();
 static INITIALIZED_LOG: Once = Once::new();

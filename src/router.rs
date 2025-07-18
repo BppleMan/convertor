@@ -1,10 +1,10 @@
 use crate::client::Client;
-use crate::convertor_config::ConvertorConfig;
+use crate::config::ConvertorConfig;
 use crate::core::profile::clash_profile::ClashProfile;
 use crate::core::profile::surge_profile::SurgeProfile;
 use crate::error::AppError;
 use crate::router::query::ProfileQuery;
-use crate::router::subscription_router::subscription_logs;
+use crate::router::surge_router::sub_logs;
 use crate::service_provider::api::ServiceApi;
 use crate::shutdown_signal;
 use crate::url_builder::UrlBuilder;
@@ -25,7 +25,6 @@ use tracing::{info, warn};
 pub mod query;
 pub mod clash_router;
 pub mod surge_router;
-pub mod subscription_router;
 
 pub struct AppState {
     pub config: ConvertorConfig,
@@ -76,7 +75,7 @@ pub fn router(app_state: AppState) -> Router {
     Router::new()
         .route("/profile", get(profile))
         .route("/rule-provider", get(rule_provider))
-        .route("/sub-logs", get(subscription_logs))
+        .route("/sub-logs", get(sub_logs))
         .with_state(Arc::new(app_state))
         .layer(
             TraceLayer::new_for_http()

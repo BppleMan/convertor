@@ -1,5 +1,5 @@
 use crate::client::Client;
-use crate::convertor_config::ConvertorConfig;
+use crate::config::ConvertorConfig;
 use crate::core::profile::clash_profile::ClashProfile;
 use crate::core::profile::profile::Profile;
 use crate::core::renderer::Renderer;
@@ -211,7 +211,7 @@ impl Installer {
         let profile = ClashProfile::parse(clash_profile_content)?;
 
         let mut template = ClashProfile::template()?;
-        template.merge(profile, &self.config.secret)?;
+        template.merge(profile)?;
         template.optimize(&url_builder)?;
         let config_content = ClashRenderer::render_profile(&template)?;
         tokio::fs::write(&config_path, &config_content).await?;
