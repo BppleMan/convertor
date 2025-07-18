@@ -32,7 +32,7 @@ pub(super) async fn rule_provider_impl(
 async fn try_get_profile(state: Arc<AppState>, url_builder: UrlBuilder, raw_profile: String) -> Result<SurgeProfile> {
     let profile = state
         .surge_cache
-        .try_get_with("surge".to_string(), async {
+        .try_get_with(url_builder.clone(), async {
             let mut profile = SurgeProfile::parse(raw_profile.clone()).map_err(Arc::new)?;
             profile.optimize(&url_builder).map_err(Arc::new)?;
             Ok::<_, Arc<ParseError>>(profile)
