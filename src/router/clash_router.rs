@@ -47,19 +47,13 @@ pub(in crate::router) async fn rule_provider_impl(
 async fn try_get_profile(state: Arc<AppState>, url_builder: UrlBuilder, raw_profile: String) -> Result<ClashProfile> {
     let profile = state
         .clash_cache
-        .try_get_with("clash".to_string(), async {
+        .try_get_with(url_builder.clone(), async {
             let profile = ClashProfile::parse(raw_profile)?;
-            Ok::<_, Arc<ParseError>>(profile)
-        })
-        .await?;
-    let template = state
-        .clash_cache
-        .try_get_with("template".to_string(), async {
             let mut template = ClashProfile::template()?;
             template.merge(profile, &state.config.secret)?;
             template.optimize(&url_builder).map_err(Arc::new)?;
             Ok::<_, Arc<ParseError>>(template)
         })
         .await?;
-    Ok(template)
+    Ok(profile)
 }

@@ -30,23 +30,21 @@ pub mod subscription_router;
 pub struct AppState {
     pub config: ConvertorConfig,
     pub api: ServiceApi,
-    pub surge_cache: Cache<String, SurgeProfile>,
-    pub clash_cache: Cache<String, ClashProfile>,
+    pub profile_cache: Cache<ProfileQuery, String>,
+    pub surge_cache: Cache<UrlBuilder, SurgeProfile>,
+    pub clash_cache: Cache<UrlBuilder, ClashProfile>,
 }
 
 impl AppState {
     pub fn new(config: ConvertorConfig, api: ServiceApi) -> Self {
-        let surge_cache = Cache::builder()
-            .max_capacity(100)
-            .time_to_live(std::time::Duration::from_secs(60 * 60))
-            .build();
-        let clash_cache = Cache::builder()
-            .max_capacity(100)
-            .time_to_live(std::time::Duration::from_secs(60 * 60))
-            .build();
+        let duration = std::time::Duration::from_secs(60 * 60); // 1 hour
+        let profile_cache = Cache::builder().max_capacity(100).time_to_live(duration).build();
+        let surge_cache = Cache::builder().max_capacity(100).time_to_live(duration).build();
+        let clash_cache = Cache::builder().max_capacity(100).time_to_live(duration).build();
         Self {
             config,
             api,
+            profile_cache,
             surge_cache,
             clash_cache,
         }
@@ -98,12 +96,20 @@ pub async fn profile(State(state): State<Arc<AppState>>, RawQuery(query): RawQue
         .map(ProfileQuery::decode_from_query_string)
         .ok_or_else(|| eyre!("查询参数不能为空"))?
         .wrap_err("解析查询字符串失败")?;
+    let client = profile_query.client;
     let url_builder = UrlBuilder::decode_from_query(&profile_query, &state.config.secret)?;
-    let raw_profile = state.api.get_raw_profile(profile_query.client).await?;
-    let profile = match profile_query.client {
-        Client::Surge => surge_router::profile_impl(state, url_builder, raw_profile).await,
-        Client::Clash => clash_router::profile_impl(state, url_builder, raw_profile).await,
-    }?;
+    let profile = state
+        .clone()
+        .profile_cache
+        .try_get_with(profile_query, async {
+            let raw_profile = state.api.get_raw_profile(client).await?;
+            let profile = match client {
+                Client::Surge => surge_router::profile_impl(state, url_builder, raw_profile).await,
+                Client::Clash => clash_router::profile_impl(state, url_builder, raw_profile).await,
+            }?;
+            Ok::<_, AppError>(profile)
+        })
+        .await?;
     Ok(profile)
 }
 

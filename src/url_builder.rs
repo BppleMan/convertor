@@ -6,7 +6,7 @@ use color_eyre::eyre::{WrapErr, eyre};
 use percent_encoding::{CONTROLS, PercentDecode, percent_decode_str, utf8_percent_encode};
 use reqwest::{IntoUrl, Url};
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct UrlBuilder {
     pub server: Url,
     pub raw_sub_url: Url,
@@ -94,7 +94,7 @@ impl UrlBuilder {
     pub fn sub_host(&self) -> color_eyre::Result<String> {
         self.raw_sub_url
             .host_str()
-            .and_then(|host| self.raw_sub_url.port().map(|port| format!("{}:{}", host, port)))
+            .and_then(|host| self.raw_sub_url.port().map(|port| format!("{host}:{port}")))
             .ok_or_else(|| eyre!("服务 URL 无效"))
     }
 

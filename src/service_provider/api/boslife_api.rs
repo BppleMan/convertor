@@ -7,6 +7,8 @@ use reqwest::Client as ReqwestClient;
 use reqwest::{Method, Request, Url};
 use std::path::Path;
 
+const USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36";
+
 #[derive(Clone)]
 pub struct BosLifeApi {
     pub config: ServiceConfig,
@@ -56,6 +58,7 @@ impl ServiceApiCommon for BosLifeApi {
                 ("email", self.config.credential.username.clone()),
                 ("password", self.config.credential.password.clone()),
             ])
+            .header("User-Agent", USER_AGENT)
             .build()?;
         Ok(request)
     }
@@ -66,6 +69,7 @@ impl ServiceApiCommon for BosLifeApi {
             .client
             .request(Method::GET, url)
             .header("Authorization", auth_token.as_ref())
+            .header("User-Agent", USER_AGENT)
             .build()?;
         Ok(request)
     }
@@ -76,6 +80,7 @@ impl ServiceApiCommon for BosLifeApi {
             .client
             .request(Method::POST, url)
             .header("Authorization", auth_token.as_ref())
+            .header("User-Agent", USER_AGENT)
             .build()?;
         Ok(request)
     }
@@ -87,6 +92,7 @@ impl ServiceApiCommon for BosLifeApi {
             .request(Method::GET, url)
             .header("Authorization", auth_token.as_ref())
             .header("Cookie", &self.config.cookie)
+            .header("User-Agent", USER_AGENT)
             .build()?;
         Ok(request)
     }
