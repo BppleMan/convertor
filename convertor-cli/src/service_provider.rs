@@ -5,10 +5,10 @@ use color_eyre::owo_colors::OwoColorize;
 use convertor_core::api::ServiceApi;
 use convertor_core::client::Client;
 use convertor_core::config::ConvertorConfig;
+use convertor_core::core::profile::Profile;
 use convertor_core::core::profile::clash_profile::ClashProfile;
 use convertor_core::core::profile::extract_policies_for_rule_provider;
 use convertor_core::core::profile::policy::Policy;
-use convertor_core::core::profile::profile::Profile;
 use convertor_core::core::profile::rule::Rule;
 use convertor_core::core::profile::surge_profile::SurgeProfile;
 use convertor_core::core::renderer::Renderer;
@@ -18,16 +18,13 @@ use convertor_core::core::renderer::surge_renderer::{
     SURGE_RULE_PROVIDER_COMMENT_END, SURGE_RULE_PROVIDER_COMMENT_START,
 };
 use convertor_core::core::result::ParseResult;
-use convertor_core::url::ConvertorUrl;
-use reqwest::IntoUrl;
-use serde::{Deserialize, Serialize};
+use convertor_core::url::{ConvertorUrl, Url};
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
-use url::Url;
 
 #[derive(Debug, Args)]
 pub struct ServiceProviderArgs {
-    /// 构造适用于不同客户端的订阅地址
+    /// 构造适用于不同客户端的订阅地址: [surge, clash]
     #[arg(value_enum)]
     pub client: Client,
 
@@ -166,7 +163,7 @@ impl SubscriptionService {
     }
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default)]
 struct SurgeConfig {
     #[allow(unused)]
     pub surge_dir: PathBuf,
@@ -246,10 +243,10 @@ impl SurgeConfig {
         Ok(())
     }
 
-    pub async fn update_surge_sub_logs_url(&self, sub_logs_url: impl IntoUrl) -> Result<()> {
+    pub async fn update_surge_sub_logs_url(&self, sub_logs_url: impl AsRef<str>) -> Result<()> {
         let content = tokio::fs::read_to_string(&self.sub_logs_path).await?;
         let mut lines = content.lines().map(Cow::Borrowed).collect::<Vec<_>>();
-        lines[0] = Cow::Owned(format!(r#"const sub_logs_url = "{}""#, sub_logs_url.as_str()));
+        lines[0] = Cow::Owned(format!(r#"const sub_logs_url = "{}""#, sub_logs_url.as_ref()));
         let content = lines.join("\n");
         tokio::fs::write(&self.sub_logs_path, &content).await?;
         Ok(())

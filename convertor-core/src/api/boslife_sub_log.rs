@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SubscriptionLog {
+pub struct BosLifeSubLog {
     pub user_id: u64,
     pub ip: String,
     pub location: String,
@@ -13,16 +13,16 @@ pub struct SubscriptionLog {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SubscriptionLogs(pub Vec<SubscriptionLog>);
+pub struct BosLifeSubLogs(pub Vec<BosLifeSubLog>);
 
-impl Display for SubscriptionLogs {
+impl Display for BosLifeSubLogs {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let string = serde_json::to_string_pretty(self).expect("JSON serialization failed");
         write!(f, "{}", string)
     }
 }
 
-impl From<String> for SubscriptionLogs {
+impl From<String> for BosLifeSubLogs {
     fn from(value: String) -> Self {
         serde_json::from_str(&value).expect("JSON deserialization failed")
     }

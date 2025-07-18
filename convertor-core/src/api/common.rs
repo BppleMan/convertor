@@ -1,4 +1,4 @@
-use crate::api::subscription_log::SubscriptionLogs;
+use crate::api::boslife_sub_log::BosLifeSubLogs;
 use crate::cache::{
     CACHED_AUTH_TOKEN_KEY, CACHED_PROFILE_KEY, CACHED_RAW_SUB_URL_KEY, CACHED_SUB_LOGS_KEY, Cache, CacheKey,
 };
@@ -28,7 +28,7 @@ pub(crate) trait ServiceApiCommon {
 
     fn cached_raw_sub_url(&self) -> &Cache<Url, String>;
 
-    fn cached_sub_logs(&self) -> &Cache<Url, SubscriptionLogs>;
+    fn cached_sub_logs(&self) -> &Cache<Url, BosLifeSubLogs>;
 
     async fn execute(&self, mut request: Request) -> color_eyre::Result<Response> {
         request
@@ -116,7 +116,7 @@ pub(crate) trait ServiceApiCommon {
         }
     }
 
-    async fn get_sub_logs(&self) -> color_eyre::Result<SubscriptionLogs> {
+    async fn get_sub_logs(&self) -> color_eyre::Result<BosLifeSubLogs> {
         let cache_key = CacheKey::new(CACHED_SUB_LOGS_KEY, self.config().api_host.clone(), None);
         self.cached_sub_logs()
             .try_get_with(cache_key, async {
@@ -125,7 +125,7 @@ pub(crate) trait ServiceApiCommon {
                 let response = self.execute(request).await?;
                 if response.status().is_success() {
                     let response = response.text().await?;
-                    let response: SubscriptionLogs =
+                    let response: BosLifeSubLogs =
                         jsonpath_lib::select_as(&response, &self.config().get_sub_logs_api.json_path)?.remove(0);
                     Ok(response)
                 } else {

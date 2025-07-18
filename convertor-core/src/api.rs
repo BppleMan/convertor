@@ -1,6 +1,6 @@
 use crate::api::boslife_api::BosLifeApi;
+use crate::api::boslife_sub_log::BosLifeSubLogs;
 use crate::api::common::ServiceApiCommon;
-use crate::api::subscription_log::SubscriptionLogs;
 use crate::cache::Cache;
 use crate::client::Client;
 use crate::config::{ServiceConfig, ServiceProvider};
@@ -10,7 +10,7 @@ use std::path::Path;
 use url::Url;
 
 mod boslife_api;
-pub mod subscription_log;
+pub mod boslife_sub_log;
 pub mod common;
 
 pub enum ServiceApi {
@@ -18,13 +18,9 @@ pub enum ServiceApi {
 }
 
 impl ServiceApi {
-    pub fn get_service_provider_api(
-        config: ServiceConfig,
-        base_dir: impl AsRef<Path>,
-        client: ReqwestClient,
-    ) -> ServiceApi {
+    pub fn get_service_provider_api(config: ServiceConfig, base_dir: impl AsRef<Path>) -> ServiceApi {
         match config.service_provider {
-            ServiceProvider::BosLife => ServiceApi::BosLife(BosLifeApi::new(base_dir, client, config)),
+            ServiceProvider::BosLife => ServiceApi::BosLife(BosLifeApi::new(base_dir, config)),
         }
     }
 
@@ -47,7 +43,7 @@ impl ServiceApi {
         ServiceApiCommon::reset_raw_sub_url(self).await
     }
 
-    pub async fn get_sub_logs(&self) -> color_eyre::Result<SubscriptionLogs> {
+    pub async fn get_sub_logs(&self) -> color_eyre::Result<BosLifeSubLogs> {
         ServiceApiCommon::get_sub_logs(self).await
     }
 }
@@ -107,7 +103,7 @@ impl ServiceApiCommon for ServiceApi {
         }
     }
 
-    fn cached_sub_logs(&self) -> &Cache<Url, SubscriptionLogs> {
+    fn cached_sub_logs(&self) -> &Cache<Url, BosLifeSubLogs> {
         match self {
             ServiceApi::BosLife(api) => api.cached_sub_logs(),
         }

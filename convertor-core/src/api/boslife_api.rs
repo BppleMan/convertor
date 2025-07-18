@@ -1,5 +1,5 @@
+use crate::api::boslife_sub_log::BosLifeSubLogs;
 use crate::api::common::ServiceApiCommon;
-use crate::api::subscription_log::SubscriptionLogs;
 use crate::cache::Cache;
 use crate::config::ServiceConfig;
 use moka::future::Cache as MokaCache;
@@ -16,12 +16,17 @@ pub struct BosLifeApi {
     pub cached_auth_token: MokaCache<String, String>,
     pub cached_sub_profile: Cache<Url, String>,
     pub cached_raw_sub_url: Cache<Url, String>,
-    pub cached_sub_logs: Cache<Url, SubscriptionLogs>,
+    pub cached_sub_logs: Cache<Url, BosLifeSubLogs>,
 }
 
 impl BosLifeApi {
-    pub fn new(base_dir: impl AsRef<Path>, client: ReqwestClient, config: ServiceConfig) -> Self {
-        let duration = std::time::Duration::from_secs(1 * 60 * 60); // 1 hour
+    pub fn new(base_dir: impl AsRef<Path>, config: ServiceConfig) -> Self {
+        let client = ReqwestClient::builder()
+            .cookie_store(true)
+            .use_rustls_tls()
+            .build()
+            .expect("Failed to create Reqwest client");
+        let duration = std::time::Duration::from_secs(60 * 60); // 1 hour
         let cached_file = Cache::new(10, base_dir.as_ref(), duration);
         let cached_string = MokaCache::builder()
             .max_capacity(10)
@@ -109,7 +114,7 @@ impl ServiceApiCommon for BosLifeApi {
         &self.cached_raw_sub_url
     }
 
-    fn cached_sub_logs(&self) -> &Cache<Url, SubscriptionLogs> {
+    fn cached_sub_logs(&self) -> &Cache<Url, BosLifeSubLogs> {
         &self.cached_sub_logs
     }
 }

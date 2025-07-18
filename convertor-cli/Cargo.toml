@@ -10,13 +10,17 @@ repository.workspace = true
 [dependencies]
 convertor-core = { path = "../convertor-core" }
 
-clap = { workspace = true, features = ["std", "derive"] }
-tokio = { workspace = true, features = ["fs", "rt-multi-thread", "macros"] }
-tokio-stream.workspace = true
-serde.workspace = true
-url.workspace = true
-color-eyre.workspace = true
-reqwest.workspace = true
-indicatif.workspace = true
-flate2.workspace = true
-inquire.workspace = true
+# async runtime
+tokio = { workspace = true, default-features = false, features = ["fs", "rt-multi-thread", "signal", "macros"] }
+tokio-stream = { workspace = true, default-features = false, features = ["fs"] }
+
+
+# cli
+clap = { workspace = true, default-features = false, features = ["std", "derive", "help"] }
+inquire = { workspace = true, default-features = false, features = ["console"] }
+indicatif = { workspace = true, default-features = false }
+
+# error/result
+color-eyre = { workspace = true, default-features = false, features = ["default"] }
+
+flate2 = { workspace = true, default-features = false, features = ["rust_backend"] }

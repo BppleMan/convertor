@@ -8,8 +8,7 @@ async fn main() -> color_eyre::Result<()> {
     init_backtrace();
 
     let config = ConvertorConfig::search(&base_dir, Option::<&str>::None)?;
-    let client = reqwest::Client::new();
-    let api = ServiceApi::get_service_provider_api(config.service_config, &base_dir, client);
+    let api = ServiceApi::get_service_provider_api(config.service_config, &base_dir);
 
     let logs = api.get_sub_logs().await?;
     println!("{logs:#?}");
