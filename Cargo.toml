@@ -26,7 +26,6 @@ tokio-stream = { version = "0.1.17", default-features = false, features = ["fs"]
 # error/result
 thiserror = { version = "2.0.12", default-features = false }
 color-eyre = { version = "0.6.5", default-features = false, features = ["default"] }
-console = { version = "0.16.0", default-features = false, features = ["ansi-parsing"] }
 
 # tracing
 tracing = { version = "0.1.41", default-features = false, features = ["attributes"] }
@@ -40,24 +39,29 @@ serde = { version = "1.0.219", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0.140", default-features = false }
 serde_yaml = { version = "0.9.31", default-features = false }
 toml = { version = "0.9.0", default-features = false, features = ["parse", "display", "serde"] }
+jsonpath_lib = { version = "0.3.0", default-features = false }
 
-# encoding/decoding
+# hasher/encoding/decoding
 blake3 = { version = "1.8.2", default-features = false }
 base64 = { version = "0.22.1", default-features = false }
 percent-encoding = { version = "2.3.1", default-features = false }
+chacha20poly1305 = { version = "0.10.1", default-features = false, features = ["getrandom", "alloc"] }
 
+# http client
 reqwest = { version = "0.12.22", default-features = false, features = ["json", "stream", "rustls-tls"] }
 url = { version = "2.5.4", default-features = false, features = ["serde"] }
-regex = { version = "1.11.1", default-features = false }
-indexmap = { version = "2.10.0", default-features = false, features = ["serde"] }
+
+# cli
 clap = { version = "4.5.40", default-features = false, features = ["std", "derive"] }
-chacha20poly1305 = { version = "0.10.1", default-features = false, features = ["getrandom", "alloc"] }
-jsonpath_lib = { version = "0.3.0", default-features = false }
-moka = { version = "0.12.10", default-features = false, features = ["future"] }
+console = { version = "0.16.0", default-features = false, features = ["ansi-parsing"] }
 inquire = { version = "0.7.5", default-features = false, features = ["console"] }
+indicatif = { version = "0.18.0", default-features = false }
+
+# other
+regex = { version = "1.11.1", default-features = false }
+moka = { version = "0.12.10", default-features = false, features = ["future"] }
 flate2 = { version = "1.1.2", default-features = false, features = ["rust_backend"] }
 chrono = { version = "0.4.41", default-features = false, features = ["clock"] }
-indicatif = { version = "0.18.0", default-features = false }
 
 # development dependencies
 httpmock = { version = "0.7.0", default-features = false, features = ["colored"] }
@@ -67,5 +71,12 @@ tempfile = { version = "3.20.0", default-features = false }
 pretty_assertions = { version = "1.4.1", default-features = false, features = ["std"] }
 include_dir = { version = "0.7.4", default-features = false }
 
-#[features]
-#bench = ["tracing-profile", "tracing-span-tree"]
+[profile.release]
+opt-level = "z"         # 极限体积优化（如需极致性能可改成3）
+lto = "fat"             # 最激进的链接时优化
+codegen-units = 1       # 单单元生成，最大化优化效果
+#panic = "abort"         # panic 直接 abort，减少依赖和体积
+strip = true            # 自动剥离所有符号表
+debug = false           # 不保留调试符号
+incremental = false     # 关闭增量编译，避免缓存不一致
+overflow-checks = false # 禁用溢出检查

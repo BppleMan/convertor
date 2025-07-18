@@ -1,7 +1,7 @@
 use crate::client::Client;
 use crate::core::parser::surge_parser::SurgeParser;
+use crate::core::profile::Profile;
 use crate::core::profile::policy::Policy;
-use crate::core::profile::profile::Profile;
 use crate::core::profile::proxy::Proxy;
 use crate::core::profile::proxy_group::ProxyGroup;
 use crate::core::profile::rule::{ProviderRule, Rule};

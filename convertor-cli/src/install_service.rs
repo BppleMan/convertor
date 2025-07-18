@@ -3,14 +3,15 @@ use color_eyre::eyre::{WrapErr, eyre};
 use convertor_core::api::ServiceApi;
 use convertor_core::client::Client;
 use convertor_core::config::ConvertorConfig;
+use convertor_core::core::profile::Profile;
 use convertor_core::core::profile::clash_profile::ClashProfile;
-use convertor_core::core::profile::profile::Profile;
 use convertor_core::core::renderer::Renderer;
 use convertor_core::core::renderer::clash_renderer::ClashRenderer;
+use convertor_core::url::Url;
+use convertor_core::{Method, StatusCode};
 use flate2::bufread::GzDecoder;
 use indicatif::{ProgressBar, ProgressStyle};
 use inquire::Confirm;
-use reqwest::{Method, StatusCode};
 use std::ffi::OsStr;
 use std::fmt::{Display, Formatter};
 use std::fs::{File, OpenOptions};
@@ -18,7 +19,6 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use tokio_stream::StreamExt;
-use url::Url;
 
 const SYSTEMD_DIR_STR: &str = "/etc/systemd/system";
 

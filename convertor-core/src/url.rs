@@ -7,7 +7,7 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::str::Utf8Error;
 use thiserror::Error;
-use url::Url;
+pub use url::Url;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ConvertorUrl {

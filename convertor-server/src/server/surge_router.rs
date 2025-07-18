@@ -4,10 +4,10 @@ use axum::extract::{RawQuery, State};
 use color_eyre::Result;
 use color_eyre::eyre::OptionExt;
 use color_eyre::eyre::eyre;
-use convertor_core::api::subscription_log::SubscriptionLog;
+use convertor_core::api::boslife_sub_log::BosLifeSubLog;
 use convertor_core::core::error::ParseError;
+use convertor_core::core::profile::Profile;
 use convertor_core::core::profile::policy::Policy;
-use convertor_core::core::profile::profile::Profile;
 use convertor_core::core::profile::surge_profile::SurgeProfile;
 use convertor_core::core::renderer::Renderer;
 use convertor_core::core::renderer::surge_renderer::SurgeRenderer;
@@ -50,7 +50,7 @@ async fn try_get_profile(state: Arc<AppState>, url: ConvertorUrl, raw_profile: S
 pub async fn sub_logs(
     State(state): State<Arc<AppState>>,
     RawQuery(query): RawQuery,
-) -> Result<Json<Vec<SubscriptionLog>>, AppError> {
+) -> Result<Json<Vec<BosLifeSubLog>>, AppError> {
     let query = query.as_ref().ok_or_eyre(eyre!("订阅记录必须传递参数"))?;
     let mut sub_log_query = SubLogQuery::decode_from_query_string(query, &state.config.secret)?;
     if sub_log_query.secret != state.config.secret {

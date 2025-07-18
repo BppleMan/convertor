@@ -7,13 +7,14 @@ use clap::Parser;
 use color_eyre::Report;
 use convertor_core::api::ServiceApi;
 use convertor_core::config::ConvertorConfig;
-use convertor_core::{init_backtrace, init_base_dir, init_log};
+use convertor_core::{init_backtrace, init_base_dir};
 
 #[derive(Debug, Parser)]
+#[allow(clippy::large_enum_variant)]
 pub enum ConvertorCli {
     /// 服务商订阅配置
     #[command(name = "sub")]
-    Subscription(Box<ServiceProviderArgs>),
+    Subscription(ServiceProviderArgs),
 
     /// 安装服务
     #[command(name = "install")]
@@ -28,17 +29,15 @@ pub enum ConvertorCli {
 async fn main() -> Result<(), Report> {
     let base_dir = init_base_dir();
     init_backtrace();
-    init_log(&base_dir);
 
     let cli = ConvertorCli::parse();
     let config = ConvertorConfig::search(&base_dir, None::<&str>)?;
-    let client = reqwest::Client::new();
-    let api = ServiceApi::get_service_provider_api(config.service_config.clone(), &base_dir, client);
+    let api = ServiceApi::get_service_provider_api(config.service_config.clone(), &base_dir);
 
     match cli {
         ConvertorCli::Subscription(args) => {
             let mut subscription_service = SubscriptionService { config, api };
-            subscription_service.execute(*args).await?;
+            subscription_service.execute(args).await?;
         }
         ConvertorCli::InstallService { name } => {
             let installer = Installer::new(name, base_dir, config, api);

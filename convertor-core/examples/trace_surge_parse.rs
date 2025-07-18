@@ -1,6 +1,6 @@
 use convertor_core::client::Client;
 use convertor_core::config::ConvertorConfig;
-use convertor_core::core::profile::profile::Profile;
+use convertor_core::core::profile::Profile;
 use convertor_core::core::profile::surge_profile::SurgeProfile;
 use convertor_core::init_backtrace;
 use std::path::Path;

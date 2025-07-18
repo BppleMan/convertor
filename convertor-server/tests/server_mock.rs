@@ -14,12 +14,12 @@ use convertor_core::core::renderer::Renderer;
 use convertor_core::core::renderer::clash_renderer::ClashRenderer;
 use convertor_core::core::renderer::surge_renderer::SurgeRenderer;
 use convertor_core::init_backtrace;
+use convertor_core::url::Url;
 use httpmock::Method::{GET, POST};
 use httpmock::MockServer;
 use include_dir::{Dir, include_dir};
 use std::path::PathBuf;
 use std::sync::{Arc, Once};
-use url::Url;
 
 pub struct ServerContext {
     pub app: Router,
@@ -57,7 +57,7 @@ pub async fn start_server_with_config(
     let mock_server = start_mock_service_server(client, &mut config.service_config).await?;
     config.service_config.api_host = Url::parse(&mock_server.base_url())?;
 
-    let api = ServiceApi::get_service_provider_api(config.service_config.clone(), &base_dir, reqwest::Client::new());
+    let api = ServiceApi::get_service_provider_api(config.service_config.clone(), &base_dir);
     let app_state = Arc::new(AppState::new(config, api));
     let app: Router = Router::new()
         .route("/profile", get(profile))
