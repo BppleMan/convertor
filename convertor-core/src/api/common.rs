@@ -2,8 +2,8 @@ use crate::api::boslife_sub_log::BosLifeSubLogs;
 use crate::cache::{
     CACHED_AUTH_TOKEN_KEY, CACHED_PROFILE_KEY, CACHED_RAW_SUB_URL_KEY, CACHED_SUB_LOGS_KEY, Cache, CacheKey,
 };
-use crate::client::Client;
 use crate::config::ServiceConfig;
+use crate::proxy_client::ProxyClient;
 use color_eyre::eyre::{Context, eyre};
 use moka::future::Cache as MokaCache;
 use reqwest::{Method, Request, Response};
@@ -37,7 +37,7 @@ pub(crate) trait ServiceApiCommon {
         Ok(self.client().execute(request).await?)
     }
 
-    async fn get_raw_profile(&self, client: Client) -> color_eyre::Result<String> {
+    async fn get_raw_profile(&self, client: ProxyClient) -> color_eyre::Result<String> {
         let raw_sub_url = self.config().build_raw_sub_url(client)?;
         let key = CacheKey::new(CACHED_PROFILE_KEY, raw_sub_url.clone(), Some(client));
         self.cached_profile()

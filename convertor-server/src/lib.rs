@@ -5,6 +5,7 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
 pub mod server;
+pub mod query;
 
 static INITIALIZED_LOG: Once = Once::new();
 

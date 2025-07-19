@@ -17,8 +17,8 @@ pub struct SurgeRenderer;
 impl Renderer for SurgeRenderer {
     type PROFILE = SurgeProfile;
 
-    fn client() -> crate::client::Client {
-        crate::client::Client::Surge
+    fn client() -> crate::proxy_client::ProxyClient {
+        crate::proxy_client::ProxyClient::Surge
     }
 
     fn render_profile(profile: &Self::PROFILE) -> RenderResult<String> {

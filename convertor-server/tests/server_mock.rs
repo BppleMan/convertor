@@ -6,7 +6,6 @@ use color_eyre::eyre::eyre;
 use convertor::server::surge_router::sub_logs;
 use convertor::server::{AppState, profile, rule_provider};
 use convertor_core::api::ServiceApi;
-use convertor_core::client::Client;
 use convertor_core::config::{ConvertorConfig, ServiceConfig};
 use convertor_core::core::profile::policy::Policy;
 use convertor_core::core::profile::rule::{Rule, RuleType};
@@ -14,6 +13,7 @@ use convertor_core::core::renderer::Renderer;
 use convertor_core::core::renderer::clash_renderer::ClashRenderer;
 use convertor_core::core::renderer::surge_renderer::SurgeRenderer;
 use convertor_core::init_backtrace;
+use convertor_core::proxy_client::ProxyClient;
 use convertor_core::url::Url;
 use httpmock::Method::{GET, POST};
 use httpmock::MockServer;
@@ -46,7 +46,7 @@ pub fn init_test() -> PathBuf {
 }
 
 pub async fn start_server_with_config(
-    client: Client,
+    client: ProxyClient,
     config: Option<ConvertorConfig>,
 ) -> color_eyre::Result<ServerContext> {
     let base_dir = init_test();
@@ -73,11 +73,14 @@ pub async fn start_server_with_config(
     })
 }
 
-pub async fn start_server(client: Client) -> color_eyre::Result<ServerContext> {
+pub async fn start_server(client: ProxyClient) -> color_eyre::Result<ServerContext> {
     start_server_with_config(client, None).await
 }
 
-pub async fn start_mock_service_server(client: Client, config: &mut ServiceConfig) -> color_eyre::Result<MockServer> {
+pub async fn start_mock_service_server(
+    client: ProxyClient,
+    config: &mut ServiceConfig,
+) -> color_eyre::Result<MockServer> {
     let _base_dir = init_test();
 
     let mock_server = MockServer::start_async().await;
@@ -132,7 +135,7 @@ pub async fn start_mock_service_server(client: Client, config: &mut ServiceConfi
     Ok(mock_server)
 }
 
-pub fn mock_profile(client: Client, mock_server: &MockServer) -> color_eyre::Result<String> {
+pub fn mock_profile(client: ProxyClient, mock_server: &MockServer) -> color_eyre::Result<String> {
     let rule = Rule {
         rule_type: RuleType::Domain,
         value: Some(mock_server.url("")),
@@ -141,7 +144,7 @@ pub fn mock_profile(client: Client, mock_server: &MockServer) -> color_eyre::Res
     };
     let content = get_included_str(client, "mock");
     match client {
-        Client::Surge => {
+        ProxyClient::Surge => {
             let mut lines = content.lines().collect::<Vec<_>>();
             let rule_line = SurgeRenderer::render_rule(&rule)?;
             if let Some(i) = lines.iter().position(|l| l.starts_with("[Rule]")) {
@@ -149,7 +152,7 @@ pub fn mock_profile(client: Client, mock_server: &MockServer) -> color_eyre::Res
             }
             Ok(lines.join("\n"))
         }
-        Client::Clash => {
+        ProxyClient::Clash => {
             let mut lines = content.lines().collect::<Vec<_>>();
             let rule_line = format!("    - {}", ClashRenderer::render_rule(&rule)?);
             if let Some(i) = lines.iter().position(|l| l.starts_with("rules:")) {
@@ -160,26 +163,26 @@ pub fn mock_profile(client: Client, mock_server: &MockServer) -> color_eyre::Res
     }
 }
 
-pub fn expect_profile(client: Client, encrypted_raw_sub_url: impl AsRef<str>) -> String {
+pub fn expect_profile(client: ProxyClient, encrypted_raw_sub_url: impl AsRef<str>) -> String {
     get_included_str(client, "profile").replace("{raw_sub_url}", encrypted_raw_sub_url.as_ref())
 }
 
-pub fn expect_rule_provider(client: Client, policy: &Policy) -> String {
+pub fn expect_rule_provider(client: ProxyClient, policy: &Policy) -> String {
     match client {
         // 统一用 ClashRenderer 渲染策略名称, 作为文件名更方便
-        Client::Surge => get_included_str(client, ClashRenderer::render_provider_name_for_policy(policy).unwrap()),
-        Client::Clash => get_included_str(client, ClashRenderer::render_provider_name_for_policy(policy).unwrap()),
+        ProxyClient::Surge => get_included_str(client, ClashRenderer::render_provider_name_for_policy(policy).unwrap()),
+        ProxyClient::Clash => get_included_str(client, ClashRenderer::render_provider_name_for_policy(policy).unwrap()),
     }
 }
 
-pub fn get_included_str(client: Client, file_name: impl AsRef<str>) -> String {
+pub fn get_included_str(client: ProxyClient, file_name: impl AsRef<str>) -> String {
     let ext = match client {
-        Client::Surge => "conf",
-        Client::Clash => "yaml",
+        ProxyClient::Surge => "conf",
+        ProxyClient::Clash => "yaml",
     };
     match client {
-        Client::Surge => SURGE_MOCK_DIR,
-        Client::Clash => CLASH_MOCK_DIR,
+        ProxyClient::Surge => SURGE_MOCK_DIR,
+        ProxyClient::Clash => CLASH_MOCK_DIR,
     }
     .get_file(format!("{}.{}", file_name.as_ref(), ext))
     .unwrap_or_else(|| panic!("无法找到文件: {}", file_name.as_ref()))

@@ -51,4 +51,8 @@ pretty_assertions = { workspace = true, default-features = false, features = ["s
 
 
 [features]
-bench = ["tracing-span-tree", "tracing-profile"]
+bench = [
+    "tracing-span-tree",
+    "tracing-profile",
+    "tokio/macros"
+]

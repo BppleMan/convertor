@@ -4,12 +4,11 @@ use std::sync::Once;
 pub use reqwest::{Method, StatusCode};
 
 pub mod encrypt;
-pub mod client;
+pub mod proxy_client;
 pub mod cache;
 pub mod core;
 pub mod config;
 pub mod url;
-pub mod router;
 pub mod api;
 
 pub fn init_base_dir() -> PathBuf {

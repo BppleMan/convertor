@@ -2,8 +2,8 @@ use crate::api::boslife_api::BosLifeApi;
 use crate::api::boslife_sub_log::BosLifeSubLogs;
 use crate::api::common::ServiceApiCommon;
 use crate::cache::Cache;
-use crate::client::Client;
 use crate::config::{ServiceConfig, ServiceProvider};
+use crate::proxy_client::ProxyClient;
 use moka::future::Cache as MokaCache;
 use reqwest::{Client as ReqwestClient, Request};
 use std::path::Path;
@@ -31,7 +31,7 @@ impl ServiceApi {
     }
 
     /// sub_url 是订阅地址并且应该指定客户端
-    pub async fn get_raw_profile(&self, client: Client) -> color_eyre::Result<String> {
+    pub async fn get_raw_profile(&self, client: ProxyClient) -> color_eyre::Result<String> {
         ServiceApiCommon::get_raw_profile(self, client).await
     }
 

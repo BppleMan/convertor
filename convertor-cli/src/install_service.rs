@@ -1,12 +1,12 @@
 use clap::ValueEnum;
 use color_eyre::eyre::{WrapErr, eyre};
 use convertor_core::api::ServiceApi;
-use convertor_core::client::Client;
 use convertor_core::config::ConvertorConfig;
 use convertor_core::core::profile::Profile;
 use convertor_core::core::profile::clash_profile::ClashProfile;
 use convertor_core::core::renderer::Renderer;
 use convertor_core::core::renderer::clash_renderer::ClashRenderer;
+use convertor_core::proxy_client::ProxyClient;
 use convertor_core::url::Url;
 use convertor_core::{Method, StatusCode};
 use flate2::bufread::GzDecoder;
@@ -205,8 +205,8 @@ impl Installer {
         }
 
         println!("正在生成 mihomo 配置文件: {}", config_path.display());
-        let convertor_url = self.config.create_convertor_url(Client::Clash)?;
-        let clash_profile_content = self.api.get_raw_profile(Client::Clash).await?;
+        let convertor_url = self.config.create_convertor_url(ProxyClient::Clash)?;
+        let clash_profile_content = self.api.get_raw_profile(ProxyClient::Clash).await?;
         let profile = ClashProfile::parse(clash_profile_content)?;
 
         let mut template = ClashProfile::template()?;

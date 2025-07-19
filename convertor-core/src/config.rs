@@ -1,4 +1,4 @@
-use crate::client::Client;
+use crate::proxy_client::ProxyClient;
 use crate::url::ConvertorUrl;
 use color_eyre::Report;
 use color_eyre::eyre::{WrapErr, eyre};
@@ -102,7 +102,7 @@ impl ConvertorConfig {
             .wrap_err("服务器地址无效")
     }
 
-    pub fn create_convertor_url(&self, client: Client) -> color_eyre::Result<ConvertorUrl> {
+    pub fn create_convertor_url(&self, client: ProxyClient) -> color_eyre::Result<ConvertorUrl> {
         Ok(ConvertorUrl::new(
             self.secret.clone(),
             client,
@@ -124,7 +124,7 @@ impl FromStr for ConvertorConfig {
 }
 
 impl ServiceConfig {
-    pub fn build_raw_sub_url(&self, client: Client) -> color_eyre::Result<Url> {
+    pub fn build_raw_sub_url(&self, client: ProxyClient) -> color_eyre::Result<Url> {
         let mut url = self.raw_sub_url.clone();
         // BosLife 的字段是 `flag` 不可改为client
         url.query_pairs_mut().append_pair("flag", client.as_str());

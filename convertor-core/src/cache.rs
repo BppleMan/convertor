@@ -1,4 +1,4 @@
-use crate::client::Client;
+use crate::proxy_client::ProxyClient;
 use blake3::Hasher;
 use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
 use color_eyre::Report;
@@ -157,14 +157,14 @@ where
 pub struct CacheKey<H: Hash + Eq + Clone + Display + Send + Sync + 'static> {
     pub prefix: String,
     pub hash: H,
-    pub client: Option<Client>,
+    pub client: Option<ProxyClient>,
 }
 
 impl<H> CacheKey<H>
 where
     H: Hash + Eq + Clone + Display + Send + Sync + 'static,
 {
-    pub fn new(prefix: impl AsRef<str>, hash: H, client: Option<Client>) -> Self {
+    pub fn new(prefix: impl AsRef<str>, hash: H, client: Option<ProxyClient>) -> Self {
         Self {
             prefix: prefix.as_ref().to_owned(),
             hash,
@@ -216,7 +216,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::client::Client;
+    use crate::proxy_client::ProxyClient;
     use tempfile::tempdir;
 
     #[tokio::test]
@@ -225,7 +225,7 @@ mod tests {
         let key = CacheKey {
             prefix: "unit_test".to_string(),
             hash: "mykey".to_string(),
-            client: Some(Client::Surge),
+            client: Some(ProxyClient::Surge),
         };
 
         let tmp_dir = tempdir().unwrap();

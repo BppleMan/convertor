@@ -1,6 +1,6 @@
-use crate::client::{Client, ParseClientError};
 use crate::core::profile::policy::{Policy, SerializablePolicy};
 use crate::encrypt::{EncryptError, decrypt, encrypt};
+use crate::proxy_client::{ParseClientError, ProxyClient};
 use percent_encoding::{percent_decode_str, utf8_percent_encode};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -12,7 +12,7 @@ pub use url::Url;
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ConvertorUrl {
     pub secret: String,
-    pub client: Client,
+    pub client: ProxyClient,
     pub server: Url,
     pub raw_sub_url: Url,
     pub enc_raw_sub_url: String,
@@ -24,7 +24,7 @@ pub struct ConvertorUrl {
 impl ConvertorUrl {
     pub fn new(
         secret: impl AsRef<str>,
-        client: Client,
+        client: ProxyClient,
         server: Url,
         raw_sub_url: Url,
         interval: u64,
@@ -132,7 +132,7 @@ impl ConvertorUrl {
         let client = query_map
             .get("client")
             .ok_or(ParseError::NotFoundParam("client"))?
-            .parse::<Client>()
+            .parse::<ProxyClient>()
             .map_err(ParseError::from)?;
 
         // 解析 server
@@ -294,7 +294,7 @@ mod tests {
         let secret = "my_secret_key";
         let convertor_url = ConvertorUrl::new(
             secret,
-            Client::Surge,
+            ProxyClient::Surge,
             server.clone(),
             raw_sub_url.clone(),
             86400,

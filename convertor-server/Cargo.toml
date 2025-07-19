@@ -13,6 +13,7 @@ convertor-core = { path = "../convertor-core" }
 # http server
 axum = { workspace = true, default-features = false, features = ["query", "json", "tokio", "http2"] }
 tower-http = { workspace = true, default-features = false, features = ["trace"] }
+percent-encoding = { workspace = true, default-features = false }
 
 # async runtime
 tokio = { workspace = true, default-features = false, features = ["rt-multi-thread", "signal"] }

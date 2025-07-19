@@ -3,7 +3,6 @@ use color_eyre::Result;
 use color_eyre::eyre::OptionExt;
 use color_eyre::owo_colors::OwoColorize;
 use convertor_core::api::ServiceApi;
-use convertor_core::client::Client;
 use convertor_core::config::ConvertorConfig;
 use convertor_core::core::profile::Profile;
 use convertor_core::core::profile::clash_profile::ClashProfile;
@@ -18,6 +17,7 @@ use convertor_core::core::renderer::surge_renderer::{
     SURGE_RULE_PROVIDER_COMMENT_END, SURGE_RULE_PROVIDER_COMMENT_START,
 };
 use convertor_core::core::result::ParseResult;
+use convertor_core::proxy_client::ProxyClient;
 use convertor_core::url::{ConvertorUrl, Url};
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
@@ -26,7 +26,7 @@ use std::path::{Path, PathBuf};
 pub struct ServiceProviderArgs {
     /// 构造适用于不同客户端的订阅地址: [surge, clash]
     #[arg(value_enum)]
-    pub client: Client,
+    pub client: ProxyClient,
 
     /// 是否重置订阅地址
     #[arg(short, long)]
@@ -71,7 +71,7 @@ impl SubscriptionService {
         let convertor_url = self.generate_url_builder(&args).await?;
         let raw_profile_content = self.api.get_raw_profile(client).await?;
         let policies = match client {
-            Client::Surge => {
+            ProxyClient::Surge => {
                 let raw_profile = SurgeProfile::parse(raw_profile_content)?;
                 let polices = extract_policies_for_rule_provider(&raw_profile.rules, convertor_url.raw_sub_host()?);
                 if args.update {
@@ -79,7 +79,7 @@ impl SubscriptionService {
                 }
                 polices
             }
-            Client::Clash => {
+            ProxyClient::Clash => {
                 let raw_profile = ClashProfile::parse(raw_profile_content)?;
                 let polices = extract_policies_for_rule_provider(&raw_profile.rules, convertor_url.raw_sub_host()?);
                 if args.update {
@@ -88,7 +88,7 @@ impl SubscriptionService {
                 polices
             }
         };
-        if matches!(client, Client::Clash) && args.update {
+        if matches!(client, ProxyClient::Clash) && args.update {
             return Ok(());
         }
         println!("{}", "Raw Subscription url:".to_string().green().bold());
@@ -99,11 +99,11 @@ impl SubscriptionService {
         println!("{}", convertor_url.build_sub_logs_url(&self.config.secret)?);
         for policy in policies {
             match client {
-                Client::Surge => println!(
+                ProxyClient::Surge => println!(
                     "{}",
                     SurgeRenderer::render_provider_name_for_policy(&policy)?.green().bold()
                 ),
-                Client::Clash => println!(
+                ProxyClient::Clash => println!(
                     "{}",
                     ClashRenderer::render_provider_name_for_policy(&policy)?.green().bold()
                 ),

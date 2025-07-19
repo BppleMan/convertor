@@ -1,4 +1,3 @@
-use crate::client::Client;
 use crate::core::parser::surge_parser::SurgeParser;
 use crate::core::profile::Profile;
 use crate::core::profile::policy::Policy;
@@ -8,6 +7,7 @@ use crate::core::profile::rule::{ProviderRule, Rule};
 use crate::core::renderer::Renderer;
 use crate::core::renderer::surge_renderer::SurgeRenderer;
 use crate::core::result::ParseResult;
+use crate::proxy_client::ProxyClient;
 use crate::url::ConvertorUrl;
 use std::collections::HashMap;
 use tracing::instrument;
@@ -27,8 +27,8 @@ pub struct SurgeProfile {
 impl Profile for SurgeProfile {
     type PROFILE = SurgeProfile;
 
-    fn client() -> Client {
-        Client::Surge
+    fn client() -> ProxyClient {
+        ProxyClient::Surge
     }
 
     fn proxies(&self) -> &[Proxy] {

@@ -1,11 +1,10 @@
-use crate::encrypt::{decrypt, encrypt};
 use color_eyre::Result;
 use color_eyre::eyre::{OptionExt, WrapErr};
+use convertor_core::encrypt::{decrypt, encrypt};
 use percent_encoding::{percent_decode_str, utf8_percent_encode};
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct SubLogQuery {
     pub secret: String,
     pub page_current: Option<usize>,

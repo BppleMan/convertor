@@ -7,10 +7,10 @@ use axum::routing::get;
 use color_eyre::Result;
 use color_eyre::eyre::{WrapErr, eyre};
 use convertor_core::api::ServiceApi;
-use convertor_core::client::Client;
 use convertor_core::config::ConvertorConfig;
 use convertor_core::core::profile::clash_profile::ClashProfile;
 use convertor_core::core::profile::surge_profile::SurgeProfile;
+use convertor_core::proxy_client::ProxyClient;
 use convertor_core::url::{ConvertorUrl, ConvertorUrlError};
 use moka::future::Cache;
 use std::net::{SocketAddr, SocketAddrV4};
@@ -132,8 +132,8 @@ pub async fn profile(State(state): State<Arc<AppState>>, RawQuery(query): RawQue
         .try_get_with(convertor_url.clone(), async {
             let raw_profile = state.api.get_raw_profile(client).await?;
             let profile = match client {
-                Client::Surge => surge_router::profile_impl(state, convertor_url, raw_profile).await,
-                Client::Clash => clash_router::profile_impl(state, convertor_url, raw_profile).await,
+                ProxyClient::Surge => surge_router::profile_impl(state, convertor_url, raw_profile).await,
+                ProxyClient::Clash => clash_router::profile_impl(state, convertor_url, raw_profile).await,
             }?;
             Ok::<_, AppError>(profile)
         })
@@ -151,10 +151,10 @@ pub async fn rule_provider(State(state): State<Arc<AppState>>, RawQuery(query): 
     let policy = convertor_url.policy.clone();
     let raw_profile = state.api.get_raw_profile(*client).await?;
     match (client, policy) {
-        (Client::Surge, Some(policy)) => {
+        (ProxyClient::Surge, Some(policy)) => {
             surge_router::rule_provider_impl(state, convertor_url, raw_profile, policy.into()).await
         }
-        (Client::Clash, Some(policy)) => {
+        (ProxyClient::Clash, Some(policy)) => {
             clash_router::rule_provider_impl(state, convertor_url, raw_profile, policy.into()).await
         }
         _ => Err(eyre!("错误的 client 或 policy 参数")),

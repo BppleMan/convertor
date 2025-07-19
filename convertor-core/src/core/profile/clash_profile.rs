@@ -1,4 +1,4 @@
-use crate::client::Client;
+use crate::proxy_client::ProxyClient;
 
 use crate::core::parser::clash_parser::ClashParser;
 use crate::core::profile::Profile;
@@ -49,8 +49,8 @@ pub struct ClashProfile {
 impl Profile for ClashProfile {
     type PROFILE = ClashProfile;
 
-    fn client() -> Client {
-        Client::Clash
+    fn client() -> ProxyClient {
+        ProxyClient::Clash
     }
 
     fn proxies(&self) -> &[Proxy] {

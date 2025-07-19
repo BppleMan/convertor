@@ -1,10 +1,10 @@
-use crate::client::Client;
 use crate::core::profile::policy::Policy;
 use crate::core::profile::proxy::Proxy;
 use crate::core::profile::proxy_group::{ProxyGroup, ProxyGroupType};
 use crate::core::profile::rule::{ProviderRule, Rule};
 use crate::core::region::Region;
 use crate::core::result::ParseResult;
+use crate::proxy_client::ProxyClient;
 use crate::url::ConvertorUrl;
 use regex::Regex;
 use std::collections::{HashMap, HashSet};
@@ -87,7 +87,7 @@ pub fn extract_policies_for_rule_provider(rules: &[Rule], sub_host: impl AsRef<s
 pub trait Profile {
     type PROFILE;
 
-    fn client() -> Client;
+    fn client() -> ProxyClient;
 
     fn proxies(&self) -> &[Proxy];
 
@@ -136,8 +136,8 @@ pub trait Profile {
             .map(|(region, proxies)| {
                 let name = format!("{} {}", region.icon, region.cn);
                 let proxy_group_type = match Self::client() {
-                    Client::Surge => ProxyGroupType::Smart,
-                    Client::Clash => ProxyGroupType::UrlTest,
+                    ProxyClient::Surge => ProxyGroupType::Smart,
+                    ProxyClient::Clash => ProxyGroupType::UrlTest,
                 };
                 let proxies = proxies.into_iter().map(|p| p.name.to_string()).collect::<Vec<_>>();
                 ProxyGroup::new(name, proxy_group_type, proxies)

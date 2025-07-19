@@ -1,6 +1,5 @@
 #![deny(unused, unused_variables)]
 
-use crate::client::Client;
 use crate::core::profile::Profile;
 use crate::core::profile::policy::Policy;
 use crate::core::profile::proxy::Proxy;
@@ -8,6 +7,7 @@ use crate::core::profile::proxy_group::ProxyGroup;
 use crate::core::profile::rule::{ProviderRule, Rule};
 use crate::core::profile::rule_provider::RuleProvider;
 use crate::core::result::RenderResult;
+use crate::proxy_client::ProxyClient;
 use std::fmt::Write;
 use tracing::instrument;
 
@@ -19,7 +19,7 @@ pub const INDENT: usize = 4;
 pub trait Renderer {
     type PROFILE: Profile;
 
-    fn client() -> Client;
+    fn client() -> ProxyClient;
 
     fn render_profile(profile: &Self::PROFILE) -> RenderResult<String>;
 
@@ -53,10 +53,10 @@ pub trait Renderer {
     fn render_provider_rules(rules: &[ProviderRule]) -> RenderResult<String> {
         let mut output = String::new();
         match Self::client() {
-            Client::Surge => {
+            ProxyClient::Surge => {
                 writeln!(output, "{}", Self::render_lines(rules, Self::render_provider_rule)?)?;
             }
-            Client::Clash => {
+            ProxyClient::Clash => {
                 writeln!(output, "payload:")?;
                 writeln!(output, "{}", Self::render_lines(rules, Self::render_provider_rule)?)?;
             }
@@ -89,8 +89,8 @@ pub trait Renderer {
             .into_iter()
             .map(map)
             .map(|line| match Self::client() {
-                Client::Surge => line,
-                Client::Clash => line.map(Self::indent_line),
+                ProxyClient::Surge => line,
+                ProxyClient::Clash => line.map(Self::indent_line),
             })
             .collect::<RenderResult<Vec<_>>>()?
             .join("\n");
