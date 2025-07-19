@@ -1,5 +1,5 @@
 use convertor_core::common::config::ConvertorConfig;
-use convertor_core::common::once::{init_backtrace, init_base_dir};
+use convertor_core::common::once::init_backtrace;
 use convertor_core::common::proxy_client::ProxyClient;
 use convertor_core::core::profile::Profile;
 use convertor_core::core::profile::surge_profile::SurgeProfile;
@@ -7,7 +7,7 @@ use std::path::Path;
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> color_eyre::Result<()> {
-    let base_dir = init_base_dir();
+    let base_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join(".convertor.bench");
     init_backtrace();
     // 下面两种方案任选一
     #[cfg(feature = "bench")]

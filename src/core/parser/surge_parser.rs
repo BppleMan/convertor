@@ -26,36 +26,31 @@ impl SurgeParser {
     #[instrument(skip_all)]
     pub fn parse_profile(content: String) -> ParseResult<SurgeProfile> {
         let mut sections = Self::parse_raw(&content);
-        let header = if let Some(section) = sections.remove(MANAGED_CONFIG_HEADER) {
-            Self::parse_header(section)?
-        } else {
-            return Err(ParseError::SectionMissing(MANAGED_CONFIG_HEADER));
-        };
-        let general = if let Some(section) = sections.remove(GENERAL_SECTION) {
-            Self::parse_general(section)?
-        } else {
-            return Err(ParseError::SectionMissing(GENERAL_SECTION));
-        };
-        let proxies = if let Some(section) = sections.remove(PROXY_SECTION) {
-            Self::parse_proxies(section)?
-        } else {
-            return Err(ParseError::SectionMissing(PROXY_SECTION));
-        };
-        let proxy_groups = if let Some(section) = sections.remove(PROXY_GROUP_SECTION) {
-            Self::parse_proxy_groups(section)?
-        } else {
-            return Err(ParseError::SectionMissing(PROXY_GROUP_SECTION));
-        };
-        let rules = if let Some(section) = sections.remove(RULE_SECTION) {
-            Self::parse_rules(section)?
-        } else {
-            return Err(ParseError::SectionMissing(RULE_SECTION));
-        };
-        let url_rewrite = if let Some(section) = sections.remove(URL_REWRITE_SECTION) {
-            Self::parse_url_rewrite(section)?
-        } else {
-            vec![]
-        };
+        let header = sections
+            .remove(MANAGED_CONFIG_HEADER)
+            .map(Self::parse_header)
+            .ok_or(ParseError::SectionMissing(MANAGED_CONFIG_HEADER))??;
+        let general = sections
+            .remove(GENERAL_SECTION)
+            .map(Self::parse_general)
+            .ok_or(ParseError::SectionMissing(GENERAL_SECTION))??;
+        let proxies = sections
+            .remove(PROXY_SECTION)
+            .map(Self::parse_proxies)
+            .ok_or(ParseError::SectionMissing(PROXY_SECTION))??;
+        let proxy_groups = sections
+            .remove(PROXY_GROUP_SECTION)
+            .map(Self::parse_proxy_groups)
+            .ok_or(ParseError::SectionMissing(PROXY_GROUP_SECTION))??;
+        let rules = sections
+            .remove(RULE_SECTION)
+            .map(Self::parse_rules)
+            .ok_or(ParseError::SectionMissing(RULE_SECTION))??;
+        let url_rewrite = sections
+            .remove(URL_REWRITE_SECTION)
+            .map(Self::parse_url_rewrite)
+            .transpose()?
+            .unwrap_or_default();
         let misc = sections
             .into_iter()
             .map(|(k, v)| (k.to_owned(), v.into_iter().map(str::to_owned).collect()))
