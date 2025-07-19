@@ -1,13 +1,13 @@
-use convertor::common::config::ConvertorConfig;
-use convertor::common::proxy_client::ProxyClient;
-use convertor::core::profile::Profile;
-use convertor::core::profile::surge_profile::SurgeProfile;
-use convertor::init_backtrace;
+use convertor_core::common::config::ConvertorConfig;
+use convertor_core::common::once::{init_backtrace, init_base_dir};
+use convertor_core::common::proxy_client::ProxyClient;
+use convertor_core::core::profile::Profile;
+use convertor_core::core::profile::surge_profile::SurgeProfile;
 use std::path::Path;
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> color_eyre::Result<()> {
-    let base_dir = std::env::current_dir()?.join("convertor-core").join(".convertor.bench");
+    let base_dir = init_base_dir();
     init_backtrace();
     // 下面两种方案任选一
     #[cfg(feature = "bench")]
@@ -20,7 +20,7 @@ async fn main() -> color_eyre::Result<()> {
 
     let file = std::fs::read_to_string(base_dir.join("mock.conf"))?;
     let mut profile = SurgeProfile::parse(file)?;
-    profile.optimize(&url)?;
+    profile.convert(&url)?;
 
     Ok(())
 }

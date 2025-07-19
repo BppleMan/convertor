@@ -1,6 +1,6 @@
-use convertor::api::ServiceApi;
-use convertor::common::config::ConvertorConfig;
-use convertor::{init_backtrace, init_base_dir};
+use convertor_core::api::ServiceApi;
+use convertor_core::common::config::ConvertorConfig;
+use convertor_core::common::once::{init_backtrace, init_base_dir};
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> color_eyre::Result<()> {

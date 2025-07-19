@@ -15,6 +15,14 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[lib]
+name = "convertor_core"
+path = "src/lib.rs"
+
+[[bin]]
+name = "convertor"
+path = "src/main.rs"
+
 [dependencies]
 # async runtime
 tokio = { version = "1.46.1", default-features = false, features = ["fs", "rt-multi-thread", "signal", "macros"] }

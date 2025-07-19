@@ -1,7 +1,7 @@
 use crate::api::ServiceApi;
 use crate::common::config::ConvertorConfig;
 use crate::common::proxy_client::ProxyClient;
-use crate::common::url::{ConvertorUrl, Url};
+use crate::common::url::ConvertorUrl;
 use crate::core::profile::Profile;
 use crate::core::profile::clash_profile::ClashProfile;
 use crate::core::profile::extract_policies_for_rule_provider;
@@ -19,6 +19,7 @@ use color_eyre::eyre::OptionExt;
 use color_eyre::owo_colors::OwoColorize;
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
+use url::Url;
 
 #[derive(Debug, Args)]
 pub struct ServiceProviderArgs {
@@ -285,7 +286,7 @@ impl ClashConfig {
     ) -> Result<()> {
         let mut template = ClashProfile::template()?;
         template.merge(raw_profile)?;
-        template.optimize(url)?;
+        template.convert(url)?;
         template.secret = Some(secret.as_ref().to_string());
         let clash_config = ClashRenderer::render_profile(&template)?;
         if !self.main_config_path.is_file() {

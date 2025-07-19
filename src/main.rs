@@ -1,9 +1,15 @@
+use crate::api::ServiceApi;
+use crate::common::config::ConvertorConfig;
+use crate::common::once::{init_backtrace, init_base_dir, init_log};
+use crate::server::{ConvertorServer, start_server};
 use clap::Parser;
 use color_eyre::Result;
-use convertor::api::ServiceApi;
-use convertor::common::config::ConvertorConfig;
-use convertor::server::{ConvertorServer, start_server};
-use convertor::{init_backtrace, init_base_dir, init_log};
+
+pub mod core;
+pub mod api;
+pub mod common;
+pub mod cli;
+pub mod server;
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<()> {

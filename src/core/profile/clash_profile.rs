@@ -89,7 +89,7 @@ impl Profile for ClashProfile {
         ClashParser::parse(content)
     }
 
-    fn optimize(&mut self, url: &ConvertorUrl) -> ParseResult<()> {
+    fn convert(&mut self, url: &ConvertorUrl) -> ParseResult<()> {
         self.optimize_proxies()?;
         self.optimize_rules(url)?;
         Ok(())

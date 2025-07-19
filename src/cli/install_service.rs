@@ -1,17 +1,16 @@
 use crate::api::ServiceApi;
 use crate::common::config::ConvertorConfig;
 use crate::common::proxy_client::ProxyClient;
-use crate::common::url::Url;
 use crate::core::profile::Profile;
 use crate::core::profile::clash_profile::ClashProfile;
 use crate::core::renderer::Renderer;
 use crate::core::renderer::clash_renderer::ClashRenderer;
-use crate::{Method, StatusCode};
 use clap::ValueEnum;
 use color_eyre::eyre::{WrapErr, eyre};
 use flate2::bufread::GzDecoder;
 use indicatif::{ProgressBar, ProgressStyle};
 use inquire::Confirm;
+use reqwest::{Method, StatusCode};
 use std::ffi::OsStr;
 use std::fmt::{Display, Formatter};
 use std::fs::{File, OpenOptions};
@@ -19,6 +18,7 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use tokio_stream::StreamExt;
+use url::Url;
 
 const SYSTEMD_DIR_STR: &str = "/etc/systemd/system";
 
@@ -211,7 +211,7 @@ impl Installer {
 
         let mut template = ClashProfile::template()?;
         template.merge(profile)?;
-        template.optimize(&convertor_url)?;
+        template.convert(&convertor_url)?;
         let config_content = ClashRenderer::render_profile(&template)?;
         tokio::fs::write(&config_path, &config_content).await?;
         println!("mihomo 配置文件生成成功: {}", config_path.display());

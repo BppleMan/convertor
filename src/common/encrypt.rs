@@ -71,7 +71,7 @@ fn normalize_key(key: &[u8]) -> [u8; 32] {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::init_backtrace;
+    use crate::common::once::init_backtrace;
 
     #[test]
     fn test_encrypt_decrypt() -> color_eyre::Result<()> {

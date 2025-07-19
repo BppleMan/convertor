@@ -107,7 +107,7 @@ pub trait Profile {
 
     fn parse(content: String) -> ParseResult<Self::PROFILE>;
 
-    fn optimize(&mut self, url: &ConvertorUrl) -> ParseResult<()>;
+    fn convert(&mut self, url: &ConvertorUrl) -> ParseResult<()>;
 
     #[instrument(skip_all)]
     fn optimize_proxies(&mut self) -> ParseResult<()> {

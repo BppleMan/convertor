@@ -69,7 +69,7 @@ impl ConvertorConfig {
             }
         }
         let home_dir = std::env::var("HOME")?;
-        let convertor_toml = Path::new(&home_dir).join("../../../.convertor").join("convertor.toml");
+        let convertor_toml = Path::new(&home_dir).join(".convertor").join("convertor.toml");
         if convertor_toml.exists() {
             return Self::from_file(convertor_toml);
         }

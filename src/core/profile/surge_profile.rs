@@ -69,7 +69,7 @@ impl Profile for SurgeProfile {
     }
 
     #[instrument(skip_all)]
-    fn optimize(&mut self, url: &ConvertorUrl) -> ParseResult<()> {
+    fn convert(&mut self, url: &ConvertorUrl) -> ParseResult<()> {
         self.replace_header(url)?;
         self.optimize_proxies()?;
         self.optimize_rules(url)?;

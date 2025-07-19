@@ -1,0 +1,32 @@
+secret = "bppleman"
+server = "http://127.0.0.1:8001/"
+interval = 86400
+strict = true
+
+[service_config]
+service_provider = "BosLife"
+raw_sub_url = "http://127.0.0.1:8001/subscription?token=bppleman"
+auth_token = ""
+cookie = ""
+api_host = "https://www.blnew.com"
+api_prefix = "/proxy/"
+
+[service_config.credential]
+username = "bppleman"
+password = "bppleman"
+
+[service_config.login_api]
+api_path = "passport/auth/login"
+json_path = "$.data.auth_data"
+
+[service_config.reset_sub_api]
+api_path = "user/resetSecurity"
+json_path = "$.data"
+
+[service_config.get_sub_api]
+api_path = "user/getSubscribe"
+json_path = "$.data.subscribe_url"
+
+[service_config.get_sub_logs_api]
+api_path = "user/stat/getSubscribeLog"
+json_path = "$.data"
