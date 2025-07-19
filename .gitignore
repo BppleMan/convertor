@@ -2,7 +2,7 @@
 .DS_Store
 /target
 **/logs
-**/config.toml
+config.toml
 **/convertor.toml
 **/.convertor.*/
 **/.convertor/
