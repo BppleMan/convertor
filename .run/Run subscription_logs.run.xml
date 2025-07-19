@@ -1,7 +1,6 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Run trace_surge_parse" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-    <option name="buildProfileId" value="dev" />
-    <option name="command" value="run --package convertor --example trace_surge_parse --features bench" />
+  <configuration default="false" name="Run subscription_logs" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+    <option name="command" value="run --package convertor --example subscription_logs" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$" />
     <envs />
     <option name="emulateTerminal" value="true" />

@@ -1,10 +1,23 @@
 #!/usr/bin/env just --justfile
 
+set shell := ["zsh", "-uc"]
+
+prepare:
+    brew install zig
+
 install:
     cargo install --bin convertor --path .
 
 linux:
-    cross build --release --bin convertor --target x86_64-unknown-linux-gnu
+    time CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=x86_64-linux-gnu-gcc \
+    cargo build --release --bin convertor --target x86_64-unknown-linux-gnu
+
+cross-linux:
+    time cross build --release --bin convertor --target x86_64-unknown-linux-gnu
+
+zig-linux:
+    time CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=./zig-cc \
+    cargo build --release --bin convertor --target x86_64-unknown-linux-gnu
 
 # 用法: just deploy user@host path/to/local/file /remote/path your-service-name
 deploy alias:
