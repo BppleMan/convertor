@@ -6,5 +6,5 @@
 **/convertor.toml
 **/.convertor.*/
 **/.convertor/
-!convertor-core/.convertor.bench
-!convertor-server/.convertor
+!.convertor.bench
+!.convertor.test
