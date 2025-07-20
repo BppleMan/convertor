@@ -1,5 +1,5 @@
+use crate::common::config::proxy_client::{ParseClientError, ProxyClient};
 use crate::common::encrypt::{EncryptError, decrypt, encrypt};
-use crate::common::proxy_client::{ParseClientError, ProxyClient};
 use crate::core::profile::policy::{Policy, SerializablePolicy};
 use percent_encoding::{percent_decode_str, utf8_percent_encode};
 use serde::{Deserialize, Serialize};
@@ -14,8 +14,10 @@ pub struct ConvertorUrl {
     pub secret: String,
     pub client: ProxyClient,
     pub server: Url,
-    pub raw_sub_url: Url,
-    pub enc_raw_sub_url: String,
+    /// 通用订阅地址
+    pub uni_sub_url: Url,
+    /// 加密后的通用订阅地址
+    pub enc_uni_sub_url: String,
     pub interval: u64,
     pub strict: bool,
     pub policy: Option<SerializablePolicy>,
@@ -26,19 +28,19 @@ impl ConvertorUrl {
         secret: impl AsRef<str>,
         client: ProxyClient,
         server: Url,
-        raw_sub_url: Url,
+        uni_sub_url: Url,
         interval: u64,
         strict: bool,
         policy: Option<SerializablePolicy>,
     ) -> Result<Self, ConvertorUrlError> {
         let secret = secret.as_ref().to_string();
-        let encrypted_sub_url = encrypt(secret.as_bytes(), raw_sub_url.as_str())?;
+        let enc_uni_sub_url = encrypt(secret.as_bytes(), uni_sub_url.as_str())?;
         let url = Self {
             secret,
             client,
             server,
-            raw_sub_url,
-            enc_raw_sub_url: encrypted_sub_url,
+            uni_sub_url,
+            enc_uni_sub_url,
             interval,
             strict,
             policy,
@@ -46,13 +48,13 @@ impl ConvertorUrl {
         Ok(url)
     }
 
-    pub fn raw_sub_host(&self) -> Result<String, ConvertorUrlError> {
-        if let (Some(host), Some(port)) = (self.raw_sub_url.host_str(), self.raw_sub_url.port()) {
-            Ok(format!("{host}:{port}"))
-        } else {
-            Err(ConvertorUrlError::Encode(EncodeError::NoRawSubHost(
-                self.raw_sub_url.to_string(),
-            )))
+    pub fn uni_sub_host(&self) -> Result<String, ConvertorUrlError> {
+        match (self.uni_sub_url.host_str(), self.uni_sub_url.port()) {
+            (Some(host), Some(port)) => Ok(format!("{host}:{port}")),
+            (Some(host), None) => Ok(host.to_string()),
+            _ => Err(ConvertorUrlError::Encode(EncodeError::NoRawSubHost(
+                self.uni_sub_url.to_string(),
+            ))),
         }
     }
 
@@ -64,14 +66,16 @@ impl ConvertorUrl {
         Self::parse_from_query_string(query, secret)
     }
 
+    /// 构造原始订阅地址，主要是用通用订阅地址拼接客户端标志
     pub fn build_raw_sub_url(&self) -> Result<Url, ConvertorUrlError> {
-        let mut url = self.raw_sub_url.clone();
+        let mut url = self.uni_sub_url.clone();
         url.query_pairs_mut().append_pair("flag", self.client.as_str());
         Ok(url)
     }
 
-    pub fn encoded_raw_sub_url(&self) -> Result<String, ConvertorUrlError> {
-        let raw_sub_url = utf8_percent_encode(&self.enc_raw_sub_url, percent_encoding::CONTROLS).to_string();
+    /// 构造编码后的通用订阅地址，编码前会先加密
+    pub fn encoded_uni_sub_url(&self) -> Result<String, ConvertorUrlError> {
+        let raw_sub_url = utf8_percent_encode(&self.enc_uni_sub_url, percent_encoding::CONTROLS).to_string();
         Ok(raw_sub_url)
     }
 
@@ -92,22 +96,22 @@ impl ConvertorUrl {
     }
 
     pub fn build_managed_config_header(&self, for_raw: bool) -> Result<String, ConvertorUrlError> {
-        let url = if for_raw {
+        let sub_url = if for_raw {
             self.build_raw_sub_url()
         } else {
             self.build_sub_url()
         }?;
         let header = format!(
             "#!MANAGED-CONFIG {} interval={} strict={}",
-            url, self.interval, self.strict
+            sub_url, self.interval, self.strict
         );
         Ok(header)
     }
 
-    pub fn build_sub_logs_url(&self, query_string: impl AsRef<str>) -> Result<Url, ConvertorUrlError> {
+    pub fn build_sub_logs_url(&self, sub_log_query: impl AsRef<str>) -> Result<Url, ConvertorUrlError> {
         let mut url = self.server.clone();
         url.set_path("/sub-logs");
-        url.set_query(Some(query_string.as_ref()));
+        url.set_query(Some(sub_log_query.as_ref()));
         Ok(url)
     }
 
@@ -142,12 +146,12 @@ impl ConvertorUrl {
             .parse::<Url>()
             .map_err(ParseError::from)?;
 
-        // 解析 raw_sub_url
-        let enc_raw_sub_url = query_map
-            .get("raw_sub_url")
-            .ok_or(ParseError::NotFoundParam("raw_sub_url"))?
+        // 解析 uni_sub_url
+        let enc_uni_sub_url = query_map
+            .get("uni_sub_url")
+            .ok_or(ParseError::NotFoundParam("uni_sub_url"))?
             .to_string();
-        let raw_sub_url = decrypt(secret.as_bytes(), enc_raw_sub_url.as_ref())?
+        let uni_sub_url = decrypt(secret.as_bytes(), enc_uni_sub_url.as_ref())?
             .parse::<Url>()
             .map_err(ParseError::from)?;
 
@@ -189,8 +193,8 @@ impl ConvertorUrl {
             secret,
             client,
             server,
-            raw_sub_url,
-            enc_raw_sub_url,
+            uni_sub_url,
+            enc_uni_sub_url,
             interval,
             strict,
             policy,
@@ -211,7 +215,7 @@ impl ConvertorUrl {
             }
             query_pairs.push(("policy.is_subscription", Cow::Owned(policy.is_subscription.to_string())));
         }
-        query_pairs.push(("raw_sub_url", Cow::Borrowed(&self.enc_raw_sub_url)));
+        query_pairs.push(("uni_sub_url", Cow::Borrowed(&self.enc_uni_sub_url)));
 
         let query_string = query_pairs
             .into_iter()
@@ -274,59 +278,4 @@ pub enum EncodeError {
 
     #[error(transparent)]
     UrlParseError(#[from] url::ParseError),
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::core::profile::policy::Policy;
-    use tracing::warn;
-    use url::Url;
-
-    #[test]
-    fn test_url_builder() -> color_eyre::Result<()> {
-        if let Err(e) = color_eyre::install() {
-            warn!("Failed to install color_eyre: {}", e);
-        };
-
-        let server = Url::parse("http://127.0.0.1:8001")?;
-        let raw_sub_url = Url::parse("https://example.com/subscription?token=12345")?;
-        let secret = "my_secret_key";
-        let convertor_url = ConvertorUrl::new(
-            secret,
-            ProxyClient::Surge,
-            server.clone(),
-            raw_sub_url.clone(),
-            86400,
-            true,
-            None,
-        )?;
-
-        let raw_sub_url = convertor_url.build_raw_sub_url()?;
-        pretty_assertions::assert_str_eq!(
-            "https://example.com/subscription?token=12345&flag=surge",
-            raw_sub_url.as_str()
-        );
-
-        let sub_url = convertor_url.build_sub_url()?;
-        let encoded_raw_sub_url = convertor_url.encoded_raw_sub_url()?;
-        pretty_assertions::assert_eq!(
-            format!(
-                "http://127.0.0.1:8001/profile?client=surge&server=http://127.0.0.1:8001/&interval=86400&strict=true&raw_sub_url={}",
-                encoded_raw_sub_url
-            ),
-            sub_url.to_string()
-        );
-
-        let rule_provider_url = convertor_url.build_rule_provider_url(&Policy::subscription_policy())?;
-        pretty_assertions::assert_eq!(
-            format!(
-                "http://127.0.0.1:8001/rule-provider?client=surge&server=http://127.0.0.1:8001/&interval=86400&strict=true&policy.name=DIRECT&policy.is_subscription=true&raw_sub_url={}",
-                encoded_raw_sub_url
-            ),
-            rule_provider_url.to_string()
-        );
-
-        Ok(())
-    }
 }

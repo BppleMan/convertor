@@ -1,6 +1,6 @@
-use convertor_core::api::ServiceApi;
-use convertor_core::common::config::ConvertorConfig;
-use convertor_core::common::once::{init_backtrace, init_base_dir};
+use convertor::api::SubProviderApi;
+use convertor::common::config::ConvertorConfig;
+use convertor::common::once::{init_backtrace, init_base_dir};
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> color_eyre::Result<()> {
@@ -8,7 +8,7 @@ async fn main() -> color_eyre::Result<()> {
     init_backtrace();
 
     let config = ConvertorConfig::search(&base_dir, Option::<&str>::None)?;
-    let api = ServiceApi::get_service_provider_api(config.service_config, &base_dir);
+    let api = SubProviderApi::get_service_provider_api(config.provider, &base_dir);
 
     let logs = api.get_sub_logs().await?;
     println!("{logs:#?}");

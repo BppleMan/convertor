@@ -14,8 +14,8 @@ pub struct ClashRenderer;
 impl Renderer for ClashRenderer {
     type PROFILE = ClashProfile;
 
-    fn client() -> crate::common::proxy_client::ProxyClient {
-        crate::common::proxy_client::ProxyClient::Clash
+    fn client() -> crate::common::config::proxy_client::ProxyClient {
+        crate::common::config::proxy_client::ProxyClient::Clash
     }
 
     #[instrument(skip_all)]

@@ -1,12 +1,19 @@
-use crate::common::proxy_client::ProxyClient;
+use crate::common::config::proxy_client::ProxyClientConfig;
+use crate::common::config::sub_provider::SubProviderConfig;
 use crate::common::url::ConvertorUrl;
 use color_eyre::Report;
 use color_eyre::eyre::{WrapErr, eyre};
+use proxy_client::ProxyClient;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::path::Path;
 use std::str::FromStr;
 use url::Url;
+
+pub mod proxy_client;
+pub mod sub_provider;
+
+pub const TEMPLATE_CONFIG: &str = include_str!("../../assets/config/template.toml");
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConvertorConfig {
@@ -14,43 +21,15 @@ pub struct ConvertorConfig {
     pub server: Url,
     pub interval: u64,
     pub strict: bool,
-    pub service_config: ServiceConfig,
-}
-
-#[derive(Default, Debug, Copy, Clone, Serialize, Deserialize)]
-pub enum ServiceProvider {
-    #[default]
-    BosLife,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ServiceConfig {
-    pub service_provider: ServiceProvider,
-    pub raw_sub_url: Url,
-    pub auth_token: String,
-    pub cookie: String,
-    pub credential: Credential,
-    pub api_host: Url,
-    pub api_prefix: String,
-    pub login_api: Api,
-    pub reset_sub_api: Api,
-    pub get_sub_api: Api,
-    pub get_sub_logs_api: Api,
-}
-
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct Api {
-    pub api_path: String,
-    pub json_path: String,
-}
-
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct Credential {
-    pub username: String,
-    pub password: String,
+    pub provider: SubProviderConfig,
+    pub client: ProxyClientConfig,
 }
 
 impl ConvertorConfig {
+    pub fn template() -> color_eyre::Result<Self> {
+        toml::from_str(TEMPLATE_CONFIG).wrap_err("解析模板配置失败")
+    }
+
     pub fn search(cwd: impl AsRef<Path>, config_path: Option<impl AsRef<Path>>) -> color_eyre::Result<Self> {
         if let Some(path) = config_path {
             return Self::from_file(path);
@@ -107,7 +86,7 @@ impl ConvertorConfig {
             self.secret.clone(),
             client,
             self.server.clone(),
-            self.service_config.raw_sub_url.clone(),
+            self.provider.uni_sub_url.clone(),
             self.interval,
             self.strict,
             None,
@@ -123,9 +102,9 @@ impl FromStr for ConvertorConfig {
     }
 }
 
-impl ServiceConfig {
+impl SubProviderConfig {
     pub fn build_raw_sub_url(&self, client: ProxyClient) -> color_eyre::Result<Url> {
-        let mut url = self.raw_sub_url.clone();
+        let mut url = self.uni_sub_url.clone();
         // BosLife 的字段是 `flag` 不可改为client
         url.query_pairs_mut().append_pair("flag", client.as_str());
         Ok(url)
@@ -134,28 +113,28 @@ impl ServiceConfig {
     pub fn build_login_url(&self) -> color_eyre::Result<Url> {
         let url = self
             .api_host
-            .join(&format!("{}{}", self.api_prefix, self.login_api.api_path))?;
+            .join(&format!("{}{}", self.api_prefix, self.login_api.path))?;
         Ok(url)
     }
 
     pub fn build_get_sub_url(&self) -> color_eyre::Result<Url> {
         let url = self
             .api_host
-            .join(&format!("{}{}", self.api_prefix, self.get_sub_api.api_path))?;
+            .join(&format!("{}{}", self.api_prefix, self.get_sub_url_api.path))?;
         Ok(url)
     }
 
     pub fn build_reset_sub_url(&self) -> color_eyre::Result<Url> {
         let url = self
             .api_host
-            .join(&format!("{}{}", self.api_prefix, self.reset_sub_api.api_path))?;
+            .join(&format!("{}{}", self.api_prefix, self.reset_sub_url_api.path))?;
         Ok(url)
     }
 
     pub fn build_get_sub_logs_url(&self) -> color_eyre::Result<Url> {
         let url = self
             .api_host
-            .join(&format!("{}{}", self.api_prefix, self.get_sub_logs_api.api_path))?;
+            .join(&format!("{}{}", self.api_prefix, self.get_sub_logs_api.path))?;
         Ok(url)
     }
 }

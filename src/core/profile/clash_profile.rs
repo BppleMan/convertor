@@ -1,4 +1,4 @@
-use crate::common::proxy_client::ProxyClient;
+use crate::common::config::proxy_client::ProxyClient;
 
 use crate::common::url::ConvertorUrl;
 use crate::core::parser::clash_parser::ClashParser;
@@ -15,7 +15,7 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use tracing::instrument;
 
-const TEMPLATE_STR: &str = include_str!("../../../assets/clash/template.yaml");
+const TEMPLATE_STR: &str = include_str!("../../../assets/profile/clash/template.yaml");
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct ClashProfile {
@@ -117,7 +117,7 @@ impl ClashProfile {
         ClashParser::parse(TEMPLATE_STR)
     }
 
-    pub fn merge(&mut self, profile: ClashProfile) -> ParseResult<()> {
+    pub fn patch(&mut self, profile: ClashProfile) -> ParseResult<()> {
         self.proxies = profile.proxies;
         self.proxy_groups = profile.proxy_groups;
         self.rules = profile.rules;

@@ -1,6 +1,6 @@
-use crate::api::ServiceApi;
+use crate::api::SubProviderApi;
 use crate::common::config::ConvertorConfig;
-use crate::common::proxy_client::ProxyClient;
+use crate::common::config::proxy_client::ProxyClient;
 use crate::core::profile::Profile;
 use crate::core::profile::clash_profile::ClashProfile;
 use crate::core::renderer::Renderer;
@@ -46,16 +46,16 @@ impl Display for ServiceName {
     }
 }
 
-pub struct Installer {
+pub struct ServiceInstaller {
     pub name: ServiceName,
     pub base_dir: PathBuf,
     pub config: ConvertorConfig,
-    pub api: ServiceApi,
+    pub api: SubProviderApi,
 }
 
-impl Installer {
-    pub fn new(name: ServiceName, base_dir: PathBuf, config: ConvertorConfig, api: ServiceApi) -> Self {
-        Installer {
+impl ServiceInstaller {
+    pub fn new(name: ServiceName, base_dir: PathBuf, config: ConvertorConfig, api: SubProviderApi) -> Self {
+        ServiceInstaller {
             name,
             base_dir,
             config,
@@ -63,7 +63,7 @@ impl Installer {
         }
     }
 
-    pub async fn install_service(self) -> color_eyre::Result<()> {
+    pub async fn install(self) -> color_eyre::Result<()> {
         if matches!(self.name, ServiceName::Mihomo) {
             self.download_mihomo().await?;
             self.copy_mihomo_executable()?;
@@ -210,7 +210,7 @@ impl Installer {
         let profile = ClashProfile::parse(clash_profile_content)?;
 
         let mut template = ClashProfile::template()?;
-        template.merge(profile)?;
+        template.patch(profile)?;
         template.convert(&convertor_url)?;
         let config_content = ClashRenderer::render_profile(&template)?;
         tokio::fs::write(&config_path, &config_content).await?;

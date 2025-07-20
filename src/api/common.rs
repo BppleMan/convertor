@@ -1,16 +1,16 @@
 use crate::api::boslife_sub_log::BosLifeSubLogs;
 use crate::common::cache::{
-    CACHED_AUTH_TOKEN_KEY, CACHED_PROFILE_KEY, CACHED_RAW_SUB_URL_KEY, CACHED_SUB_LOGS_KEY, Cache, CacheKey,
+    CACHED_AUTH_TOKEN_KEY, CACHED_PROFILE_KEY, CACHED_SUB_LOGS_KEY, CACHED_UNI_SUB_URL_KEY, Cache, CacheKey,
 };
-use crate::common::config::ServiceConfig;
-use crate::common::proxy_client::ProxyClient;
+use crate::common::config::proxy_client::ProxyClient;
+use crate::common::config::sub_provider::SubProviderConfig;
 use color_eyre::eyre::{Context, eyre};
 use moka::future::Cache as MokaCache;
 use reqwest::{Method, Request, Response};
 use url::Url;
 
 pub(crate) trait ServiceApiCommon {
-    fn config(&self) -> &ServiceConfig;
+    fn config(&self) -> &SubProviderConfig;
 
     fn client(&self) -> &reqwest::Client;
 
@@ -79,20 +79,20 @@ pub(crate) trait ServiceApiCommon {
     async fn get_raw_sub_url(&self) -> color_eyre::Result<Url> {
         self.cached_raw_sub_url()
             .try_get_with(
-                CacheKey::new(CACHED_RAW_SUB_URL_KEY, self.config().api_host.clone(), None),
+                CacheKey::new(CACHED_UNI_SUB_URL_KEY, self.config().api_host.clone(), None),
                 async {
                     let auth_token = self.login().await?;
                     let request = self.get_sub_request(auth_token)?;
                     let response = self.execute(request).await?;
                     if response.status().is_success() {
                         let json_response = response.text().await?;
-                        let json_path = &self.config().get_sub_api.json_path;
+                        let json_path = &self.config().get_sub_url_api.json_path;
                         let url_str: String = jsonpath_lib::select_as(&json_response, json_path)
                             .wrap_err_with(|| format!("failed to select json_path: {json_path}"))?
                             .remove(0);
                         Ok(url_str)
                     } else {
-                        Err(eyre!("请求服务商订阅配置失败: {}", response.status(),))
+                        Err(eyre!("请求服务商原始订阅链接失败: {}", response.status(),))
                     }
                 },
             )
@@ -107,8 +107,13 @@ pub(crate) trait ServiceApiCommon {
         let response = self.execute(request).await?;
         if response.status().is_success() {
             let json_response = response.text().await?;
-            let url_str: String = jsonpath_lib::select_as(&json_response, &self.config().reset_sub_api.json_path)
-                .wrap_err_with(|| format!("failed to select json_path: {}", self.config().reset_sub_api.json_path))?
+            let url_str: String = jsonpath_lib::select_as(&json_response, &self.config().reset_sub_url_api.json_path)
+                .wrap_err_with(|| {
+                    format!(
+                        "failed to select json_path: {}",
+                        self.config().reset_sub_url_api.json_path
+                    )
+                })?
                 .remove(0);
             Url::parse(&url_str).map_err(|e| e.into())
         } else {

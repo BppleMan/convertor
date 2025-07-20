@@ -1,8 +1,8 @@
-use convertor_core::common::config::ConvertorConfig;
-use convertor_core::common::once::init_backtrace;
-use convertor_core::common::proxy_client::ProxyClient;
-use convertor_core::core::profile::Profile;
-use convertor_core::core::profile::surge_profile::SurgeProfile;
+use convertor::common::config::ConvertorConfig;
+use convertor::common::config::proxy_client::ProxyClient;
+use convertor::common::once::init_backtrace;
+use convertor::core::profile::Profile;
+use convertor::core::profile::surge_profile::SurgeProfile;
 use std::path::Path;
 
 #[tokio::main(flavor = "multi_thread")]

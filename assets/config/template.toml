@@ -1,26 +1,44 @@
 secret = "bppleman"
 server = "http://127.0.0.1:8001"
+interval = 86400
+strict = true
 
-[service_config]
-base_url = "https://www.blnew.com"
-prefix_path = "/proxy/"
+[provider]
+provider = "BosLife"
+uni_sub_url = "http://127.0.0.1:8001/subscription?token=bppleman"
+auth_token = ""
+cookie = ""
+api_host = "https://www.blnew.com"
+api_prefix = "/proxy/"
 
-[service_config.credential]
-username = ""
-password = ""
+[provider.credential]
+username = "bppleman"
+password = "bppleman"
 
-[service_config.login_api]
-api_path = "passport/auth/login"
+[provider.login_api]
+path = "passport/auth/login"
 json_path = "$.data.auth_data"
 
-[service_config.get_subscription_api]
-api_path = "user/getSubscribe"
+[provider.get_sub_url_api]
+path = "user/getSubscribe"
 json_path = "$.data.subscribe_url"
 
-[service_config.reset_subscription_api]
-api_path = "user/resetSecurity"
+[provider.reset_sub_url_api]
+path = "user/resetSecurity"
 json_path = "$.data"
 
-[service_config.get_subscription_logs_api]
-api_path = "user/stat/getSubscribeLog"
+[provider.get_sub_logs_api]
+path = "user/stat/getSubscribeLog"
 json_path = "$.data"
+
+[client.surge]
+surge_dir = "${ICLOUD}/../iCloud~com~nssurge~inc/Documents/surge"
+main_sub_name = "surge.conf"
+raw_sub_name = "BosLife.conf"
+rules_name = "rules.dconf"
+sub_logs_name = "subscription_logs.js"
+
+[client.clash]
+clash_dir = "${HOME}/.config/mihomo"
+main_sub_name = "config.yaml"
+install_path = "/usr/local/bin/mihomo"

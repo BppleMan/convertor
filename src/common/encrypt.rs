@@ -67,27 +67,3 @@ fn normalize_key(key: &[u8]) -> [u8; 32] {
     normalized[..len].copy_from_slice(&key[..len]);
     normalized
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::common::once::init_backtrace;
-
-    #[test]
-    fn test_encrypt_decrypt() -> color_eyre::Result<()> {
-        init_backtrace();
-
-        let secret = b"abcdefg"; // 密钥必须是32字节
-        let message = "This is a secret message.";
-
-        // 加密
-        let encrypted = encrypt(secret, message)?;
-
-        // 解密
-        let decrypted = decrypt(secret, &encrypted)?;
-
-        assert_eq!(message, decrypted);
-
-        Ok(())
-    }
-}

@@ -1,4 +1,4 @@
-use crate::common::proxy_client::ProxyClient;
+use crate::common::config::proxy_client::ProxyClient;
 use crate::common::url::ConvertorUrl;
 use crate::core::profile::policy::Policy;
 use crate::core::profile::proxy::Proxy;
@@ -10,7 +10,6 @@ use regex::Regex;
 use std::collections::{HashMap, HashSet};
 use tracing::{instrument, span, warn};
 
-pub mod policy_preset;
 pub mod proxy;
 pub mod proxy_group;
 pub mod rule;
@@ -60,14 +59,14 @@ pub fn extract_policies(rules: &[Rule]) -> Vec<Policy> {
     policies
 }
 
-pub fn extract_policies_for_rule_provider(rules: &[Rule], sub_host: impl AsRef<str>) -> Vec<Policy> {
+pub fn extract_policies_for_rule_provider(rules: &[Rule], uni_sub_host: impl AsRef<str>) -> Vec<Policy> {
     let mut policies = rules
         .iter()
         .filter_map(|rule| {
             if rule
                 .value
                 .as_ref()
-                .map(|v| v.contains(sub_host.as_ref()))
+                .map(|v| v.contains(uni_sub_host.as_ref()))
                 .unwrap_or(false)
             {
                 Some(Policy::subscription_policy())
@@ -153,7 +152,7 @@ pub trait Profile {
 
     #[instrument(skip_all)]
     fn optimize_rules(&mut self, url: &ConvertorUrl) -> ParseResult<()> {
-        let raw_sub_host = url.raw_sub_host()?;
+        let uni_sub_host = url.uni_sub_host()?;
         let inner_span = span!(tracing::Level::INFO, "拆分内置规则和其他规则");
         let _guard = inner_span.entered();
         let (built_in_rules, other_rules): (Vec<Rule>, Vec<Rule>) = self
@@ -165,7 +164,7 @@ pub trait Profile {
         let inner_span = span!(tracing::Level::INFO, "处理其它规则");
         let _guard = inner_span.entered();
         for mut rule in other_rules {
-            if rule.value.as_ref().map(|v| v.contains(&raw_sub_host)) == Some(true) {
+            if rule.value.as_ref().map(|v| v.contains(&uni_sub_host)) == Some(true) {
                 let inner_span = span!(tracing::Level::INFO, "Rule 转换为 ProviderRule");
                 let _inner_guard = inner_span.entered();
                 rule.policy.is_subscription = true;

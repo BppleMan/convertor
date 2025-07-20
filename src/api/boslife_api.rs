@@ -1,7 +1,7 @@
 use crate::api::boslife_sub_log::BosLifeSubLogs;
 use crate::api::common::ServiceApiCommon;
 use crate::common::cache::Cache;
-use crate::common::config::ServiceConfig;
+use crate::common::config::sub_provider::SubProviderConfig;
 use moka::future::Cache as MokaCache;
 use reqwest::Client as ReqwestClient;
 use reqwest::{Method, Request, Url};
@@ -11,16 +11,16 @@ const USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleW
 
 #[derive(Clone)]
 pub struct BosLifeApi {
-    pub config: ServiceConfig,
+    pub config: SubProviderConfig,
     pub client: ReqwestClient,
     pub cached_auth_token: MokaCache<String, String>,
     pub cached_sub_profile: Cache<Url, String>,
-    pub cached_raw_sub_url: Cache<Url, String>,
+    pub cached_uni_sub_url: Cache<Url, String>,
     pub cached_sub_logs: Cache<Url, BosLifeSubLogs>,
 }
 
 impl BosLifeApi {
-    pub fn new(base_dir: impl AsRef<Path>, config: ServiceConfig) -> Self {
+    pub fn new(base_dir: impl AsRef<Path>, config: SubProviderConfig) -> Self {
         let client = ReqwestClient::builder()
             .cookie_store(true)
             .use_rustls_tls()
@@ -32,21 +32,21 @@ impl BosLifeApi {
             .max_capacity(10)
             .time_to_live(duration) // 10 minutes
             .build();
-        let cached_raw_subscription_url = Cache::new(10, base_dir.as_ref(), duration);
-        let cached_subscription_logs = Cache::new(10, base_dir.as_ref(), duration);
+        let cached_uni_sub_url = Cache::new(10, base_dir.as_ref(), duration);
+        let cached_sub_logs = Cache::new(10, base_dir.as_ref(), duration);
         Self {
             config,
             client,
             cached_auth_token: cached_string,
             cached_sub_profile: cached_file,
-            cached_raw_sub_url: cached_raw_subscription_url,
-            cached_sub_logs: cached_subscription_logs,
+            cached_uni_sub_url,
+            cached_sub_logs,
         }
     }
 }
 
 impl ServiceApiCommon for BosLifeApi {
-    fn config(&self) -> &ServiceConfig {
+    fn config(&self) -> &SubProviderConfig {
         &self.config
     }
 
@@ -111,7 +111,7 @@ impl ServiceApiCommon for BosLifeApi {
     }
 
     fn cached_raw_sub_url(&self) -> &Cache<Url, String> {
-        &self.cached_raw_sub_url
+        &self.cached_uni_sub_url
     }
 
     fn cached_sub_logs(&self) -> &Cache<Url, BosLifeSubLogs> {
