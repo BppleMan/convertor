@@ -1,4 +1,4 @@
-use crate::api::SubProviderApi;
+use crate::api::UniversalProviderApi;
 use crate::common::config::ConvertorConfig;
 use crate::common::config::proxy_client::ProxyClient;
 use crate::common::url::{ConvertorUrl, ConvertorUrlError};
@@ -30,14 +30,14 @@ pub mod query;
 
 pub struct AppState {
     pub config: ConvertorConfig,
-    pub api: SubProviderApi,
+    pub api: UniversalProviderApi,
     pub profile_cache: Cache<ConvertorUrl, String>,
     pub surge_cache: Cache<ConvertorUrl, SurgeProfile>,
     pub clash_cache: Cache<ConvertorUrl, ClashProfile>,
 }
 
 impl AppState {
-    pub fn new(config: ConvertorConfig, api: SubProviderApi) -> Self {
+    pub fn new(config: ConvertorConfig, api: UniversalProviderApi) -> Self {
         let duration = std::time::Duration::from_secs(60 * 60); // 1 hour
         let profile_cache = Cache::builder().max_capacity(100).time_to_live(duration).build();
         let surge_cache = Cache::builder().max_capacity(100).time_to_live(duration).build();
@@ -84,7 +84,7 @@ impl IntoResponse for AppError {
 pub async fn start_server(
     listen_addr: SocketAddrV4,
     config: ConvertorConfig,
-    api: SubProviderApi,
+    api: UniversalProviderApi,
     base_dir: impl AsRef<Path>,
 ) -> Result<()> {
     info!("base_dir: {}", base_dir.as_ref().display());

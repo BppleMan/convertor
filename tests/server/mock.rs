@@ -3,7 +3,7 @@ use axum::Router;
 use axum::routing::get;
 use color_eyre::Report;
 use color_eyre::eyre::eyre;
-use convertor::api::SubProviderApi;
+use convertor::api::UniversalProviderApi;
 use convertor::common::config::ConvertorConfig;
 use convertor::common::config::proxy_client::ProxyClient;
 use convertor::common::config::sub_provider::SubProviderConfig;
@@ -37,7 +37,7 @@ pub async fn start_server_with_config() -> color_eyre::Result<ServerContext> {
         .map_err(|_| eyre!("can't set mock server port"))?;
     config.provider.api_host = Url::parse(&mock_server.base_url())?;
 
-    let api = SubProviderApi::get_service_provider_api(config.provider.clone(), &base_dir);
+    let api = UniversalProviderApi::get_service_provider_api(config.provider.clone(), &base_dir);
     let app_state = Arc::new(AppState::new(config, api));
     let app: Router = Router::new()
         .route("/profile", get(profile))

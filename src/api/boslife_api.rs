@@ -1,5 +1,5 @@
 use crate::api::boslife_sub_log::BosLifeSubLogs;
-use crate::api::common::ServiceApiCommon;
+use crate::api::sub_provider_api::SubProviderApi;
 use crate::common::cache::Cache;
 use crate::common::config::sub_provider::SubProviderConfig;
 use moka::future::Cache as MokaCache;
@@ -45,7 +45,7 @@ impl BosLifeApi {
     }
 }
 
-impl ServiceApiCommon for BosLifeApi {
+impl SubProviderApi for BosLifeApi {
     fn config(&self) -> &SubProviderConfig {
         &self.config
     }

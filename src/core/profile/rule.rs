@@ -25,7 +25,7 @@ impl Rule {
             rule_type: RuleType::RuleSet,
             value: Some(url.to_string()),
             policy: policy.clone(),
-            comment: Some(name.as_ref().to_string()),
+            comment: Some(format!("// {}", name.as_ref())),
         }
     }
 

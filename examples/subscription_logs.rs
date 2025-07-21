@@ -1,4 +1,4 @@
-use convertor::api::SubProviderApi;
+use convertor::api::UniversalProviderApi;
 use convertor::common::config::ConvertorConfig;
 use convertor::common::once::{init_backtrace, init_base_dir};
 
@@ -8,7 +8,7 @@ async fn main() -> color_eyre::Result<()> {
     init_backtrace();
 
     let config = ConvertorConfig::search(&base_dir, Option::<&str>::None)?;
-    let api = SubProviderApi::get_service_provider_api(config.provider, &base_dir);
+    let api = UniversalProviderApi::get_service_provider_api(config.provider, &base_dir);
 
     let logs = api.get_sub_logs().await?;
     println!("{logs:#?}");

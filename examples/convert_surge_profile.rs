@@ -1,4 +1,4 @@
-use convertor::api::SubProviderApi;
+use convertor::api::UniversalProviderApi;
 use convertor::common::config::ConvertorConfig;
 use convertor::common::config::proxy_client::ProxyClient;
 use convertor::common::once::{init_backtrace, init_base_dir};
@@ -15,7 +15,7 @@ async fn main() -> color_eyre::Result<()> {
     // 搜索可用配置文件
     let config = ConvertorConfig::search(&base_dir, Option::<&str>::None)?;
     // 创建服务(BosLife)API实例
-    let api = SubProviderApi::get_service_provider_api(config.provider.clone(), &base_dir);
+    let api = UniversalProviderApi::get_service_provider_api(config.provider.clone(), &base_dir);
     // 创建 URL 对象，该 URL 用于从convertor订阅优化后的配置文件
     let url = config.create_convertor_url(ProxyClient::Surge)?;
 

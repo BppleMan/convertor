@@ -1,4 +1,4 @@
-use crate::api::SubProviderApi;
+use crate::api::UniversalProviderApi;
 use crate::common::config::ConvertorConfig;
 use crate::common::config::proxy_client::ProxyClient;
 use crate::core::profile::Profile;
@@ -50,11 +50,11 @@ pub struct ServiceInstaller {
     pub name: ServiceName,
     pub base_dir: PathBuf,
     pub config: ConvertorConfig,
-    pub api: SubProviderApi,
+    pub api: UniversalProviderApi,
 }
 
 impl ServiceInstaller {
-    pub fn new(name: ServiceName, base_dir: PathBuf, config: ConvertorConfig, api: SubProviderApi) -> Self {
+    pub fn new(name: ServiceName, base_dir: PathBuf, config: ConvertorConfig, api: UniversalProviderApi) -> Self {
         ServiceInstaller {
             name,
             base_dir,

@@ -146,7 +146,7 @@ impl Renderer for SurgeRenderer {
 
     fn render_provider_name_for_policy(policy: &Policy) -> RenderResult<String> {
         let mut output = String::new();
-        write!(output, "// [")?;
+        write!(output, "[")?;
         if policy.is_subscription {
             write!(output, "Subscription")?;
         } else {

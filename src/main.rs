@@ -1,6 +1,6 @@
 use clap::Parser;
 use color_eyre::Result;
-use convertor::api::SubProviderApi;
+use convertor::api::UniversalProviderApi;
 use convertor::cli::ConvertorCommand;
 use convertor::cli::service_installer::ServiceInstaller;
 use convertor::cli::sub_provider_executor::SubProviderExecutor;
@@ -35,11 +35,14 @@ async fn main() -> Result<()> {
 
     let args = Convertor::parse();
     let config = ConvertorConfig::search(&base_dir, args.config)?;
-    let api = SubProviderApi::get_service_provider_api(config.provider.clone(), &base_dir);
+    let api = UniversalProviderApi::get_service_provider_api(config.provider.clone(), &base_dir);
 
     match args.command {
         None => start_server(args.listen, config, api, &base_dir).await?,
-        Some(ConvertorCommand::Subscription(args)) => SubProviderExecutor::new(config, api).execute(args).await?,
+        Some(ConvertorCommand::Subscription(args)) => {
+            let result = SubProviderExecutor::new(config, api).execute(args).await?;
+            println!("{result}");
+        }
         Some(ConvertorCommand::Install { name }) => {
             ServiceInstaller::new(name, base_dir, config, api).install().await?
         }

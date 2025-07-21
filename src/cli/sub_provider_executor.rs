@@ -1,4 +1,5 @@
-use crate::api::SubProviderApi;
+use crate::api::UniversalProviderApi;
+use crate::cli::sub_provider_executor::result::{SubProviderExecutorLink, SubProviderExecutorResult};
 use crate::common::config::ConvertorConfig;
 use crate::common::config::proxy_client::{ClashConfig, ProxyClient, SurgeConfig};
 use crate::common::url::ConvertorUrl;
@@ -20,6 +21,8 @@ use color_eyre::owo_colors::OwoColorize;
 use std::borrow::Cow;
 use std::path::Path;
 use url::Url;
+
+pub mod result;
 
 #[derive(Default, Debug, Clone, Args)]
 pub struct SubProviderCmd {
@@ -67,7 +70,7 @@ pub enum ConvertorUrlSource {
 
 pub struct SubProviderExecutor {
     pub config: ConvertorConfig,
-    pub api: SubProviderApi,
+    pub api: UniversalProviderApi,
 }
 
 #[allow(clippy::large_enum_variant)]
@@ -77,11 +80,11 @@ enum ClientProfile {
 }
 
 impl SubProviderExecutor {
-    pub fn new(config: ConvertorConfig, api: SubProviderApi) -> Self {
+    pub fn new(config: ConvertorConfig, api: UniversalProviderApi) -> Self {
         Self { config, api }
     }
 
-    pub async fn execute(&self, cmd: SubProviderCmd) -> Result<()> {
+    pub async fn execute(&self, cmd: SubProviderCmd) -> Result<SubProviderExecutorResult> {
         let client = cmd.client;
         let convertor_url = self.generate_convertor_url(&cmd).await?;
         let raw_profile_content = self.api.get_raw_profile(client).await?;
@@ -99,15 +102,37 @@ impl SubProviderExecutor {
             }
         };
 
-        let sub_log_query = SubLogQuery::new(&self.config.secret, 1, 20);
         let raw_sub_url = convertor_url.build_raw_sub_url()?;
         let sub_url = convertor_url.build_sub_url()?;
+        let sub_log_query = SubLogQuery::new(&self.config.secret, 1, 20);
         let sub_logs_url = convertor_url.build_sub_logs_url(sub_log_query.encode_to_query_string()?)?;
 
+        let raw_link = SubProviderExecutorLink::raw(raw_sub_url);
+        let convertor_link = SubProviderExecutorLink::convertor(sub_url);
+        let logs_link = SubProviderExecutorLink::logs(sub_logs_url);
+        let rule_provider_links = policies
+            .iter()
+            .map(|policy| {
+                let name = match client {
+                    ProxyClient::Surge => SurgeRenderer::render_provider_name_for_policy(policy)?,
+                    ProxyClient::Clash => ClashRenderer::render_provider_name_for_policy(policy)?,
+                };
+                let url = convertor_url.build_rule_provider_url(policy)?;
+                Ok(SubProviderExecutorLink::rule_provider(name, url))
+            })
+            .collect::<Result<Vec<_>>>()?;
+        let result = SubProviderExecutorResult {
+            raw_link,
+            convertor_link,
+            logs_link,
+            policy_links: rule_provider_links,
+        };
+
+        // 副作用逻辑后置，主流程只负责数据流
         if cmd.update {
             match client_profile {
                 ClientProfile::Surge => {
-                    self.update_surge_config(&convertor_url, &sub_logs_url, &policies)
+                    self.update_surge_config(&convertor_url, &result.logs_link, &policies)
                         .await?;
                 }
                 ClientProfile::Clash(profile) => {
@@ -115,27 +140,7 @@ impl SubProviderExecutor {
                 }
             }
         }
-
-        println!("{}", "Raw Subscription url:".to_string().green().bold());
-        println!("{}", raw_sub_url);
-        println!("{}", "Convertor url:".to_string().green().bold());
-        println!("{}", sub_url);
-        println!("{}", "Subscription logs url:".to_string().green().bold());
-        println!("{}", sub_logs_url);
-        for policy in policies {
-            match client {
-                ProxyClient::Surge => println!(
-                    "{}",
-                    SurgeRenderer::render_provider_name_for_policy(&policy)?.green().bold()
-                ),
-                ProxyClient::Clash => println!(
-                    "{}",
-                    ClashRenderer::render_provider_name_for_policy(&policy)?.green().bold()
-                ),
-            }
-            println!("{}", convertor_url.build_rule_provider_url(&policy)?)
-        }
-        Ok(())
+        Ok(result)
     }
 
     async fn generate_convertor_url(&self, cmd: &SubProviderCmd) -> Result<ConvertorUrl> {
@@ -175,9 +180,14 @@ impl SubProviderExecutor {
         Ok(convertor_url)
     }
 
-    async fn update_surge_config(&self, url: &ConvertorUrl, sub_logs_url: &Url, policies: &[Policy]) -> Result<()> {
+    async fn update_surge_config(
+        &self,
+        url: &ConvertorUrl,
+        sub_logs_link: &SubProviderExecutorLink,
+        policies: &[Policy],
+    ) -> Result<()> {
         if let Some(surge_config) = &self.config.client.surge {
-            surge_config.update_surge_config(url, sub_logs_url, policies).await?;
+            surge_config.update_surge_config(url, sub_logs_link, policies).await?;
         } else {
             eprintln!("{}", "Surge 配置未找到，请检查配置文件是否正确设置".red().bold());
         }
@@ -197,7 +207,12 @@ impl SubProviderExecutor {
 }
 
 impl SurgeConfig {
-    async fn update_surge_config(&self, url: &ConvertorUrl, sub_logs_url: &Url, policies: &[Policy]) -> Result<()> {
+    async fn update_surge_config(
+        &self,
+        url: &ConvertorUrl,
+        sub_logs_link: &SubProviderExecutorLink,
+        policies: &[Policy],
+    ) -> Result<()> {
         // 更新主订阅配置，即由 convertor 生成的订阅配置
         let header = url.build_managed_config_header(false)?;
         Self::update_conf(&self.main_sub_path(), header).await?;
@@ -215,7 +230,7 @@ impl SurgeConfig {
 
         // 更新 subscription_logs.js 中的请求订阅日志的 URL
         if let Some(sub_logs_path) = self.sub_logs_path() {
-            self.update_surge_sub_logs_url(sub_logs_path, sub_logs_url.as_str())
+            self.update_surge_sub_logs_url(sub_logs_path, sub_logs_link.url.as_str())
                 .await?;
         }
         Ok(())
@@ -265,11 +280,11 @@ impl SurgeConfig {
     async fn update_surge_sub_logs_url(
         &self,
         sub_logs_path: impl AsRef<Path>,
-        sub_logs_url: impl AsRef<str>,
+        sub_logs_link: impl AsRef<str>,
     ) -> Result<()> {
         let content = tokio::fs::read_to_string(&sub_logs_path).await?;
         let mut lines = content.lines().map(Cow::Borrowed).collect::<Vec<_>>();
-        lines[0] = Cow::Owned(format!(r#"const sub_logs_url = "{}""#, sub_logs_url.as_ref()));
+        lines[0] = Cow::Owned(format!(r#"const sub_logs_link = "{}""#, sub_logs_link.as_ref()));
         let content = lines.join("\n");
         tokio::fs::write(sub_logs_path, &content).await?;
         Ok(())

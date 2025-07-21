@@ -9,7 +9,7 @@ use moka::future::Cache as MokaCache;
 use reqwest::{Method, Request, Response};
 use url::Url;
 
-pub(crate) trait ServiceApiCommon {
+pub(crate) trait SubProviderApi {
     fn config(&self) -> &SubProviderConfig;
 
     fn client(&self) -> &reqwest::Client;
