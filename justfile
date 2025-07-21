@@ -23,6 +23,7 @@ zig-linux:
 deploy alias:
     echo "Stopping remote service..."
     ssh {{ alias }} "systemctl stop convertor"
+    ssh {{ alias }} "systemctl daemon-reload"
 
     echo "Uploading file..."
     scp target/x86_64-unknown-linux-gnu/release/convertor ubuntu:/root/.cargo/bin/convertor
