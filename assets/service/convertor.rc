@@ -1,0 +1,20 @@
+#!/sbin/openrc-run
+
+name="convertor"
+description="Convertor Service"
+
+command="/root/.cargo/bin/convertor"
+command_args="0.0.0.0:8001"
+command_user="root:root"
+directory="/root/.convertor"
+
+# 启动顺序：在 network 启动之后
+depend() {
+    need net
+}
+
+# 设置资源限制（非强制，OpenRC 没有 systemd 那么细化）
+rc_ulimit="-n 1024"  # 文件句柄限制
+
+# 你可以通过 `start_pre` 设置环境变量（如启用 RUST_LOG）
+# export RUST_LOG=info
