@@ -4,7 +4,6 @@ use serde::{Deserialize, Deserializer};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use tracing::instrument;
-use url::Url;
 
 #[derive(Debug, Clone)]
 pub struct Rule {
@@ -20,7 +19,7 @@ impl Rule {
         matches!(self.rule_type, RuleType::GeoIP | RuleType::Final | RuleType::Match)
     }
 
-    pub fn surge_rule_provider(policy: &Policy, name: impl AsRef<str>, url: Url) -> Self {
+    pub fn surge_rule_provider(policy: &Policy, name: impl AsRef<str>, url: impl ToString) -> Self {
         Self {
             rule_type: RuleType::RuleSet,
             value: Some(url.to_string()),

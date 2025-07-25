@@ -3,22 +3,35 @@ use crate::common::cache::{
     CACHED_AUTH_TOKEN_KEY, CACHED_PROFILE_KEY, CACHED_SUB_LOGS_KEY, CACHED_UNI_SUB_URL_KEY, Cache, CacheKey,
 };
 use crate::common::config::proxy_client::ProxyClient;
-use crate::common::config::sub_provider::SubProviderConfig;
+use crate::common::config::request::RequestConfig;
+use crate::common::config::sub_provider::ApiConfig;
 use color_eyre::eyre::{Context, eyre};
 use moka::future::Cache as MokaCache;
 use reqwest::{Method, Request, Response};
 use url::Url;
 
 pub(crate) trait SubProviderApi {
-    fn config(&self) -> &SubProviderConfig;
+    fn common_request_config(&self) -> Option<&RequestConfig>;
+
+    fn api_host(&self) -> &Url;
+
+    fn login_api(&self) -> &ApiConfig;
+
+    fn get_sub_url_api(&self) -> &ApiConfig;
+
+    fn reset_sub_url_api(&self) -> &ApiConfig;
+
+    fn get_sub_logs_api(&self) -> &ApiConfig;
+
+    fn build_raw_sub_url(&self, client: ProxyClient) -> Url;
 
     fn client(&self) -> &reqwest::Client;
 
     fn login_request(&self) -> color_eyre::Result<Request>;
 
-    fn get_sub_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request>;
+    fn get_sub_url_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request>;
 
-    fn reset_sub_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request>;
+    fn reset_sub_url_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request>;
 
     fn get_sub_logs_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request>;
 
@@ -26,7 +39,7 @@ pub(crate) trait SubProviderApi {
 
     fn cached_profile(&self) -> &Cache<Url, String>;
 
-    fn cached_raw_sub_url(&self) -> &Cache<Url, String>;
+    fn cached_sub_url(&self) -> &Cache<Url, String>;
 
     fn cached_sub_logs(&self) -> &Cache<Url, BosLifeSubLogs>;
 
@@ -38,7 +51,7 @@ pub(crate) trait SubProviderApi {
     }
 
     async fn get_raw_profile(&self, client: ProxyClient) -> color_eyre::Result<String> {
-        let raw_sub_url = self.config().build_raw_sub_url(client)?;
+        let raw_sub_url = self.build_raw_sub_url(client);
         let key = CacheKey::new(CACHED_PROFILE_KEY, raw_sub_url.clone(), Some(client));
         self.cached_profile()
             .try_get_with(key, async {
@@ -55,17 +68,18 @@ pub(crate) trait SubProviderApi {
     }
 
     async fn login(&self) -> color_eyre::Result<String> {
-        if !self.config().auth_token.is_empty() {
-            return Ok(self.config().auth_token.clone());
+        if let Some(Some(auth_token)) = &self.common_request_config().map(|r| &r.auth_token) {
+            return Ok(auth_token.clone());
         }
         self.cached_auth_token()
-            .try_get_with(format!("{}_{}", CACHED_AUTH_TOKEN_KEY, self.config().api_host), async {
+            .try_get_with(format!("{}_{}", CACHED_AUTH_TOKEN_KEY, self.api_host()), async {
                 let request = self.login_request()?;
                 let response = self.execute(request).await?;
+                let json_path = &self.login_api().json_path;
                 if response.status().is_success() {
                     let json_response = response.text().await?;
-                    let auth_token = jsonpath_lib::select_as(&json_response, &self.config().login_api.json_path)
-                        .wrap_err_with(|| format!("failed to select json_path: {}", self.config().login_api.json_path))?
+                    let auth_token = jsonpath_lib::select_as(&json_response, &json_path)
+                        .wrap_err_with(|| format!("failed to select json_path: {}", &json_path))?
                         .remove(0);
                     Ok(auth_token)
                 } else {
@@ -76,17 +90,17 @@ pub(crate) trait SubProviderApi {
             .map_err(|e| eyre!(e))
     }
 
-    async fn get_raw_sub_url(&self) -> color_eyre::Result<Url> {
-        self.cached_raw_sub_url()
+    async fn get_uni_sub_url(&self) -> color_eyre::Result<Url> {
+        self.cached_sub_url()
             .try_get_with(
-                CacheKey::new(CACHED_UNI_SUB_URL_KEY, self.config().api_host.clone(), None),
+                CacheKey::new(CACHED_UNI_SUB_URL_KEY, self.api_host().clone(), None),
                 async {
                     let auth_token = self.login().await?;
-                    let request = self.get_sub_request(auth_token)?;
+                    let request = self.get_sub_url_request(auth_token)?;
                     let response = self.execute(request).await?;
                     if response.status().is_success() {
                         let json_response = response.text().await?;
-                        let json_path = &self.config().get_sub_url_api.json_path;
+                        let json_path = &self.get_sub_url_api().json_path;
                         let url_str: String = jsonpath_lib::select_as(&json_response, json_path)
                             .wrap_err_with(|| format!("failed to select json_path: {json_path}"))?
                             .remove(0);
@@ -101,19 +115,15 @@ pub(crate) trait SubProviderApi {
             .map_err(|e| eyre!(e))?
     }
 
-    async fn reset_raw_sub_url(&self) -> color_eyre::Result<Url> {
+    async fn reset_uni_sub_url(&self) -> color_eyre::Result<Url> {
         let auth_token = self.login().await?;
-        let request = self.reset_sub_request(auth_token)?;
+        let request = self.reset_sub_url_request(auth_token)?;
         let response = self.execute(request).await?;
         if response.status().is_success() {
+            let json_path = &self.reset_sub_url_api().json_path;
             let json_response = response.text().await?;
-            let url_str: String = jsonpath_lib::select_as(&json_response, &self.config().reset_sub_url_api.json_path)
-                .wrap_err_with(|| {
-                    format!(
-                        "failed to select json_path: {}",
-                        self.config().reset_sub_url_api.json_path
-                    )
-                })?
+            let url_str: String = jsonpath_lib::select_as(&json_response, &json_path)
+                .wrap_err_with(|| format!("failed to select json_path: {}", &json_path))?
                 .remove(0);
             Url::parse(&url_str).map_err(|e| e.into())
         } else {
@@ -122,21 +132,23 @@ pub(crate) trait SubProviderApi {
     }
 
     async fn get_sub_logs(&self) -> color_eyre::Result<BosLifeSubLogs> {
-        let cache_key = CacheKey::new(CACHED_SUB_LOGS_KEY, self.config().api_host.clone(), None);
         self.cached_sub_logs()
-            .try_get_with(cache_key, async {
-                let auth_token = self.login().await?;
-                let request = self.get_sub_logs_request(auth_token)?;
-                let response = self.execute(request).await?;
-                if response.status().is_success() {
-                    let response = response.text().await?;
-                    let response: BosLifeSubLogs =
-                        jsonpath_lib::select_as(&response, &self.config().get_sub_logs_api.json_path)?.remove(0);
-                    Ok(response)
-                } else {
-                    Err(eyre!("Get subscription log failed: {}", response.status()))
-                }
-            })
+            .try_get_with(
+                CacheKey::new(CACHED_SUB_LOGS_KEY, self.api_host().clone(), None),
+                async {
+                    let auth_token = self.login().await?;
+                    let request = self.get_sub_logs_request(auth_token)?;
+                    let response = self.execute(request).await?;
+                    if response.status().is_success() {
+                        let response = response.text().await?;
+                        let json_path = &self.get_sub_logs_api().json_path;
+                        let response: BosLifeSubLogs = jsonpath_lib::select_as(&response, &json_path)?.remove(0);
+                        Ok(response)
+                    } else {
+                        Err(eyre!("Get subscription log failed: {}", response.status()))
+                    }
+                },
+            )
             .await
             .map_err(|e| eyre!(e))
     }

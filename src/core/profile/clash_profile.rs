@@ -1,6 +1,5 @@
 use crate::common::config::proxy_client::ProxyClient;
 
-use crate::common::url::ConvertorUrl;
 use crate::core::parser::clash_parser::ClashParser;
 use crate::core::profile::Profile;
 use crate::core::profile::policy::Policy;
@@ -11,6 +10,7 @@ use crate::core::profile::rule_provider::RuleProvider;
 use crate::core::renderer::Renderer;
 use crate::core::renderer::clash_renderer::ClashRenderer;
 use crate::core::result::ParseResult;
+use crate::core::url_builder::UrlBuilder;
 use serde::Deserialize;
 use std::collections::HashMap;
 use tracing::instrument;
@@ -89,13 +89,13 @@ impl Profile for ClashProfile {
         ClashParser::parse(content)
     }
 
-    fn convert(&mut self, url: &ConvertorUrl) -> ParseResult<()> {
+    fn convert(&mut self, url: &UrlBuilder) -> ParseResult<()> {
         self.optimize_proxies()?;
         self.optimize_rules(url)?;
         Ok(())
     }
 
-    fn append_rule_provider(&mut self, policy: &Policy, url: &ConvertorUrl) -> ParseResult<()> {
+    fn append_rule_provider(&mut self, policy: &Policy, url: &UrlBuilder) -> ParseResult<()> {
         let name = ClashRenderer::render_provider_name_for_policy(policy)?;
         let rule_provider_url = url.build_rule_provider_url(policy)?;
         let rule_provider = RuleProvider::new(rule_provider_url, name.clone(), url.interval);

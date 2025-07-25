@@ -1,6 +1,7 @@
-use crate::api::UniversalProviderApi;
+use crate::api::SubProviderWrapper;
 use crate::common::config::ConvertorConfig;
 use crate::common::config::proxy_client::ProxyClient;
+use crate::common::config::sub_provider::SubProvider;
 use crate::core::profile::Profile;
 use crate::core::profile::clash_profile::ClashProfile;
 use crate::core::renderer::Renderer;
@@ -50,11 +51,11 @@ pub struct ServiceInstaller {
     pub name: ServiceName,
     pub base_dir: PathBuf,
     pub config: ConvertorConfig,
-    pub api: UniversalProviderApi,
+    pub api: SubProviderWrapper,
 }
 
 impl ServiceInstaller {
-    pub fn new(name: ServiceName, base_dir: PathBuf, config: ConvertorConfig, api: UniversalProviderApi) -> Self {
+    pub fn new(name: ServiceName, base_dir: PathBuf, config: ConvertorConfig, api: SubProviderWrapper) -> Self {
         ServiceInstaller {
             name,
             base_dir,
@@ -205,7 +206,9 @@ impl ServiceInstaller {
         }
 
         println!("正在生成 mihomo 配置文件: {}", config_path.display());
-        let convertor_url = self.config.create_convertor_url(ProxyClient::Clash)?;
+        let convertor_url = self
+            .config
+            .create_url_builder(ProxyClient::Clash, SubProvider::BosLife)?;
         let clash_profile_content = self.api.get_raw_profile(ProxyClient::Clash).await?;
         let profile = ClashProfile::parse(clash_profile_content)?;
 

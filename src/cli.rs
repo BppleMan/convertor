@@ -1,5 +1,6 @@
 use crate::cli::service_installer::ServiceName;
 use crate::cli::sub_provider_executor::SubProviderCmd;
+use crate::common::config::sub_provider::SubProvider;
 use clap::Subcommand;
 
 pub mod service_installer;
@@ -16,7 +17,11 @@ pub enum ConvertorCommand {
     #[command(name = "install")]
     Install {
         /// 服务名称
-        #[arg(value_enum, default_value = "convertor")]
+        #[arg(value_enum, default_value_t = ServiceName::Convertor)]
         name: ServiceName,
+
+        /// 订阅提供商
+        #[arg(value_enum, default_value_t = SubProvider::BosLife)]
+        provider: SubProvider,
     },
 }

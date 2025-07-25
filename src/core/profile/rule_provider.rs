@@ -1,5 +1,4 @@
 use serde::Deserialize;
-use url::Url;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct RuleProvider {
@@ -14,7 +13,7 @@ pub struct RuleProvider {
 }
 
 impl RuleProvider {
-    pub fn new(url: Url, file_name: impl AsRef<str>, interval: u64) -> Self {
+    pub fn new(url: impl ToString, file_name: impl AsRef<str>, interval: u64) -> Self {
         Self {
             r#type: "http".to_string(),
             url: url.to_string(),

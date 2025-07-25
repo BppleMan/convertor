@@ -2,7 +2,17 @@ use color_eyre::Report;
 use color_eyre::eyre::eyre;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::str::FromStr;
+use std::sync::LazyLock;
+
+static OPTION_RANK: LazyLock<HashMap<Option<&str>, usize>> = LazyLock::new(|| {
+    [None, Some("no-resolve"), Some("force-remote-dns")]
+        .into_iter()
+        .enumerate()
+        .map(|(i, option)| (option, i))
+        .collect()
+});
 
 #[derive(Default, Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Policy {
@@ -19,6 +29,14 @@ pub struct SerializablePolicy {
 }
 
 impl Policy {
+    pub fn new(name: impl AsRef<str>, option: Option<&str>, is_subscription: bool) -> Self {
+        Policy {
+            name: name.as_ref().to_string(),
+            option: option.map(|s| s.to_string()),
+            is_subscription,
+        }
+    }
+
     pub fn subscription_policy() -> Self {
         Policy {
             name: "DIRECT".to_string(),
@@ -27,10 +45,10 @@ impl Policy {
         }
     }
 
-    pub fn direct_policy() -> Self {
+    pub fn direct_policy(option: Option<&str>) -> Self {
         Policy {
             name: "DIRECT".to_string(),
-            option: None,
+            option: option.map(|s| s.to_string()),
             is_subscription: false,
         }
     }
@@ -68,10 +86,17 @@ impl PartialOrd<Policy> for Policy {
 
 impl Ord for Policy {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.name
-            .cmp(&other.name)
-            .then(self.option.cmp(&other.option))
-            .then(self.is_subscription.cmp(&other.is_subscription))
+        let option_rank = |option: &Option<String>| {
+            *OPTION_RANK
+                .get(&option.as_ref().map(String::as_str))
+                .unwrap_or(&usize::MAX)
+        };
+
+        self.is_subscription
+            .cmp(&other.is_subscription)
+            .reverse()
+            .then(self.name.cmp(&other.name))
+            .then(option_rank(&self.option).cmp(&option_rank(&other.option)))
     }
 }
 
@@ -111,11 +136,31 @@ impl From<Policy> for SerializablePolicy {
     }
 }
 
+impl From<&Policy> for SerializablePolicy {
+    fn from(value: &Policy) -> Self {
+        SerializablePolicy {
+            name: value.name.clone(),
+            option: value.option.clone(),
+            is_subscription: value.is_subscription,
+        }
+    }
+}
+
 impl From<SerializablePolicy> for Policy {
     fn from(value: SerializablePolicy) -> Self {
         Policy {
             name: value.name,
             option: value.option,
+            is_subscription: value.is_subscription,
+        }
+    }
+}
+
+impl From<&SerializablePolicy> for Policy {
+    fn from(value: &SerializablePolicy) -> Self {
+        Policy {
+            name: value.name.clone(),
+            option: value.option.clone(),
             is_subscription: value.is_subscription,
         }
     }

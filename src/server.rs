@@ -1,9 +1,11 @@
-use crate::api::UniversalProviderApi;
+use crate::api::SubProviderWrapper;
 use crate::common::config::ConvertorConfig;
 use crate::common::config::proxy_client::ProxyClient;
-use crate::common::url::{ConvertorUrl, ConvertorUrlError};
+use crate::common::config::sub_provider::SubProvider;
 use crate::core::profile::clash_profile::ClashProfile;
 use crate::core::profile::surge_profile::SurgeProfile;
+use crate::core::query::convertor_query::ConvertorQuery;
+use crate::core::url_builder::ConvertorUrlError;
 use axum::Router;
 use axum::extract::{RawQuery, State};
 use axum::http::StatusCode;
@@ -13,6 +15,7 @@ use axum::routing::get;
 use color_eyre::Result;
 use color_eyre::eyre::{WrapErr, eyre};
 use moka::future::Cache;
+use std::collections::HashMap;
 use std::net::{SocketAddr, SocketAddrV4};
 use std::path::Path;
 use std::sync::Arc;
@@ -26,25 +29,24 @@ use tracing::{info, warn};
 
 pub mod clash_router;
 pub mod surge_router;
-pub mod query;
 
 pub struct AppState {
     pub config: ConvertorConfig,
-    pub api: UniversalProviderApi,
-    pub profile_cache: Cache<ConvertorUrl, String>,
-    pub surge_cache: Cache<ConvertorUrl, SurgeProfile>,
-    pub clash_cache: Cache<ConvertorUrl, ClashProfile>,
+    pub api_map: HashMap<SubProvider, SubProviderWrapper>,
+    pub profile_cache: Cache<ConvertorQuery, String>,
+    pub surge_cache: Cache<ConvertorQuery, SurgeProfile>,
+    pub clash_cache: Cache<ConvertorQuery, ClashProfile>,
 }
 
 impl AppState {
-    pub fn new(config: ConvertorConfig, api: UniversalProviderApi) -> Self {
+    pub fn new(config: ConvertorConfig, api_map: HashMap<SubProvider, SubProviderWrapper>) -> Self {
         let duration = std::time::Duration::from_secs(60 * 60); // 1 hour
         let profile_cache = Cache::builder().max_capacity(100).time_to_live(duration).build();
         let surge_cache = Cache::builder().max_capacity(100).time_to_live(duration).build();
         let clash_cache = Cache::builder().max_capacity(100).time_to_live(duration).build();
         Self {
             config,
-            api,
+            api_map,
             profile_cache,
             surge_cache,
             clash_cache,
@@ -54,6 +56,12 @@ impl AppState {
 
 #[derive(Debug, Error)]
 pub enum AppError {
+    #[error("没有找到对应的订阅提供者")]
+    NoSubProvider,
+
+    #[error("没有找到对应的代理客户端")]
+    NoProxyClient,
+
     #[error(transparent)]
     ConvertorUrl(#[from] ConvertorUrlError),
 
@@ -84,7 +92,7 @@ impl IntoResponse for AppError {
 pub async fn start_server(
     listen_addr: SocketAddrV4,
     config: ConvertorConfig,
-    api: UniversalProviderApi,
+    api_map: HashMap<SubProvider, SubProviderWrapper>,
     base_dir: impl AsRef<Path>,
 ) -> Result<()> {
     info!("base_dir: {}", base_dir.as_ref().display());
@@ -93,7 +101,7 @@ pub async fn start_server(
     info!("服务启动，使用 Ctrl+C 或 SIGTERM 关闭服务");
     let listener = tokio::net::TcpListener::bind(listen_addr).await?;
 
-    let app_state = AppState::new(config, api);
+    let app_state = AppState::new(config, api_map);
     let app = router(app_state);
     axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
         .with_graceful_shutdown(shutdown_signal())
@@ -122,19 +130,22 @@ pub fn router(app_state: AppState) -> Router {
 
 #[instrument(skip_all)]
 pub async fn profile(State(state): State<Arc<AppState>>, RawQuery(query): RawQuery) -> Result<String, AppError> {
-    let convertor_url = query
-        .map(|query| ConvertorUrl::parse_from_query_string(query, &state.config.secret))
+    let query = query
+        .map(|query| ConvertorQuery::parse_from_query_string(query, &state.config.secret))
         .ok_or_else(|| eyre!("查询参数不能为空"))?
         .wrap_err("解析查询字符串失败")?;
-    let client = convertor_url.client;
+    let client = query.client;
     let profile = state
         .clone()
         .profile_cache
-        .try_get_with(convertor_url.clone(), async {
-            let raw_profile = state.api.get_raw_profile(client).await?;
+        .try_get_with(query.clone(), async {
+            let Some(api) = state.api_map.get(&query.provider) else {
+                return Err(AppError::NoSubProvider);
+            };
+            let raw_profile = api.get_raw_profile(client).await?;
             let profile = match client {
-                ProxyClient::Surge => surge_router::profile_impl(state, convertor_url, raw_profile).await,
-                ProxyClient::Clash => clash_router::profile_impl(state, convertor_url, raw_profile).await,
+                ProxyClient::Surge => surge_router::profile_impl(state, query, raw_profile).await,
+                ProxyClient::Clash => clash_router::profile_impl(state, query, raw_profile).await,
             }?;
             Ok::<_, AppError>(profile)
         })
@@ -144,19 +155,22 @@ pub async fn profile(State(state): State<Arc<AppState>>, RawQuery(query): RawQue
 
 #[instrument(skip_all)]
 pub async fn rule_provider(State(state): State<Arc<AppState>>, RawQuery(query): RawQuery) -> Result<String, AppError> {
-    let convertor_url = query
-        .map(|query| ConvertorUrl::parse_from_query_string(query, &state.config.secret))
+    let query = query
+        .map(|query| ConvertorQuery::parse_from_query_string(query, &state.config.secret))
         .ok_or_else(|| eyre!("查询参数不能为空"))?
         .wrap_err("解析查询字符串失败")?;
-    let client = &convertor_url.client;
-    let policy = convertor_url.policy.clone();
-    let raw_profile = state.api.get_raw_profile(*client).await?;
+    let client = &query.client;
+    let policy = query.policy.clone();
+    let Some(api) = state.api_map.get(&query.provider) else {
+        return Err(AppError::NoSubProvider);
+    };
+    let raw_profile = api.get_raw_profile(*client).await?;
     match (client, policy) {
         (ProxyClient::Surge, Some(policy)) => {
-            surge_router::rule_provider_impl(state, convertor_url, raw_profile, policy.into()).await
+            surge_router::rule_provider_impl(state, query, raw_profile, policy.into()).await
         }
         (ProxyClient::Clash, Some(policy)) => {
-            clash_router::rule_provider_impl(state, convertor_url, raw_profile, policy.into()).await
+            clash_router::rule_provider_impl(state, query, raw_profile, policy.into()).await
         }
         _ => Err(eyre!("错误的 client 或 policy 参数")),
     }

@@ -1,6 +1,7 @@
 use clap::Parser;
 use color_eyre::Result;
-use convertor::api::UniversalProviderApi;
+use color_eyre::eyre::eyre;
+use convertor::api::SubProviderWrapper;
 use convertor::cli::ConvertorCommand;
 use convertor::cli::service_installer::ServiceInstaller;
 use convertor::cli::sub_provider_executor::SubProviderExecutor;
@@ -35,15 +36,18 @@ async fn main() -> Result<()> {
 
     let args = Convertor::parse();
     let config = ConvertorConfig::search(&base_dir, args.config)?;
-    let api = UniversalProviderApi::get_service_provider_api(config.provider.clone(), &base_dir);
+    let mut api_map = SubProviderWrapper::create_api(config.providers.clone(), &base_dir);
 
     match args.command {
-        None => start_server(args.listen, config, api, &base_dir).await?,
+        None => start_server(args.listen, config, api_map, &base_dir).await?,
         Some(ConvertorCommand::Subscription(args)) => {
-            let result = SubProviderExecutor::new(config, api).execute(args).await?;
+            let result = SubProviderExecutor::new(config, api_map).execute(args).await?;
             println!("{result}");
         }
-        Some(ConvertorCommand::Install { name }) => {
+        Some(ConvertorCommand::Install { name, provider }) => {
+            let Some(api) = api_map.remove(&provider) else {
+                return Err(eyre!("没有找到对应的订阅提供者: {provider}"));
+            };
             ServiceInstaller::new(name, base_dir, config, api).install().await?
         }
     }

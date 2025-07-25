@@ -1,6 +1,8 @@
-use convertor::api::UniversalProviderApi;
+use color_eyre::eyre::eyre;
+use convertor::api::SubProviderWrapper;
 use convertor::common::config::ConvertorConfig;
 use convertor::common::config::proxy_client::ProxyClient;
+use convertor::common::config::sub_provider::SubProvider;
 use convertor::common::once::{init_backtrace, init_base_dir};
 use convertor::core::profile::Profile;
 use convertor::core::profile::surge_profile::SurgeProfile;
@@ -15,9 +17,12 @@ async fn main() -> color_eyre::Result<()> {
     // 搜索可用配置文件
     let config = ConvertorConfig::search(&base_dir, Option::<&str>::None)?;
     // 创建服务(BosLife)API实例
-    let api = UniversalProviderApi::get_service_provider_api(config.provider.clone(), &base_dir);
+    let api_map = SubProviderWrapper::create_api(config.providers.clone(), &base_dir);
+    let api = api_map
+        .get(&SubProvider::BosLife)
+        .ok_or_else(|| eyre!("未找到 BosLife 订阅提供者"))?;
     // 创建 URL 对象，该 URL 用于从convertor订阅优化后的配置文件
-    let url = config.create_convertor_url(ProxyClient::Surge)?;
+    let url = config.create_url_builder(ProxyClient::Surge, SubProvider::BosLife)?;
 
     // 获取原始的 Surge 配置文件内容
     let raw_sub_content = api.get_raw_profile(ProxyClient::Surge).await?;

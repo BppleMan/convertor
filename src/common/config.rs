@@ -1,8 +1,10 @@
-use crate::common::config::proxy_client::ProxyClientConfig;
-use crate::common::config::sub_provider::SubProviderConfig;
-use crate::common::url::ConvertorUrl;
+use crate::common::config::proxy_client::{ClashConfig, ProxyClientConfig, SurgeConfig};
+use crate::common::config::sub_provider::{BosLifeConfig, SubProvider, SubProviderConfig};
+use crate::common::encrypt::encrypt;
+use crate::core::url_builder::UrlBuilder;
 use color_eyre::Report;
 use color_eyre::eyre::{WrapErr, eyre};
+use dispatch_map::DispatchMap;
 use proxy_client::ProxyClient;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
@@ -12,22 +14,37 @@ use url::Url;
 
 pub mod proxy_client;
 pub mod sub_provider;
+pub mod request;
 
-pub const TEMPLATE_CONFIG: &str = include_str!("../../assets/config/template.toml");
+// pub const TEMPLATE_CONFIG: &str = include_str!("../../assets/config/template.toml");
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConvertorConfig {
     pub secret: String,
     pub server: Url,
-    pub interval: u64,
-    pub strict: bool,
-    pub provider: SubProviderConfig,
-    pub client: ProxyClientConfig,
+    pub providers: DispatchMap<SubProvider, SubProviderConfig>,
+    #[serde(default)]
+    pub clients: DispatchMap<ProxyClient, ProxyClientConfig>,
 }
 
 impl ConvertorConfig {
-    pub fn template() -> color_eyre::Result<Self> {
-        toml::from_str(TEMPLATE_CONFIG).wrap_err("解析模板配置失败")
+    pub fn template() -> Self {
+        let mut providers = DispatchMap::default();
+        providers.insert(
+            SubProvider::BosLife,
+            SubProviderConfig::BosLife(BosLifeConfig::template()),
+        );
+
+        let mut clients = DispatchMap::default();
+        clients.insert(ProxyClient::Surge, ProxyClientConfig::Surge(SurgeConfig::template()));
+        clients.insert(ProxyClient::Clash, ProxyClientConfig::Clash(ClashConfig::template()));
+
+        ConvertorConfig {
+            secret: "bppleman".to_string(),
+            server: Url::parse("http://127.0.0.1:8080").expect("不合法的服务器地址"),
+            providers,
+            clients,
+        }
     }
 
     pub fn search(cwd: impl AsRef<Path>, config_path: Option<impl AsRef<Path>>) -> color_eyre::Result<Self> {
@@ -81,15 +98,31 @@ impl ConvertorConfig {
             .wrap_err("服务器地址无效")
     }
 
-    pub fn create_convertor_url(&self, client: ProxyClient) -> color_eyre::Result<ConvertorUrl> {
-        Ok(ConvertorUrl::new(
-            self.secret.clone(),
+    pub fn enc_secret(&self) -> color_eyre::Result<String> {
+        Ok(encrypt(self.secret.as_bytes(), &self.secret)?)
+    }
+
+    pub fn create_url_builder(&self, client: ProxyClient, provider: SubProvider) -> color_eyre::Result<UrlBuilder> {
+        let uni_sub_url = match self.providers.get(&provider) {
+            Some(SubProviderConfig::BosLife(provider_config)) => provider_config.uni_sub_url.clone(),
+            None => return Err(eyre!("未找到提供商配置: [providers.{}]", provider)),
+        };
+        let (interval, strict) = match self.clients.get(&client) {
+            Some(ProxyClientConfig::Surge(config)) => (config.interval, config.strict),
+            Some(ProxyClientConfig::Clash(config)) => (config.interval, config.strict),
+            None => return Err(eyre!("未找到代理客户端配置: [clients.{}]", client)),
+        };
+        let server = self.server.clone();
+        let secret = self.secret.clone();
+        Ok(UrlBuilder::new(
+            secret,
             client,
-            self.server.clone(),
-            self.provider.uni_sub_url.clone(),
-            self.interval,
-            self.strict,
+            provider,
+            server,
+            uni_sub_url,
             None,
+            interval,
+            strict,
         )?)
     }
 }
@@ -99,42 +132,5 @@ impl FromStr for ConvertorConfig {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         toml::from_str(s).wrap_err("解析配置字符串失败")
-    }
-}
-
-impl SubProviderConfig {
-    pub fn build_raw_sub_url(&self, client: ProxyClient) -> color_eyre::Result<Url> {
-        let mut url = self.uni_sub_url.clone();
-        // BosLife 的字段是 `flag` 不可改为client
-        url.query_pairs_mut().append_pair("flag", client.as_str());
-        Ok(url)
-    }
-
-    pub fn build_login_url(&self) -> color_eyre::Result<Url> {
-        let url = self
-            .api_host
-            .join(&format!("{}{}", self.api_prefix, self.login_api.path))?;
-        Ok(url)
-    }
-
-    pub fn build_get_sub_url(&self) -> color_eyre::Result<Url> {
-        let url = self
-            .api_host
-            .join(&format!("{}{}", self.api_prefix, self.get_sub_url_api.path))?;
-        Ok(url)
-    }
-
-    pub fn build_reset_sub_url(&self) -> color_eyre::Result<Url> {
-        let url = self
-            .api_host
-            .join(&format!("{}{}", self.api_prefix, self.reset_sub_url_api.path))?;
-        Ok(url)
-    }
-
-    pub fn build_get_sub_logs_url(&self) -> color_eyre::Result<Url> {
-        let url = self
-            .api_host
-            .join(&format!("{}{}", self.api_prefix, self.get_sub_logs_api.path))?;
-        Ok(url)
     }
 }

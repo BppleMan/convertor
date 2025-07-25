@@ -1,11 +1,11 @@
 use crate::common::config::proxy_client::ProxyClient;
-use crate::common::url::ConvertorUrl;
 use crate::core::profile::policy::Policy;
 use crate::core::profile::proxy::Proxy;
 use crate::core::profile::proxy_group::{ProxyGroup, ProxyGroupType};
 use crate::core::profile::rule::{ProviderRule, Rule};
 use crate::core::region::Region;
 use crate::core::result::ParseResult;
+use crate::core::url_builder::{HostPort, UrlBuilder};
 use regex::Regex;
 use std::collections::{HashMap, HashSet};
 use tracing::{instrument, span, warn};
@@ -17,6 +17,7 @@ pub mod rule_provider;
 pub mod policy;
 pub mod surge_profile;
 pub mod clash_profile;
+pub mod surge_header;
 
 pub(super) fn group_by_region(proxies: &[Proxy]) -> (Vec<(&'static Region, Vec<&Proxy>)>, Vec<&Proxy>) {
     let match_number = Regex::new(r"^\d+$").unwrap();
@@ -59,14 +60,14 @@ pub fn extract_policies(rules: &[Rule]) -> Vec<Policy> {
     policies
 }
 
-pub fn extract_policies_for_rule_provider(rules: &[Rule], uni_sub_host: impl AsRef<str>) -> Vec<Policy> {
+pub fn extract_policies_for_rule_provider(rules: &[Rule], uni_sub_host_port: impl AsRef<str>) -> Vec<Policy> {
     let mut policies = rules
         .iter()
         .filter_map(|rule| {
             if rule
                 .value
                 .as_ref()
-                .map(|v| v.contains(uni_sub_host.as_ref()))
+                .map(|v| v.contains(uni_sub_host_port.as_ref()))
                 .unwrap_or(false)
             {
                 Some(Policy::subscription_policy())
@@ -106,7 +107,7 @@ pub trait Profile {
 
     fn parse(content: String) -> ParseResult<Self::PROFILE>;
 
-    fn convert(&mut self, url: &ConvertorUrl) -> ParseResult<()>;
+    fn convert(&mut self, url_builder: &UrlBuilder) -> ParseResult<()>;
 
     #[instrument(skip_all)]
     fn optimize_proxies(&mut self) -> ParseResult<()> {
@@ -151,8 +152,8 @@ pub trait Profile {
     }
 
     #[instrument(skip_all)]
-    fn optimize_rules(&mut self, url: &ConvertorUrl) -> ParseResult<()> {
-        let uni_sub_host = url.uni_sub_host()?;
+    fn optimize_rules(&mut self, url_builder: &UrlBuilder) -> ParseResult<()> {
+        let uni_sub_host_port = url_builder.uni_sub_url.host_port()?;
         let inner_span = span!(tracing::Level::INFO, "拆分内置规则和其他规则");
         let _guard = inner_span.entered();
         let (built_in_rules, other_rules): (Vec<Rule>, Vec<Rule>) = self
@@ -164,7 +165,7 @@ pub trait Profile {
         let inner_span = span!(tracing::Level::INFO, "处理其它规则");
         let _guard = inner_span.entered();
         for mut rule in other_rules {
-            if rule.value.as_ref().map(|v| v.contains(&uni_sub_host)) == Some(true) {
+            if rule.value.as_ref().map(|v| v.contains(&uni_sub_host_port)) == Some(true) {
                 let inner_span = span!(tracing::Level::INFO, "Rule 转换为 ProviderRule");
                 let _inner_guard = inner_span.entered();
                 rule.policy.is_subscription = true;
@@ -200,7 +201,7 @@ pub trait Profile {
         let inner_span = span!(tracing::Level::INFO, "为每个策略添加规则提供者");
         let _guard = inner_span.entered();
         for policy in policy_list {
-            if let Err(e) = self.append_rule_provider(&policy, url) {
+            if let Err(e) = self.append_rule_provider(&policy, url_builder) {
                 warn!("无法为 {:?} 添加 Rule Provider: {}", policy, e);
             }
         }
@@ -214,7 +215,7 @@ pub trait Profile {
         Ok(())
     }
 
-    fn append_rule_provider(&mut self, policy: &Policy, url: &ConvertorUrl) -> ParseResult<()>;
+    fn append_rule_provider(&mut self, policy: &Policy, url_builder: &UrlBuilder) -> ParseResult<()>;
 
     #[instrument(skip_all)]
     fn get_provider_rules_with_policy(&self, policy: &Policy) -> Option<&Vec<ProviderRule>> {
