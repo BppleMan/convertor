@@ -206,7 +206,7 @@ impl ServiceInstaller {
         }
 
         println!("正在生成 mihomo 配置文件: {}", config_path.display());
-        let convertor_url = self
+        let url_builder = self
             .config
             .create_url_builder(ProxyClient::Clash, SubProvider::BosLife)?;
         let clash_profile_content = self.api.get_raw_profile(ProxyClient::Clash).await?;
@@ -214,7 +214,7 @@ impl ServiceInstaller {
 
         let mut template = ClashProfile::template()?;
         template.patch(profile)?;
-        template.convert(&convertor_url)?;
+        template.convert(&url_builder)?;
         let config_content = ClashRenderer::render_profile(&template)?;
         tokio::fs::write(&config_path, &config_content).await?;
         println!("mihomo 配置文件生成成功: {}", config_path.display());

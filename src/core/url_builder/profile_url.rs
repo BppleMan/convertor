@@ -1,17 +1,16 @@
-use crate::core::query::convertor_query::ConvertorQuery;
-use serde::{Deserialize, Serialize};
+use crate::server::query::profile_query::ProfileQuery;
 use std::fmt::{Display, Formatter};
 use url::Url;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ConvertorUrl {
+#[derive(Debug, Clone)]
+pub struct ProfileUrl {
     pub server: Url,
     pub path: String,
-    pub query: ConvertorQuery,
+    pub query: ProfileQuery,
 }
 
-impl From<&ConvertorUrl> for Url {
-    fn from(value: &ConvertorUrl) -> Self {
+impl From<&ProfileUrl> for Url {
+    fn from(value: &ProfileUrl) -> Self {
         let mut url = value.server.clone();
         url.set_path(&value.path);
         url.set_query(Some(&value.query.encode_to_query_string()));
@@ -19,7 +18,7 @@ impl From<&ConvertorUrl> for Url {
     }
 }
 
-impl Display for ConvertorUrl {
+impl Display for ProfileUrl {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,

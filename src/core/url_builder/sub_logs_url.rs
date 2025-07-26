@@ -1,9 +1,8 @@
-use crate::core::query::sub_logs_query::SubLogsQuery;
-use serde::{Deserialize, Serialize};
+use crate::server::query::sub_logs_query::SubLogsQuery;
 use std::fmt::{Display, Formatter};
 use url::Url;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct SubLogsUrl {
     pub server: Url,
     pub path: String,

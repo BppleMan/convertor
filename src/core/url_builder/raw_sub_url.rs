@@ -1,9 +1,8 @@
 use crate::common::config::proxy_client::ProxyClient;
-use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use url::Url;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct RawSubUrl {
     pub server: Url,
     pub flag: ProxyClient,

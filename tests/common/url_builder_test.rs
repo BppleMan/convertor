@@ -27,10 +27,10 @@ fn test_url_builder(
         true,
     )?;
 
-    let raw_sub_url = url_builder.build_raw_sub_url()?;
+    let raw_sub_url = url_builder.build_raw_sub_url();
     pretty_assertions::assert_str_eq!(format!("{uni_sub_url}&flag={client}"), raw_sub_url.to_string(),);
 
-    let sub_url = url_builder.build_sub_url()?;
+    let sub_url = url_builder.build_profile_url();
     let encoded_uni_sub_url = sub_url.query.encoded_uni_sub_url();
     pretty_assertions::assert_eq!(
         format!(
@@ -39,7 +39,7 @@ fn test_url_builder(
         sub_url.to_string()
     );
 
-    let rule_provider_url = url_builder.build_rule_provider_url(&Policy::subscription_policy())?;
+    let rule_provider_url = url_builder.build_rule_provider_url(&Policy::subscription_policy());
     pretty_assertions::assert_eq!(
         format!(
             "{server}rule-provider?client={client}&provider={provider}&server={server}&interval=86400&policy.name=DIRECT&policy.is_subscription=true&uni_sub_url={encoded_uni_sub_url}",

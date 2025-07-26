@@ -1,18 +1,17 @@
 use crate::common::config::proxy_client::ProxyClient;
 use crate::common::config::sub_provider::SubProvider;
 use crate::common::encrypt::decrypt;
-use crate::core::query::error::{ConvertorQueryError, ParseError};
 use crate::core::url_builder::UrlBuilder;
-use crate::server::ProfileCacheKey;
+use crate::server::app_state::ProfileCacheKey;
+use crate::server::query::error::{ParseError, QueryError};
 use percent_encoding::{percent_decode_str, utf8_percent_encode};
-use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::str::Utf8Error;
 use url::Url;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct ConvertorQuery {
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub struct ProfileQuery {
     pub client: ProxyClient,
     pub provider: SubProvider,
     pub server: Url,
@@ -22,11 +21,8 @@ pub struct ConvertorQuery {
     pub strict: bool,
 }
 
-impl ConvertorQuery {
-    pub fn parse_from_query_string(
-        query_string: impl AsRef<str>,
-        secret: impl AsRef<str>,
-    ) -> Result<Self, ConvertorQueryError> {
+impl ProfileQuery {
+    pub fn parse_from_query_string(query_string: impl AsRef<str>, secret: impl AsRef<str>) -> Result<Self, QueryError> {
         let query_string = query_string.as_ref();
         let secret = secret.as_ref().to_string();
         let query_map = query_string
@@ -125,7 +121,7 @@ impl ConvertorQuery {
     }
 }
 
-impl ConvertorQuery {
+impl ProfileQuery {
     pub fn cache_key(&self) -> ProfileCacheKey {
         ProfileCacheKey {
             client: self.client,
@@ -139,9 +135,9 @@ impl ConvertorQuery {
     }
 }
 
-impl From<&UrlBuilder> for ConvertorQuery {
+impl From<&UrlBuilder> for ProfileQuery {
     fn from(builder: &UrlBuilder) -> Self {
-        ConvertorQuery {
+        ProfileQuery {
             client: builder.client,
             provider: builder.provider,
             server: builder.server.clone(),

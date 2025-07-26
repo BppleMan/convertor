@@ -5,7 +5,7 @@ use std::str::Utf8Error;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum ConvertorQueryError {
+pub enum QueryError {
     #[error("无法加密/解密 raw_sub_url: {0}")]
     EncryptError(#[from] EncryptError),
 

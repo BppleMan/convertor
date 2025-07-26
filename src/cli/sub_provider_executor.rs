@@ -8,7 +8,7 @@ use crate::core::profile::clash_profile::ClashProfile;
 use crate::core::profile::extract_policies_for_rule_provider;
 use crate::core::profile::policy::Policy;
 use crate::core::profile::rule::Rule;
-use crate::core::profile::surge_header::SurgeHeader;
+use crate::core::profile::surge_header::{SurgeHeader, SurgeHeaderType};
 use crate::core::profile::surge_profile::SurgeProfile;
 use crate::core::renderer::Renderer;
 use crate::core::renderer::clash_renderer::ClashRenderer;
@@ -68,10 +68,10 @@ pub enum UrlSource {
     Reset,
 
     /// 解码 订阅提供商 的原始订阅链接
-    Raw { sub_url: Url },
+    Raw { sub_url: Option<Url> },
 
     /// 解码 convertor 的完整订阅链接
-    Decode { convertor_url: Url },
+    Decode { profile_url: Url },
 }
 
 pub struct SubProviderExecutor {
@@ -116,12 +116,14 @@ impl SubProviderExecutor {
             }
         };
 
-        let raw_sub_url = url_builder.build_raw_sub_url()?;
-        let sub_url = url_builder.build_sub_url()?;
+        let raw_sub_url = url_builder.build_raw_sub_url();
+        let profile_url = url_builder.build_profile_url();
+        let raw_profile_url = url_builder.build_raw_profile_url();
         let sub_logs_url = url_builder.build_sub_logs_url(1, 20)?;
 
         let raw_link = SubProviderExecutorLink::raw((&raw_sub_url).into());
-        let convertor_link = SubProviderExecutorLink::convertor((&sub_url).into());
+        let profile_link = SubProviderExecutorLink::profile((&profile_url).into());
+        let raw_profile_link = SubProviderExecutorLink::raw_profile((&raw_profile_url).into());
         let logs_link = SubProviderExecutorLink::logs((&sub_logs_url).into());
         let rule_provider_links = policies
             .iter()
@@ -130,15 +132,16 @@ impl SubProviderExecutor {
                     ProxyClient::Surge => SurgeRenderer::render_provider_name_for_policy(policy)?,
                     ProxyClient::Clash => ClashRenderer::render_provider_name_for_policy(policy)?,
                 };
-                let url = url_builder.build_rule_provider_url(policy)?;
+                let url = url_builder.build_rule_provider_url(policy);
                 Ok(SubProviderExecutorLink::rule_provider(name, (&url).into()))
             })
             .collect::<Result<Vec<_>>>()?;
         let result = SubProviderExecutorResult {
             raw_link,
-            convertor_link,
+            raw_profile_link,
+            profile_link,
             logs_link,
-            policy_links: rule_provider_links,
+            rule_provider_links,
         };
 
         // 副作用逻辑后置，主流程只负责数据流
@@ -196,12 +199,16 @@ impl SubProviderExecutor {
             }
             Some(UrlSource::Raw { sub_url }) => {
                 let mut url_builder = self.config.create_url_builder(*client, *provider)?;
-                url_builder.uni_sub_url = sub_url.clone();
+                url_builder.uni_sub_url = match (sub_url, self.config.providers.get(provider)) {
+                    (Some(sub_url), _) => sub_url.clone(),
+                    (None, Some(config)) => config.uni_sub_url().clone(),
+                    _ => {
+                        return Err(eyre!("未找到订阅提供商的原始订阅链接，请检查参数是否完整"));
+                    }
+                };
                 url_builder
             }
-            Some(UrlSource::Decode { convertor_url }) => {
-                UrlBuilder::parse_from_url(convertor_url, &self.config.secret)?
-            }
+            Some(UrlSource::Decode { profile_url }) => UrlBuilder::parse_from_url(profile_url, &self.config.secret)?,
         };
 
         if let Some(server) = server {
@@ -251,12 +258,18 @@ impl SurgeConfig {
         policies: &[Policy],
     ) -> Result<()> {
         // 更新主订阅配置，即由 convertor 生成的订阅配置
-        let header = url.build_managed_config_header(false)?;
-        Self::update_conf(&self.main_sub_path(), header).await?;
+        let header = url.build_managed_config_header(SurgeHeaderType::Profile);
+        Self::update_conf(&self.main_profile_path(), header).await?;
+
+        // 更新转发原始订阅配置，即由 convertor 生成的原始订阅配置
+        if let Some(raw_profile_path) = self.raw_profile_path() {
+            let header = url.build_managed_config_header(SurgeHeaderType::RawProfile);
+            Self::update_conf(raw_profile_path, header).await?;
+        }
 
         // 更新原始订阅配置，即由订阅提供商生成的订阅配置，如果存在的话
         if let Some(raw_sub_path) = self.raw_sub_path() {
-            let header = url.build_managed_config_header(true)?;
+            let header = url.build_managed_config_header(SurgeHeaderType::Raw);
             Self::update_conf(raw_sub_path, header).await?;
         }
 
@@ -297,7 +310,7 @@ impl SurgeConfig {
             .iter()
             .map(|policy| {
                 let name = SurgeRenderer::render_provider_name_for_policy(policy)?;
-                let url = url.build_rule_provider_url(policy)?;
+                let url = url.build_rule_provider_url(policy);
                 Ok(Rule::surge_rule_provider(policy, name, url))
             })
             .collect::<ParseResult<Vec<_>>>()?;
