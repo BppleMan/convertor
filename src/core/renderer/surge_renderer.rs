@@ -79,7 +79,7 @@ impl Renderer for SurgeRenderer {
             write!(output, ",encrypt-method={cipher}")?;
         }
         if let Some(udp) = proxy.udp {
-            write!(output, ",udp-replay={udp}")?;
+            write!(output, ",udp-relay={udp}")?;
         }
         if let Some(tfo) = proxy.tfo {
             write!(output, ",tfo={tfo}")?;

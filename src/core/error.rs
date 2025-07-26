@@ -1,5 +1,5 @@
-use crate::common::url::ConvertorUrlError;
 use crate::core::profile::rule::Rule;
+use crate::core::url_builder::ConvertorUrlError;
 use thiserror::Error;
 
 /// 所有解析失败场景的统一错误
