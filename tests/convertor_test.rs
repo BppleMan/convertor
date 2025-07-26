@@ -10,7 +10,7 @@ static SURGE_MOCK_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/test-assets/surge
 static CLASH_MOCK_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/test-assets/clash/convertor");
 
 pub fn init_test_base_dir() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join(".convertor.test")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("test-assets")
 }
 
 pub fn init_test() -> PathBuf {

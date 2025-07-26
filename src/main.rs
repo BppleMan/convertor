@@ -35,14 +35,21 @@ async fn main() -> Result<()> {
     init_log(&base_dir);
 
     let args = Convertor::parse();
+    if let Some(ConvertorCommand::Config) = &args.command {
+        let config = ConvertorConfig::template();
+        println!("{config}");
+        return Ok(());
+    }
     let config = ConvertorConfig::search(&base_dir, args.config)?;
     let mut api_map = SubProviderWrapper::create_api(config.providers.clone(), &base_dir);
 
     match args.command {
         None => start_server(args.listen, config, api_map, &base_dir).await?,
+        Some(ConvertorCommand::Config) => unreachable!("config 子命令已拦截处理"),
         Some(ConvertorCommand::Subscription(args)) => {
-            let result = SubProviderExecutor::new(config, api_map).execute(args).await?;
-            println!("{result}");
+            let executor = SubProviderExecutor::new(config.clone(), api_map);
+            let (url_builder, result) = executor.execute(args).await?;
+            executor.post_execute(url_builder, result);
         }
         Some(ConvertorCommand::Install { name, provider }) => {
             let Some(api) = api_map.remove(&provider) else {

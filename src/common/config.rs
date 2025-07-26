@@ -1,13 +1,13 @@
 use crate::common::config::proxy_client::{ClashConfig, ProxyClientConfig, SurgeConfig};
 use crate::common::config::sub_provider::{BosLifeConfig, SubProvider, SubProviderConfig};
-use crate::common::encrypt::encrypt;
+use crate::common::encrypt::{decrypt, encrypt};
 use crate::core::url_builder::UrlBuilder;
 use color_eyre::Report;
 use color_eyre::eyre::{WrapErr, eyre};
 use dispatch_map::DispatchMap;
 use proxy_client::ProxyClient;
 use serde::{Deserialize, Serialize};
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 use std::path::Path;
 use std::str::FromStr;
 use url::Url;
@@ -15,8 +15,6 @@ use url::Url;
 pub mod proxy_client;
 pub mod sub_provider;
 pub mod request;
-
-// pub const TEMPLATE_CONFIG: &str = include_str!("../../assets/config/template.toml");
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConvertorConfig {
@@ -114,16 +112,19 @@ impl ConvertorConfig {
         };
         let server = self.server.clone();
         let secret = self.secret.clone();
-        Ok(UrlBuilder::new(
-            secret,
-            client,
-            provider,
-            server,
-            uni_sub_url,
-            None,
-            interval,
-            strict,
-        )?)
+        let url_builder = UrlBuilder::new(secret, client, provider, server, uni_sub_url, None, interval, strict)?;
+        Ok(url_builder)
+    }
+
+    pub fn validate_enc_secret(&self, enc_secret: &str) -> color_eyre::Result<()> {
+        if enc_secret.is_empty() {
+            return Err(eyre!("加密后的 secret 不能为空"));
+        }
+        let decrypted = decrypt(self.secret.as_bytes(), enc_secret).wrap_err("无法解密 secret")?;
+        if decrypted != self.secret {
+            return Err(eyre!("解密后的 secret 不匹配"));
+        }
+        Ok(())
     }
 }
 
@@ -132,5 +133,11 @@ impl FromStr for ConvertorConfig {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         toml::from_str(s).wrap_err("解析配置字符串失败")
+    }
+}
+
+impl Display for ConvertorConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", toml::to_string(self).expect("无法序列化 ConvertorConfig"))
     }
 }

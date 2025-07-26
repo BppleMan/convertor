@@ -90,7 +90,7 @@ impl SubProviderExecutor {
         Self { config, api_map }
     }
 
-    pub async fn execute(&self, cmd: SubProviderCmd) -> Result<SubProviderExecutorResult> {
+    pub async fn execute(&self, cmd: SubProviderCmd) -> Result<(UrlBuilder, SubProviderExecutorResult)> {
         let client = cmd.client;
         let sub_provider = cmd.provider;
         let url_builder = self.create_url_builder(&cmd).await?;
@@ -151,8 +151,10 @@ impl SubProviderExecutor {
                 }
             }
         }
-        Ok(result)
+        Ok((url_builder, result))
     }
+
+    pub fn post_execute(&self, _url_builder: UrlBuilder, _result: SubProviderExecutorResult) {}
 
     async fn create_url_builder(&self, cmd: &SubProviderCmd) -> Result<UrlBuilder> {
         let SubProviderCmd {

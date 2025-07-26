@@ -40,6 +40,7 @@ pub(super) fn group_by_region(proxies: &[Proxy]) -> (Vec<(&'static Region, Vec<&
     (groups, infos)
 }
 
+/// 用于提取非内置策略, 以确定需要创建的代理组
 pub fn extract_policies(rules: &[Rule]) -> Vec<Policy> {
     let mut policies = rules
         .iter()
@@ -63,18 +64,16 @@ pub fn extract_policies(rules: &[Rule]) -> Vec<Policy> {
 pub fn extract_policies_for_rule_provider(rules: &[Rule], uni_sub_host_port: impl AsRef<str>) -> Vec<Policy> {
     let mut policies = rules
         .iter()
-        .filter_map(|rule| {
+        .map(|rule| {
             if rule
                 .value
                 .as_ref()
                 .map(|v| v.contains(uni_sub_host_port.as_ref()))
                 .unwrap_or(false)
             {
-                Some(Policy::subscription_policy())
-            } else if !rule.policy.is_built_in() {
-                Some(rule.policy.clone())
+                Policy::subscription_policy()
             } else {
-                None
+                rule.policy.clone()
             }
         })
         .collect::<HashSet<_>>()
@@ -117,6 +116,7 @@ pub trait Profile {
         let (region_map, infos) = group_by_region(self.proxies());
         // 一个包含了所有地区组的大型代理组
         let region_list = region_map.iter().map(|(r, _)| r.policy_name()).collect::<Vec<_>>();
+        // 提取非内置策略, 以确定需要创建的代理组
         let policies = extract_policies(self.rules());
         let policy_groups = policies
             .iter()

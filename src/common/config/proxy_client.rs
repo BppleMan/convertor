@@ -17,6 +17,7 @@ pub enum ProxyClient {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum ProxyClientConfig {
     Surge(SurgeConfig),
     Clash(ClashConfig),
@@ -25,12 +26,6 @@ pub enum ProxyClientConfig {
 dispatch_pattern! {
     ProxyClient::Surge => ProxyClientConfig::Surge(SurgeConfig),
     ProxyClient::Clash => ProxyClientConfig::Clash(ClashConfig),
-}
-
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct ProxyClientCommonConfig {
-    pub interval: u64,
-    pub strict: bool,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
@@ -84,11 +79,27 @@ impl Display for ProxyClient {
     }
 }
 
+impl ProxyClientConfig {
+    pub fn interval(&self) -> u64 {
+        match self {
+            ProxyClientConfig::Surge(config) => config.interval,
+            ProxyClientConfig::Clash(config) => config.interval,
+        }
+    }
+
+    pub fn strict(&self) -> bool {
+        match self {
+            ProxyClientConfig::Surge(config) => config.strict,
+            ProxyClientConfig::Clash(config) => config.strict,
+        }
+    }
+}
+
 impl SurgeConfig {
     pub fn template() -> Self {
         Self {
             surge_dir: "${ICLOUD}/../iCloud~com~nssurge~inc/Documents/surge".to_string(),
-            interval: 86400,
+            interval: 43200,
             strict: true,
             main_sub_name: "surge.conf".to_string(),
             raw_sub_name: Some("BosLife.conf".to_string()),
@@ -132,7 +143,7 @@ impl ClashConfig {
     pub fn template() -> Self {
         Self {
             clash_dir: "${HOME}/.config/mihomo".to_string(),
-            interval: 86400,
+            interval: 43200,
             strict: true,
             main_sub_name: "config.yaml".to_string(),
             install_path: Some("/usr/local/bin/mihomo".to_string()),

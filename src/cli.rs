@@ -9,6 +9,10 @@ pub mod sub_provider_executor;
 #[derive(Debug, Clone, Subcommand)]
 #[allow(clippy::large_enum_variant)]
 pub enum ConvertorCommand {
+    /// 配置相关的子命令
+    /// 获取配置模板, 生成配置文件等
+    #[command(name = "config")]
+    Config,
     /// 获取订阅提供商的订阅链接
     #[command(name = "sub")]
     Subscription(SubProviderCmd),

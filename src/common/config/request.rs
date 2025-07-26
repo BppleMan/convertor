@@ -19,16 +19,16 @@ impl RequestConfig {
     pub fn template() -> Self {
         Self {
             user_agent: Some(concat!("Convertor/", env!("CARGO_PKG_VERSION")).to_string()),
-            auth_token: Some("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c".to_string()),
-            cookie: Some("sessionId=abc123; theme=light".to_string()),
+            auth_token: Some("optional:boslife.auth_token".to_string()),
+            cookie: Some("optional:boslife.cookie".to_string()),
             headers: [
                 ("Host", "http://127.0.0.1:8008"),
                 ("Accept", "application/json"),
                 ("Content-Type", "application/json"),
             ]
-                .into_iter()
-                .map(|(k, v)| (k.to_string(), v.to_string()))
-                .collect(),
+            .into_iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect(),
         }
     }
 

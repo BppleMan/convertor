@@ -15,6 +15,11 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[[example]]
+name = "trace_surge_parse"
+path = "examples/trace_surge_parse.rs"
+required-features = ["bench"]
+
 [dependencies]
 rush-var = { git = "https://github.com/BppleMan/rush-env", package = "rush-var", branch = "main" }
 

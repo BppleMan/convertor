@@ -41,6 +41,7 @@ impl FromStr for SubProvider {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum SubProviderConfig {
     BosLife(BosLifeConfig),
 }
@@ -122,7 +123,7 @@ impl SubProviderConfig {
 impl Display for SubProvider {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            SubProvider::BosLife => write!(f, "{}", "BosLife"),
+            SubProvider::BosLife => write!(f, "{}", self.as_str()),
         }
     }
 }
@@ -133,8 +134,8 @@ impl BosLifeConfig {
             uni_sub_url: Url::parse("http://127.0.0.1:8080/subscription?token=bppleman").expect("不合法的订阅地址"),
             request: Some(RequestConfig::template()),
             credential: CredentialConfig {
-                username: "test_user".to_string(),
-                password: "test_pass".to_string(),
+                username: "optional:boslife.username".to_string(),
+                password: "optional:boslife.password".to_string(),
             },
             api_host: Url::parse("https://www.blnew.com").expect("不合法的API地址"),
             api_prefix: "/proxy/".to_string(),

@@ -16,12 +16,12 @@ async fn main() -> color_eyre::Result<()> {
     // #[cfg(feature = "bench")]
     // tracing_profile::init_tracing()?;
 
-    let config = ConvertorConfig::search(&base_dir, Option::<&Path>::None)?;
-    let url = config.create_url_builder(ProxyClient::Surge, SubProvider::BosLife)?;
+    let config = ConvertorConfig::template();
+    let url_builder = config.create_url_builder(ProxyClient::Surge, SubProvider::BosLife)?;
 
     let file = std::fs::read_to_string(base_dir.join("mock.conf"))?;
     let mut profile = SurgeProfile::parse(file)?;
-    profile.convert(&url)?;
+    profile.convert(&url_builder)?;
 
     Ok(())
 }

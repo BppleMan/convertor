@@ -1,5 +1,4 @@
 use crate::common::config::proxy_client::ProxyClient;
-use percent_encoding::utf8_percent_encode;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use url::Url;
