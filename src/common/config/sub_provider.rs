@@ -1,7 +1,6 @@
 use crate::common::config::proxy_client::ProxyClient;
 use crate::common::config::request::RequestConfig;
 use clap::ValueEnum;
-use dispatch_map::DispatchSeed;
 use dispatch_map::dispatch_pattern;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};

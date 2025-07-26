@@ -154,7 +154,9 @@ impl SubProviderExecutor {
         Ok((url_builder, result))
     }
 
-    pub fn post_execute(&self, _url_builder: UrlBuilder, _result: SubProviderExecutorResult) {}
+    pub fn post_execute(&self, _url_builder: UrlBuilder, result: SubProviderExecutorResult) {
+        println!("{result}");
+    }
 
     async fn create_url_builder(&self, cmd: &SubProviderCmd) -> Result<UrlBuilder> {
         let SubProviderCmd {

@@ -26,7 +26,6 @@ impl SubProviderWrapper {
         base_dir: impl AsRef<Path>,
     ) -> HashMap<SubProvider, SubProviderWrapper> {
         providers
-            .0
             .into_iter()
             .map(|(provider, config)| match (provider, config) {
                 (SubProvider::BosLife, SubProviderConfig::BosLife(config)) => (

@@ -16,7 +16,7 @@ use std::path::PathBuf;
 /// 启动 Convertor 服务
 pub struct Convertor {
     /// 监听地址, 不需要指定协议
-    #[arg(default_value = "127.0.0.1:8001")]
+    #[arg(default_value = "127.0.0.1:8080")]
     listen: SocketAddrV4,
 
     /// 如果你想特别指定配置文件, 可以使用此参数
@@ -47,7 +47,7 @@ async fn main() -> Result<()> {
         None => start_server(args.listen, config, api_map, &base_dir).await?,
         Some(ConvertorCommand::Config) => unreachable!("config 子命令已拦截处理"),
         Some(ConvertorCommand::Subscription(args)) => {
-            let executor = SubProviderExecutor::new(config.clone(), api_map);
+            let executor = SubProviderExecutor::new(config, api_map);
             let (url_builder, result) = executor.execute(args).await?;
             executor.post_execute(url_builder, result);
         }

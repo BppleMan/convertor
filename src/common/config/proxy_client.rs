@@ -1,5 +1,4 @@
 use clap::ValueEnum;
-use dispatch_map::DispatchSeed;
 use dispatch_map::dispatch_pattern;
 use rush_var::expand_env_vars;
 use serde::{Deserialize, Serialize};
