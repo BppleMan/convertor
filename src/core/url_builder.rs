@@ -5,9 +5,11 @@ use crate::core::profile::policy::Policy;
 use crate::core::profile::surge_header::SurgeHeader;
 use crate::core::query::convertor_query::ConvertorQuery;
 use crate::core::query::error::ConvertorQueryError;
+use crate::core::query::rule_provider_query::RuleProviderQuery;
 use crate::core::query::sub_logs_query::SubLogsQuery;
 use crate::core::url_builder::convertor_url::ConvertorUrl;
 use crate::core::url_builder::raw_sub_url::RawSubUrl;
+use crate::core::url_builder::rule_provider_url::RuleProviderUrl;
 use crate::core::url_builder::sub_logs_url::SubLogsUrl;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -16,6 +18,7 @@ use url::Url;
 pub mod convertor_url;
 pub mod raw_sub_url;
 pub mod sub_logs_url;
+pub mod rule_provider_url;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct UrlBuilder {
@@ -23,9 +26,7 @@ pub struct UrlBuilder {
     pub client: ProxyClient,
     pub provider: SubProvider,
     pub server: Url,
-    /// 通用订阅地址
     pub uni_sub_url: Url,
-    /// 加密后的通用订阅地址
     pub enc_uni_sub_url: String,
     pub interval: u64,
     pub strict: bool,
@@ -61,7 +62,7 @@ impl UrlBuilder {
         Ok(url)
     }
 
-    pub fn from_query(secret: impl AsRef<str>, query: ConvertorQuery) -> Result<Self, EncryptError> {
+    pub fn from_convertor_query(secret: impl AsRef<str>, query: ConvertorQuery) -> Result<Self, EncryptError> {
         let ConvertorQuery {
             client,
             provider,
@@ -70,7 +71,6 @@ impl UrlBuilder {
             enc_uni_sub_url,
             interval,
             strict,
-            policy: _,
         } = query;
         Self::new(
             secret,
@@ -84,13 +84,35 @@ impl UrlBuilder {
         )
     }
 
+    pub fn from_rule_provider_query(secret: impl AsRef<str>, query: RuleProviderQuery) -> Result<Self, EncryptError> {
+        let RuleProviderQuery {
+            client,
+            provider,
+            server,
+            uni_sub_url,
+            enc_uni_sub_url,
+            interval,
+            policy: _,
+        } = query;
+        Self::new(
+            secret,
+            client,
+            provider,
+            server,
+            uni_sub_url,
+            Some(enc_uni_sub_url),
+            interval,
+            true,
+        )
+    }
+
     pub fn parse_from_url(url: &Url, secret: impl AsRef<str>) -> Result<Self, ConvertorUrlError> {
         let secret = secret.as_ref();
         match url.query() {
             None => Err(ConvertorUrlError::ParseFromUrlNoQuery(url.clone())),
             Some(query) => {
                 let query = ConvertorQuery::parse_from_query_string(query, secret)?;
-                Ok(Self::from_query(secret, query)?)
+                Ok(Self::from_convertor_query(secret, query)?)
             }
         }
     }
@@ -108,11 +130,19 @@ impl UrlBuilder {
         Ok(ConvertorUrl { server, path, query })
     }
 
-    pub fn build_rule_provider_url(&self, policy: &Policy) -> Result<ConvertorUrl, ConvertorUrlError> {
+    pub fn build_rule_provider_url(&self, policy: &Policy) -> Result<RuleProviderUrl, ConvertorUrlError> {
         let server = self.server.clone();
         let path = "/rule-provider".to_string();
-        let query = ConvertorQuery::from(self).set_policy(Some(policy.into()));
-        Ok(ConvertorUrl { server, path, query })
+        let query = RuleProviderQuery {
+            client: self.client,
+            provider: self.provider,
+            server: self.server.clone(),
+            uni_sub_url: self.uni_sub_url.clone(),
+            enc_uni_sub_url: self.enc_uni_sub_url.clone(),
+            interval: self.interval,
+            policy: policy.clone().into(),
+        };
+        Ok(RuleProviderUrl { server, path, query })
     }
 
     pub fn build_sub_logs_url(&self, page: usize, page_size: usize) -> Result<SubLogsUrl, ConvertorUrlError> {
@@ -143,21 +173,6 @@ impl HostPort for Url {
             (Some(host), Some(port)) => Ok(format!("{host}:{port}")),
             (Some(host), None) => Ok(host.to_string()),
             _ => Err(ConvertorUrlError::NoUniSubHost(self.clone())),
-        }
-    }
-}
-
-impl From<&UrlBuilder> for ConvertorQuery {
-    fn from(builder: &UrlBuilder) -> Self {
-        ConvertorQuery {
-            client: builder.client,
-            provider: builder.provider,
-            server: builder.server.clone(),
-            uni_sub_url: builder.uni_sub_url.clone(),
-            enc_uni_sub_url: builder.enc_uni_sub_url.clone(),
-            interval: builder.interval,
-            strict: builder.strict,
-            policy: None,
         }
     }
 }

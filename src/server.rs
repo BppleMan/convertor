@@ -3,89 +3,51 @@ use crate::common::config::ConvertorConfig;
 use crate::common::config::proxy_client::ProxyClient;
 use crate::common::config::sub_provider::SubProvider;
 use crate::core::profile::clash_profile::ClashProfile;
+use crate::core::profile::policy::Policy;
 use crate::core::profile::surge_profile::SurgeProfile;
-use crate::core::query::convertor_query::ConvertorQuery;
-use crate::core::url_builder::ConvertorUrlError;
-use axum::Router;
-use axum::extract::{RawQuery, State};
-use axum::http::StatusCode;
-use axum::http::header::ToStrError;
-use axum::response::{IntoResponse, Response};
-use axum::routing::get;
 use color_eyre::Result;
-use color_eyre::eyre::{WrapErr, eyre};
 use moka::future::Cache;
 use std::collections::HashMap;
 use std::net::{SocketAddr, SocketAddrV4};
 use std::path::Path;
-use std::sync::Arc;
-use surge_router::sub_logs;
-use thiserror::Error;
 use tokio::signal;
-use tower_http::LatencyUnit;
-use tower_http::trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer};
-use tracing::instrument;
 use tracing::{info, warn};
+use url::Url;
 
 pub mod clash_router;
 pub mod surge_router;
+pub mod router;
+pub mod error;
 
 pub struct AppState {
     pub config: ConvertorConfig,
     pub api_map: HashMap<SubProvider, SubProviderWrapper>,
-    pub profile_cache: Cache<ConvertorQuery, String>,
-    pub surge_cache: Cache<ConvertorQuery, SurgeProfile>,
-    pub clash_cache: Cache<ConvertorQuery, ClashProfile>,
+    pub surge_cache: Cache<ProfileCacheKey, SurgeProfile>,
+    pub clash_cache: Cache<ProfileCacheKey, ClashProfile>,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub struct ProfileCacheKey {
+    pub client: ProxyClient,
+    pub provider: SubProvider,
+    pub uni_sub_url: Url,
+    pub interval: u64,
+    pub server: Option<Url>,
+    pub strict: Option<bool>,
+    pub policy: Option<Policy>,
 }
 
 impl AppState {
     pub fn new(config: ConvertorConfig, api_map: HashMap<SubProvider, SubProviderWrapper>) -> Self {
         let duration = std::time::Duration::from_secs(60 * 60); // 1 hour
-        let profile_cache = Cache::builder().max_capacity(100).time_to_live(duration).build();
         let surge_cache = Cache::builder().max_capacity(100).time_to_live(duration).build();
         let clash_cache = Cache::builder().max_capacity(100).time_to_live(duration).build();
         Self {
             config,
             api_map,
-            profile_cache,
             surge_cache,
             clash_cache,
         }
-    }
-}
-
-#[derive(Debug, Error)]
-pub enum AppError {
-    #[error("没有找到对应的订阅提供者")]
-    NoSubProvider,
-
-    #[error("没有找到对应的代理客户端")]
-    NoProxyClient,
-
-    #[error(transparent)]
-    ConvertorUrl(#[from] ConvertorUrlError),
-
-    #[error("Unauthorized: {0}")]
-    Unauthorized(String),
-
-    #[error(transparent)]
-    Eyre(#[from] color_eyre::Report),
-
-    #[error(transparent)]
-    ToStr(#[from] ToStrError),
-
-    #[error(transparent)]
-    Utf8Error(#[from] std::str::Utf8Error),
-
-    #[error(transparent)]
-    CacheError(#[from] Arc<AppError>),
-}
-
-impl IntoResponse for AppError {
-    fn into_response(self) -> Response {
-        let message = format!("{self:?}");
-        let message = console::strip_ansi_codes(&message).to_string();
-        (StatusCode::INTERNAL_SERVER_ERROR, message).into_response()
     }
 }
 
@@ -102,79 +64,12 @@ pub async fn start_server(
     let listener = tokio::net::TcpListener::bind(listen_addr).await?;
 
     let app_state = AppState::new(config, api_map);
-    let app = router(app_state);
+    let app = router::router(app_state);
     axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
         .with_graceful_shutdown(shutdown_signal())
         .await?;
     info!("服务关闭");
     Ok(())
-}
-
-pub fn router(app_state: AppState) -> Router {
-    Router::new()
-        .route("/profile", get(profile))
-        .route("/rule-provider", get(rule_provider))
-        .route("/sub-logs", get(sub_logs))
-        .with_state(Arc::new(app_state))
-        .layer(
-            TraceLayer::new_for_http()
-                .make_span_with(DefaultMakeSpan::new().include_headers(true))
-                .on_request(DefaultOnRequest::new().level(tracing::Level::INFO))
-                .on_response(
-                    DefaultOnResponse::new()
-                        .level(tracing::Level::INFO)
-                        .latency_unit(LatencyUnit::Millis),
-                ),
-        )
-}
-
-#[instrument(skip_all)]
-pub async fn profile(State(state): State<Arc<AppState>>, RawQuery(query): RawQuery) -> Result<String, AppError> {
-    let query = query
-        .map(|query| ConvertorQuery::parse_from_query_string(query, &state.config.secret))
-        .ok_or_else(|| eyre!("查询参数不能为空"))?
-        .wrap_err("解析查询字符串失败")?;
-    let client = query.client;
-    let profile = state
-        .clone()
-        .profile_cache
-        .try_get_with(query.clone(), async {
-            let Some(api) = state.api_map.get(&query.provider) else {
-                return Err(AppError::NoSubProvider);
-            };
-            let raw_profile = api.get_raw_profile(client).await?;
-            let profile = match client {
-                ProxyClient::Surge => surge_router::profile_impl(state, query, raw_profile).await,
-                ProxyClient::Clash => clash_router::profile_impl(state, query, raw_profile).await,
-            }?;
-            Ok::<_, AppError>(profile)
-        })
-        .await?;
-    Ok(profile)
-}
-
-#[instrument(skip_all)]
-pub async fn rule_provider(State(state): State<Arc<AppState>>, RawQuery(query): RawQuery) -> Result<String, AppError> {
-    let query = query
-        .map(|query| ConvertorQuery::parse_from_query_string(query, &state.config.secret))
-        .ok_or_else(|| eyre!("查询参数不能为空"))?
-        .wrap_err("解析查询字符串失败")?;
-    let client = &query.client;
-    let policy = query.policy.clone();
-    let Some(api) = state.api_map.get(&query.provider) else {
-        return Err(AppError::NoSubProvider);
-    };
-    let raw_profile = api.get_raw_profile(*client).await?;
-    match (client, policy) {
-        (ProxyClient::Surge, Some(policy)) => {
-            surge_router::rule_provider_impl(state, query, raw_profile, policy.into()).await
-        }
-        (ProxyClient::Clash, Some(policy)) => {
-            clash_router::rule_provider_impl(state, query, raw_profile, policy.into()).await
-        }
-        _ => Err(eyre!("错误的 client 或 policy 参数")),
-    }
-    .map_err(Into::into)
 }
 
 pub async fn shutdown_signal() {

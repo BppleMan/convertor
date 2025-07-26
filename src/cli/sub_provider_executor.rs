@@ -103,14 +103,16 @@ impl SubProviderExecutor {
         let uni_sub_host_port = url_builder.uni_sub_url.host_port()?;
         let (client_profile, policies) = match client {
             ProxyClient::Surge => {
-                let raw_profile = SurgeProfile::parse(raw_profile_content)?;
-                let polices = extract_policies_for_rule_provider(&raw_profile.rules, uni_sub_host_port);
-                (ClientProfile::Surge, polices)
+                let mut raw_profile = SurgeProfile::parse(raw_profile_content)?;
+                raw_profile.convert(&url_builder)?;
+                let mut policies: Vec<Policy> = raw_profile.policy_of_rules.keys().cloned().collect();
+                policies.sort();
+                (ClientProfile::Surge, policies)
             }
             ProxyClient::Clash => {
                 let raw_profile = ClashProfile::parse(raw_profile_content)?;
-                let polices = extract_policies_for_rule_provider(&raw_profile.rules, uni_sub_host_port);
-                (ClientProfile::Clash(raw_profile), polices)
+                let policies = extract_policies_for_rule_provider(&raw_profile.rules, uni_sub_host_port);
+                (ClientProfile::Clash(raw_profile), policies)
             }
         };
 

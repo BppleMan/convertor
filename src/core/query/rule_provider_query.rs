@@ -1,8 +1,8 @@
 use crate::common::config::proxy_client::ProxyClient;
 use crate::common::config::sub_provider::SubProvider;
 use crate::common::encrypt::decrypt;
+use crate::core::profile::policy::Policy;
 use crate::core::query::error::{ConvertorQueryError, ParseError};
-use crate::core::url_builder::UrlBuilder;
 use crate::server::ProfileCacheKey;
 use percent_encoding::{percent_decode_str, utf8_percent_encode};
 use serde::{Deserialize, Serialize};
@@ -11,18 +11,25 @@ use std::collections::HashMap;
 use std::str::Utf8Error;
 use url::Url;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct ConvertorQuery {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RuleProviderQuery {
     pub client: ProxyClient,
     pub provider: SubProvider,
     pub server: Url,
     pub uni_sub_url: Url,
     pub enc_uni_sub_url: String,
     pub interval: u64,
-    pub strict: bool,
+    pub policy: SerializablePolicy,
 }
 
-impl ConvertorQuery {
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct SerializablePolicy {
+    pub name: String,
+    pub option: Option<String>,
+    pub is_subscription: bool,
+}
+
+impl RuleProviderQuery {
     pub fn parse_from_query_string(
         query_string: impl AsRef<str>,
         secret: impl AsRef<str>,
@@ -78,34 +85,30 @@ impl ConvertorQuery {
             .map_err(ParseError::from)?
             .unwrap_or(86400);
 
-        // 解析 strict
-        let strict = query_map
-            .get("strict")
-            .map(|s| s.parse::<bool>())
-            .transpose()
-            .map_err(ParseError::from)?
-            .unwrap_or(true);
+        // 解析 policy
+        let policy = SerializablePolicy::parse_from_query_pairs(&query_map)?;
 
-        Ok(Self {
+        let query = RuleProviderQuery {
             client,
             provider,
             server,
             uni_sub_url,
             enc_uni_sub_url,
             interval,
-            strict,
-        })
+            policy,
+        };
+        Ok(query)
     }
 
     pub fn encode_to_query_string(&self) -> String {
-        let query_pairs = vec![
+        let mut query_pairs = vec![
             ("client", Cow::Borrowed(self.client.as_str())),
             ("provider", Cow::Borrowed(self.provider.as_str())),
             ("server", Cow::Borrowed(self.server.as_str())),
             ("interval", Cow::Owned(self.interval.to_string())),
-            ("strict", Cow::Owned(self.strict.to_string())),
-            ("uni_sub_url", Cow::Borrowed(&self.enc_uni_sub_url)),
         ];
+        self.policy.encode_to_query_pairs(&mut query_pairs);
+        query_pairs.push(("uni_sub_url", Cow::Borrowed(&self.enc_uni_sub_url)));
 
         query_pairs
             .into_iter()
@@ -119,36 +122,95 @@ impl ConvertorQuery {
             .collect::<Vec<_>>()
             .join("&")
     }
-
-    pub fn encoded_uni_sub_url(&self) -> String {
-        utf8_percent_encode(&self.enc_uni_sub_url, percent_encoding::CONTROLS).to_string()
-    }
 }
 
-impl ConvertorQuery {
+impl RuleProviderQuery {
     pub fn cache_key(&self) -> ProfileCacheKey {
         ProfileCacheKey {
             client: self.client,
             provider: self.provider,
             uni_sub_url: self.uni_sub_url.clone(),
             interval: self.interval,
-            server: Some(self.server.clone()),
-            strict: Some(self.strict),
-            policy: None,
+            server: None,
+            strict: None,
+            policy: Some(self.policy.clone().into()),
+        }
+    }
+
+    pub fn encoded_uni_sub_url(&self) -> String {
+        utf8_percent_encode(&self.enc_uni_sub_url, percent_encoding::CONTROLS).to_string()
+    }
+}
+
+impl SerializablePolicy {
+    pub fn parse_from_query_pairs(query_pairs: &HashMap<Cow<'_, str>, Cow<'_, str>>) -> Result<Self, ParseError> {
+        let name = query_pairs
+            .get("policy.name")
+            .ok_or(ParseError::NotFoundParam("policy.name"))?
+            .to_string();
+        let option = query_pairs.get("policy.option").map(|s| s.to_string());
+        let is_subscription = query_pairs
+            .get("policy.is_subscription")
+            .map(|s| s.parse::<bool>())
+            .transpose()
+            .map_err(ParseError::from)?
+            .unwrap_or(false);
+
+        Ok(SerializablePolicy {
+            name,
+            option,
+            is_subscription,
+        })
+    }
+
+    pub fn encode_to_query_pairs<'a, 'b>(&'a self, query_pairs: &mut Vec<(&'static str, Cow<'b, str>)>)
+    where
+        'a: 'b,
+    {
+        query_pairs.push(("policy.name", Cow::Borrowed(&self.name)));
+        if let Some(option) = &self.option {
+            query_pairs.push(("policy.option", Cow::Borrowed(option)));
+        }
+        query_pairs.push(("policy.is_subscription", Cow::Owned(self.is_subscription.to_string())));
+    }
+}
+
+impl From<Policy> for SerializablePolicy {
+    fn from(value: Policy) -> Self {
+        SerializablePolicy {
+            name: value.name,
+            option: value.option,
+            is_subscription: value.is_subscription,
         }
     }
 }
 
-impl From<&UrlBuilder> for ConvertorQuery {
-    fn from(builder: &UrlBuilder) -> Self {
-        ConvertorQuery {
-            client: builder.client,
-            provider: builder.provider,
-            server: builder.server.clone(),
-            uni_sub_url: builder.uni_sub_url.clone(),
-            enc_uni_sub_url: builder.enc_uni_sub_url.clone(),
-            interval: builder.interval,
-            strict: builder.strict,
+impl From<&Policy> for SerializablePolicy {
+    fn from(value: &Policy) -> Self {
+        SerializablePolicy {
+            name: value.name.clone(),
+            option: value.option.clone(),
+            is_subscription: value.is_subscription,
+        }
+    }
+}
+
+impl From<SerializablePolicy> for Policy {
+    fn from(value: SerializablePolicy) -> Self {
+        Policy {
+            name: value.name,
+            option: value.option,
+            is_subscription: value.is_subscription,
+        }
+    }
+}
+
+impl From<&SerializablePolicy> for Policy {
+    fn from(value: &SerializablePolicy) -> Self {
+        Policy {
+            name: value.name.clone(),
+            option: value.option.clone(),
+            is_subscription: value.is_subscription,
         }
     }
 }

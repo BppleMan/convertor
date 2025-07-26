@@ -42,7 +42,7 @@ fn test_url_builder(
     let rule_provider_url = url_builder.build_rule_provider_url(&Policy::subscription_policy())?;
     pretty_assertions::assert_eq!(
         format!(
-            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval=86400&strict=true&policy.name=DIRECT&policy.is_subscription=true&uni_sub_url={encoded_uni_sub_url}",
+            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval=86400&policy.name=DIRECT&policy.is_subscription=true&uni_sub_url={encoded_uni_sub_url}",
         ),
         rule_provider_url.to_string()
     );

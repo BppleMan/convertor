@@ -76,18 +76,18 @@ pub async fn test_rule_provider(
         .clients
         .get(&client)
         .ok_or_else(|| eyre!("没有找到对应的订阅提供者: {provider}"))?;
-    let convertor_url = url_builder.build_rule_provider_url(&policy)?;
+    let rule_provider_url = url_builder.build_rule_provider_url(&policy)?;
     let expect_placeholder = ExpectPlaceholder {
-        server: convertor_url.server.to_string(),
+        server: rule_provider_url.server.to_string(),
         interval: client_config.interval(),
         strict: client_config.strict(),
-        uni_sub_host: convertor_url.query.uni_sub_url.host_port()?,
-        enc_uni_sub_url: convertor_url.query.encoded_uni_sub_url(),
+        uni_sub_host: rule_provider_url.query.uni_sub_url.host_port()?,
+        enc_uni_sub_url: rule_provider_url.query.encoded_uni_sub_url(),
     };
     let uri = format!(
         "{}?{}",
-        convertor_url.path,
-        convertor_url.query.encode_to_query_string()
+        rule_provider_url.path,
+        rule_provider_url.query.encode_to_query_string()
     );
 
     let request = Request::builder().uri(uri).method("GET").body(Body::empty())?;

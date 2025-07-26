@@ -1,6 +1,6 @@
 use color_eyre::Report;
 use color_eyre::eyre::eyre;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Deserializer};
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -16,13 +16,6 @@ static OPTION_RANK: LazyLock<HashMap<Option<&str>, usize>> = LazyLock::new(|| {
 
 #[derive(Default, Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Policy {
-    pub name: String,
-    pub option: Option<String>,
-    pub is_subscription: bool,
-}
-
-#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct SerializablePolicy {
     pub name: String,
     pub option: Option<String>,
     pub is_subscription: bool,
@@ -123,45 +116,5 @@ impl<'de> Deserialize<'de> for Policy {
         }
 
         deserializer.deserialize_str(PolicyVisitor)
-    }
-}
-
-impl From<Policy> for SerializablePolicy {
-    fn from(value: Policy) -> Self {
-        SerializablePolicy {
-            name: value.name,
-            option: value.option,
-            is_subscription: value.is_subscription,
-        }
-    }
-}
-
-impl From<&Policy> for SerializablePolicy {
-    fn from(value: &Policy) -> Self {
-        SerializablePolicy {
-            name: value.name.clone(),
-            option: value.option.clone(),
-            is_subscription: value.is_subscription,
-        }
-    }
-}
-
-impl From<SerializablePolicy> for Policy {
-    fn from(value: SerializablePolicy) -> Self {
-        Policy {
-            name: value.name,
-            option: value.option,
-            is_subscription: value.is_subscription,
-        }
-    }
-}
-
-impl From<&SerializablePolicy> for Policy {
-    fn from(value: &SerializablePolicy) -> Self {
-        Policy {
-            name: value.name.clone(),
-            option: value.option.clone(),
-            is_subscription: value.is_subscription,
-        }
     }
 }

@@ -52,14 +52,6 @@ async fn test_subscription(
             strict: Some(false),
             ..Default::default()
         },
-        // SubProviderCmd {
-        //     client,
-        //     provider,
-        //     url_source: Some(UrlSource::Raw {
-        //         sub_url: Url::parse("http://localhost:8081/subscription?token=bppleman").expect("不合法的服务器地址"),
-        //     }),
-        //     ..Default::default()
-        // },
     )]
     cmd: SubProviderCmd,
 ) -> Result<(), Report> {
@@ -110,31 +102,31 @@ async fn test_subscription(
 
     let expect_policy_urls = [
         format!(
-            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&strict={strict}&policy.name=DIRECT&policy.is_subscription=true&uni_sub_url={}",
+            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&policy.name=DIRECT&policy.is_subscription=true&uni_sub_url={}",
             url_builder.enc_uni_sub_url
         ),
         format!(
-            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&strict={strict}&policy.name=BosLife&policy.is_subscription=false&uni_sub_url={}",
+            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&policy.name=BosLife&policy.is_subscription=false&uni_sub_url={}",
             url_builder.enc_uni_sub_url
         ),
         format!(
-            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&strict={strict}&policy.name=BosLife&policy.option=no-resolve&policy.is_subscription=false&uni_sub_url={}",
+            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&policy.name=BosLife&policy.option=no-resolve&policy.is_subscription=false&uni_sub_url={}",
             url_builder.enc_uni_sub_url
         ),
         format!(
-            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&strict={strict}&policy.name=BosLife&policy.option=force-remote-dns&policy.is_subscription=false&uni_sub_url={}",
+            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&policy.name=BosLife&policy.option=force-remote-dns&policy.is_subscription=false&uni_sub_url={}",
             url_builder.enc_uni_sub_url
         ),
         format!(
-            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&strict={strict}&policy.name=DIRECT&policy.is_subscription=false&uni_sub_url={}",
+            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&policy.name=DIRECT&policy.is_subscription=false&uni_sub_url={}",
             url_builder.enc_uni_sub_url
         ),
         format!(
-            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&strict={strict}&policy.name=DIRECT&policy.option=no-resolve&policy.is_subscription=false&uni_sub_url={}",
+            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&policy.name=DIRECT&policy.option=no-resolve&policy.is_subscription=false&uni_sub_url={}",
             url_builder.enc_uni_sub_url
         ),
         format!(
-            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&strict={strict}&policy.name=DIRECT&policy.option=force-remote-dns&policy.is_subscription=false&uni_sub_url={}",
+            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&policy.name=DIRECT&policy.option=force-remote-dns&policy.is_subscription=false&uni_sub_url={}",
             url_builder.enc_uni_sub_url
         ),
     ];
