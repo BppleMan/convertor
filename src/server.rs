@@ -1,55 +1,21 @@
 use crate::api::SubProviderWrapper;
 use crate::common::config::ConvertorConfig;
-use crate::common::config::proxy_client::ProxyClient;
 use crate::common::config::sub_provider::SubProvider;
-use crate::core::profile::clash_profile::ClashProfile;
-use crate::core::profile::policy::Policy;
-use crate::core::profile::surge_profile::SurgeProfile;
+use crate::server::app_state::AppState;
 use color_eyre::Result;
-use moka::future::Cache;
 use std::collections::HashMap;
 use std::net::{SocketAddr, SocketAddrV4};
 use std::path::Path;
 use tokio::signal;
 use tracing::{info, warn};
-use url::Url;
 
-pub mod clash_router;
-pub mod surge_router;
 pub mod router;
 pub mod error;
-
-pub struct AppState {
-    pub config: ConvertorConfig,
-    pub api_map: HashMap<SubProvider, SubProviderWrapper>,
-    pub surge_cache: Cache<ProfileCacheKey, SurgeProfile>,
-    pub clash_cache: Cache<ProfileCacheKey, ClashProfile>,
-}
-
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct ProfileCacheKey {
-    pub client: ProxyClient,
-    pub provider: SubProvider,
-    pub uni_sub_url: Url,
-    pub interval: u64,
-    pub server: Option<Url>,
-    pub strict: Option<bool>,
-    pub policy: Option<Policy>,
-}
-
-impl AppState {
-    pub fn new(config: ConvertorConfig, api_map: HashMap<SubProvider, SubProviderWrapper>) -> Self {
-        let duration = std::time::Duration::from_secs(60 * 60); // 1 hour
-        let surge_cache = Cache::builder().max_capacity(100).time_to_live(duration).build();
-        let clash_cache = Cache::builder().max_capacity(100).time_to_live(duration).build();
-        Self {
-            config,
-            api_map,
-            surge_cache,
-            clash_cache,
-        }
-    }
-}
+pub mod surge_service;
+pub mod clash_service;
+pub mod raw_service;
+pub mod app_state;
+pub mod query;
 
 pub async fn start_server(
     listen_addr: SocketAddrV4,

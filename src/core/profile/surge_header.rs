@@ -1,4 +1,4 @@
-use crate::core::url_builder::convertor_url::ConvertorUrl;
+use crate::core::url_builder::profile_url::ProfileUrl;
 use crate::core::url_builder::raw_sub_url::RawSubUrl;
 use std::fmt::{Display, Formatter};
 
@@ -11,12 +11,18 @@ pub enum SurgeHeader {
         interval: u64,
         strict: bool,
     },
-    Convertor {
+    Profile {
         shebang: &'static str,
-        url: ConvertorUrl,
+        url: ProfileUrl,
         interval: u64,
         strict: bool,
     },
+}
+
+pub enum SurgeHeaderType {
+    Raw,
+    RawProfile,
+    Profile,
 }
 
 impl SurgeHeader {
@@ -29,8 +35,8 @@ impl SurgeHeader {
         }
     }
 
-    pub fn new_convertor(url: ConvertorUrl, interval: u64, strict: bool) -> Self {
-        Self::Convertor {
+    pub fn new_convertor(url: ProfileUrl, interval: u64, strict: bool) -> Self {
+        Self::Profile {
             shebang: "#!MANAGED-CONFIG",
             url,
             interval,
@@ -50,7 +56,7 @@ impl Display for SurgeHeader {
             } => {
                 write!(f, "{} {} interval={} strict={}", shebang, url, interval, strict)
             }
-            SurgeHeader::Convertor {
+            SurgeHeader::Profile {
                 shebang,
                 url,
                 interval,

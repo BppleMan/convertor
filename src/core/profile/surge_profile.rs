@@ -5,6 +5,7 @@ use crate::core::profile::policy::Policy;
 use crate::core::profile::proxy::Proxy;
 use crate::core::profile::proxy_group::ProxyGroup;
 use crate::core::profile::rule::{ProviderRule, Rule};
+use crate::core::profile::surge_header::SurgeHeaderType;
 use crate::core::renderer::Renderer;
 use crate::core::renderer::surge_renderer::SurgeRenderer;
 use crate::core::result::ParseResult;
@@ -79,7 +80,7 @@ impl Profile for SurgeProfile {
     #[instrument(skip_all)]
     fn append_rule_provider(&mut self, policy: &Policy, url_builder: &UrlBuilder) -> ParseResult<()> {
         let name = SurgeRenderer::render_provider_name_for_policy(policy)?;
-        let url = url_builder.build_rule_provider_url(policy)?;
+        let url = url_builder.build_rule_provider_url(policy);
         let rule = Rule::surge_rule_provider(policy, name, url);
         self.rules.push(rule);
         Ok(())
@@ -89,7 +90,9 @@ impl Profile for SurgeProfile {
 impl SurgeProfile {
     #[instrument(skip_all)]
     fn replace_header(&mut self, url_builder: &UrlBuilder) -> ParseResult<()> {
-        self.header = url_builder.build_managed_config_header(false)?.to_string();
+        self.header = url_builder
+            .build_managed_config_header(SurgeHeaderType::Profile)
+            .to_string();
         Ok(())
     }
 }

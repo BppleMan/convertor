@@ -81,11 +81,11 @@ async fn test_subscription(
     );
     assert_str_eq!(expect_raw_url, result.raw_link.url.as_str());
 
-    let expect_convertor_url = format!(
+    let expect_profile_url = format!(
         "{server}profile?client={client}&provider={provider}&server={server}&interval={interval}&strict={strict}&uni_sub_url={}",
         url_builder.enc_uni_sub_url
     );
-    assert_str_eq!(expect_convertor_url, result.convertor_link.url.as_str());
+    assert_str_eq!(expect_profile_url, result.profile_link.url.as_str());
 
     let regex_str = format!(
         r#"{}sub-logs\?provider={provider}&secret=(?P<enc_secret>.+)&page=1&page_size=20"#,
@@ -131,7 +131,7 @@ async fn test_subscription(
         ),
     ];
 
-    for (i, link) in result.policy_links.iter().enumerate() {
+    for (i, link) in result.rule_provider_links.iter().enumerate() {
         assert_str_eq!(expect_policy_urls[i], link.url.as_str());
     }
 

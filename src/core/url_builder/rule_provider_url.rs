@@ -1,7 +1,8 @@
-use crate::core::query::rule_provider_query::RuleProviderQuery;
+use crate::server::query::rule_provider_query::RuleProviderQuery;
 use std::fmt::Display;
 use url::Url;
 
+#[derive(Debug, Clone)]
 pub struct RuleProviderUrl {
     pub server: Url,
     pub path: String,

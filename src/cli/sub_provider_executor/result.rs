@@ -16,18 +16,28 @@ impl SubProviderExecutorLink {
             url,
         }
     }
-    pub fn convertor(url: Url) -> Self {
+
+    pub fn raw_profile(url: Url) -> Self {
         Self {
-            label: "转换器订阅链接:".to_string(),
+            label: "非转换配置订阅链接:".to_string(),
             url,
         }
     }
+
+    pub fn profile(url: Url) -> Self {
+        Self {
+            label: "转换配置订阅链接:".to_string(),
+            url,
+        }
+    }
+
     pub fn logs(url: Url) -> Self {
         Self {
             label: "订阅日志链接:".to_string(),
             url,
         }
     }
+
     pub fn rule_provider(name: String, url: Url) -> Self {
         Self {
             label: format!("规则集: {name}"),
@@ -46,17 +56,19 @@ impl Display for SubProviderExecutorLink {
 #[derive(Debug, Clone)]
 pub struct SubProviderExecutorResult {
     pub raw_link: SubProviderExecutorLink,
-    pub convertor_link: SubProviderExecutorLink,
+    pub raw_profile_link: SubProviderExecutorLink,
+    pub profile_link: SubProviderExecutorLink,
     pub logs_link: SubProviderExecutorLink,
-    pub policy_links: Vec<SubProviderExecutorLink>,
+    pub rule_provider_links: Vec<SubProviderExecutorLink>,
 }
 
 impl Display for SubProviderExecutorResult {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "{}", self.raw_link)?;
-        writeln!(f, "{}", self.convertor_link)?;
+        writeln!(f, "{}", self.profile_link)?;
+        writeln!(f, "{}", self.raw_profile_link)?;
         writeln!(f, "{}", self.logs_link)?;
-        for link in &self.policy_links {
+        for link in &self.rule_provider_links {
             writeln!(f, "{link}")?;
         }
         Ok(())

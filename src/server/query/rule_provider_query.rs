@@ -2,8 +2,8 @@ use crate::common::config::proxy_client::ProxyClient;
 use crate::common::config::sub_provider::SubProvider;
 use crate::common::encrypt::decrypt;
 use crate::core::profile::policy::Policy;
-use crate::core::query::error::{ConvertorQueryError, ParseError};
-use crate::server::ProfileCacheKey;
+use crate::server::app_state::ProfileCacheKey;
+use crate::server::query::error::{ParseError, QueryError};
 use percent_encoding::{percent_decode_str, utf8_percent_encode};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -30,10 +30,7 @@ pub struct SerializablePolicy {
 }
 
 impl RuleProviderQuery {
-    pub fn parse_from_query_string(
-        query_string: impl AsRef<str>,
-        secret: impl AsRef<str>,
-    ) -> Result<Self, ConvertorQueryError> {
+    pub fn parse_from_query_string(query_string: impl AsRef<str>, secret: impl AsRef<str>) -> Result<Self, QueryError> {
         let query_string = query_string.as_ref();
         let secret = secret.as_ref().to_string();
         let query_map = query_string
