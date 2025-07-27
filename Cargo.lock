@@ -611,7 +611,7 @@ dependencies = [
 
 [[package]]
 name = "convertor"
-version = "2.4.5"
+version = "2.5.0"
 dependencies = [
  "axum",
  "base64 0.22.1",
@@ -2267,7 +2267,8 @@ dependencies = [
 [[package]]
 name = "rush-var"
 version = "0.1.1"
-source = "git+https://github.com/BppleMan/rush-env?branch=main#c49a6f3d43246bf952ce12f60ec49b5a0246198f"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ac318b1065c47f2b65cc612d6d5e72ea2b583d388fcde4886d42e02bc0a46876"
 
 [[package]]
 name = "rustc-demangle"

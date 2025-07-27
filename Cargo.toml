@@ -1,7 +1,7 @@
 [workspace.package]
 description = "A profile converter for surge/clash."
 authors = ["BppleMan"]
-version = "2.4.5"
+version = "2.5.0"
 edition = "2024"
 license = "Apache-2.0"
 repository = "https://github.com/BppleMan/convertor"
@@ -21,7 +21,7 @@ path = "examples/trace_surge_parse.rs"
 required-features = ["bench"]
 
 [dependencies]
-rush-var = { git = "https://github.com/BppleMan/rush-env", package = "rush-var", branch = "main" }
+rush-var = { version = "0.1.1" }
 dispatch_map = { version = "0.1.3", features = ["macros"] }
 
 # async runtime
