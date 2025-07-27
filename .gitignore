@@ -7,4 +7,3 @@ config.toml
 **/.convertor.*/
 **/.convertor/
 !.convertor.bench
-!.convertor.test

@@ -1,56 +1,50 @@
-use crate::common::proxy_client::ProxyClient;
-use crate::common::url::ConvertorUrl;
+use crate::common::config::proxy_client::{ClashConfig, ProxyClientConfig, SurgeConfig};
+use crate::common::config::sub_provider::{BosLifeConfig, SubProvider, SubProviderConfig};
+use crate::common::encrypt::{decrypt, encrypt};
+use crate::core::url_builder::UrlBuilder;
 use color_eyre::Report;
 use color_eyre::eyre::{WrapErr, eyre};
+use dispatch_map::DispatchMap;
+use proxy_client::ProxyClient;
 use serde::{Deserialize, Serialize};
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 use std::path::Path;
 use std::str::FromStr;
 use url::Url;
+
+pub mod proxy_client;
+pub mod sub_provider;
+pub mod request;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConvertorConfig {
     pub secret: String,
     pub server: Url,
-    pub interval: u64,
-    pub strict: bool,
-    pub service_config: ServiceConfig,
-}
-
-#[derive(Default, Debug, Copy, Clone, Serialize, Deserialize)]
-pub enum ServiceProvider {
-    #[default]
-    BosLife,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ServiceConfig {
-    pub service_provider: ServiceProvider,
-    pub raw_sub_url: Url,
-    pub auth_token: String,
-    pub cookie: String,
-    pub credential: Credential,
-    pub api_host: Url,
-    pub api_prefix: String,
-    pub login_api: Api,
-    pub reset_sub_api: Api,
-    pub get_sub_api: Api,
-    pub get_sub_logs_api: Api,
-}
-
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct Api {
-    pub api_path: String,
-    pub json_path: String,
-}
-
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct Credential {
-    pub username: String,
-    pub password: String,
+    pub providers: DispatchMap<SubProvider, SubProviderConfig>,
+    #[serde(default)]
+    pub clients: DispatchMap<ProxyClient, ProxyClientConfig>,
 }
 
 impl ConvertorConfig {
+    pub fn template() -> Self {
+        let mut providers = DispatchMap::default();
+        providers.insert(
+            SubProvider::BosLife,
+            SubProviderConfig::BosLife(BosLifeConfig::template()),
+        );
+
+        let mut clients = DispatchMap::default();
+        clients.insert(ProxyClient::Surge, ProxyClientConfig::Surge(SurgeConfig::template()));
+        clients.insert(ProxyClient::Clash, ProxyClientConfig::Clash(ClashConfig::template()));
+
+        ConvertorConfig {
+            secret: "bppleman".to_string(),
+            server: Url::parse("http://127.0.0.1:8080").expect("不合法的服务器地址"),
+            providers,
+            clients,
+        }
+    }
+
     pub fn search(cwd: impl AsRef<Path>, config_path: Option<impl AsRef<Path>>) -> color_eyre::Result<Self> {
         if let Some(path) = config_path {
             return Self::from_file(path);
@@ -102,16 +96,35 @@ impl ConvertorConfig {
             .wrap_err("服务器地址无效")
     }
 
-    pub fn create_convertor_url(&self, client: ProxyClient) -> color_eyre::Result<ConvertorUrl> {
-        Ok(ConvertorUrl::new(
-            self.secret.clone(),
-            client,
-            self.server.clone(),
-            self.service_config.raw_sub_url.clone(),
-            self.interval,
-            self.strict,
-            None,
-        )?)
+    pub fn enc_secret(&self) -> color_eyre::Result<String> {
+        Ok(encrypt(self.secret.as_bytes(), &self.secret)?)
+    }
+
+    pub fn create_url_builder(&self, client: ProxyClient, provider: SubProvider) -> color_eyre::Result<UrlBuilder> {
+        let uni_sub_url = match self.providers.get(&provider) {
+            Some(SubProviderConfig::BosLife(provider_config)) => provider_config.uni_sub_url.clone(),
+            None => return Err(eyre!("未找到提供商配置: [providers.{}]", provider)),
+        };
+        let (interval, strict) = match self.clients.get(&client) {
+            Some(ProxyClientConfig::Surge(config)) => (config.interval, config.strict),
+            Some(ProxyClientConfig::Clash(config)) => (config.interval, config.strict),
+            None => return Err(eyre!("未找到代理客户端配置: [clients.{}]", client)),
+        };
+        let server = self.server.clone();
+        let secret = self.secret.clone();
+        let url_builder = UrlBuilder::new(secret, client, provider, server, uni_sub_url, None, interval, strict)?;
+        Ok(url_builder)
+    }
+
+    pub fn validate_enc_secret(&self, enc_secret: &str) -> color_eyre::Result<()> {
+        if enc_secret.is_empty() {
+            return Err(eyre!("加密后的 secret 不能为空"));
+        }
+        let decrypted = decrypt(self.secret.as_bytes(), enc_secret).wrap_err("无法解密 secret")?;
+        if decrypted != self.secret {
+            return Err(eyre!("解密后的 secret 不匹配"));
+        }
+        Ok(())
     }
 }
 
@@ -123,39 +136,8 @@ impl FromStr for ConvertorConfig {
     }
 }
 
-impl ServiceConfig {
-    pub fn build_raw_sub_url(&self, client: ProxyClient) -> color_eyre::Result<Url> {
-        let mut url = self.raw_sub_url.clone();
-        // BosLife 的字段是 `flag` 不可改为client
-        url.query_pairs_mut().append_pair("flag", client.as_str());
-        Ok(url)
-    }
-
-    pub fn build_login_url(&self) -> color_eyre::Result<Url> {
-        let url = self
-            .api_host
-            .join(&format!("{}{}", self.api_prefix, self.login_api.api_path))?;
-        Ok(url)
-    }
-
-    pub fn build_get_sub_url(&self) -> color_eyre::Result<Url> {
-        let url = self
-            .api_host
-            .join(&format!("{}{}", self.api_prefix, self.get_sub_api.api_path))?;
-        Ok(url)
-    }
-
-    pub fn build_reset_sub_url(&self) -> color_eyre::Result<Url> {
-        let url = self
-            .api_host
-            .join(&format!("{}{}", self.api_prefix, self.reset_sub_api.api_path))?;
-        Ok(url)
-    }
-
-    pub fn build_get_sub_logs_url(&self) -> color_eyre::Result<Url> {
-        let url = self
-            .api_host
-            .join(&format!("{}{}", self.api_prefix, self.get_sub_logs_api.api_path))?;
-        Ok(url)
+impl Display for ConvertorConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", toml::to_string(self).expect("无法序列化 ConvertorConfig"))
     }
 }

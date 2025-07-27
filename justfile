@@ -3,6 +3,7 @@
 set shell := ["zsh", "-uc"]
 
 prepare:
+    cargo install cargo-zigbuild
     brew install zig
 
 install:
@@ -12,6 +13,9 @@ linux:
     time CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=x86_64-linux-gnu-gcc \
     cargo build --release --bin convertor --target x86_64-unknown-linux-gnu
 
+musl:
+    cargo zigbuild --release --bin convertor --target x86_64-unknown-linux-musl
+
 cross-linux:
     time cross build --release --bin convertor --target x86_64-unknown-linux-gnu
 
@@ -19,18 +23,30 @@ zig-linux:
     time CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=./zig-cc \
     cargo build --release --bin convertor --target x86_64-unknown-linux-gnu
 
-# 用法: just deploy user@host path/to/local/file /remote/path your-service-name
-deploy alias:
+deploy:
     echo "Stopping remote service..."
-    ssh {{ alias }} "systemctl stop convertor"
+    ssh convertor "rc-service convertor stop"
+
+    echo "Uploading file..."
+    scp target/x86_64-unknown-linux-musl/release/convertor convertor:/root/convertor
+    scp ~/.convertor/convertor.toml convertor:/root/.convertor/convertor.toml
+
+    ssh convertor "rc-service convertor restart"
+    ssh convertor "rc-service convertor status"
+
+# 用法: just deploy user@host path/to/local/file /remote/path your-service-name
+deploy_ubuntu:
+    echo "Stopping remote service..."
+    ssh ubuntu "systemctl stop convertor"
+    ssh ubuntu "systemctl daemon-reload"
 
     echo "Uploading file..."
     scp target/x86_64-unknown-linux-gnu/release/convertor ubuntu:/root/.cargo/bin/convertor
     scp ~/.convertor/convertor.toml ubuntu:/root/.convertor/convertor.toml
 
     echo "Restarting remote service..."
-    ssh {{ alias }} "systemctl restart convertor"
-    ssh {{ alias }} "systemctl status convertor"
+    ssh ubuntu "systemctl restart convertor"
+    ssh ubuntu "systemctl status convertor"
 
 push_config alias:
     echo "Uploading file..."

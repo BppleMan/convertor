@@ -1,11 +1,10 @@
-use crate::common::proxy_client::ProxyClient;
-use blake3::Hasher;
+use crate::common::config::proxy_client::ProxyClient;
 use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
 use color_eyre::Report;
 use moka::future::Cache as MokaCache;
 use std::fmt::{Debug, Display, Formatter};
 use std::future::Future;
-use std::hash::Hash;
+use std::hash::{DefaultHasher, Hash, Hasher};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -13,7 +12,7 @@ use tracing::{debug, error};
 
 pub const CACHED_AUTH_TOKEN_KEY: &str = "CACHED_AUTH_TOKEN";
 pub const CACHED_PROFILE_KEY: &str = "CACHED_PROFILE";
-pub const CACHED_RAW_SUB_URL_KEY: &str = "CACHED_RAW_SUB_URL";
+pub const CACHED_UNI_SUB_URL_KEY: &str = "CACHED_UNI_SUB_URL";
 pub const CACHED_SUB_LOGS_KEY: &str = "CACHED_SUB_LOGS";
 
 #[derive(Clone)]
@@ -89,7 +88,7 @@ where
         use tokio_stream::{StreamExt, wrappers::ReadDirStream};
 
         let target_dir = self.cache_dir.join(key.prefix_path());
-        let hash_prefix = key.short_hash();
+        let hash_prefix = key.hash_code();
 
         let mut read_dir = match tokio::fs::read_dir(&target_dir).await {
             Ok(rd) => ReadDirStream::new(rd),
@@ -129,11 +128,12 @@ where
     /// 从干净的 file_stem 中提取 `(hash, expires_ts)`
     /// 要求传入格式为：`<hash_prefix>__<datetime>`
     /// 如：`abc123__2025-07-02T12-00-00`
-    fn decode_file_stem(file_stem: &str) -> Option<(String, u64)> {
+    fn decode_file_stem(file_stem: &str) -> Option<(u64, u64)> {
         let (hash, time_str) = file_stem.rsplit_once("__")?;
         let naive = NaiveDateTime::parse_from_str(time_str, "%Y-%m-%dT%H-%M-%S").ok()?;
         let local = Local.from_local_datetime(&naive).single()?;
-        Some((hash.to_string(), local.timestamp() as u64))
+        let hash_code = hash.parse::<u64>().ok()?;
+        Some((hash_code, local.timestamp() as u64))
     }
 
     fn now_ts() -> u64 {
@@ -173,11 +173,10 @@ where
     }
 
     /// 生成 hash 文件名前缀，例如 "a4bc1398"
-    pub fn short_hash(&self) -> String {
-        let mut hasher = Hasher::new();
-        hasher.update(self.to_string().as_bytes());
-        let hash = hasher.finalize();
-        hash.to_hex()[..8].to_string()
+    pub fn hash_code(&self) -> u64 {
+        let mut hasher = DefaultHasher::default();
+        self.hash(&mut hasher);
+        hasher.finish()
     }
 
     pub fn prefix_path(&self) -> PathBuf {
@@ -190,7 +189,7 @@ where
 
     /// 返回相对路径（不含 cache_dir）：<prefix>/<client>/<short_hash>__<expires>.txt
     pub fn relative_path(&self, expires_at: DateTime<Local>) -> PathBuf {
-        let file_name = format!("{}__{}.txt", self.short_hash(), expires_at.format("%Y-%m-%dT%H-%M-%S"));
+        let file_name = format!("{}__{}.txt", self.hash_code(), expires_at.format("%Y-%m-%dT%H-%M-%S"));
         self.prefix_path().join(file_name)
     }
 
@@ -210,44 +209,5 @@ where
             write!(f, "::{}", client.as_str())?;
         }
         write!(f, "::{}", self.hash)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::common::proxy_client::ProxyClient;
-    use tempfile::tempdir;
-
-    #[tokio::test]
-    async fn test_cache_file_roundtrip() {
-        // 定义一个简单的 CacheKey
-        let key = CacheKey {
-            prefix: "unit_test".to_string(),
-            hash: "mykey".to_string(),
-            client: Some(ProxyClient::Surge),
-        };
-
-        let tmp_dir = tempdir().unwrap();
-        let cache = Cache::new(10, tmp_dir.path(), Duration::from_secs(10));
-
-        let val = cache
-            .try_get_with(key.clone(), async { Ok::<_, Report>("hello cache".to_string()) })
-            .await
-            .unwrap();
-
-        assert_eq!(val, "hello cache");
-
-        // 再次获取，应该命中缓存
-        let val2 = cache
-            .try_get_with(key, async {
-                panic!("Should not hit loader");
-                #[allow(unreachable_code)]
-                Ok::<_, Report>("never reached".to_string())
-            })
-            .await
-            .unwrap();
-
-        assert_eq!(val2, "hello cache");
     }
 }

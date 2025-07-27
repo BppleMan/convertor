@@ -17,8 +17,8 @@ pub struct SurgeRenderer;
 impl Renderer for SurgeRenderer {
     type PROFILE = SurgeProfile;
 
-    fn client() -> crate::common::proxy_client::ProxyClient {
-        crate::common::proxy_client::ProxyClient::Surge
+    fn client() -> crate::common::config::proxy_client::ProxyClient {
+        crate::common::config::proxy_client::ProxyClient::Surge
     }
 
     fn render_profile(profile: &Self::PROFILE) -> RenderResult<String> {
@@ -79,7 +79,7 @@ impl Renderer for SurgeRenderer {
             write!(output, ",encrypt-method={cipher}")?;
         }
         if let Some(udp) = proxy.udp {
-            write!(output, ",udp-replay={udp}")?;
+            write!(output, ",udp-relay={udp}")?;
         }
         if let Some(tfo) = proxy.tfo {
             write!(output, ",tfo={tfo}")?;
@@ -146,7 +146,7 @@ impl Renderer for SurgeRenderer {
 
     fn render_provider_name_for_policy(policy: &Policy) -> RenderResult<String> {
         let mut output = String::new();
-        write!(output, "// [")?;
+        write!(output, "[")?;
         if policy.is_subscription {
             write!(output, "Subscription")?;
         } else {

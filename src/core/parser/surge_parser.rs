@@ -9,9 +9,6 @@ use std::collections::HashMap;
 use std::fmt::Write;
 use std::str::FromStr;
 use tracing::{instrument, trace};
-// pub const SECTION_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"^\[[^\[\]]+]$"#).unwrap());
-// pub const COMMENT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\s*(;|#|//)").unwrap());
-// pub const INLINE_COMMENT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"(;|#|//).*$").unwrap());
 
 pub const MANAGED_CONFIG_HEADER: &str = "MANAGED-CONFIG";
 pub const GENERAL_SECTION: &str = "[General]";
@@ -154,7 +151,7 @@ impl SurgeParser {
                 let v = v.trim();
                 match k {
                     "password" => password = Some(v),
-                    "udp-replay" => udp = v.parse::<bool>().ok(),
+                    "udp-relay" => udp = v.parse::<bool>().ok(),
                     "tfo" => tfo = v.parse::<bool>().ok(),
                     "encrypt-method" => cipher = Some(v),
                     "sni" => sni = Some(v),
@@ -283,7 +280,7 @@ impl SurgeParser {
                 line if line.is_empty() || line.starts_with('#') || line.starts_with(';') || line.starts_with("//") => {
                     match comment.as_mut() {
                         None => comment = Some(line.to_string()),
-                        Some(comment) => writeln!(comment, "{line}")?,
+                        Some(comment) => write!(comment, "\n{line}")?,
                     }
                 }
                 _ => match parse(line) {

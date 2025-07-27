@@ -1,8 +1,9 @@
-use convertor_core::common::config::ConvertorConfig;
-use convertor_core::common::once::init_backtrace;
-use convertor_core::common::proxy_client::ProxyClient;
-use convertor_core::core::profile::Profile;
-use convertor_core::core::profile::surge_profile::SurgeProfile;
+use convertor::common::config::ConvertorConfig;
+use convertor::common::config::proxy_client::ProxyClient;
+use convertor::common::config::sub_provider::SubProvider;
+use convertor::common::once::init_backtrace;
+use convertor::core::profile::Profile;
+use convertor::core::profile::surge_profile::SurgeProfile;
 use std::path::Path;
 
 #[tokio::main(flavor = "multi_thread")]
@@ -15,12 +16,12 @@ async fn main() -> color_eyre::Result<()> {
     // #[cfg(feature = "bench")]
     // tracing_profile::init_tracing()?;
 
-    let config = ConvertorConfig::search(&base_dir, Option::<&Path>::None)?;
-    let url = config.create_convertor_url(ProxyClient::Surge)?;
+    let config = ConvertorConfig::template();
+    let url_builder = config.create_url_builder(ProxyClient::Surge, SubProvider::BosLife)?;
 
     let file = std::fs::read_to_string(base_dir.join("mock.conf"))?;
     let mut profile = SurgeProfile::parse(file)?;
-    profile.convert(&url)?;
+    profile.convert(&url_builder)?;
 
     Ok(())
 }

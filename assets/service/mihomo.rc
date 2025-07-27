@@ -1,0 +1,47 @@
+#!/sbin/openrc-run
+
+name="mihomo"
+description="mihomo Daemon, Another Clash Kernel."
+
+command="/usr/local/bin/mihomo"
+command_args="-d /root/.config/mihomo"
+pidfile="/run/$RC_SVCNAME.pid"
+directory="/root/.config/mihomo"
+command_background="yes"
+command_user="root:root"
+
+# 启动顺序要求网络服务
+depend() {
+    need net
+    use dns logger
+}
+
+# 启动前等待网络稳定
+start_pre() {
+    sleep 1
+}
+
+# 环境能力（以setpriv代替systemd的AmbientCapabilities）
+start_post() {
+    ebegin "Dropping capabilities with setpriv"
+    # 需要 util-linux 中的 setpriv 命令
+    setpriv --bounding-set \
+        cap_net_admin,cap_net_raw,cap_net_bind_service,cap_sys_time,cap_sys_ptrace,cap_dac_read_search,cap_dac_override \
+        --ambient \
+        --reset-env \
+        --inh-caps \
+        --clear-groups \
+        -- \
+        "$command" $command_args &
+    eend $?
+}
+
+# 重启时向主进程发送 HUP 信号
+reload() {
+    ebegin "Reloading mihomo"
+    kill -HUP "$(cat $pidfile)"
+    eend $?
+}
+
+# 资源限制
+rc_ulimit="-n 1000000 -u 500"

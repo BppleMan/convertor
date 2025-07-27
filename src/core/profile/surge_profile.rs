@@ -1,14 +1,15 @@
-use crate::common::proxy_client::ProxyClient;
-use crate::common::url::ConvertorUrl;
+use crate::common::config::proxy_client::ProxyClient;
 use crate::core::parser::surge_parser::SurgeParser;
 use crate::core::profile::Profile;
 use crate::core::profile::policy::Policy;
 use crate::core::profile::proxy::Proxy;
 use crate::core::profile::proxy_group::ProxyGroup;
 use crate::core::profile::rule::{ProviderRule, Rule};
+use crate::core::profile::surge_header::SurgeHeaderType;
 use crate::core::renderer::Renderer;
 use crate::core::renderer::surge_renderer::SurgeRenderer;
 use crate::core::result::ParseResult;
+use crate::core::url_builder::UrlBuilder;
 use std::collections::HashMap;
 use tracing::instrument;
 
@@ -69,17 +70,17 @@ impl Profile for SurgeProfile {
     }
 
     #[instrument(skip_all)]
-    fn convert(&mut self, url: &ConvertorUrl) -> ParseResult<()> {
-        self.replace_header(url)?;
+    fn convert(&mut self, url_builder: &UrlBuilder) -> ParseResult<()> {
+        self.replace_header(url_builder)?;
         self.optimize_proxies()?;
-        self.optimize_rules(url)?;
+        self.optimize_rules(url_builder)?;
         Ok(())
     }
 
     #[instrument(skip_all)]
-    fn append_rule_provider(&mut self, policy: &Policy, url: &ConvertorUrl) -> ParseResult<()> {
+    fn append_rule_provider(&mut self, policy: &Policy, url_builder: &UrlBuilder) -> ParseResult<()> {
         let name = SurgeRenderer::render_provider_name_for_policy(policy)?;
-        let url = url.build_rule_provider_url(policy)?;
+        let url = url_builder.build_rule_provider_url(policy);
         let rule = Rule::surge_rule_provider(policy, name, url);
         self.rules.push(rule);
         Ok(())
@@ -88,19 +89,10 @@ impl Profile for SurgeProfile {
 
 impl SurgeProfile {
     #[instrument(skip_all)]
-    fn replace_header(&mut self, url: &ConvertorUrl) -> ParseResult<()> {
-        self.header = Self::build_managed_config_header(url)?;
+    fn replace_header(&mut self, url_builder: &UrlBuilder) -> ParseResult<()> {
+        self.header = url_builder
+            .build_managed_config_header(SurgeHeaderType::Profile)
+            .to_string();
         Ok(())
-    }
-
-    pub fn build_managed_config_header(convertor_url: &ConvertorUrl) -> ParseResult<String> {
-        let url = convertor_url.build_sub_url()?;
-        let header = format!(
-            "#!MANAGED-CONFIG {} interval={} strict={}",
-            url.as_str(),
-            convertor_url.interval,
-            convertor_url.strict
-        );
-        Ok(header)
     }
 }

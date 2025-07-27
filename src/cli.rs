@@ -1,22 +1,31 @@
-use crate::cli::install_service::ServiceName;
-use crate::cli::service_provider::ServiceProviderArgs;
-use clap::Parser;
+use crate::cli::service_installer::ServiceName;
+use crate::cli::sub_provider_executor::SubProviderCmd;
+use crate::common::config::sub_provider::SubProvider;
+use clap::Subcommand;
 
-pub mod install_service;
-pub mod service_provider;
+pub mod service_installer;
+pub mod sub_provider_executor;
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Clone, Subcommand)]
 #[allow(clippy::large_enum_variant)]
-pub enum ConvertorCli {
-    /// 服务商订阅配置
+pub enum ConvertorCommand {
+    /// 配置相关的子命令
+    /// 获取配置模板, 生成配置文件等
+    #[command(name = "config")]
+    Config,
+    /// 获取订阅提供商的订阅链接
     #[command(name = "sub")]
-    Subscription(ServiceProviderArgs),
+    Subscription(SubProviderCmd),
 
-    /// 安装服务
+    /// 安装 systemd 服务
     #[command(name = "install")]
-    InstallService {
+    Install {
         /// 服务名称
-        #[arg(value_enum, default_value = "convertor")]
+        #[arg(value_enum, default_value_t = ServiceName::Convertor)]
         name: ServiceName,
+
+        /// 订阅提供商
+        #[arg(value_enum, default_value_t = SubProvider::BosLife)]
+        provider: SubProvider,
     },
 }
