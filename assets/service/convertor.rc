@@ -3,18 +3,27 @@
 name="convertor"
 description="Convertor Service"
 
-command="/root/.cargo/bin/convertor"
-command_args="0.0.0.0:8001"
-command_user="root:root"
+command="/root/convertor"
+command_args="127.0.0.1:8080"
+command_user="root"
 directory="/root/.convertor"
 
-# 启动顺序：在 network 启动之后
+command_background=yes
+start_stop_daemon_args="--make-pidfile --background"
+pidfile=/run/convertor/convertor.pid
+
+# 👉 彻底静音（可选保留）
+#output_log="/dev/null"
+#error_log="/dev/null"
+
 depend() {
     need net
 }
 
-# 设置资源限制（非强制，OpenRC 没有 systemd 那么细化）
-rc_ulimit="-n 1024"  # 文件句柄限制
+rc_ulimit="-n 1024"#error_log="/dev/null"
 
-# 你可以通过 `start_pre` 设置环境变量（如启用 RUST_LOG）
-# export RUST_LOG=info
+depend() {
+    need net
+}
+
+rc_ulimit="-n 1024"

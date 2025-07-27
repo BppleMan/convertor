@@ -23,11 +23,11 @@ pub async fn start_server(
     api_map: HashMap<SubProvider, SubProviderWrapper>,
     base_dir: impl AsRef<Path>,
 ) -> Result<()> {
+    let listener = tokio::net::TcpListener::bind(listen_addr).await?;
     info!("base_dir: {}", base_dir.as_ref().display());
     info!("监听中: {}", &listen_addr);
     warn!("建议使用 nginx 等网关进行反向代理，以开启 HTTPS 支持");
     info!("服务启动，使用 Ctrl+C 或 SIGTERM 关闭服务");
-    let listener = tokio::net::TcpListener::bind(listen_addr).await?;
 
     let app_state = AppState::new(config, api_map);
     let app = router::router(app_state);
