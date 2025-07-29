@@ -90,16 +90,19 @@ impl SubProviderExecutor {
         Self { config, api_map }
     }
 
-    pub async fn execute(&self, cmd: SubProviderCmd) -> Result<(UrlBuilder, SubProviderExecutorResult)> {
+    pub async fn execute(&mut self, cmd: SubProviderCmd) -> Result<(UrlBuilder, SubProviderExecutorResult)> {
         let client = cmd.client;
         let sub_provider = cmd.provider;
         let url_builder = self.create_url_builder(&cmd).await?;
-        let raw_profile_content = self
-            .api_map
-            .get(&sub_provider)
-            .ok_or(eyre!("无法取得订阅供应商的 api 实现: {}", &sub_provider))?
-            .get_raw_profile(client)
-            .await?;
+        let raw_profile_content = match self.api_map.get_mut(&sub_provider) {
+            Some(api) => {
+                api.set_uni_sub_url(url_builder.uni_sub_url.clone());
+                api.get_raw_profile(client).await?
+            }
+            None => {
+                return Err(eyre!("无法取得订阅供应商的 api 实现: {}", &sub_provider));
+            }
+        };
         let uni_sub_host_port = url_builder.uni_sub_url.host_port()?;
         let (client_profile, policies) = match client {
             ProxyClient::Surge => {

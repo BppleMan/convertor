@@ -76,6 +76,12 @@ pub struct CredentialConfig {
 }
 
 impl SubProviderConfig {
+    pub fn set_uni_sub_url(&mut self, url: Url) {
+        match self {
+            SubProviderConfig::BosLife(config) => config.uni_sub_url = url,
+        }
+    }
+
     pub fn uni_sub_url(&self) -> &Url {
         match self {
             SubProviderConfig::BosLife(config) => &config.uni_sub_url,

@@ -69,7 +69,7 @@ async fn test_subscription(
     let strict = cmd.strict.unwrap_or(client_config.strict());
 
     let api_map = SubProviderWrapper::create_api(convertor_config.providers.clone(), &base_dir);
-    let executor = SubProviderExecutor::new(convertor_config, api_map);
+    let mut executor = SubProviderExecutor::new(convertor_config, api_map);
     let (url_builder, result) = executor.execute(cmd).await?;
 
     // 构造期望值
