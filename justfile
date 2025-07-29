@@ -14,7 +14,7 @@ linux:
     cargo build --release --bin convertor --target x86_64-unknown-linux-gnu
 
 musl:
-    cargo zigbuild --release --bin convertor --target x86_64-unknown-linux-musl
+    time cargo zigbuild --release --bin convertor --target x86_64-unknown-linux-musl
 
 cross-linux:
     time cross build --release --bin convertor --target x86_64-unknown-linux-gnu

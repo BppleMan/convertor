@@ -36,6 +36,12 @@ impl SubProviderWrapper {
             .collect()
     }
 
+    pub fn set_uni_sub_url(&mut self, url: Url) {
+        match self {
+            SubProviderWrapper::BosLife(api) => api.config.uni_sub_url = url,
+        }
+    }
+
     pub fn client(&self) -> &ReqwestClient {
         match self {
             SubProviderWrapper::BosLife(api) => api.client(),

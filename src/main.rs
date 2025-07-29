@@ -47,7 +47,7 @@ async fn main() -> Result<()> {
         None => start_server(args.listen, config, api_map, &base_dir).await?,
         Some(ConvertorCommand::Config) => unreachable!("config 子命令已拦截处理"),
         Some(ConvertorCommand::Subscription(args)) => {
-            let executor = SubProviderExecutor::new(config, api_map);
+            let mut executor = SubProviderExecutor::new(config, api_map);
             let (url_builder, result) = executor.execute(args).await?;
             executor.post_execute(url_builder, result);
         }

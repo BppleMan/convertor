@@ -5,9 +5,12 @@ use crate::common::cache::{
 use crate::common::config::proxy_client::ProxyClient;
 use crate::common::config::request::RequestConfig;
 use crate::common::config::sub_provider::ApiConfig;
+use axum::http::HeaderValue;
 use color_eyre::eyre::{Context, eyre};
 use moka::future::Cache as MokaCache;
+use reqwest::header::HeaderName;
 use reqwest::{Method, Request, Response};
+use std::str::FromStr;
 use url::Url;
 
 pub(crate) trait SubProviderApi {
@@ -44,9 +47,22 @@ pub(crate) trait SubProviderApi {
     fn cached_sub_logs(&self) -> &Cache<Url, BosLifeSubLogs>;
 
     async fn execute(&self, mut request: Request) -> color_eyre::Result<Response> {
-        request
-            .headers_mut()
-            .insert("User-Agent", concat!("convertor/", env!("CARGO_PKG_VERSION")).parse()?);
+        if let Some(request_config) = self.common_request_config() {
+            if let Some(cookie) = request_config.cookie.as_ref() {
+                request.headers_mut().insert("Cookie", cookie.parse()?);
+            }
+            if let Some(ua) = request_config.user_agent.as_ref() {
+                request.headers_mut().insert("User-Agent", ua.parse()?);
+            }
+            request_config.headers.iter().for_each(|(key, value)| {
+                if let (Ok(name), Ok(value)) = (
+                    HeaderName::from_str(key.as_str()),
+                    HeaderValue::from_str(value.as_str()),
+                ) {
+                    request.headers_mut().insert(name, value);
+                }
+            });
+        }
         Ok(self.client().execute(request).await?)
     }
 
@@ -55,6 +71,7 @@ pub(crate) trait SubProviderApi {
         let key = CacheKey::new(CACHED_PROFILE_KEY, raw_sub_url.clone(), Some(client));
         self.cached_profile()
             .try_get_with(key, async {
+                println!("Raw subscription URL: {raw_sub_url}");
                 let request = self.client().request(Method::GET, raw_sub_url).build()?;
                 let response = self.execute(request).await?;
                 if response.status().is_success() {
