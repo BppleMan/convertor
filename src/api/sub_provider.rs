@@ -71,7 +71,6 @@ pub(crate) trait SubProviderApi {
         let key = CacheKey::new(CACHED_PROFILE_KEY, raw_sub_url.clone(), Some(client));
         self.cached_profile()
             .try_get_with(key, async {
-                println!("Raw subscription URL: {raw_sub_url}");
                 let request = self.client().request(Method::GET, raw_sub_url).build()?;
                 let response = self.execute(request).await?;
                 if response.status().is_success() {
