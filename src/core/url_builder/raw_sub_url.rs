@@ -18,6 +18,6 @@ impl From<&RawSubUrl> for Url {
 
 impl Display for RawSubUrl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}&flag={}", self.server, self.flag)
+        write!(f, "{}?flag={}", self.server, self.flag)
     }
 }
