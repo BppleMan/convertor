@@ -1,7 +1,7 @@
 [workspace.package]
 description = "A profile converter for surge/clash."
 authors = ["BppleMan"]
-version = "2.5.1"
+version = "2.5.11"
 edition = "2024"
 license = "Apache-2.0"
 repository = "https://github.com/BppleMan/convertor"
