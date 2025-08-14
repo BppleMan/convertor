@@ -30,6 +30,9 @@ pub enum AppError {
 
     #[error(transparent)]
     CacheError(#[from] Arc<AppError>),
+
+    #[error("读写锁异常: {0}")]
+    RwLockError(String),
 }
 
 impl IntoResponse for AppError {

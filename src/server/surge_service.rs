@@ -18,6 +18,7 @@ use moka::future::Cache;
 use std::sync::Arc;
 use tracing::instrument;
 
+#[derive(Clone)]
 pub struct SurgeService {
     pub config: Arc<ConvertorConfig>,
     pub profile_cache: Cache<ProfileCacheKey, SurgeProfile>,
@@ -57,12 +58,13 @@ impl SurgeService {
         api: &SubProviderWrapper,
     ) -> Result<Vec<BosLifeSubLog>, AppError> {
         if query.secret != self.config.secret {
-            return Err(AppError::Unauthorized("Invalid secret".to_string()));
+            Err(AppError::Unauthorized("Invalid secret".to_string()))
+        } else {
+            let logs = api.get_sub_logs().await?;
+            let start = (query.page - 1) * query.page_size;
+            let logs: Vec<BosLifeSubLog> = logs.0.into_iter().skip(start).take(query.page_size).collect();
+            Ok(logs)
         }
-        let logs = api.get_sub_logs().await?;
-        let start = (query.page - 1) * query.page_size;
-        let logs: Vec<BosLifeSubLog> = logs.0.into_iter().skip(start).take(query.page_size).collect();
-        Ok(logs)
     }
 
     async fn try_get_profile(

@@ -9,8 +9,6 @@ use reqwest::Client as ReqwestClient;
 use reqwest::{Method, Request, Url};
 use std::path::Path;
 
-const USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36";
-
 #[derive(Clone)]
 pub struct BosLifeApi {
     pub config: BosLifeConfig,
@@ -82,43 +80,46 @@ impl SubProviderApi for BosLifeApi {
 
     fn login_request(&self) -> color_eyre::Result<Request> {
         let url = self.config.build_login_url();
-        let request = self
-            .client
-            .request(Method::POST, url)
-            .form(&[
-                ("email", self.config.credential.username.clone()),
-                ("password", self.config.credential.password.clone()),
-            ])
-            .header("User-Agent", USER_AGENT)
-            .build()?;
-        Ok(request)
+        let mut builder = self.client.request(Method::POST, url).form(&[
+            ("email", self.config.credential.username.clone()),
+            ("password", self.config.credential.password.clone()),
+        ]);
+        if let Some(config) = self.config.request.as_ref() {
+            if let Some(user_agent) = &config.user_agent {
+                builder = builder.header("User-Agent", user_agent);
+            }
+            for (k, v) in &config.headers {
+                builder = builder.header(k, v);
+            }
+        }
+        Ok(builder.build()?)
     }
 
     fn get_sub_url_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request> {
         let url = self.config.build_get_sub_url();
-        let mut request_builder = self.client.request(Method::GET, url);
-        if let Some(common_request) = self.config.request.as_ref() {
-            request_builder = common_request.patch_request(request_builder, Some(auth_token));
+        let mut builder = self.client.request(Method::GET, url);
+        if let Some(config) = self.config.request.as_ref() {
+            builder = config.patch_request(builder, Some(auth_token));
         }
-        Ok(request_builder.build()?)
+        Ok(builder.build()?)
     }
 
     fn reset_sub_url_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request> {
         let url = self.config.build_reset_sub_url();
-        let mut request_builder = self.client.request(Method::POST, url);
-        if let Some(common_request) = self.config.request.as_ref() {
-            request_builder = common_request.patch_request(request_builder, Some(auth_token));
+        let mut builder = self.client.request(Method::POST, url);
+        if let Some(config) = self.config.request.as_ref() {
+            builder = config.patch_request(builder, Some(auth_token));
         }
-        Ok(request_builder.build()?)
+        Ok(builder.build()?)
     }
 
     fn get_sub_logs_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request> {
         let url = self.config.build_get_sub_logs_url();
-        let mut request_builder = self.client.request(Method::GET, url);
-        if let Some(common_request) = self.config.request.as_ref() {
-            request_builder = common_request.patch_request(request_builder, Some(auth_token));
+        let mut builder = self.client.request(Method::GET, url);
+        if let Some(config) = self.config.request.as_ref() {
+            builder = config.patch_request(builder, Some(auth_token));
         }
-        Ok(request_builder.build()?)
+        Ok(builder.build()?)
     }
 
     fn cached_auth_token(&self) -> &MokaCache<String, String> {

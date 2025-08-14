@@ -1,5 +1,6 @@
 use crate::cli::service_installer::ServiceName;
 use crate::cli::sub_provider_executor::SubProviderCmd;
+use crate::common::config::config_cmd::ConfigCmd;
 use crate::common::config::sub_provider::SubProvider;
 use clap::Subcommand;
 
@@ -12,10 +13,11 @@ pub enum ConvertorCommand {
     /// 配置相关的子命令
     /// 获取配置模板, 生成配置文件等
     #[command(name = "config")]
-    Config,
+    Config(ConfigCmd),
+
     /// 获取订阅提供商的订阅链接
     #[command(name = "sub")]
-    Subscription(SubProviderCmd),
+    SubProvider(SubProviderCmd),
 
     /// 安装 systemd 服务
     #[command(name = "install")]

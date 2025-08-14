@@ -16,6 +16,7 @@ mod boslife;
 pub mod boslife_sub_log;
 pub mod sub_provider;
 
+#[derive(Clone)]
 pub enum SubProviderWrapper {
     BosLife(BosLifeApi),
 }

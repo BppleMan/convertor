@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use url::Url;
 
+#[derive(Clone)]
 pub struct AppState {
     pub config: Arc<ConvertorConfig>,
     pub api_map: HashMap<SubProvider, SubProviderWrapper>,

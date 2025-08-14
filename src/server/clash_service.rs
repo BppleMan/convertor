@@ -14,6 +14,7 @@ use moka::future::Cache;
 use std::sync::Arc;
 use tracing::instrument;
 
+#[derive(Clone)]
 pub struct ClashService {
     pub config: Arc<ConvertorConfig>,
     pub profile_cache: Cache<ProfileCacheKey, ClashProfile>,
