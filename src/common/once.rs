@@ -1,12 +1,11 @@
-use std::path::{Path, PathBuf};
 use std::sync::Once;
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-pub fn init_base_dir() -> PathBuf {
+pub fn init_base_dir() -> std::path::PathBuf {
     #[cfg(debug_assertions)]
-    let base_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join(".convertor.dev");
+    let base_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(".convertor.dev");
     #[cfg(not(debug_assertions))]
     let base_dir =
         std::path::PathBuf::from(std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_string())).join(".convertor");
