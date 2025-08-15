@@ -9,6 +9,9 @@ prepare:
 install:
     cargo install --bin convertor --path .
 
+release:
+    cargo build --release --bin convertor
+
 linux:
     time CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=x86_64-linux-gnu-gcc \
     cargo build --release --bin convertor --target x86_64-unknown-linux-gnu
@@ -132,3 +135,25 @@ bash *args:
 
 stop:
     docker rm -f {{ container-name }}
+
+dlogin:
+    echo "Logging in to GitHub Container Registry..."
+    echo $CR_PAT | docker login ghcr.io -u bppleman --password-stdin
+
+dbuild:
+    docker buildx build --platform linux/amd64 -t ghcr.io/bppleman/convertor:0.0.1 .
+
+drun:
+    docker run --rm \
+        -e REDIS_ENDPOINT \
+        -e REDIS_CONVERTOR_USERNAME \
+        -e REDIS_CONVERTOR_PASSWORD \
+        -e REDIS_CA_CERT \
+        -p 8080:80 \
+        ghcr.io/bppleman/convertor:0.0.1 0.0.0.0:80
+
+dpush:
+    docker push ghcr.io/bppleman/convertor:0.0.1
+
+dinspect:
+    docker buildx imagetools inspect ghcr.io/bppleman/convertor:0.0.1

@@ -11,6 +11,9 @@ pub fn init_redis_info() -> color_eyre::Result<()> {
     let endpoint = std::env::var("REDIS_ENDPOINT")?;
     let username = std::env::var("REDIS_CONVERTOR_USERNAME")?;
     let password = std::env::var("REDIS_CONVERTOR_PASSWORD")?;
+    println!("Redis Endpoint: {endpoint}");
+    println!("Redis Username: {username}");
+    println!("Redis Password: {password}");
     REDIS_ENDPOINT.get_or_init(|| endpoint);
     REDIS_CONVERTOR_USERNAME.get_or_init(|| username);
     REDIS_CONVERTOR_PASSWORD.get_or_init(|| password);
@@ -40,6 +43,7 @@ pub fn redis_url() -> String {
 
 pub fn redis_client(redis_url: impl AsRef<str>) -> color_eyre::Result<Client> {
     let ca_cert = std::env::var("REDIS_CA_CERT")?;
+    println!("Redis CA Certificate: {ca_cert}");
     let client = Client::build_with_tls(
         redis_url.as_ref(),
         TlsCertificates {

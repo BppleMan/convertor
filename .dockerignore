@@ -1,0 +1,17 @@
+# Ignore build artifacts & caches
+target
+tmp
+.git
+.github
+**/*.rs.bk
+Dockerfile
+*.iml
+.idea
+.vscode
+
+# Ignore local certificates if you don't want to bake them (mount or env pass instead)
+cert/*
+
+# Allow assets
+!assets
+!target/x86_64-unknown-linux-musl/release/convertor
