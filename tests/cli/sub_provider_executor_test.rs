@@ -7,7 +7,7 @@ use convertor::common::config::proxy_client::ProxyClient;
 
 use crate::server::{redis_url, start_mock_provider_server};
 use convertor::common::config::sub_provider::SubProvider;
-use convertor::common::redis_info::redis_client;
+use convertor::common::redis_info::{init_redis_info, redis_client};
 use convertor::core::url_builder::HostPort;
 use pretty_assertions::assert_str_eq;
 use regex::Regex;
@@ -29,6 +29,7 @@ pub fn convertor_config() -> ConvertorConfig {
 
 #[fixture]
 pub async fn connection_manager() -> redis::aio::ConnectionManager {
+    init_redis_info().expect("Failed to init redis client");
     let redis = redis_client(redis_url()).expect("无法连接到 Redis");
     redis::aio::ConnectionManager::new(redis)
         .await
