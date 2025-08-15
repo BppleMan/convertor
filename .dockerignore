@@ -15,3 +15,4 @@ cert/*
 # Allow assets
 !assets
 !target/x86_64-unknown-linux-musl/release/convertor
+!target/x86_64-unknown-linux-musl/debug/convertor

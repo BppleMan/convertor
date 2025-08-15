@@ -72,12 +72,32 @@ pub(crate) trait SubProviderApi {
         self.cached_profile()
             .try_get_with(key, async {
                 let request = self.client().request(Method::GET, raw_sub_url).build()?;
+                println!("获取原始订阅文件: {:?}", request);
                 let response = self.execute(request).await?;
+                let status = format!("响应状态: {:?}", response.status());
+                let headers = format!("响应头: {:?}", response.headers());
                 if response.status().is_success() {
                     response.text().await.map_err(Into::into)
                 } else {
-                    Err(eyre!("Get raw profile failed: {}", response.status()))
+                    let body = response.bytes().await?;
+                    let content = String::from_utf8_lossy(&body).to_string();
+                    let content = format!("{}\n{}\n响应体: {}", status, headers, content);
+                    let error_report = eyre!("获取原始订阅文件失败: {}", content);
+                    Err(error_report)
                 }
+                // if response.status().is_success() {
+                //     response.text().await.map_err(Into::into)
+                // } else {
+                //     let status = response.status();
+                //     let error_report = response
+                //         .text()
+                //         .await
+                //         .map(|msg| eyre!(msg))
+                //         .wrap_err("获取错误信息失败")
+                //         .unwrap_or_else(|e| e)
+                //         .wrap_err(format!("获取原始订阅文件失败: {}", status));
+                //     Err(error_report)
+                // }
             })
             .await
             .map_err(|e| eyre!(e))
@@ -95,11 +115,19 @@ pub(crate) trait SubProviderApi {
                 if response.status().is_success() {
                     let json_response = response.text().await?;
                     let auth_token = jsonpath_lib::select_as(&json_response, &json_path)
-                        .wrap_err_with(|| format!("failed to select json_path: {}", &json_path))?
+                        .wrap_err_with(|| format!("无法选择 json_path: {}", &json_path))?
                         .remove(0);
                     Ok(auth_token)
                 } else {
-                    Err(eyre!("登陆服务商失败: {}", response.status()))
+                    let status = response.status();
+                    let error_report = response
+                        .text()
+                        .await
+                        .map(|msg| eyre!(msg))
+                        .wrap_err("获取错误信息失败")
+                        .unwrap_or_else(|e| e)
+                        .wrap_err(format!("登录服务商失败: {}", status));
+                    Err(error_report)
                 }
             })
             .await
@@ -122,7 +150,15 @@ pub(crate) trait SubProviderApi {
                             .remove(0);
                         Ok(url_str)
                     } else {
-                        Err(eyre!("请求服务商原始订阅链接失败: {}", response.status(),))
+                        let status = response.status();
+                        let error_report = response
+                            .text()
+                            .await
+                            .map(|msg| eyre!(msg))
+                            .wrap_err("获取错误信息失败")
+                            .unwrap_or_else(|e| e)
+                            .wrap_err(format!("请求服务商原始订阅链接失败: {}", status));
+                        Err(error_report)
                     }
                 },
             )
@@ -138,12 +174,20 @@ pub(crate) trait SubProviderApi {
         if response.status().is_success() {
             let json_path = &self.reset_sub_url_api().json_path;
             let json_response = response.text().await?;
-            let url_str: String = jsonpath_lib::select_as(&json_response, &json_path)
+            let url_str: String = jsonpath_lib::select_as(&json_response, json_path)
                 .wrap_err_with(|| format!("failed to select json_path: {}", &json_path))?
                 .remove(0);
             Url::parse(&url_str).map_err(|e| e.into())
         } else {
-            Err(eyre!("Reset raw subscription URL failed: {}", response.status()))
+            let status = response.status();
+            let error_report = response
+                .text()
+                .await
+                .map(|msg| eyre!(msg))
+                .wrap_err("获取错误信息失败")
+                .unwrap_or_else(|e| e)
+                .wrap_err(format!("重置原始订阅链接失败: {}", status));
+            Err(error_report)
         }
     }
 

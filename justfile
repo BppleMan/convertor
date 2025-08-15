@@ -16,8 +16,8 @@ linux:
     time CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=x86_64-linux-gnu-gcc \
     cargo build --release --bin convertor --target x86_64-unknown-linux-gnu
 
-musl:
-    time cargo zigbuild --release --bin convertor --target x86_64-unknown-linux-musl
+musl profile="release":
+    time cargo zigbuild --profile {{ profile }} --bin convertor --target x86_64-unknown-linux-musl
 
 cross-linux:
     time cross build --release --bin convertor --target x86_64-unknown-linux-gnu
@@ -140,20 +140,31 @@ dlogin:
     echo "Logging in to GitHub Container Registry..."
     echo $CR_PAT | docker login ghcr.io -u bppleman --password-stdin
 
-dbuild:
-    docker buildx build --platform linux/amd64 -t ghcr.io/bppleman/convertor:0.0.1 .
+dbuild version:
+    docker build --platform linux/amd64 -t ghcr.io/bppleman/convertor:{{ version }} --push .
 
-drun:
+drun version:
     docker run --rm \
         -e REDIS_ENDPOINT \
         -e REDIS_CONVERTOR_USERNAME \
         -e REDIS_CONVERTOR_PASSWORD \
         -e REDIS_CA_CERT \
         -p 8080:80 \
-        ghcr.io/bppleman/convertor:0.0.1 0.0.0.0:80
+        ghcr.io/bppleman/convertor:{{ version }} 0.0.0.0:80
 
-dpush:
-    docker push ghcr.io/bppleman/convertor:0.0.1
+dpush version:
+    docker push ghcr.io/bppleman/convertor:{{ version }}
 
-dinspect:
-    docker buildx imagetools inspect ghcr.io/bppleman/convertor:0.0.1
+dinspect version:
+    docker buildx imagetools inspect ghcr.io/bppleman/convertor:{{ version }}
+
+dall version profile="release":
+    just musl {{ profile }}
+    just dbuild {{ version }}
+    just dinspect {{ version }}
+
+dbuildx version:
+    docker buildx build \
+      --platform linux/amd64 \
+      -t ghcr.io/bppleman/convertor:{{ version }} \
+      --push .

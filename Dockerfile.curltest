@@ -1,0 +1,3 @@
+FROM alpine:latest
+RUN apk add --no-cache curl
+CMD curl https://tvm.xa5z.org/xm6bh9/90064382264b5f1ae715abce660e757b -vvv
