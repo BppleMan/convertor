@@ -16,10 +16,10 @@ use std::str::FromStr;
 use tracing::{error, warn};
 use url::Url;
 
-pub mod proxy_client;
-pub mod sub_provider;
-pub mod request;
 pub mod config_cmd;
+pub mod proxy_client;
+pub mod request;
+pub mod sub_provider;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConvertorConfig {

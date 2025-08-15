@@ -1,2 +1,2 @@
-pub mod surge_parser;
 pub mod clash_parser;
+pub mod surge_parser;

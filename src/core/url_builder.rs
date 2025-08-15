@@ -17,8 +17,8 @@ use url::Url;
 
 pub mod profile_url;
 pub mod raw_sub_url;
-pub mod sub_logs_url;
 pub mod rule_provider_url;
+pub mod sub_logs_url;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct UrlBuilder {

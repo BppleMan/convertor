@@ -18,13 +18,13 @@ use tokio_stream::StreamExt;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, warn};
 
-pub mod router;
-pub mod error;
-pub mod surge_service;
-pub mod clash_service;
-pub mod raw_service;
 pub mod app_state;
+pub mod clash_service;
+pub mod error;
 pub mod query;
+pub mod raw_service;
+pub mod router;
+pub mod surge_service;
 
 pub async fn start_server(
     listen_addr: SocketAddrV4,
