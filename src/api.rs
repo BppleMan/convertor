@@ -7,9 +7,9 @@ use crate::common::config::request::RequestConfig;
 use crate::common::config::sub_provider::{ApiConfig, SubProvider, SubProviderConfig};
 use dispatch_map::DispatchMap;
 use moka::future::Cache as MokaCache;
+use redis::aio::ConnectionManager;
 use reqwest::{Client as ReqwestClient, Request};
 use std::collections::HashMap;
-use std::path::Path;
 use url::Url;
 
 mod boslife;
@@ -24,14 +24,14 @@ pub enum SubProviderWrapper {
 impl SubProviderWrapper {
     pub fn create_api(
         providers: DispatchMap<SubProvider, SubProviderConfig>,
-        base_dir: impl AsRef<Path>,
+        redis: ConnectionManager,
     ) -> HashMap<SubProvider, SubProviderWrapper> {
         providers
             .into_iter()
             .map(|(provider, config)| match (provider, config) {
                 (SubProvider::BosLife, SubProviderConfig::BosLife(config)) => (
                     SubProvider::BosLife,
-                    SubProviderWrapper::BosLife(BosLifeApi::new(base_dir.as_ref(), config)),
+                    SubProviderWrapper::BosLife(BosLifeApi::new(redis.clone(), config)),
                 ),
             })
             .collect()

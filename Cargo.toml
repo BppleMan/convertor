@@ -61,24 +61,25 @@ tower = { version = "0.5.2", default-features = false, features = [] }
 tower-http = { version = "0.6.6", default-features = false, features = ["trace"] }
 
 # cli
-clap = { version = "4.5.41", default-features = true, features = ["cargo", "derive"] }
+clap = { version = "4.5.45", default-features = true, features = ["cargo", "derive"] }
 console = { version = "0.16.0", default-features = false, features = ["ansi-parsing", "alloc"] }
 inquire = { version = "0.7.5", default-features = false, features = ["console"] }
 indicatif = { version = "0.18.0", default-features = false }
 
+# cache
+moka = { version = "0.12.10", default-features = false, features = ["future"] }
+redis = { version = "0.32.5", default-features = true, features = ["tokio-rustls-comp", "streams", "connection-manager"] }
+
 # other
 regex = { version = "1.11.1", default-features = false }
-moka = { version = "0.12.10", default-features = false, features = ["future"] }
-chrono = { version = "0.4.41", default-features = false, features = ["clock"] }
+#chrono = { version = "0.4.41", default-features = false, features = ["clock"] }
 flate2 = { version = "1.1.2", default-features = false, features = ["rust_backend"] }
-redis = { version = "0.32.5", default-features = true, features = ["tokio-comp", "streams"] }
 
 # benchmarking
 tracing-span-tree = { version = "0.1.1", optional = true }
 tracing-profile = { version = "0.10.9", optional = true }
 
 [dev-dependencies]
-tempfile = { version = "3.20.0", default-features = false }
 serde_json = { version = "1.0.141", default-features = false }
 httpmock = { version = "0.7.0", default-features = false, features = ["colored"] }
 tower = { version = "0.5.2", default-features = false }
@@ -96,11 +97,11 @@ bench = [
 
 
 [profile.release]
-opt-level = "z"         # 极限体积优化（如需极致性能可改成3）
+opt-level = 3           # 极限体积优化（如需极致性能可改成3）
 lto = "fat"             # 最激进的链接时优化
 codegen-units = 1       # 单单元生成，最大化优化效果
 #panic = "abort"         # panic 直接 abort，减少依赖和体积
 strip = true            # 自动剥离所有符号表
 debug = false           # 不保留调试符号
-incremental = false     # 关闭增量编译，避免缓存不一致
+#incremental = false     # 关闭增量编译，避免缓存不一致
 overflow-checks = false # 禁用溢出检查

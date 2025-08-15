@@ -2,7 +2,7 @@ use crate::api::SubProviderWrapper;
 use crate::common::config::ConvertorConfig;
 use crate::common::config::sub_provider::SubProvider;
 use crate::common::ext::WatchDebounceExt;
-use crate::common::redis_info::{CONFIG_CENTER_CONVERTOR_CONFIG_PUBLISH_CHANNEL, config_center_url};
+use crate::common::redis_info::REDIS_CONVERTOR_CONFIG_PUBLISH_CHANNEL;
 use crate::server::app_state::AppState;
 use axum::Router;
 use color_eyre::eyre::WrapErr;
@@ -31,14 +31,13 @@ pub async fn start_server(
     config: ConvertorConfig,
     api_map: HashMap<SubProvider, SubProviderWrapper>,
     base_dir: impl AsRef<Path>,
+    client: redis::Client,
 ) -> Result<()> {
     info!("工作环境: {}", base_dir.as_ref().display());
     info!("监听中: {}", &listen_addr);
     warn!("建议使用 nginx 等网关进行反向代理，以开启 HTTPS 支持");
-    info!("服务启动，使用 Ctrl+C 或 SIGTERM 关闭服务");
 
     let cancel_token = CancellationToken::new();
-    let client = redis::Client::open(config_center_url())?;
     let mut config_receiver = start_sub_config(client, config);
     let mut current_config = config_receiver.borrow().clone();
 
@@ -57,6 +56,7 @@ pub async fn start_server(
         let serve_handle = tokio::spawn({
             let stop_this = stop_this.clone();
             async move {
+                info!("服务启动，使用 Ctrl+C 或 SIGTERM 关闭服务");
                 axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
                     .with_graceful_shutdown(async move { stop_this.cancelled().await })
                     .await
@@ -80,10 +80,10 @@ pub async fn start_server(
             }
             Ok(config) = config_receiver.recv_debounced_distinct(tokio::time::Duration::from_secs(1), |_| true) => {
                 info!("收到配置更新通知，准备重启服务…");
-                // 先优雅停本轮
+                info!("停止旧的服务…");
                 stop_this.cancel();
                 let _ = serve_handle.await;
-                // 更新配置，回到 loop 顶部重启
+                info!("更新配置…");
                 current_config = config.clone();
                 continue;
             }
@@ -106,12 +106,14 @@ fn bind_once(addr: SocketAddrV4) -> Result<TcpListener> {
 fn start_sub_config(client: redis::Client, config: ConvertorConfig) -> Receiver<ConvertorConfig> {
     let (tx, rx) = watch::channel(config);
     tokio::spawn(async move {
+        info!("启动 Redis subscribe");
         let connection = client.get_multiplexed_async_connection().await?;
         let mut sub = client.get_async_pubsub().await?;
-        sub.subscribe(CONFIG_CENTER_CONVERTOR_CONFIG_PUBLISH_CHANNEL).await?;
+        sub.subscribe(REDIS_CONVERTOR_CONFIG_PUBLISH_CHANNEL).await?;
         let mut stream = sub.into_on_message();
         while let Some(msg) = stream.next().await {
-            if msg.get_channel_name() == CONFIG_CENTER_CONVERTOR_CONFIG_PUBLISH_CHANNEL {
+            info!("Redis sub 接收到: {msg:?}");
+            if msg.get_channel_name() == REDIS_CONVERTOR_CONFIG_PUBLISH_CHANNEL {
                 if let Err(e) = ConvertorConfig::from_redis(connection.clone())
                     .await
                     .and_then(|config| tx.send(config).wrap_err("无法发送更新配置"))

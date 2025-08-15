@@ -1,7 +1,7 @@
 use crate::common::config::proxy_client::{ClashConfig, ProxyClientConfig, SurgeConfig};
 use crate::common::config::sub_provider::{BosLifeConfig, SubProvider, SubProviderConfig};
 use crate::common::encrypt::{decrypt, encrypt};
-use crate::common::redis_info::CONFIG_CENTER_CONVERTOR_CONFIG_KEY;
+use crate::common::redis_info::REDIS_CONVERTOR_CONFIG_KEY;
 use crate::core::url_builder::UrlBuilder;
 use color_eyre::Report;
 use color_eyre::eyre::{WrapErr, eyre};
@@ -95,10 +95,10 @@ impl ConvertorConfig {
 
     pub async fn from_redis(mut connection: MultiplexedConnection) -> color_eyre::Result<Self> {
         let config: Option<String> = connection
-            .get(CONFIG_CENTER_CONVERTOR_CONFIG_KEY)
+            .get(REDIS_CONVERTOR_CONFIG_KEY)
             .await
             .wrap_err("获取配置失败")?;
-        let config = config.ok_or_else(|| eyre!("未找到配置项: {}", CONFIG_CENTER_CONVERTOR_CONFIG_KEY))?;
+        let config = config.ok_or_else(|| eyre!("未找到配置项: {}", REDIS_CONVERTOR_CONFIG_KEY))?;
         Self::from_str(&config).wrap_err("解析配置字符串失败")
     }
 

@@ -4,6 +4,7 @@ use convertor::common::config::ConvertorConfig;
 use convertor::common::config::proxy_client::ProxyClient;
 use convertor::common::config::sub_provider::SubProvider;
 use convertor::common::once::{init_backtrace, init_base_dir};
+use convertor::common::redis_info::{redis_client, redis_url};
 use convertor::core::profile::Profile;
 use convertor::core::profile::surge_profile::SurgeProfile;
 use convertor::core::renderer::Renderer;
@@ -21,8 +22,11 @@ async fn main() -> color_eyre::Result<()> {
 
     // 搜索可用配置文件
     let config = ConvertorConfig::search(&base_dir, Option::<&str>::None)?;
+    // redis 客户端连接
+    let redis = redis_client(redis_url())?;
+    let connection_manager = redis::aio::ConnectionManager::new(redis).await?;
     // 创建订阅供应商实例
-    let api_map = SubProviderWrapper::create_api(config.providers.clone(), &base_dir);
+    let api_map = SubProviderWrapper::create_api(config.providers.clone(), connection_manager);
     // 获取 BosLife 的 API 实例
     let api = api_map
         .get(&provider)

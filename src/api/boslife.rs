@@ -5,41 +5,43 @@ use crate::common::config::proxy_client::ProxyClient;
 use crate::common::config::request::RequestConfig;
 use crate::common::config::sub_provider::{ApiConfig, BosLifeConfig};
 use moka::future::Cache as MokaCache;
+use redis::aio::ConnectionManager;
 use reqwest::Client as ReqwestClient;
 use reqwest::{Method, Request, Url};
-use std::path::Path;
 
 #[derive(Clone)]
 pub struct BosLifeApi {
     pub config: BosLifeConfig,
     pub client: ReqwestClient,
+    pub redis: ConnectionManager,
     pub cached_auth_token: MokaCache<String, String>,
     pub cached_sub_profile: Cache<Url, String>,
-    pub cached_sub_url: Cache<Url, String>,
+    pub cached_uni_sub_url: Cache<Url, String>,
     pub cached_sub_logs: Cache<Url, BosLifeSubLogs>,
 }
 
 impl BosLifeApi {
-    pub fn new(base_dir: impl AsRef<Path>, config: BosLifeConfig) -> Self {
+    pub fn new(redis: ConnectionManager, config: BosLifeConfig) -> Self {
         let client = ReqwestClient::builder()
             .cookie_store(true)
             .use_rustls_tls()
             .build()
             .expect("Failed to create Reqwest client");
         let duration = std::time::Duration::from_secs(60 * 60); // 1 hour
-        let cached_file = Cache::new(10, base_dir.as_ref(), duration);
-        let cached_string = MokaCache::builder()
+        let cached_sub_profile = Cache::new(redis.clone(), 10, duration);
+        let cached_auth_token = MokaCache::builder()
             .max_capacity(10)
             .time_to_live(duration) // 10 minutes
             .build();
-        let cached_uni_sub_url = Cache::new(10, base_dir.as_ref(), duration);
-        let cached_sub_logs = Cache::new(10, base_dir.as_ref(), duration);
+        let cached_uni_sub_url = Cache::new(redis.clone(), 10, duration);
+        let cached_sub_logs = Cache::new(redis.clone(), 10, duration);
         Self {
             config,
             client,
-            cached_auth_token: cached_string,
-            cached_sub_profile: cached_file,
-            cached_sub_url: cached_uni_sub_url,
+            redis,
+            cached_auth_token,
+            cached_sub_profile,
+            cached_uni_sub_url,
             cached_sub_logs,
         }
     }
@@ -131,7 +133,7 @@ impl SubProviderApi for BosLifeApi {
     }
 
     fn cached_sub_url(&self) -> &Cache<Url, String> {
-        &self.cached_sub_url
+        &self.cached_uni_sub_url
     }
 
     fn cached_sub_logs(&self) -> &Cache<Url, BosLifeSubLogs> {

@@ -1,9 +1,7 @@
 use crate::common::config::ConvertorConfig;
-use crate::common::redis_info::{
-    CONFIG_CENTER_CONVERTOR_CONFIG_KEY, CONFIG_CENTER_CONVERTOR_CONFIG_PUBLISH_CHANNEL, config_center_url,
-};
+use crate::common::redis_info::{REDIS_CONVERTOR_CONFIG_KEY, REDIS_CONVERTOR_CONFIG_PUBLISH_CHANNEL};
 use clap::{Args, Subcommand};
-use redis::AsyncTypedCommands;
+use redis::{AsyncTypedCommands, Client};
 use std::path::PathBuf;
 use tracing::info;
 
@@ -42,8 +40,7 @@ impl ConfigCmdExecutor {
         Self { cmd }
     }
 
-    pub async fn execute(self) -> color_eyre::Result<()> {
-        let client = redis::Client::open(config_center_url())?;
+    pub async fn execute(self, client: Client) -> color_eyre::Result<()> {
         let config = match (self.cmd.file, self.cmd.option) {
             (Some(file), _) => {
                 let config = ConvertorConfig::from_file(file)?;
@@ -66,15 +63,10 @@ impl ConfigCmdExecutor {
         if self.cmd.publish {
             info!("更新配置到 Redis");
             let mut connection = client.get_multiplexed_async_connection().await?;
-            connection
-                .set(CONFIG_CENTER_CONVERTOR_CONFIG_KEY, config.to_string())
-                .await?;
+            connection.set(REDIS_CONVERTOR_CONFIG_KEY, config.to_string()).await?;
             info!("发布配置更新到 Redis 频道");
             connection
-                .publish(
-                    CONFIG_CENTER_CONVERTOR_CONFIG_PUBLISH_CHANNEL,
-                    CONFIG_CENTER_CONVERTOR_CONFIG_KEY,
-                )
+                .publish(REDIS_CONVERTOR_CONFIG_PUBLISH_CHANNEL, REDIS_CONVERTOR_CONFIG_KEY)
                 .await?;
         }
         Ok(())

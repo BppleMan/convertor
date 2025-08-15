@@ -19,7 +19,7 @@ pub fn router(app_state: AppState) -> Router {
     Router::new()
         .route("/", get(|| async { Html(include_str!("../../assets/index.html")) }))
         .route("/ready", get(|| async { "ok" }))
-        .route("/health", get(|| async { "ok" }))
+        .route("/healthy", get(|| async { "ok" }))
         .route("/raw-profile", get(raw_profile))
         .route("/profile", get(profile))
         .route("/rule-provider", get(rule_provider))

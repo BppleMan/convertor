@@ -7,6 +7,9 @@ use convertor::api::SubProviderWrapper;
 use convertor::common::config::ConvertorConfig;
 use convertor::common::config::proxy_client::ProxyClient;
 use convertor::common::config::sub_provider::{BosLifeConfig, SubProvider, SubProviderConfig};
+use convertor::common::redis_info::{
+    REDIS_CONVERTOR_PASSWORD, REDIS_CONVERTOR_USERNAME, REDIS_ENDPOINT, init_redis_info, redis_client,
+};
 use convertor::core::profile::policy::Policy;
 use convertor::core::renderer::Renderer;
 use convertor::core::renderer::clash_renderer::ClashRenderer;
@@ -17,6 +20,7 @@ use dispatch_map::DispatchMap;
 use httpmock::Method::{GET, POST};
 use httpmock::MockServer;
 use moka::future::Cache;
+use redis::aio::ConnectionManager;
 use rstest::fixture;
 use std::sync::{Arc, LazyLock};
 use std::thread;
@@ -33,19 +37,38 @@ pub struct ServerContext {
 #[once]
 pub fn server_context() -> ServerContext {
     thread::spawn(|| {
-        let rt = tokio::runtime::Builder::new_current_thread().build().unwrap();
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_io()
+            .enable_time()
+            .build()
+            .unwrap();
         rt.block_on(async { start_server().await.unwrap() })
     })
     .join()
     .unwrap()
 }
 
+pub fn redis_url() -> String {
+    format!(
+        "rediss://{}:{}@{}/2?protocol=resp3",
+        REDIS_CONVERTOR_USERNAME
+            .get()
+            .expect("REDIS_CONVERTOR_USERNAME not set"),
+        REDIS_CONVERTOR_PASSWORD
+            .get()
+            .expect("REDIS_CONVERTOR_PASSWORD not set"),
+        REDIS_ENDPOINT.get().expect("REDIS_ENDPOINT not set")
+    )
+}
+
 pub async fn start_server() -> color_eyre::Result<ServerContext> {
-    let base_dir = init_test();
     let mut config = ConvertorConfig::template();
     start_mock_provider_server(&mut config.providers).await?;
 
-    let api = SubProviderWrapper::create_api(config.providers.clone(), &base_dir);
+    init_redis_info()?;
+    let redis = redis_client(redis_url())?;
+    let connection_manager = ConnectionManager::new(redis).await?;
+    let api = SubProviderWrapper::create_api(config.providers.clone(), connection_manager);
     let app_state = Arc::new(AppState::new(config, api));
     let app: Router = Router::new()
         .route("/profile", get(profile))

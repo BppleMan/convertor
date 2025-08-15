@@ -8,7 +8,7 @@ use convertor::cli::sub_provider_executor::SubProviderExecutor;
 use convertor::common::config::ConvertorConfig;
 use convertor::common::config::config_cmd::ConfigCmdExecutor;
 use convertor::common::once::{init_backtrace, init_base_dir, init_log};
-use convertor::common::redis_info::{config_center_url, init_redis_info};
+use convertor::common::redis_info::{init_redis_info, redis_client, redis_url};
 use convertor::server::start_server;
 use std::net::SocketAddrV4;
 use std::path::PathBuf;
@@ -38,18 +38,19 @@ async fn main() -> Result<()> {
     init_redis_info()?;
 
     let mut args = Convertor::parse();
+    let redis_client = redis_client(redis_url())?;
     match args.command.take() {
         Some(ConvertorCommand::Config(config_cmd)) => {
-            ConfigCmdExecutor::new(config_cmd).execute().await?;
+            ConfigCmdExecutor::new(config_cmd).execute(redis_client).await?;
         }
         other => {
-            let redis_client = redis::Client::open(config_center_url())?;
             let connection = redis_client.get_multiplexed_async_connection().await?;
+            let connection_manager = redis::aio::ConnectionManager::new(redis_client.clone()).await?;
             let config = ConvertorConfig::search_or_redis(&base_dir, args.config, connection).await?;
-            let mut api_map = SubProviderWrapper::create_api(config.providers.clone(), &base_dir);
+            let mut api_map = SubProviderWrapper::create_api(config.providers.clone(), connection_manager);
 
             match other {
-                None => start_server(args.listen, config, api_map, &base_dir).await?,
+                None => start_server(args.listen, config, api_map, &base_dir, redis_client).await?,
                 Some(ConvertorCommand::SubProvider(args)) => {
                     let mut executor = SubProviderExecutor::new(config, api_map);
                     let (url_builder, result) = executor.execute(args).await?;
