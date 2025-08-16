@@ -34,7 +34,7 @@ pub struct Convertor {
 async fn main() -> Result<()> {
     let base_dir = init_base_dir();
     init_backtrace();
-    init_log();
+    init_log(&base_dir);
     init_redis_info()?;
 
     let mut args = Convertor::parse();

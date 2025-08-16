@@ -50,7 +50,10 @@ pub async fn raw_profile(
         return Err(AppError::NoSubProvider);
     };
     let raw_profile = api.get_raw_profile(client).await?;
-    Ok(raw_profile)
+    match client {
+        ProxyClient::Surge => Ok(state.surge_service.raw_profile(query, raw_profile).await?),
+        ProxyClient::Clash => Err(AppError::RawProfileUnsupportedClient(client)),
+    }
 }
 
 #[instrument(skip_all)]

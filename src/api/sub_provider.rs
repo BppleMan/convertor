@@ -72,7 +72,6 @@ pub(crate) trait SubProviderApi {
         self.cached_profile()
             .try_get_with(key, async {
                 let request = self.client().request(Method::GET, raw_sub_url).build()?;
-                println!("获取原始订阅文件: {:?}", request);
                 let response = self.execute(request).await?;
                 let status = format!("响应状态: {:?}", response.status());
                 let headers = format!("响应头: {:?}", response.headers());

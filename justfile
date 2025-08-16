@@ -26,13 +26,13 @@ zig-linux:
     time CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=./zig-cc \
     cargo build --release --bin convertor --target x86_64-unknown-linux-gnu
 
-deploy:
+deploy profile="release":
     echo "Stopping remote service..."
     ssh convertor "rc-service convertor stop"
 
     echo "Uploading file..."
-    scp target/x86_64-unknown-linux-musl/release/convertor convertor:/root/convertor
-    scp ~/.convertor/convertor.toml convertor:/root/.convertor/convertor.toml
+    scp target/x86_64-unknown-linux-musl/{{ profile }}/convertor convertor:/root/convertor
+    # scp ~/.convertor/convertor.toml convertor:/root/.convertor/convertor.toml
 
     ssh convertor "rc-service convertor restart"
     ssh convertor "rc-service convertor status"

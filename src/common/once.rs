@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::sync::Once;
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
@@ -24,29 +25,31 @@ pub fn init_backtrace() {
 
 static INITIALIZED_LOG: Once = Once::new();
 
-pub fn init_log() {
+pub fn init_log(base_dir: impl AsRef<Path>) {
     INITIALIZED_LOG.call_once(|| {
-        let filter = EnvFilter::new("info")
+        // 1. 灵活 EnvFilter（支持 RUST_LOG，否则用默认）
+        let filter = EnvFilter::try_from_default_env()
+            .unwrap_or_else(|_| EnvFilter::new("info"))
             .add_directive("convertor=trace".parse().unwrap())
             .add_directive("tower_http=trace".parse().unwrap())
             .add_directive("moka=trace".parse().unwrap());
 
-        // let file_appender = tracing_appender::rolling::hourly(base_dir.as_ref().join("logs"), "convertor.log");
-        // let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
-        // let file_layer = tracing_subscriber::fmt::layer().with_writer(file_appender);
+        // 2. 文件日志（每小时滚动）
+        let file_appender = tracing_appender::rolling::hourly(base_dir.as_ref().join("logs"), "convertor.log");
+        let file_layer = tracing_subscriber::fmt::layer()
+            .with_writer(file_appender)
+            .with_ansi(false)
+            .with_target(false);
 
-        // #[cfg(debug_assertions)]
-        let stdout_layer = tracing_subscriber::fmt::layer().pretty();
-        // #[cfg(not(debug_assertions))]
-        // let stdout_layer = tracing_subscriber::fmt::layer()
-        //     .json()
-        //     .with_target(false)
-        //     .with_timer(tracing_subscriber::fmt::time::UtcTime::rfc_3339())
-        //     .with_level(true);
+        // 3. 控制台日志（开发模式用 pretty，生产可换 compact）
+        let stdout_layer = tracing_subscriber::fmt::layer()
+            .pretty()
+            .with_timer(tracing_subscriber::fmt::time::LocalTime::rfc_3339())
+            .with_target(true);
 
         let registry = tracing_subscriber::registry()
             .with(filter)
-            // .with(file_layer)
+            .with(file_layer)
             .with(stdout_layer);
 
         #[cfg(feature = "otel")]

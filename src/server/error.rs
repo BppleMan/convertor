@@ -1,3 +1,4 @@
+use crate::common::config::proxy_client::ProxyClient;
 use crate::core::url_builder::ConvertorUrlError;
 use axum::http::StatusCode;
 use axum::http::header::ToStrError;
@@ -7,6 +8,9 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum AppError {
+    #[error("获取原始非转换配置失败, 遇到错误的客户端: {0}")]
+    RawProfileUnsupportedClient(ProxyClient),
+
     #[error("没有找到对应的订阅提供者")]
     NoSubProvider,
 

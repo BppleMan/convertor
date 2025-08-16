@@ -2,6 +2,7 @@ use crate::api::SubProviderWrapper;
 use crate::api::boslife_sub_log::BosLifeSubLog;
 use crate::common::config::ConvertorConfig;
 use crate::core::profile::Profile;
+use crate::core::profile::surge_header::SurgeHeaderType;
 use crate::core::profile::surge_profile::SurgeProfile;
 use crate::core::renderer::Renderer;
 use crate::core::renderer::surge_renderer::SurgeRenderer;
@@ -37,6 +38,16 @@ impl SurgeService {
         let url_builder = UrlBuilder::from_convertor_query(&self.config.secret, query)?;
         let profile = self.try_get_profile(cache_key, &url_builder, raw_profile).await?;
         Ok(SurgeRenderer::render_profile(&profile)?)
+    }
+
+    #[instrument(skip_all)]
+    pub async fn raw_profile(&self, query: ProfileQuery, raw_profile: String) -> Result<String> {
+        let url_builder = UrlBuilder::from_convertor_query(&self.config.secret, query)?;
+        let surge_header = url_builder.build_managed_config_header(SurgeHeaderType::RawProfile);
+        let (_, right) = raw_profile
+            .split_once('\n')
+            .ok_or(eyre!("错误的原始配置, 未能找出第一行: {raw_profile}"))?;
+        Ok(format!("{}\n{}", surge_header, right))
     }
 
     #[instrument(skip_all)]
