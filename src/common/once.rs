@@ -35,20 +35,21 @@ pub fn init_log() {
         // let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
         // let file_layer = tracing_subscriber::fmt::layer().with_writer(file_appender);
 
-        #[cfg(debug_assertions)]
+        // #[cfg(debug_assertions)]
         let stdout_layer = tracing_subscriber::fmt::layer().pretty();
-        #[cfg(not(debug_assertions))]
-        let stdout_layer = tracing_subscriber::fmt::layer()
-            .json()
-            .with_target(false)
-            .with_timer(tracing_subscriber::fmt::time::UtcTime::rfc_3339())
-            .with_level(true);
+        // #[cfg(not(debug_assertions))]
+        // let stdout_layer = tracing_subscriber::fmt::layer()
+        //     .json()
+        //     .with_target(false)
+        //     .with_timer(tracing_subscriber::fmt::time::UtcTime::rfc_3339())
+        //     .with_level(true);
 
         let registry = tracing_subscriber::registry()
             .with(filter)
             // .with(file_layer)
             .with(stdout_layer);
 
+        #[cfg(feature = "otel")]
         if let Ok(endpoint) = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT") {
             use opentelemetry::KeyValue;
             use opentelemetry::global;
@@ -93,6 +94,9 @@ pub fn init_log() {
             registry.with(otel_layer).init();
         } else {
             registry.init();
-        };
+        }
+
+        #[cfg(not(feature = "otel"))]
+        registry.init();
     });
 }

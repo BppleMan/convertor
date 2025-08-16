@@ -80,10 +80,10 @@ tracing-span-tree = { version = "0.1.1", optional = true }
 tracing-profile = { version = "0.10.9", optional = true }
 
 # metrics
-opentelemetry = { version = "0.30.0", default-features = false, features = ["trace"] }
-opentelemetry_sdk = { version = "0.30.0", default-features = false, features = ["trace", "rt-tokio"] }
-opentelemetry-otlp = { version = "0.30.0", default-features = false, features = ["trace", "grpc-tonic"] }
-tracing-opentelemetry = { version = "0.31.0", default-features = false }
+opentelemetry = { version = "0.30.0", default-features = false, features = ["trace"], optional = true }
+opentelemetry_sdk = { version = "0.30.0", default-features = false, features = ["trace", "rt-tokio"], optional = true }
+opentelemetry-otlp = { version = "0.30.0", default-features = false, features = ["trace", "grpc-tonic"], optional = true }
+tracing-opentelemetry = { version = "0.31.0", default-features = false, optional = true }
 
 [dev-dependencies]
 serde_json = { version = "1.0.141", default-features = false }
@@ -100,7 +100,12 @@ bench = [
     "tracing-profile",
     "tokio/macros"
 ]
-
+otel = [
+    "opentelemetry",
+    "opentelemetry_sdk",
+    "opentelemetry-otlp",
+    "tracing-opentelemetry"
+]
 
 # [profile.release]
 # opt-level = 3           # 极限体积优化（如需极致性能可改成3）
