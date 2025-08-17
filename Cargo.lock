@@ -646,7 +646,7 @@ dependencies = [
 
 [[package]]
 name = "convertor"
-version = "2.5.11"
+version = "2.5.2"
 dependencies = [
  "axum",
  "base64 0.22.1",

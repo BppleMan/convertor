@@ -2,7 +2,7 @@ name: Build and Push (GHCR)
 
 on:
   push:
-    branches: [ "main", "dev" ]
+    branches: [ "main" ]
     tags: [ "v*", "release-*" ]
   workflow_dispatch:
     inputs:
