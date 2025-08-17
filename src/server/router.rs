@@ -1,4 +1,4 @@
-use crate::api::boslife_sub_log::BosLifeSubLog;
+use crate::api::boslife_log::BosLifeLog;
 use crate::common::config::proxy_client::ProxyClient;
 use crate::server::AppState;
 use crate::server::error::AppError;
@@ -101,7 +101,7 @@ pub async fn rule_provider(
 pub async fn sub_logs(
     State(state): State<Arc<AppState>>,
     RawQuery(query): RawQuery,
-) -> color_eyre::Result<Json<Vec<BosLifeSubLog>>, AppError> {
+) -> color_eyre::Result<Json<Vec<BosLifeLog>>, AppError> {
     let query = query.as_ref().ok_or_eyre(eyre!("订阅记录必须传递参数"))?;
     let sub_log_query = SubLogsQuery::decode_from_query_string(query, &state.config.secret)?;
     let provider = sub_log_query.provider;

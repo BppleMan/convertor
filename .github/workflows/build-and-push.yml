@@ -1,0 +1,120 @@
+name: Build and Push (GHCR)
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "v*", "release-*" ]  # 打 tag 会额外生成对应 tag 镜像
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write    # 允许推送到 GHCR
+  id-token: write    # （可选）未来用 OIDC 登录注册表
+
+env:
+  # 你的镜像名：ghcr.io/<owner>/convertor
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/convertor
+
+  # 如果你的 Dockerfile 不在仓库根，这里改一下
+  DOCKERFILE: Dockerfile
+  # Docker build 上下文（必须能包含 target/... 产物）
+  CONTEXT_DIR: .
+
+  # Rust 目标
+  TARGET_TRIPLE: x86_64-unknown-linux-musl
+  BIN_NAME: convertor
+  PROFILE: release
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ----- 准备 Rust & zigbuild（生成 MUSL 静态产物）-----
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Install zig + musl tools + cargo-zigbuild
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zig musl-tools pkg-config
+          cargo install cargo-zigbuild --locked
+
+      - name: Build (zig + MUSL)
+        # env:
+        #   RUSTFLAGS: "-C target-feature=+crt-static"
+        run: |
+          cargo zigbuild --target $TARGET_TRIPLE --release
+
+      # ----- 登录 GHCR -----
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ----- 生成 Docker 元数据（tags & labels）-----
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=sha,format=short
+            type=ref,event=tag
+          labels: |
+            org.opencontainers.image.title=convertor
+            org.opencontainers.image.description=A profile converter for Surge/Clash.
+            org.opencontainers.image.url=https://github.com/${{ github.repository }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.documentation=https://github.com/${{ github.repository }}#readme
+            org.opencontainers.image.vendor=${{ github.repository_owner }}
+            org.opencontainers.image.licenses=Apache-2.0
+
+      # ----- 设置 buildx（支持缓存）-----
+      - name: Set up QEMU (optional for future multi-arch)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ----- 构建并推送镜像 -----
+      - name: Build and Push to GHCR
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.CONTEXT_DIR }}
+          file: ${{ env.DOCKERFILE }}
+          push: true
+          platforms: linux/amd64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: |
+            ${{ steps.meta.outputs.labels }}
+            org.opencontainers.image.version=${{ steps.meta.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ steps.meta.outputs.created }}
+          build-args: |
+            VERSION=${{ steps.meta.outputs.version }}
+            VCS_REF=${{ github.sha }}
+            BUILD_DATE=${{ steps.meta.outputs.created }}
+            TARGET_TRIPLE=${{ env.TARGET_TRIPLE }}
+            PROFILE=${{ env.PROFILE }}
+            BIN_NAME=${{ env.BIN_NAME }}
+            BIN_PATH=target/${{ env.TARGET_TRIPLE }}/${{ env.PROFILE }}/${{ env.BIN_NAME }}
+          cache-from: type=registry,ref=${{ env.IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ env.IMAGE_NAME }}:buildcache,mode=max

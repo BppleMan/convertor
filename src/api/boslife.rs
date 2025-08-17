@@ -1,5 +1,5 @@
-use crate::api::boslife_sub_log::BosLifeSubLogs;
-use crate::api::sub_provider::SubProviderApi;
+use crate::api::boslife_log::BosLifeLogs;
+use crate::api::provider::ProviderApi;
 use crate::common::cache::Cache;
 use crate::common::config::proxy_client::ProxyClient;
 use crate::common::config::request::RequestConfig;
@@ -17,7 +17,7 @@ pub struct BosLifeApi {
     pub cached_auth_token: MokaCache<String, String>,
     pub cached_sub_profile: Cache<Url, String>,
     pub cached_uni_sub_url: Cache<Url, String>,
-    pub cached_sub_logs: Cache<Url, BosLifeSubLogs>,
+    pub cached_sub_logs: Cache<Url, BosLifeLogs>,
 }
 
 impl BosLifeApi {
@@ -47,7 +47,7 @@ impl BosLifeApi {
     }
 }
 
-impl SubProviderApi for BosLifeApi {
+impl ProviderApi for BosLifeApi {
     fn common_request_config(&self) -> Option<&RequestConfig> {
         self.config.request.as_ref()
     }
@@ -136,7 +136,7 @@ impl SubProviderApi for BosLifeApi {
         &self.cached_uni_sub_url
     }
 
-    fn cached_sub_logs(&self) -> &Cache<Url, BosLifeSubLogs> {
+    fn cached_sub_logs(&self) -> &Cache<Url, BosLifeLogs> {
         &self.cached_sub_logs
     }
 }

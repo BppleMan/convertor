@@ -1,4 +1,4 @@
-use crate::api::boslife_sub_log::BosLifeSubLogs;
+use crate::api::boslife_log::BosLifeLogs;
 use crate::common::cache::{
     CACHED_AUTH_TOKEN_KEY, CACHED_PROFILE_KEY, CACHED_SUB_LOGS_KEY, CACHED_UNI_SUB_URL_KEY, Cache, CacheKey,
 };
@@ -13,7 +13,7 @@ use reqwest::{Method, Request, Response};
 use std::str::FromStr;
 use url::Url;
 
-pub(crate) trait SubProviderApi {
+pub(crate) trait ProviderApi {
     fn common_request_config(&self) -> Option<&RequestConfig>;
 
     fn api_host(&self) -> &Url;
@@ -44,7 +44,7 @@ pub(crate) trait SubProviderApi {
 
     fn cached_sub_url(&self) -> &Cache<Url, String>;
 
-    fn cached_sub_logs(&self) -> &Cache<Url, BosLifeSubLogs>;
+    fn cached_sub_logs(&self) -> &Cache<Url, BosLifeLogs>;
 
     async fn execute(&self, mut request: Request) -> color_eyre::Result<Response> {
         if let Some(request_config) = self.common_request_config() {
@@ -190,7 +190,7 @@ pub(crate) trait SubProviderApi {
         }
     }
 
-    async fn get_sub_logs(&self) -> color_eyre::Result<BosLifeSubLogs> {
+    async fn get_sub_logs(&self) -> color_eyre::Result<BosLifeLogs> {
         self.cached_sub_logs()
             .try_get_with(
                 CacheKey::new(CACHED_SUB_LOGS_KEY, self.api_host().clone(), None),
@@ -201,7 +201,7 @@ pub(crate) trait SubProviderApi {
                     if response.status().is_success() {
                         let response = response.text().await?;
                         let json_path = &self.get_sub_logs_api().json_path;
-                        let response: BosLifeSubLogs = jsonpath_lib::select_as(&response, &json_path)?.remove(0);
+                        let response: BosLifeLogs = jsonpath_lib::select_as(&response, &json_path)?.remove(0);
                         Ok(response)
                     } else {
                         Err(eyre!("Get subscription log failed: {}", response.status()))

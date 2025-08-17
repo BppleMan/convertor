@@ -1,5 +1,5 @@
 use crate::api::SubProviderWrapper;
-use crate::api::boslife_sub_log::BosLifeSubLog;
+use crate::api::boslife_log::BosLifeLog;
 use crate::common::config::ConvertorConfig;
 use crate::core::profile::Profile;
 use crate::core::profile::surge_header::SurgeHeaderType;
@@ -63,17 +63,13 @@ impl SurgeService {
     }
 
     #[instrument(skip_all)]
-    pub async fn sub_logs(
-        &self,
-        query: SubLogsQuery,
-        api: &SubProviderWrapper,
-    ) -> Result<Vec<BosLifeSubLog>, AppError> {
+    pub async fn sub_logs(&self, query: SubLogsQuery, api: &SubProviderWrapper) -> Result<Vec<BosLifeLog>, AppError> {
         if query.secret != self.config.secret {
             Err(AppError::Unauthorized("Invalid secret".to_string()))
         } else {
             let logs = api.get_sub_logs().await?;
             let start = (query.page - 1) * query.page_size;
-            let logs: Vec<BosLifeSubLog> = logs.0.into_iter().skip(start).take(query.page_size).collect();
+            let logs: Vec<BosLifeLog> = logs.0.into_iter().skip(start).take(query.page_size).collect();
             Ok(logs)
         }
     }

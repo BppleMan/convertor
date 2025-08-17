@@ -63,19 +63,6 @@ pull_config alias:
     echo "Downloading file..."
     scp ubuntu:/root/.convertor/convertor.toml ~/.convertor/convertor.toml
 
-#cert:
-#    # 生成服务器私钥 + CSR
-#    openssl req -new -nodes -newkey rsa:2048 \
-#        -keyout cert/ip-key.pem \
-#        -out cert/ip.csr \
-#        -config cert/ip-cert.cnf
-#
-#    # 用 CA 签服务器证书（非自签）
-#    openssl x509 -req -in cert/ip.csr \
-#        -CA cert/ca-cert.pem -CAkey cert/ca-key.pem -CAcreateserial \
-#        -out cert/ip-cert.pem -days 825 -sha256 \
-#        -extfile cert/ip-cert.cnf -extensions v3_req
-
 ca:
     mkdir -p $ICLOUD/cert/ca
     openssl req -x509 -nodes -days 3650 -newkey rsa:4096 \
@@ -115,56 +102,18 @@ install-cert ecs:
     scp $ICLOUD/cert/redis/ip-key.pem {{ ecs }}:/etc/redis/cert/ip-key.pem
     scp $ICLOUD/cert/redis/ip-cert.pem {{ ecs }}:/etc/redis/cert/ip-cert.pem
 
-container-name := "convertor-dev"
+# ===== 基础参数，可改 =====
 
-start:
-    docker run -dit \
-      -v "$(pwd):/usr/src/app" \
-      -v "$(pwd)/target:/usr/src/app/target" \
-      -v "$(pwd)/.convertor.dev:/usr/src/app/.convertor.dev" \
-      -w /usr/src/app \
-      --name {{ container-name }} \
-      rust:1.87.0 \
-      bash
+TARGET := "x86_64-unknown-linux-musl"
+BIN := "convertor"
+CONTAINER_NAME := "convertor-dev"
 
-cargo-run *args:
-    docker exec -it {{ container-name }} bash -c "cargo run --target aarch64-unknown-linux-gnu --bin convertor -- {{ args }}"
-
-bash *args:
-    docker exec -it {{ container-name }} bash -c "bash {{ args }}"
-
-stop:
-    docker rm -f {{ container-name }}
-
-dlogin:
-    echo "Logging in to GitHub Container Registry..."
-    echo $CR_PAT | docker login ghcr.io -u bppleman --password-stdin
-
-dbuild version:
-    docker build --platform linux/amd64 -t ghcr.io/bppleman/convertor:{{ version }} --push .
-
-drun version:
-    docker run --rm \
-        -e REDIS_ENDPOINT \
-        -e REDIS_CONVERTOR_USERNAME \
-        -e REDIS_CONVERTOR_PASSWORD \
-        -e REDIS_CA_CERT \
-        -p 8080:80 \
-        ghcr.io/bppleman/convertor:{{ version }} 0.0.0.0:80
-
-dpush version:
-    docker push ghcr.io/bppleman/convertor:{{ version }}
-
-dinspect version:
-    docker buildx imagetools inspect ghcr.io/bppleman/convertor:{{ version }}
-
-dall version profile="release":
-    just musl {{ profile }}
-    just dbuild {{ version }}
-    just dinspect {{ version }}
-
-dbuildx version:
-    docker buildx build \
-      --platform linux/amd64 \
-      -t ghcr.io/bppleman/convertor:{{ version }} \
-      --push .
+# 1) 打本地镜像（只打包宿主构建产物）
+image PROFILE="release":
+    docker build -f docker-service/Dockerfile \
+      --build-arg TARGET_TRIPLE={{ TARGET }} \
+      --build-arg PROFILE={{ PROFILE }} \
+      --build-arg BIN_NAME={{ BIN }} \
+      --build-arg BIN_PATH=target/{{ TARGET }}/{{ PROFILE }}/{{ BIN }} \
+      --build-arg VERSION=dev-`date +%Y%m%d%H%M%S` \
+      -t local/{{ BIN }}:dev .
