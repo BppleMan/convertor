@@ -101,23 +101,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 生成 tags/labels（去掉 v 前缀，输出 steps.meta.outputs.*）
+      # 生成 tags/labels（自动从 v1.2.3 解析出 1.2.3/1.2/1；支持 dev/latest/sha）
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.IMAGE_NAME }}
+          images: ${{ steps.img.outputs.image }}
           tags: |
             # 分支策略
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=raw,value=dev,enable=${{ github.ref == 'refs/heads/dev' }}
             # 唯一回溯
             type=sha,format=short
-            # 语义化（自动从 v1.2.3 解析出 1.2.3/1.2/1）
+            # 语义化（从 v1.2.3 解析）
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            # 手动触发时的额外 tag（仅 workflow_dispatch 且非空）
+            # 手动触发的额外 tag
             type=raw,value=${{ steps.vars.outputs.extra }},enable=${{ github.event_name == 'workflow_dispatch' && steps.vars.outputs.extra != '' }}
           labels: |
             org.opencontainers.image.title=convertor
@@ -128,14 +128,11 @@ jobs:
             org.opencontainers.image.vendor=${{ github.repository_owner }}
             org.opencontainers.image.licenses=Apache-2.0
 
-      # buildx + 缓存
-      - name: Set up QEMU (optional)
-        uses: docker/setup-qemu-action@v3
-
+      # Buildx（同构架构，不需要 QEMU）
       - name: Set up Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 构建并推送镜像（把版本信息注入到 Dockerfile 的 ARG / OCI labels）
+      # 构建并推送镜像（用小写的镜像名，并对 BUILD_DATE 做 fallback）
       - name: Build and Push to GHCR
         uses: docker/build-push-action@v6
         with:
@@ -148,14 +145,14 @@ jobs:
             ${{ steps.meta.outputs.labels }}
             org.opencontainers.image.version=${{ steps.meta.outputs.version }}
             org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.created=${{ steps.meta.outputs.created }}
+            org.opencontainers.image.created=${{ steps.meta.outputs.created != '' && steps.meta.outputs.created || github.run_started_at }}
           build-args: |
             VERSION=${{ steps.meta.outputs.version }}
             VCS_REF=${{ github.sha }}
-            BUILD_DATE=${{ steps.meta.outputs.created }}
+            BUILD_DATE=${{ steps.meta.outputs.created != '' && steps.meta.outputs.created || github.run_started_at }}
             TARGET_TRIPLE=${{ env.TARGET_TRIPLE }}
             PROFILE=${{ steps.vars.outputs.profile }}
             BIN_NAME=${{ env.BIN_NAME }}
             BIN_PATH=target/${{ env.TARGET_TRIPLE }}/${{ steps.vars.outputs.profile }}/${{ env.BIN_NAME }}
-          cache-from: type=registry,ref=${{ env.IMAGE_NAME }}:buildcache
-          cache-to: type=registry,ref=${{ env.IMAGE_NAME }}:buildcache,mode=max
+          cache-from: type=registry,ref=${{ steps.img.outputs.image }}:buildcache
+          cache-to: type=registry,ref=${{ steps.img.outputs.image }}:buildcache,mode=max
