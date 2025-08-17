@@ -154,5 +154,3 @@ jobs:
             PROFILE=${{ steps.vars.outputs.profile }}
             BIN_NAME=${{ env.BIN_NAME }}
             BIN_PATH=target/${{ env.TARGET_TRIPLE }}/${{ steps.vars.outputs.profile }}/${{ env.BIN_NAME }}
-          cache-from: type=registry,ref=${{ steps.img.outputs.image }}:buildcache
-          cache-to: type=registry,ref=${{ steps.img.outputs.image }}:buildcache,mode=max
