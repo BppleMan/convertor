@@ -101,12 +101,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 生成 tags/labels（自动从 v1.2.3 解析出 1.2.3/1.2/1；支持 dev/latest/sha）
+      # 生成 tags/labels（v1.2.3 → 1.2.3/1.2/1；还会加 latest/dev/sha）
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ steps.img.outputs.image }}
+          images: ${{ env.IMAGE_NAME }}
           tags: |
             # 分支策略
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
@@ -128,11 +128,11 @@ jobs:
             org.opencontainers.image.vendor=${{ github.repository_owner }}
             org.opencontainers.image.licenses=Apache-2.0
 
-      # Buildx（同构架构，不需要 QEMU）
+      # 同构架，不需要 QEMU；只保留 Buildx
       - name: Set up Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 构建并推送镜像（用小写的镜像名，并对 BUILD_DATE 做 fallback）
+      # 构建并推送镜像（用小写镜像名；BUILD_DATE 有兜底）
       - name: Build and Push to GHCR
         uses: docker/build-push-action@v6
         with:
@@ -154,5 +154,5 @@ jobs:
             PROFILE=${{ steps.vars.outputs.profile }}
             BIN_NAME=${{ env.BIN_NAME }}
             BIN_PATH=target/${{ env.TARGET_TRIPLE }}/${{ steps.vars.outputs.profile }}/${{ env.BIN_NAME }}
-          cache-from: type=registry,ref=${{ steps.img.outputs.image }}:buildcache
-          cache-to: type=registry,ref=${{ steps.img.outputs.image }}:buildcache,mode=max
+          cache-from: type=registry,ref=${{ env.IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ env.IMAGE_NAME }}:buildcache,mode=max
