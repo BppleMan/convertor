@@ -2,28 +2,37 @@ name: Build and Push (GHCR)
 
 on:
   push:
-    branches: [ "main" ]
-    tags: [ "v*", "release-*" ]  # 打 tag 会额外生成对应 tag 镜像
+    branches: [ "main", "dev" ]
+    tags: [ "v*", "release-*" ]
   workflow_dispatch:
+    inputs:
+      extra_tag:
+        description: "Optional extra image tag (e.g. canary)"
+        type: string
+        required: false
+      profile:
+        description: "Cargo build profile (release|debug)"
+        type: choice
+        options: [ release, debug ]
+        required: false
+        default: release
 
 permissions:
   contents: read
-  packages: write    # 允许推送到 GHCR
-  id-token: write    # （可选）未来用 OIDC 登录注册表
+  packages: write
 
 env:
-  # 你的镜像名：ghcr.io/<owner>/convertor
+  # 你的镜像名（固定成你仓库名，避免大小写问题）
   IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/convertor
 
-  # 如果你的 Dockerfile 不在仓库根，这里改一下
-  DOCKERFILE: Dockerfile
-  # Docker build 上下文（必须能包含 target/... 产物）
+  # Dockerfile 在仓库根目录
+  DOCKERFILE: ./Dockerfile
   CONTEXT_DIR: .
 
-  # Rust 目标
+  # Rust 目标（你的 Dockerfile 期望的构建产物路径）
   TARGET_TRIPLE: x86_64-unknown-linux-musl
-  BIN_NAME: convertor
   PROFILE: release
+  BIN_NAME: convertor
 
 jobs:
   build-and-push:
@@ -33,10 +42,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ----- 准备 Rust & zigbuild（生成 MUSL 静态产物）-----
-      - name: Set up Rust
+      # ---- Rust 工具链（官方维护）----
+      - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      # ---- Cargo 缓存 ----
       - name: Cache cargo
         uses: actions/cache@v4
         with:
@@ -48,19 +58,20 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      - name: Install zig + musl tools + cargo-zigbuild
+      # ---- 准备 zig + cargo-zigbuild（产出 MUSL 静态二进制）----
+      - name: Install zig & tools
         run: |
           sudo apt-get update
           sudo apt-get install -y zig musl-tools pkg-config
           cargo install cargo-zigbuild --locked
 
       - name: Build (zig + MUSL)
-        # env:
-        #   RUSTFLAGS: "-C target-feature=+crt-static"
+        env:
+          RUSTFLAGS: "-C target-feature=+crt-static"
         run: |
           cargo zigbuild --target $TARGET_TRIPLE --release
 
-      # ----- 登录 GHCR -----
+      # ---- 登录 GHCR（GITHUB_TOKEN 自动注入；配合 packages: write 权限）----
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
@@ -68,16 +79,22 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # ----- 生成 Docker 元数据（tags & labels）-----
+      # ---- 生成 tags/labels （自动去掉 v 前缀并生成 1.2.3/1.2/1）----
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.IMAGE_NAME }}
           tags: |
+            # 分支策略
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/dev' }}
+            # 唯一回溯
             type=sha,format=short
-            type=ref,event=tag
+            # 语义化（打 tag 时自动解析，支持 v 前缀）
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
           labels: |
             org.opencontainers.image.title=convertor
             org.opencontainers.image.description=A profile converter for Surge/Clash.
@@ -87,14 +104,14 @@ jobs:
             org.opencontainers.image.vendor=${{ github.repository_owner }}
             org.opencontainers.image.licenses=Apache-2.0
 
-      # ----- 设置 buildx（支持缓存）-----
+      # ---- buildx + 缓存 ----
       - name: Set up QEMU (optional for future multi-arch)
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Buildx
         uses: docker/setup-buildx-action@v3
 
-      # ----- 构建并推送镜像 -----
+      # ---- 构建并推送镜像 ----
       - name: Build and Push to GHCR
         uses: docker/build-push-action@v6
         with:
