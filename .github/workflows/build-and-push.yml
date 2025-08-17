@@ -113,12 +113,22 @@ jobs:
         with:
           images: ${{ steps.img.outputs.image }}
           tags: |
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/dev' }}
+            # 所有场景都打短 SHA
             type=sha,format=short
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
+
+            # ─── 推送 tag 的场景 ───
+            # latest：仅在 tag 推送时
+            type=raw,value=latest,enable=${{ github.ref_type == 'tag' }}
+            # semver：仅在 v* 的语义化版本 tag 上
+            type=semver,pattern={{version}},enable=${{ github.ref_type == 'tag' && startsWith(github.ref_name, 'v') }}
+            type=semver,pattern={{major}}.{{minor}},enable=${{ github.ref_type == 'tag' && startsWith(github.ref_name, 'v') }}
+            type=semver,pattern={{major}},enable=${{ github.ref_type == 'tag' && startsWith(github.ref_name, 'v') }}
+
+            # ─── 手动触发的场景 ───
+            # 分支名 tag（会自动把非法字符安全化）
+            type=ref,event=branch,enable=${{ github.event_name == 'workflow_dispatch' }}
+
+            # 可选：手动触发时额外 tag（如 canary）
             type=raw,value=${{ steps.vars.outputs.extra }},enable=${{ github.event_name == 'workflow_dispatch' && steps.vars.outputs.extra != '' }}
           labels: |
             org.opencontainers.image.title=convertor
