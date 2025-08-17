@@ -2,8 +2,9 @@ name: Build and Push (GHCR)
 
 on:
   push:
-    branches: [ "main" ]
-    tags: [ "v*", "release-*" ]
+    tags:
+      - "v*"
+      - "release-*"
   workflow_dispatch:
     inputs:
       extra_tag:
