@@ -1,4 +1,3 @@
-use crate::init_test;
 use color_eyre::Report;
 use color_eyre::eyre::eyre;
 use convertor::api::SubProviderWrapper;
@@ -6,8 +5,9 @@ use convertor::cli::sub_provider_executor::{SubProviderCmd, SubProviderExecutor}
 use convertor::common::config::ConvertorConfig;
 use convertor::common::config::proxy_client::ProxyClient;
 
-use crate::server::start_mock_provider_server;
+use crate::server::{redis_url, start_mock_provider_server};
 use convertor::common::config::sub_provider::SubProvider;
+use convertor::common::redis_info::{init_redis_info, redis_client};
 use convertor::core::url_builder::HostPort;
 use pretty_assertions::assert_str_eq;
 use regex::Regex;
@@ -27,10 +27,20 @@ pub fn convertor_config() -> ConvertorConfig {
     .unwrap()
 }
 
+#[fixture]
+pub async fn connection_manager() -> redis::aio::ConnectionManager {
+    init_redis_info().expect("Failed to init redis client");
+    let redis = redis_client(redis_url()).expect("无法连接到 Redis");
+    redis::aio::ConnectionManager::new(redis)
+        .await
+        .expect("无法创建 Redis 连接管理器")
+}
+
 #[rstest]
 #[tokio::test]
 async fn test_subscription(
     convertor_config: &ConvertorConfig,
+    connection_manager: impl std::future::Future<Output = redis::aio::ConnectionManager>,
     #[values(ProxyClient::Surge, ProxyClient::Clash)] client: ProxyClient,
     #[values(SubProvider::BosLife)] provider: SubProvider,
     #[values(
@@ -55,7 +65,6 @@ async fn test_subscription(
     )]
     cmd: SubProviderCmd,
 ) -> Result<(), Report> {
-    let base_dir = init_test();
     let convertor_config = convertor_config.clone();
     let server = match &cmd.server {
         Some(server) => server.clone(),
@@ -68,7 +77,7 @@ async fn test_subscription(
     let interval = cmd.interval.unwrap_or(client_config.interval());
     let strict = cmd.strict.unwrap_or(client_config.strict());
 
-    let api_map = SubProviderWrapper::create_api(convertor_config.providers.clone(), &base_dir);
+    let api_map = SubProviderWrapper::create_api(convertor_config.providers.clone(), connection_manager.await);
     let mut executor = SubProviderExecutor::new(convertor_config, api_map);
     let (url_builder, result) = executor.execute(cmd).await?;
 

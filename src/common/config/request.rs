@@ -38,8 +38,14 @@ impl RequestConfig {
         auth_token: Option<impl AsRef<str>>,
     ) -> RequestBuilder {
         let mut request_builder = request_builder;
+        if let Some(cookie) = &self.cookie {
+            request_builder = request_builder.header("Cookie", cookie);
+        }
         if let Some(user_agent) = &self.user_agent {
             request_builder = request_builder.header("User-Agent", user_agent);
+        }
+        for (k, v) in &self.headers {
+            request_builder = request_builder.header(k, v);
         }
         match (auth_token, self.auth_token.as_ref()) {
             (Some(auth_token), _) => {
@@ -50,12 +56,6 @@ impl RequestConfig {
             }
             _ => {}
         };
-        if let Some(cookie) = &self.cookie {
-            request_builder = request_builder.header("Cookie", cookie);
-        }
-        for (k, v) in &self.headers {
-            request_builder = request_builder.header(k, v);
-        }
         request_builder
     }
 }

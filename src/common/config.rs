@@ -1,20 +1,25 @@
 use crate::common::config::proxy_client::{ClashConfig, ProxyClientConfig, SurgeConfig};
 use crate::common::config::sub_provider::{BosLifeConfig, SubProvider, SubProviderConfig};
 use crate::common::encrypt::{decrypt, encrypt};
+use crate::common::redis_info::REDIS_CONVERTOR_CONFIG_KEY;
 use crate::core::url_builder::UrlBuilder;
 use color_eyre::Report;
 use color_eyre::eyre::{WrapErr, eyre};
 use dispatch_map::DispatchMap;
 use proxy_client::ProxyClient;
+use redis::AsyncTypedCommands;
+use redis::aio::MultiplexedConnection;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display};
 use std::path::Path;
 use std::str::FromStr;
+use tracing::{error, warn};
 use url::Url;
 
+pub mod config_cmd;
 pub mod proxy_client;
-pub mod sub_provider;
 pub mod request;
+pub mod sub_provider;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConvertorConfig {
@@ -45,6 +50,21 @@ impl ConvertorConfig {
         }
     }
 
+    pub async fn search_or_redis(
+        cwd: impl AsRef<Path>,
+        config_path: Option<impl AsRef<Path>>,
+        connection: MultiplexedConnection,
+    ) -> color_eyre::Result<Self> {
+        match Self::search(cwd, config_path) {
+            Ok(config) => Ok(config),
+            Err(e) => {
+                error!("{:?}", e);
+                warn!("尝试从 Redis 获取配置");
+                Self::from_redis(connection).await
+            }
+        }
+    }
+
     pub fn search(cwd: impl AsRef<Path>, config_path: Option<impl AsRef<Path>>) -> color_eyre::Result<Self> {
         if let Some(path) = config_path {
             return Self::from_file(path);
@@ -62,12 +82,24 @@ impl ConvertorConfig {
                 break;
             }
         }
-        let home_dir = std::env::var("HOME")?;
-        let convertor_toml = Path::new(&home_dir).join(".convertor").join("convertor.toml");
-        if convertor_toml.exists() {
-            return Self::from_file(convertor_toml);
+        #[cfg(not(debug_assertions))]
+        {
+            let home_dir = std::env::var("HOME")?;
+            let convertor_toml = Path::new(&home_dir).join(".convertor").join("convertor.toml");
+            if convertor_toml.exists() {
+                return Self::from_file(convertor_toml);
+            }
         }
         Err(eyre!("未找到 convertor.toml 配置文件"))
+    }
+
+    pub async fn from_redis(mut connection: MultiplexedConnection) -> color_eyre::Result<Self> {
+        let config: Option<String> = connection
+            .get(REDIS_CONVERTOR_CONFIG_KEY)
+            .await
+            .wrap_err("获取配置失败")?;
+        let config = config.ok_or_else(|| eyre!("未找到配置项: {}", REDIS_CONVERTOR_CONFIG_KEY))?;
+        Self::from_str(&config).wrap_err("解析配置字符串失败")
     }
 
     pub fn from_file(path: impl AsRef<Path>) -> color_eyre::Result<Self> {
@@ -84,7 +116,7 @@ impl ConvertorConfig {
     pub fn server_addr(&self) -> color_eyre::Result<String> {
         self.server
             .host_str()
-            .and_then(|host| self.server.port().map(|port| format!("{}:{}", host, port)))
+            .and_then(|host| self.server.port().map(|port| format!("{host}:{port}")))
             .ok_or_else(|| eyre!("服务器地址无效"))
     }
 

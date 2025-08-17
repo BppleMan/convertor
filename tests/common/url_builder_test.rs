@@ -28,7 +28,7 @@ fn test_url_builder(
     )?;
 
     let raw_sub_url = url_builder.build_raw_sub_url();
-    pretty_assertions::assert_str_eq!(format!("{uni_sub_url}&flag={client}"), raw_sub_url.to_string(),);
+    pretty_assertions::assert_str_eq!(format!("{uni_sub_url}&flag={client}"), raw_sub_url.to_string());
 
     let sub_url = url_builder.build_profile_url();
     let encoded_uni_sub_url = sub_url.query.encoded_uni_sub_url();

@@ -1,21 +1,22 @@
 use crate::api::boslife::BosLifeApi;
-use crate::api::boslife_sub_log::BosLifeSubLogs;
-use crate::api::sub_provider::SubProviderApi;
+use crate::api::boslife_log::BosLifeLogs;
+use crate::api::provider::ProviderApi;
 use crate::common::cache::Cache;
 use crate::common::config::proxy_client::ProxyClient;
 use crate::common::config::request::RequestConfig;
 use crate::common::config::sub_provider::{ApiConfig, SubProvider, SubProviderConfig};
 use dispatch_map::DispatchMap;
 use moka::future::Cache as MokaCache;
+use redis::aio::ConnectionManager;
 use reqwest::{Client as ReqwestClient, Request};
 use std::collections::HashMap;
-use std::path::Path;
 use url::Url;
 
 mod boslife;
-pub mod boslife_sub_log;
-pub mod sub_provider;
+pub mod boslife_log;
+pub mod provider;
 
+#[derive(Clone)]
 pub enum SubProviderWrapper {
     BosLife(BosLifeApi),
 }
@@ -23,14 +24,14 @@ pub enum SubProviderWrapper {
 impl SubProviderWrapper {
     pub fn create_api(
         providers: DispatchMap<SubProvider, SubProviderConfig>,
-        base_dir: impl AsRef<Path>,
+        redis: ConnectionManager,
     ) -> HashMap<SubProvider, SubProviderWrapper> {
         providers
             .into_iter()
             .map(|(provider, config)| match (provider, config) {
                 (SubProvider::BosLife, SubProviderConfig::BosLife(config)) => (
                     SubProvider::BosLife,
-                    SubProviderWrapper::BosLife(BosLifeApi::new(base_dir.as_ref(), config)),
+                    SubProviderWrapper::BosLife(BosLifeApi::new(redis.clone(), config)),
                 ),
             })
             .collect()
@@ -50,23 +51,23 @@ impl SubProviderWrapper {
 
     /// sub_url 是订阅地址并且应该指定客户端
     pub async fn get_raw_profile(&self, client: ProxyClient) -> color_eyre::Result<String> {
-        SubProviderApi::get_raw_profile(self, client).await
+        ProviderApi::get_raw_profile(self, client).await
     }
 
     pub async fn get_sub_url(&self) -> color_eyre::Result<Url> {
-        SubProviderApi::get_uni_sub_url(self).await
+        ProviderApi::get_uni_sub_url(self).await
     }
 
     pub async fn reset_sub_url(&self) -> color_eyre::Result<Url> {
-        SubProviderApi::reset_uni_sub_url(self).await
+        ProviderApi::reset_uni_sub_url(self).await
     }
 
-    pub async fn get_sub_logs(&self) -> color_eyre::Result<BosLifeSubLogs> {
-        SubProviderApi::get_sub_logs(self).await
+    pub async fn get_sub_logs(&self) -> color_eyre::Result<BosLifeLogs> {
+        ProviderApi::get_sub_logs(self).await
     }
 }
 
-impl SubProviderApi for SubProviderWrapper {
+impl ProviderApi for SubProviderWrapper {
     fn common_request_config(&self) -> Option<&RequestConfig> {
         match self {
             SubProviderWrapper::BosLife(api) => api.common_request_config(),
@@ -157,7 +158,7 @@ impl SubProviderApi for SubProviderWrapper {
         }
     }
 
-    fn cached_sub_logs(&self) -> &Cache<Url, BosLifeSubLogs> {
+    fn cached_sub_logs(&self) -> &Cache<Url, BosLifeLogs> {
         match self {
             SubProviderWrapper::BosLife(api) => api.cached_sub_logs(),
         }

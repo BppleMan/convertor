@@ -1,7 +1,8 @@
 use crate::api::SubProviderWrapper;
-use crate::api::boslife_sub_log::BosLifeSubLog;
+use crate::api::boslife_log::BosLifeLog;
 use crate::common::config::ConvertorConfig;
 use crate::core::profile::Profile;
+use crate::core::profile::surge_header::SurgeHeaderType;
 use crate::core::profile::surge_profile::SurgeProfile;
 use crate::core::renderer::Renderer;
 use crate::core::renderer::surge_renderer::SurgeRenderer;
@@ -18,6 +19,7 @@ use moka::future::Cache;
 use std::sync::Arc;
 use tracing::instrument;
 
+#[derive(Clone)]
 pub struct SurgeService {
     pub config: Arc<ConvertorConfig>,
     pub profile_cache: Cache<ProfileCacheKey, SurgeProfile>,
@@ -39,6 +41,16 @@ impl SurgeService {
     }
 
     #[instrument(skip_all)]
+    pub async fn raw_profile(&self, query: ProfileQuery, raw_profile: String) -> Result<String> {
+        let url_builder = UrlBuilder::from_convertor_query(&self.config.secret, query)?;
+        let surge_header = url_builder.build_managed_config_header(SurgeHeaderType::RawProfile);
+        let (_, right) = raw_profile
+            .split_once('\n')
+            .ok_or(eyre!("错误的原始配置, 未能找出第一行: {raw_profile}"))?;
+        Ok(format!("{}\n{}", surge_header, right))
+    }
+
+    #[instrument(skip_all)]
     pub async fn rule_provider(&self, query: RuleProviderQuery, raw_profile: String) -> Result<String> {
         let url_builder = UrlBuilder::from_rule_provider_query(&self.config.secret, &query)?;
         let profile = self
@@ -51,18 +63,15 @@ impl SurgeService {
     }
 
     #[instrument(skip_all)]
-    pub async fn sub_logs(
-        &self,
-        query: SubLogsQuery,
-        api: &SubProviderWrapper,
-    ) -> Result<Vec<BosLifeSubLog>, AppError> {
+    pub async fn sub_logs(&self, query: SubLogsQuery, api: &SubProviderWrapper) -> Result<Vec<BosLifeLog>, AppError> {
         if query.secret != self.config.secret {
-            return Err(AppError::Unauthorized("Invalid secret".to_string()));
+            Err(AppError::Unauthorized("Invalid secret".to_string()))
+        } else {
+            let logs = api.get_sub_logs().await?;
+            let start = (query.page - 1) * query.page_size;
+            let logs: Vec<BosLifeLog> = logs.0.into_iter().skip(start).take(query.page_size).collect();
+            Ok(logs)
         }
-        let logs = api.get_sub_logs().await?;
-        let start = (query.page - 1) * query.page_size;
-        let logs: Vec<BosLifeSubLog> = logs.0.into_iter().skip(start).take(query.page_size).collect();
-        Ok(logs)
     }
 
     async fn try_get_profile(

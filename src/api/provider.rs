@@ -1,4 +1,4 @@
-use crate::api::boslife_sub_log::BosLifeSubLogs;
+use crate::api::boslife_log::BosLifeLogs;
 use crate::common::cache::{
     CACHED_AUTH_TOKEN_KEY, CACHED_PROFILE_KEY, CACHED_SUB_LOGS_KEY, CACHED_UNI_SUB_URL_KEY, Cache, CacheKey,
 };
@@ -13,7 +13,7 @@ use reqwest::{Method, Request, Response};
 use std::str::FromStr;
 use url::Url;
 
-pub(crate) trait SubProviderApi {
+pub(crate) trait ProviderApi {
     fn common_request_config(&self) -> Option<&RequestConfig>;
 
     fn api_host(&self) -> &Url;
@@ -44,7 +44,7 @@ pub(crate) trait SubProviderApi {
 
     fn cached_sub_url(&self) -> &Cache<Url, String>;
 
-    fn cached_sub_logs(&self) -> &Cache<Url, BosLifeSubLogs>;
+    fn cached_sub_logs(&self) -> &Cache<Url, BosLifeLogs>;
 
     async fn execute(&self, mut request: Request) -> color_eyre::Result<Response> {
         if let Some(request_config) = self.common_request_config() {
@@ -73,11 +73,30 @@ pub(crate) trait SubProviderApi {
             .try_get_with(key, async {
                 let request = self.client().request(Method::GET, raw_sub_url).build()?;
                 let response = self.execute(request).await?;
+                let status = format!("响应状态: {:?}", response.status());
+                let headers = format!("响应头: {:?}", response.headers());
                 if response.status().is_success() {
                     response.text().await.map_err(Into::into)
                 } else {
-                    Err(eyre!("Get raw profile failed: {}", response.status()))
+                    let body = response.bytes().await?;
+                    let content = String::from_utf8_lossy(&body).to_string();
+                    let content = format!("{}\n{}\n响应体: {}", status, headers, content);
+                    let error_report = eyre!("获取原始订阅文件失败: {}", content);
+                    Err(error_report)
                 }
+                // if response.status().is_success() {
+                //     response.text().await.map_err(Into::into)
+                // } else {
+                //     let status = response.status();
+                //     let error_report = response
+                //         .text()
+                //         .await
+                //         .map(|msg| eyre!(msg))
+                //         .wrap_err("获取错误信息失败")
+                //         .unwrap_or_else(|e| e)
+                //         .wrap_err(format!("获取原始订阅文件失败: {}", status));
+                //     Err(error_report)
+                // }
             })
             .await
             .map_err(|e| eyre!(e))
@@ -95,11 +114,19 @@ pub(crate) trait SubProviderApi {
                 if response.status().is_success() {
                     let json_response = response.text().await?;
                     let auth_token = jsonpath_lib::select_as(&json_response, &json_path)
-                        .wrap_err_with(|| format!("failed to select json_path: {}", &json_path))?
+                        .wrap_err_with(|| format!("无法选择 json_path: {}", &json_path))?
                         .remove(0);
                     Ok(auth_token)
                 } else {
-                    Err(eyre!("登陆服务商失败: {}", response.status()))
+                    let status = response.status();
+                    let error_report = response
+                        .text()
+                        .await
+                        .map(|msg| eyre!(msg))
+                        .wrap_err("获取错误信息失败")
+                        .unwrap_or_else(|e| e)
+                        .wrap_err(format!("登录服务商失败: {}", status));
+                    Err(error_report)
                 }
             })
             .await
@@ -122,7 +149,15 @@ pub(crate) trait SubProviderApi {
                             .remove(0);
                         Ok(url_str)
                     } else {
-                        Err(eyre!("请求服务商原始订阅链接失败: {}", response.status(),))
+                        let status = response.status();
+                        let error_report = response
+                            .text()
+                            .await
+                            .map(|msg| eyre!(msg))
+                            .wrap_err("获取错误信息失败")
+                            .unwrap_or_else(|e| e)
+                            .wrap_err(format!("请求服务商原始订阅链接失败: {}", status));
+                        Err(error_report)
                     }
                 },
             )
@@ -138,16 +173,24 @@ pub(crate) trait SubProviderApi {
         if response.status().is_success() {
             let json_path = &self.reset_sub_url_api().json_path;
             let json_response = response.text().await?;
-            let url_str: String = jsonpath_lib::select_as(&json_response, &json_path)
+            let url_str: String = jsonpath_lib::select_as(&json_response, json_path)
                 .wrap_err_with(|| format!("failed to select json_path: {}", &json_path))?
                 .remove(0);
             Url::parse(&url_str).map_err(|e| e.into())
         } else {
-            Err(eyre!("Reset raw subscription URL failed: {}", response.status()))
+            let status = response.status();
+            let error_report = response
+                .text()
+                .await
+                .map(|msg| eyre!(msg))
+                .wrap_err("获取错误信息失败")
+                .unwrap_or_else(|e| e)
+                .wrap_err(format!("重置原始订阅链接失败: {}", status));
+            Err(error_report)
         }
     }
 
-    async fn get_sub_logs(&self) -> color_eyre::Result<BosLifeSubLogs> {
+    async fn get_sub_logs(&self) -> color_eyre::Result<BosLifeLogs> {
         self.cached_sub_logs()
             .try_get_with(
                 CacheKey::new(CACHED_SUB_LOGS_KEY, self.api_host().clone(), None),
@@ -158,7 +201,7 @@ pub(crate) trait SubProviderApi {
                     if response.status().is_success() {
                         let response = response.text().await?;
                         let json_path = &self.get_sub_logs_api().json_path;
-                        let response: BosLifeSubLogs = jsonpath_lib::select_as(&response, &json_path)?.remove(0);
+                        let response: BosLifeLogs = jsonpath_lib::select_as(&response, &json_path)?.remove(0);
                         Ok(response)
                     } else {
                         Err(eyre!("Get subscription log failed: {}", response.status()))

@@ -11,8 +11,8 @@ use crate::core::result::RenderResult;
 use std::fmt::Write;
 use tracing::instrument;
 
-pub mod surge_renderer;
 pub mod clash_renderer;
+pub mod surge_renderer;
 
 pub const INDENT: usize = 4;
 

@@ -33,16 +33,18 @@ pub struct SubProviderCmd {
     #[arg(value_enum)]
     pub client: ProxyClient,
 
+    /// 订阅提供商
     #[arg(value_enum, default_value_t = SubProvider::BosLife)]
     pub provider: SubProvider,
 
     /// convertor 所在服务器的地址
     /// 格式为 `http://ip:port`
+    /// 未指定时，使用配置文件中的默认值
     #[arg(short, long)]
     pub server: Option<Url>,
 
     /// 订阅更新的间隔时间，单位为秒
-    /// 默认为 86400 秒（24 小时）
+    /// 未指定时，使用配置文件中的默认值
     #[arg(short, long)]
     pub interval: Option<u64>,
 

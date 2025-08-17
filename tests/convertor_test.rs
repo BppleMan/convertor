@@ -1,6 +1,6 @@
+mod cli;
 mod common;
 mod server;
-mod cli;
 
 use convertor::common::once::init_backtrace;
 use include_dir::{Dir, include_dir};

@@ -3,24 +3,27 @@
 name="convertor"
 description="Convertor Service"
 
+# 服务二进制
 command="/root/convertor"
 command_args="127.0.0.1:8080"
 command_user="root"
 directory="/root/.convertor"
 
+# 运行模式
 command_background=yes
 start_stop_daemon_args="--make-pidfile --background"
-pidfile=/run/convertor/convertor.pid
+pidfile="/run/convertor/convertor.pid"
 
-# 👉 彻底静音（可选保留）
-#output_log="/dev/null"
-#error_log="/dev/null"
+# 可选：日志路径（如需要静音可改为 /dev/null）
+output_log="/var/log/${RC_SVCNAME}.out.log"
+error_log="/var/log/${RC_SVCNAME}.err.log"
 
-depend() {
-    need net
-}
-
-rc_ulimit="-n 1024"#error_log="/dev/null"
+# 环境变量注入方式一：从 conf.d 读取
+# 推荐：在 /etc/conf.d/convertor 文件中定义，例如：
+#   REDIS_ENDPOINT=redis.example.com
+#   APP_ENV=production
+# OpenRC 会自动加载
+env_file="/etc/conf.d/${RC_SVCNAME}"
 
 depend() {
     need net
