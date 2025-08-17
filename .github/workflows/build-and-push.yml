@@ -79,6 +79,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y musl-tools pkg-config
           cargo install cargo-zigbuild --locked
+          rustup target add x86_64-unknown-linux-musl
 
       # 根据解析后的 profile 构建 MUSL 二进制（release 带 --release，debug 不带）
       - name: Build (zig + MUSL)
