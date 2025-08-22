@@ -13,42 +13,6 @@ use tower::ServiceExt;
 
 #[rstest]
 #[tokio::test]
-pub async fn test_profile(
-    server_context: &ServerContext,
-    #[values(ProxyClient::Surge, ProxyClient::Clash)] client: ProxyClient,
-    #[values(SubProvider::BosLife)] provider: SubProvider,
-) -> color_eyre::Result<()> {
-    let ServerContext { app, app_state, .. } = server_context;
-    let url_builder = app_state.config.create_url_builder(client, provider)?;
-
-    let client_config = app_state
-        .config
-        .clients
-        .get(&client)
-        .ok_or_else(|| eyre!("没有找到对应的订阅提供者: {provider}"))?;
-    let profile_url = url_builder.build_profile_url();
-    let expect_placeholder = ExpectPlaceholder {
-        server: profile_url.server.to_string(),
-        interval: client_config.interval(),
-        strict: client_config.strict(),
-        uni_sub_host: profile_url.query.uni_sub_url.host_port()?,
-        enc_uni_sub_url: profile_url.query.encoded_uni_sub_url(),
-    };
-    let uri = format!("{}?{}", profile_url.path, profile_url.query.encode_to_query_string());
-
-    let request = Request::builder().uri(uri).method("GET").body(Body::empty())?;
-    let response = app.clone().oneshot(request).await?;
-
-    let actual = String::from_utf8_lossy(&response.into_body().collect().await?.to_bytes()).to_string();
-    let expect = expect_profile(client, &expect_placeholder);
-
-    pretty_assertions::assert_str_eq!(expect, actual);
-
-    Ok(())
-}
-
-#[rstest]
-#[tokio::test]
 pub async fn test_rule_provider(
     server_context: &ServerContext,
     #[values(ProxyClient::Surge, ProxyClient::Clash)] client: ProxyClient,
@@ -77,8 +41,8 @@ pub async fn test_rule_provider(
         server: rule_provider_url.server.to_string(),
         interval: client_config.interval(),
         strict: client_config.strict(),
-        uni_sub_host: rule_provider_url.query.uni_sub_url.host_port()?,
-        enc_uni_sub_url: rule_provider_url.query.encoded_uni_sub_url(),
+        uni_sub_host: rule_provider_url.query.sub_url.host_port()?,
+        enc_sub_url: rule_provider_url.query.encoded_sub_url(),
     };
     let uri = format!(
         "{}?{}",

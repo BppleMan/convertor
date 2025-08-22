@@ -12,7 +12,7 @@ use tracing::{debug, error};
 
 pub const CACHED_AUTH_TOKEN_KEY: &str = "cached:auth_token";
 pub const CACHED_PROFILE_KEY: &str = "cached:profile";
-pub const CACHED_UNI_SUB_URL_KEY: &str = "cached:uni_sub_url";
+pub const CACHED_SUB_URL_KEY: &str = "cached:sub_url";
 pub const CACHED_SUB_LOGS_KEY: &str = "cached:sub_logs";
 
 #[derive(Clone)]

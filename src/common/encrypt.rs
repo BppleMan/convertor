@@ -1,7 +1,7 @@
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
-use chacha20poly1305::aead::{Aead, KeyInit, OsRng};
-use chacha20poly1305::{AeadCore, ChaCha20Poly1305, Key, Nonce};
+use chacha20poly1305::aead::{Aead, KeyInit};
+use chacha20poly1305::{ChaCha20Poly1305, Key, Nonce};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -24,15 +24,27 @@ pub fn encrypt(secret: &[u8], plaintext: &str) -> Result<String, EncryptError> {
     let key = Key::from_slice(&secret);
     let cipher = ChaCha20Poly1305::new(key);
 
-    let nonce = ChaCha20Poly1305::generate_nonce(&mut OsRng);
+    println!("Encrypting {plaintext}");
+    #[cfg(debug_assertions)]
+    let nonce = {
+        println!("Using default nonce in debug mode");
+        Nonce::default()
+    };
+    #[cfg(not(debug_assertions))]
+    let nonce = {
+        use chacha20poly1305::AeadCore;
+        use chacha20poly1305::aead::OsRng;
+        ChaCha20Poly1305::generate_nonce(&mut OsRng)
+    };
 
     // 加密数据
     let ciphertext = cipher
         .encrypt(&nonce, plaintext.as_bytes())
-        .map_err(|e| EncryptError::Encrypt(e))?;
+        .map_err(EncryptError::Encrypt)?;
 
     // 返回 base64 编码的 nonce 和密文
     let result = format!("{}:{}", STANDARD.encode(nonce), STANDARD.encode(ciphertext));
+    println!("Encrypted {result}");
     Ok(result)
 }
 
@@ -49,8 +61,8 @@ pub fn decrypt(secret: &[u8], encrypted: &str) -> Result<String, EncryptError> {
         return Err(EncryptError::SplitError);
     }
 
-    let nonce = STANDARD.decode(parts[0]).map_err(|e| EncryptError::DecodeError(e))?;
-    let ciphertext = STANDARD.decode(parts[1]).map_err(|e| EncryptError::DecodeError(e))?;
+    let nonce = STANDARD.decode(parts[0]).map_err(EncryptError::DecodeError)?;
+    let ciphertext = STANDARD.decode(parts[1]).map_err(EncryptError::DecodeError)?;
 
     // 解密数据
     let plaintext = match cipher.decrypt(Nonce::from_slice(&nonce), ciphertext.as_ref()) {

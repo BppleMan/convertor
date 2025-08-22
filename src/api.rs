@@ -37,9 +37,9 @@ impl SubProviderWrapper {
             .collect()
     }
 
-    pub fn set_uni_sub_url(&mut self, url: Url) {
+    pub fn set_sub_url(&mut self, url: Url) {
         match self {
-            SubProviderWrapper::BosLife(api) => api.config.uni_sub_url = url,
+            SubProviderWrapper::BosLife(api) => api.config.sub_url = url,
         }
     }
 
@@ -55,11 +55,11 @@ impl SubProviderWrapper {
     }
 
     pub async fn get_sub_url(&self) -> color_eyre::Result<Url> {
-        ProviderApi::get_uni_sub_url(self).await
+        ProviderApi::get_sub_url(self).await
     }
 
     pub async fn reset_sub_url(&self) -> color_eyre::Result<Url> {
-        ProviderApi::reset_uni_sub_url(self).await
+        ProviderApi::reset_sub_url(self).await
     }
 
     pub async fn get_sub_logs(&self) -> color_eyre::Result<BosLifeLogs> {

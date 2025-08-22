@@ -26,8 +26,8 @@ pub struct UrlBuilder {
     pub client: ProxyClient,
     pub provider: SubProvider,
     pub server: Url,
-    pub uni_sub_url: Url,
-    pub enc_uni_sub_url: String,
+    pub sub_url: Url,
+    pub enc_sub_url: String,
     pub interval: u64,
     pub strict: bool,
 }
@@ -39,23 +39,23 @@ impl UrlBuilder {
         client: ProxyClient,
         provider: SubProvider,
         server: Url,
-        uni_sub_url: Url,
-        enc_uni_sub_url: Option<String>,
+        sub_url: Url,
+        enc_sub_url: Option<String>,
         interval: u64,
         strict: bool,
     ) -> Result<Self, EncryptError> {
         let secret = secret.as_ref().to_string();
-        let enc_uni_sub_url = enc_uni_sub_url
+        let enc_sub_url = enc_sub_url
             .map(Ok)
-            .unwrap_or_else(|| encrypt(secret.as_bytes(), uni_sub_url.as_str()))?;
+            .unwrap_or_else(|| encrypt(secret.as_bytes(), sub_url.as_str()))?;
 
         let url = Self {
             secret,
             client,
             provider,
             server,
-            uni_sub_url,
-            enc_uni_sub_url,
+            sub_url,
+            enc_sub_url,
             interval,
             strict,
         };
@@ -67,8 +67,8 @@ impl UrlBuilder {
             client,
             provider,
             server,
-            uni_sub_url,
-            enc_uni_sub_url,
+            sub_url,
+            enc_sub_url,
             interval,
             strict,
         } = query;
@@ -77,8 +77,8 @@ impl UrlBuilder {
             client,
             provider,
             server,
-            uni_sub_url,
-            Some(enc_uni_sub_url),
+            sub_url,
+            Some(enc_sub_url),
             interval,
             strict,
         )
@@ -89,8 +89,8 @@ impl UrlBuilder {
             client,
             provider,
             server,
-            uni_sub_url,
-            enc_uni_sub_url,
+            sub_url,
+            enc_sub_url,
             interval,
             policy: _,
         } = query;
@@ -99,8 +99,8 @@ impl UrlBuilder {
             *client,
             *provider,
             server.clone(),
-            uni_sub_url.clone(),
-            Some(enc_uni_sub_url.clone()),
+            sub_url.clone(),
+            Some(enc_sub_url.clone()),
             *interval,
             true,
         )
@@ -119,7 +119,7 @@ impl UrlBuilder {
 
     // 构造直通 raw 订阅链接
     pub fn build_raw_url(&self) -> RawUrl {
-        let server = self.uni_sub_url.clone();
+        let server = self.sub_url.clone();
         let flag = self.client;
         RawUrl { server, flag }
     }
@@ -148,8 +148,8 @@ impl UrlBuilder {
             client: self.client,
             provider: self.provider,
             server: self.server.clone(),
-            uni_sub_url: self.uni_sub_url.clone(),
-            enc_uni_sub_url: self.enc_uni_sub_url.clone(),
+            sub_url: self.sub_url.clone(),
+            enc_sub_url: self.enc_sub_url.clone(),
             interval: self.interval,
             policy: policy.clone().into(),
         };

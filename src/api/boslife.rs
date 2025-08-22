@@ -16,7 +16,7 @@ pub struct BosLifeApi {
     pub redis: ConnectionManager,
     pub cached_auth_token: MokaCache<String, String>,
     pub cached_sub_profile: Cache<Url, String>,
-    pub cached_uni_sub_url: Cache<Url, String>,
+    pub cached_sub_url: Cache<Url, String>,
     pub cached_sub_logs: Cache<Url, BosLifeLogs>,
 }
 
@@ -33,7 +33,7 @@ impl BosLifeApi {
             .max_capacity(10)
             .time_to_live(duration) // 10 minutes
             .build();
-        let cached_uni_sub_url = Cache::new(redis.clone(), 10, duration);
+        let cached_sub_url = Cache::new(redis.clone(), 10, duration);
         let cached_sub_logs = Cache::new(redis.clone(), 10, duration);
         Self {
             config,
@@ -41,7 +41,7 @@ impl BosLifeApi {
             redis,
             cached_auth_token,
             cached_sub_profile,
-            cached_uni_sub_url,
+            cached_sub_url,
             cached_sub_logs,
         }
     }
@@ -133,7 +133,7 @@ impl ProviderApi for BosLifeApi {
     }
 
     fn cached_sub_url(&self) -> &Cache<Url, String> {
-        &self.cached_uni_sub_url
+        &self.cached_sub_url
     }
 
     fn cached_sub_logs(&self) -> &Cache<Url, BosLifeLogs> {

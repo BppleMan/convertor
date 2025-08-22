@@ -84,15 +84,15 @@ async fn test_subscription(
     // 构造期望值
     let expect_raw_url = format!(
         "{}://{}/subscription?token=bppleman&flag={}",
-        url_builder.uni_sub_url.scheme(),
-        url_builder.uni_sub_url.host_port()?,
+        url_builder.sub_url.scheme(),
+        url_builder.sub_url.host_port()?,
         client
     );
     assert_str_eq!(expect_raw_url, result.raw_link.url.as_str());
 
     let expect_profile_url = format!(
-        "{server}profile?client={client}&provider={provider}&server={server}&interval={interval}&strict={strict}&uni_sub_url={}",
-        url_builder.enc_uni_sub_url
+        "{server}profile?client={client}&provider={provider}&server={server}&interval={interval}&strict={strict}&sub_url={}",
+        url_builder.enc_sub_url
     );
     assert_str_eq!(expect_profile_url, result.profile_link.url.as_str());
 
@@ -111,32 +111,32 @@ async fn test_subscription(
 
     let expect_policy_urls = [
         format!(
-            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&policy.name=DIRECT&policy.is_subscription=true&uni_sub_url={}",
-            url_builder.enc_uni_sub_url
+            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&policy.name=DIRECT&policy.is_subscription=true&sub_url={}",
+            url_builder.enc_sub_url
         ),
         format!(
-            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&policy.name=BosLife&policy.is_subscription=false&uni_sub_url={}",
-            url_builder.enc_uni_sub_url
+            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&policy.name=BosLife&policy.is_subscription=false&sub_url={}",
+            url_builder.enc_sub_url
         ),
         format!(
-            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&policy.name=BosLife&policy.option=no-resolve&policy.is_subscription=false&uni_sub_url={}",
-            url_builder.enc_uni_sub_url
+            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&policy.name=BosLife&policy.option=no-resolve&policy.is_subscription=false&sub_url={}",
+            url_builder.enc_sub_url
         ),
         format!(
-            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&policy.name=BosLife&policy.option=force-remote-dns&policy.is_subscription=false&uni_sub_url={}",
-            url_builder.enc_uni_sub_url
+            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&policy.name=BosLife&policy.option=force-remote-dns&policy.is_subscription=false&sub_url={}",
+            url_builder.enc_sub_url
         ),
         format!(
-            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&policy.name=DIRECT&policy.is_subscription=false&uni_sub_url={}",
-            url_builder.enc_uni_sub_url
+            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&policy.name=DIRECT&policy.is_subscription=false&sub_url={}",
+            url_builder.enc_sub_url
         ),
         format!(
-            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&policy.name=DIRECT&policy.option=no-resolve&policy.is_subscription=false&uni_sub_url={}",
-            url_builder.enc_uni_sub_url
+            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&policy.name=DIRECT&policy.option=no-resolve&policy.is_subscription=false&sub_url={}",
+            url_builder.enc_sub_url
         ),
         format!(
-            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&policy.name=DIRECT&policy.option=force-remote-dns&policy.is_subscription=false&uni_sub_url={}",
-            url_builder.enc_uni_sub_url
+            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval={interval}&policy.name=DIRECT&policy.option=force-remote-dns&policy.is_subscription=false&sub_url={}",
+            url_builder.enc_sub_url
         ),
     ];
 

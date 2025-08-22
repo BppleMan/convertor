@@ -51,7 +51,7 @@ dispatch_pattern! {
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct BosLifeConfig {
-    pub uni_sub_url: Url,
+    pub sub_url: Url,
     #[serde(default)]
     pub request: Option<RequestConfig>,
     pub credential: CredentialConfig,
@@ -76,15 +76,15 @@ pub struct CredentialConfig {
 }
 
 impl SubProviderConfig {
-    pub fn set_uni_sub_url(&mut self, url: Url) {
+    pub fn set_sub_url(&mut self, url: Url) {
         match self {
-            SubProviderConfig::BosLife(config) => config.uni_sub_url = url,
+            SubProviderConfig::BosLife(config) => config.sub_url = url,
         }
     }
 
-    pub fn uni_sub_url(&self) -> &Url {
+    pub fn sub_url(&self) -> &Url {
         match self {
-            SubProviderConfig::BosLife(config) => &config.uni_sub_url,
+            SubProviderConfig::BosLife(config) => &config.sub_url,
         }
     }
 
@@ -142,7 +142,7 @@ impl Display for SubProvider {
 impl BosLifeConfig {
     pub fn template() -> Self {
         Self {
-            uni_sub_url: Url::parse("http://127.0.0.1:8080/subscription?token=bppleman").expect("不合法的订阅地址"),
+            sub_url: Url::parse("http://127.0.0.1:8080/subscription?token=bppleman").expect("不合法的订阅地址"),
             request: Some(RequestConfig::template()),
             credential: CredentialConfig {
                 username: "optional:boslife.username".to_string(),
@@ -170,7 +170,7 @@ impl BosLifeConfig {
     }
 
     pub fn build_raw_sub_url(&self, client: ProxyClient) -> Url {
-        let mut url = self.uni_sub_url.clone();
+        let mut url = self.sub_url.clone();
         // BosLife 的字段是 `flag` 不可改为client
         url.query_pairs_mut().append_pair("flag", client.as_str());
         url

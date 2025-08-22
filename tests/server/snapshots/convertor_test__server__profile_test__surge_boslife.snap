@@ -1,4 +1,8 @@
-#!MANAGED-CONFIG {server}profile?client=surge&provider=boslife&server={server}&interval={interval}&strict={strict}&sub_url={sub_url} interval={interval} strict={strict}
+---
+source: tests/server/profile_test.rs
+expression: actual
+---
+#!MANAGED-CONFIG http://127.0.0.1:8080/profile?client=surge&provider=boslife&server=http://127.0.0.1:8080/&interval=43200&strict=true&sub_url=AAAAAAAAAAAAAAAA:1LOIV7ZZQVxM1paZDfnY5ss0O5q515xpc32Zhx95GbLkP8O428KQK3SxiM2F/Brj9qs3aihdbhmQQfg89yZ2E4pb interval=43200 strict=true
 
 [General]
 skip-proxy = 192.168.0.0/16, 10.0.0.0/8, 172.16.0.0/12, 100.64.0.0/10, localhost, *.local, seed-sequoia.siri.apple.com, sequoia.apple.com, *.crashlytics.com
@@ -64,20 +68,20 @@ Subscription Info=select,订阅提供商信息
 🇦🇺 澳洲=smart,🇦🇺 澳洲 01
 
 [Rule]
-// [Subscription] by convertor/{CARGO_PKG_VERSION}
-RULE-SET,{server}rule-provider?client=surge&provider=boslife&server={server}&interval={interval}&policy.name=DIRECT&policy.is_subscription=true&sub_url={sub_url},DIRECT
-// [BosLife] by convertor/{CARGO_PKG_VERSION}
-RULE-SET,{server}rule-provider?client=surge&provider=boslife&server={server}&interval={interval}&policy.name=BosLife&policy.is_subscription=false&sub_url={sub_url},BosLife
-// [BosLife: no-resolve] by convertor/{CARGO_PKG_VERSION}
-RULE-SET,{server}rule-provider?client=surge&provider=boslife&server={server}&interval={interval}&policy.name=BosLife&policy.option=no-resolve&policy.is_subscription=false&sub_url={sub_url},BosLife,no-resolve
-// [BosLife: force-remote-dns] by convertor/{CARGO_PKG_VERSION}
-RULE-SET,{server}rule-provider?client=surge&provider=boslife&server={server}&interval={interval}&policy.name=BosLife&policy.option=force-remote-dns&policy.is_subscription=false&sub_url={sub_url},BosLife,force-remote-dns
-// [DIRECT] by convertor/{CARGO_PKG_VERSION}
-RULE-SET,{server}rule-provider?client=surge&provider=boslife&server={server}&interval={interval}&policy.name=DIRECT&policy.is_subscription=false&sub_url={sub_url},DIRECT
-// [DIRECT: no-resolve] by convertor/{CARGO_PKG_VERSION}
-RULE-SET,{server}rule-provider?client=surge&provider=boslife&server={server}&interval={interval}&policy.name=DIRECT&policy.option=no-resolve&policy.is_subscription=false&sub_url={sub_url},DIRECT,no-resolve
-// [DIRECT: force-remote-dns] by convertor/{CARGO_PKG_VERSION}
-RULE-SET,{server}rule-provider?client=surge&provider=boslife&server={server}&interval={interval}&policy.name=DIRECT&policy.option=force-remote-dns&policy.is_subscription=false&sub_url={sub_url},DIRECT,force-remote-dns
+// [Subscription] by convertor/2.5.2
+RULE-SET,http://127.0.0.1:8080/rule-provider?client=surge&provider=boslife&server=http://127.0.0.1:8080/&interval=43200&policy.name=DIRECT&policy.is_subscription=true&sub_url=AAAAAAAAAAAAAAAA:1LOIV7ZZQVxM1paZDfnY5ss0O5q515xpc32Zhx95GbLkP8O428KQK3SxiM2F/Brj9qs3aihdbhmQQfg89yZ2E4pb,DIRECT
+// [BosLife] by convertor/2.5.2
+RULE-SET,http://127.0.0.1:8080/rule-provider?client=surge&provider=boslife&server=http://127.0.0.1:8080/&interval=43200&policy.name=BosLife&policy.is_subscription=false&sub_url=AAAAAAAAAAAAAAAA:1LOIV7ZZQVxM1paZDfnY5ss0O5q515xpc32Zhx95GbLkP8O428KQK3SxiM2F/Brj9qs3aihdbhmQQfg89yZ2E4pb,BosLife
+// [BosLife: no-resolve] by convertor/2.5.2
+RULE-SET,http://127.0.0.1:8080/rule-provider?client=surge&provider=boslife&server=http://127.0.0.1:8080/&interval=43200&policy.name=BosLife&policy.option=no-resolve&policy.is_subscription=false&sub_url=AAAAAAAAAAAAAAAA:1LOIV7ZZQVxM1paZDfnY5ss0O5q515xpc32Zhx95GbLkP8O428KQK3SxiM2F/Brj9qs3aihdbhmQQfg89yZ2E4pb,BosLife,no-resolve
+// [BosLife: force-remote-dns] by convertor/2.5.2
+RULE-SET,http://127.0.0.1:8080/rule-provider?client=surge&provider=boslife&server=http://127.0.0.1:8080/&interval=43200&policy.name=BosLife&policy.option=force-remote-dns&policy.is_subscription=false&sub_url=AAAAAAAAAAAAAAAA:1LOIV7ZZQVxM1paZDfnY5ss0O5q515xpc32Zhx95GbLkP8O428KQK3SxiM2F/Brj9qs3aihdbhmQQfg89yZ2E4pb,BosLife,force-remote-dns
+// [DIRECT] by convertor/2.5.2
+RULE-SET,http://127.0.0.1:8080/rule-provider?client=surge&provider=boslife&server=http://127.0.0.1:8080/&interval=43200&policy.name=DIRECT&policy.is_subscription=false&sub_url=AAAAAAAAAAAAAAAA:1LOIV7ZZQVxM1paZDfnY5ss0O5q515xpc32Zhx95GbLkP8O428KQK3SxiM2F/Brj9qs3aihdbhmQQfg89yZ2E4pb,DIRECT
+// [DIRECT: no-resolve] by convertor/2.5.2
+RULE-SET,http://127.0.0.1:8080/rule-provider?client=surge&provider=boslife&server=http://127.0.0.1:8080/&interval=43200&policy.name=DIRECT&policy.option=no-resolve&policy.is_subscription=false&sub_url=AAAAAAAAAAAAAAAA:1LOIV7ZZQVxM1paZDfnY5ss0O5q515xpc32Zhx95GbLkP8O428KQK3SxiM2F/Brj9qs3aihdbhmQQfg89yZ2E4pb,DIRECT,no-resolve
+// [DIRECT: force-remote-dns] by convertor/2.5.2
+RULE-SET,http://127.0.0.1:8080/rule-provider?client=surge&provider=boslife&server=http://127.0.0.1:8080/&interval=43200&policy.name=DIRECT&policy.option=force-remote-dns&policy.is_subscription=false&sub_url=AAAAAAAAAAAAAAAA:1LOIV7ZZQVxM1paZDfnY5ss0O5q515xpc32Zhx95GbLkP8O428KQK3SxiM2F/Brj9qs3aihdbhmQQfg89yZ2E4pb,DIRECT,force-remote-dns
 
 GEOIP,CN,DIRECT
 FINAL,DIRECT
@@ -86,4 +90,3 @@ FINAL,DIRECT
 ^https?://(www.)?g.cn https://www.google.com.hk 302
 ^https?://(www.)?google.cn https://www.google.com.hk 302
 ^https?://youtube.com https://www.youtube.com 302
-

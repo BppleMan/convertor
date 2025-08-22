@@ -98,14 +98,14 @@ impl SubProviderExecutor {
         let url_builder = self.create_url_builder(&cmd).await?;
         let raw_profile_content = match self.api_map.get_mut(&sub_provider) {
             Some(api) => {
-                api.set_uni_sub_url(url_builder.uni_sub_url.clone());
+                api.set_sub_url(url_builder.sub_url.clone());
                 api.get_raw_profile(client).await?
             }
             None => {
                 return Err(eyre!("无法取得订阅供应商的 api 实现: {}", &sub_provider));
             }
         };
-        let uni_sub_host_port = url_builder.uni_sub_url.host_port()?;
+        let uni_sub_host_port = url_builder.sub_url.host_port()?;
         let (client_profile, policies) = match client {
             ProxyClient::Surge => {
                 let mut raw_profile = SurgeProfile::parse(raw_profile_content)?;
@@ -181,32 +181,32 @@ impl SubProviderExecutor {
         let mut url_builder = match url_source {
             None => self.config.create_url_builder(*client, *provider)?,
             Some(UrlSource::Get) => {
-                let uni_sub_url = self
+                let sub_url = self
                     .api_map
                     .get(provider)
                     .ok_or(eyre!("无法取得订阅供应商的 api 实现: {}", &provider))?
                     .get_sub_url()
                     .await?;
                 let mut url_builder = self.config.create_url_builder(*client, *provider)?;
-                url_builder.uni_sub_url = uni_sub_url;
+                url_builder.sub_url = sub_url;
                 url_builder
             }
             Some(UrlSource::Reset) => {
-                let uni_sub_url = self
+                let sub_url = self
                     .api_map
                     .get(provider)
                     .ok_or(eyre!("无法取得订阅供应商的 api 实现: {}", &provider))?
                     .reset_sub_url()
                     .await?;
                 let mut url_builder = self.config.create_url_builder(*client, *provider)?;
-                url_builder.uni_sub_url = uni_sub_url;
+                url_builder.sub_url = sub_url;
                 url_builder
             }
             Some(UrlSource::Raw { sub_url }) => {
                 let mut url_builder = self.config.create_url_builder(*client, *provider)?;
-                url_builder.uni_sub_url = match (sub_url, self.config.providers.get(provider)) {
+                url_builder.sub_url = match (sub_url, self.config.providers.get(provider)) {
                     (Some(sub_url), _) => sub_url.clone(),
-                    (None, Some(config)) => config.uni_sub_url().clone(),
+                    (None, Some(config)) => config.sub_url().clone(),
                     _ => {
                         return Err(eyre!("未找到订阅提供商的原始订阅链接，请检查参数是否完整"));
                     }

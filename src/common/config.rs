@@ -118,8 +118,8 @@ impl ConvertorConfig {
     }
 
     pub fn create_url_builder(&self, client: ProxyClient, provider: SubProvider) -> color_eyre::Result<UrlBuilder> {
-        let uni_sub_url = match self.providers.get(&provider) {
-            Some(SubProviderConfig::BosLife(provider_config)) => provider_config.uni_sub_url.clone(),
+        let sub_url = match self.providers.get(&provider) {
+            Some(SubProviderConfig::BosLife(provider_config)) => provider_config.sub_url.clone(),
             None => return Err(eyre!("未找到提供商配置: [providers.{}]", provider)),
         };
         let (interval, strict) = match self.clients.get(&client) {
@@ -129,7 +129,7 @@ impl ConvertorConfig {
         };
         let server = self.server.clone();
         let secret = self.secret.clone();
-        let url_builder = UrlBuilder::new(secret, client, provider, server, uni_sub_url, None, interval, strict)?;
+        let url_builder = UrlBuilder::new(secret, client, provider, server, sub_url, None, interval, strict)?;
         Ok(url_builder)
     }
 

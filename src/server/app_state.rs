@@ -21,7 +21,7 @@ pub struct AppState {
 pub struct ProfileCacheKey {
     pub client: ProxyClient,
     pub provider: SubProvider,
-    pub uni_sub_url: Url,
+    pub sub_url: Url,
     pub interval: u64,
     pub server: Option<Url>,
     pub strict: Option<bool>,

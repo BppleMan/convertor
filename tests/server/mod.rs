@@ -26,6 +26,7 @@ use std::sync::{Arc, LazyLock};
 use std::thread;
 use url::Url;
 
+mod profile_test;
 pub mod server_test;
 
 pub struct ServerContext {
@@ -113,12 +114,12 @@ impl MockServerExt for BosLifeConfig {
         let subscribe_url_path = "/subscription";
         let token = "bppleman";
 
-        self.uni_sub_url =
+        self.sub_url =
             Url::parse(&mock_server.url(format!("{subscribe_url_path}?token={token}"))).expect("不合法的订阅地址");
         self.api_host = Url::parse(&mock_server.base_url())?;
 
         let mock_placeholder = MockPlaceholder {
-            uni_sub_host: self.uni_sub_url.host_port()?,
+            uni_sub_host: self.sub_url.host_port()?,
         };
 
         mock_server
@@ -178,7 +179,7 @@ pub struct ExpectPlaceholder {
     pub interval: u64,
     pub strict: bool,
     pub uni_sub_host: String,
-    pub enc_uni_sub_url: String,
+    pub enc_sub_url: String,
 }
 
 pub fn mock_profile(client: ProxyClient, placeholder: &MockPlaceholder) -> String {
@@ -190,7 +191,7 @@ pub fn expect_profile(client: ProxyClient, expect_placeholder: &ExpectPlaceholde
         .replace("{server}", &expect_placeholder.server)
         .replace("{interval}", &expect_placeholder.interval.to_string())
         .replace("{strict}", &expect_placeholder.strict.to_string())
-        .replace("{uni_sub_url}", &expect_placeholder.enc_uni_sub_url)
+        .replace("{sub_url}", &expect_placeholder.enc_sub_url)
         .replace("{CARGO_PKG_VERSION}", env!("CARGO_PKG_VERSION"))
 }
 

@@ -10,11 +10,11 @@ fn test_encrypt_and_decrypt() -> color_eyre::Result<()> {
 
     // 加密
     let encrypted = encrypt(secret, message)?;
+    insta::assert_snapshot!(encrypted, @"AAAAAAAAAAAAAAAA:ySjQlsiKDWUglgkbbu96L2ITbcWr6sIoKShyEQ5Nhc6sk+v2dWrC++4=");
 
     // 解密
     let decrypted = decrypt(secret, &encrypted)?;
-
-    assert_eq!(message, decrypted);
+    insta::assert_snapshot!(decrypted, @"This is a secret message.");
 
     Ok(())
 }

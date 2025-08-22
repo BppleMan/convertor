@@ -1,6 +1,6 @@
 use crate::api::boslife_log::BosLifeLogs;
 use crate::common::cache::{
-    CACHED_AUTH_TOKEN_KEY, CACHED_PROFILE_KEY, CACHED_SUB_LOGS_KEY, CACHED_UNI_SUB_URL_KEY, Cache, CacheKey,
+    CACHED_AUTH_TOKEN_KEY, CACHED_PROFILE_KEY, CACHED_SUB_LOGS_KEY, CACHED_SUB_URL_KEY, Cache, CacheKey,
 };
 use crate::common::config::proxy_client::ProxyClient;
 use crate::common::config::request::RequestConfig;
@@ -133,10 +133,10 @@ pub(crate) trait ProviderApi {
             .map_err(|e| eyre!(e))
     }
 
-    async fn get_uni_sub_url(&self) -> color_eyre::Result<Url> {
+    async fn get_sub_url(&self) -> color_eyre::Result<Url> {
         self.cached_sub_url()
             .try_get_with(
-                CacheKey::new(CACHED_UNI_SUB_URL_KEY, self.api_host().clone(), None),
+                CacheKey::new(CACHED_SUB_URL_KEY, self.api_host().clone(), None),
                 async {
                     let auth_token = self.login().await?;
                     let request = self.get_sub_url_request(auth_token)?;
@@ -166,7 +166,7 @@ pub(crate) trait ProviderApi {
             .map_err(|e| eyre!(e))?
     }
 
-    async fn reset_uni_sub_url(&self) -> color_eyre::Result<Url> {
+    async fn reset_sub_url(&self) -> color_eyre::Result<Url> {
         let auth_token = self.login().await?;
         let request = self.reset_sub_url_request(auth_token)?;
         let response = self.execute(request).await?;

@@ -661,6 +661,7 @@ dependencies = [
  "include_dir",
  "indicatif",
  "inquire",
+ "insta",
  "jsonpath_lib",
  "moka",
  "opentelemetry",
@@ -1577,6 +1578,18 @@ dependencies = [
  "once_cell",
  "unicode-segmentation",
  "unicode-width 0.1.14",
+]
+
+[[package]]
+name = "insta"
+version = "1.43.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "154934ea70c58054b556dd430b99a98c2a7ff5309ac9891597e339b5c28f4371"
+dependencies = [
+ "console 0.15.11",
+ "once_cell",
+ "regex",
+ "similar",
 ]
 
 [[package]]

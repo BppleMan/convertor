@@ -153,7 +153,7 @@ pub trait Profile {
 
     #[instrument(skip_all)]
     fn optimize_rules(&mut self, url_builder: &UrlBuilder) -> ParseResult<()> {
-        let uni_sub_host_port = url_builder.uni_sub_url.host_port()?;
+        let uni_sub_host_port = url_builder.sub_url.host_port()?;
         let inner_span = span!(tracing::Level::INFO, "拆分内置规则和其他规则");
         let _guard = inner_span.entered();
         let (built_in_rules, other_rules): (Vec<Rule>, Vec<Rule>) = self

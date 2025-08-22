@@ -16,8 +16,8 @@ pub struct RuleProviderQuery {
     pub client: ProxyClient,
     pub provider: SubProvider,
     pub server: Url,
-    pub uni_sub_url: Url,
-    pub enc_uni_sub_url: String,
+    pub sub_url: Url,
+    pub enc_sub_url: String,
     pub interval: u64,
     pub policy: SerializablePolicy,
 }
@@ -65,12 +65,12 @@ impl RuleProviderQuery {
             .parse::<Url>()
             .map_err(ParseError::from)?;
 
-        // 解析 uni_sub_url
-        let enc_uni_sub_url = query_map
-            .get("uni_sub_url")
-            .ok_or(ParseError::NotFoundParam("uni_sub_url"))?
+        // 解析 sub_url
+        let enc_sub_url = query_map
+            .get("sub_url")
+            .ok_or(ParseError::NotFoundParam("sub_url"))?
             .to_string();
-        let uni_sub_url = decrypt(secret.as_bytes(), enc_uni_sub_url.as_ref())?
+        let sub_url = decrypt(secret.as_bytes(), enc_sub_url.as_ref())?
             .parse::<Url>()
             .map_err(ParseError::from)?;
 
@@ -89,8 +89,8 @@ impl RuleProviderQuery {
             client,
             provider,
             server,
-            uni_sub_url,
-            enc_uni_sub_url,
+            sub_url: sub_url,
+            enc_sub_url: enc_sub_url,
             interval,
             policy,
         };
@@ -105,7 +105,7 @@ impl RuleProviderQuery {
             ("interval", Cow::Owned(self.interval.to_string())),
         ];
         self.policy.encode_to_query_pairs(&mut query_pairs);
-        query_pairs.push(("uni_sub_url", Cow::Borrowed(&self.enc_uni_sub_url)));
+        query_pairs.push(("sub_url", Cow::Borrowed(&self.enc_sub_url)));
 
         query_pairs
             .into_iter()
@@ -126,7 +126,7 @@ impl RuleProviderQuery {
         ProfileCacheKey {
             client: self.client,
             provider: self.provider,
-            uni_sub_url: self.uni_sub_url.clone(),
+            sub_url: self.sub_url.clone(),
             interval: self.interval,
             server: None,
             strict: None,
@@ -134,8 +134,8 @@ impl RuleProviderQuery {
         }
     }
 
-    pub fn encoded_uni_sub_url(&self) -> String {
-        utf8_percent_encode(&self.enc_uni_sub_url, percent_encoding::CONTROLS).to_string()
+    pub fn encoded_sub_url(&self) -> String {
+        utf8_percent_encode(&self.enc_sub_url, percent_encoding::CONTROLS).to_string()
     }
 }
 
