@@ -121,7 +121,7 @@ impl SubProviderExecutor {
             }
         };
 
-        let raw_sub_url = url_builder.build_raw_sub_url();
+        let raw_sub_url = url_builder.build_raw_url();
         let profile_url = url_builder.build_profile_url();
         let raw_profile_url = url_builder.build_raw_profile_url();
         let sub_logs_url = url_builder.build_sub_logs_url(1, 20)?;

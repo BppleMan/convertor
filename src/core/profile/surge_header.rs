@@ -1,5 +1,5 @@
 use crate::core::url_builder::profile_url::ProfileUrl;
-use crate::core::url_builder::raw_sub_url::RawSubUrl;
+use crate::core::url_builder::raw_url::RawUrl;
 use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Clone)]
@@ -7,7 +7,7 @@ use std::fmt::{Display, Formatter};
 pub enum SurgeHeader {
     Raw {
         shebang: &'static str,
-        url: RawSubUrl,
+        url: RawUrl,
         interval: u64,
         strict: bool,
     },
@@ -26,7 +26,7 @@ pub enum SurgeHeaderType {
 }
 
 impl SurgeHeader {
-    pub fn new_raw(url: RawSubUrl, interval: u64, strict: bool) -> Self {
+    pub fn new_raw(url: RawUrl, interval: u64, strict: bool) -> Self {
         Self::Raw {
             shebang: "#!MANAGED-CONFIG",
             url,

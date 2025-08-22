@@ -113,21 +113,6 @@ impl ConvertorConfig {
         Ok(config)
     }
 
-    pub fn server_addr(&self) -> color_eyre::Result<String> {
-        self.server
-            .host_str()
-            .and_then(|host| self.server.port().map(|port| format!("{host}:{port}")))
-            .ok_or_else(|| eyre!("服务器地址无效"))
-    }
-
-    pub fn server_origin(&self) -> color_eyre::Result<String> {
-        self.server
-            .origin()
-            .ascii_serialization()
-            .parse()
-            .wrap_err("服务器地址无效")
-    }
-
     pub fn enc_secret(&self) -> color_eyre::Result<String> {
         Ok(encrypt(self.secret.as_bytes(), &self.secret)?)
     }

@@ -27,7 +27,7 @@ fn test_url_builder(
         true,
     )?;
 
-    let raw_sub_url = url_builder.build_raw_sub_url();
+    let raw_sub_url = url_builder.build_raw_url();
     pretty_assertions::assert_str_eq!(format!("{uni_sub_url}&flag={client}"), raw_sub_url.to_string());
 
     let sub_url = url_builder.build_profile_url();

@@ -4,7 +4,7 @@ use crate::common::encrypt::{EncryptError, encrypt};
 use crate::core::profile::policy::Policy;
 use crate::core::profile::surge_header::{SurgeHeader, SurgeHeaderType};
 use crate::core::url_builder::profile_url::ProfileUrl;
-use crate::core::url_builder::raw_sub_url::RawSubUrl;
+use crate::core::url_builder::raw_url::RawUrl;
 use crate::core::url_builder::rule_provider_url::RuleProviderUrl;
 use crate::core::url_builder::sub_logs_url::SubLogsUrl;
 use crate::server::query::error::QueryError;
@@ -16,7 +16,7 @@ use thiserror::Error;
 use url::Url;
 
 pub mod profile_url;
-pub mod raw_sub_url;
+pub mod raw_url;
 pub mod rule_provider_url;
 pub mod sub_logs_url;
 
@@ -117,10 +117,10 @@ impl UrlBuilder {
         }
     }
 
-    pub fn build_raw_sub_url(&self) -> RawSubUrl {
+    pub fn build_raw_url(&self) -> RawUrl {
         let server = self.uni_sub_url.clone();
         let flag = self.client;
-        RawSubUrl { server, flag }
+        RawUrl { server, flag }
     }
 
     pub fn build_raw_profile_url(&self) -> ProfileUrl {
@@ -162,7 +162,7 @@ impl UrlBuilder {
 
     pub fn build_managed_config_header(&self, r#type: SurgeHeaderType) -> SurgeHeader {
         match r#type {
-            SurgeHeaderType::Raw => SurgeHeader::new_raw(self.build_raw_sub_url(), self.interval, self.strict),
+            SurgeHeaderType::Raw => SurgeHeader::new_raw(self.build_raw_url(), self.interval, self.strict),
             SurgeHeaderType::RawProfile => {
                 SurgeHeader::new_convertor(self.build_raw_profile_url(), self.interval, self.strict)
             }
