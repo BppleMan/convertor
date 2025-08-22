@@ -117,12 +117,14 @@ impl UrlBuilder {
         }
     }
 
+    // 构造直通 raw 订阅链接
     pub fn build_raw_url(&self) -> RawUrl {
         let server = self.uni_sub_url.clone();
         let flag = self.client;
         RawUrl { server, flag }
     }
 
+    // 构造转发 raw 订阅链接
     pub fn build_raw_profile_url(&self) -> ProfileUrl {
         let server = self.server.clone();
         let path = "/raw-profile".to_string();
@@ -130,6 +132,7 @@ impl UrlBuilder {
         ProfileUrl { server, path, query }
     }
 
+    // 构造转发的 profile 链接
     pub fn build_profile_url(&self) -> ProfileUrl {
         let server = self.server.clone();
         let path = "/profile".to_string();
@@ -137,6 +140,7 @@ impl UrlBuilder {
         ProfileUrl { server, path, query }
     }
 
+    // 构造转发的 规则集 链接
     pub fn build_rule_provider_url(&self, policy: &Policy) -> RuleProviderUrl {
         let server = self.server.clone();
         let path = "/rule-provider".to_string();
@@ -152,6 +156,7 @@ impl UrlBuilder {
         RuleProviderUrl { server, path, query }
     }
 
+    // 构造转发的 订阅日志 链接
     pub fn build_sub_logs_url(&self, page: usize, page_size: usize) -> Result<SubLogsUrl, ConvertorUrlError> {
         let server = self.server.clone();
         let path = "/sub-logs".to_string();
@@ -160,6 +165,7 @@ impl UrlBuilder {
         Ok(SubLogsUrl { server, path, query })
     }
 
+    // 构造专属 Surge 的订阅头
     pub fn build_managed_config_header(&self, r#type: SurgeHeaderType) -> SurgeHeader {
         match r#type {
             SurgeHeaderType::Raw => SurgeHeader::new_raw(self.build_raw_url(), self.interval, self.strict),
