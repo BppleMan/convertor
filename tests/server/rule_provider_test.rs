@@ -5,6 +5,8 @@ use axum::extract::Request;
 use convertor::common::config::provider::SubProvider;
 use convertor::common::config::proxy_client::ProxyClient;
 use convertor::core::profile::policy::Policy;
+use convertor::core::renderer::Renderer;
+use convertor::core::renderer::clash_renderer::ClashRenderer;
 use convertor::core::url_builder::HostPort;
 use http_body_util::BodyExt;
 use tower::ServiceExt;
@@ -52,9 +54,12 @@ async fn test_rule_provider_surge_boslife() -> color_eyre::Result<()> {
     let server_context = start_server().await?;
     let policies = policies();
     for policy in policies {
-        let ctx = format!("{}_{}_{:?}", ProxyClient::Surge, SubProvider::BosLife, policy);
+        let ctx = format!(
+            "test_rule_provider_surge_boslife_{}",
+            ClashRenderer::render_provider_name_for_policy(&policy)?
+        );
         let actual = rule_provider(&server_context, ProxyClient::Surge, SubProvider::BosLife, policy).await?;
-        insta::assert_snapshot!(actual, ctx);
+        insta::assert_snapshot!(ctx, actual);
     }
     Ok(())
 }
@@ -65,9 +70,12 @@ async fn test_rule_provider_clash_boslife() -> color_eyre::Result<()> {
     let server_context = start_server().await?;
     let policies = policies();
     for policy in policies {
-        let ctx = format!("{}_{}_{:?}", ProxyClient::Surge, SubProvider::BosLife, policy);
+        let ctx = format!(
+            "test_rule_provider_clash_boslife_{}",
+            ClashRenderer::render_provider_name_for_policy(&policy)?
+        );
         let actual = rule_provider(&server_context, ProxyClient::Clash, SubProvider::BosLife, policy).await?;
-        insta::assert_snapshot!(actual, ctx);
+        insta::assert_snapshot!(ctx, actual);
     }
     Ok(())
 }

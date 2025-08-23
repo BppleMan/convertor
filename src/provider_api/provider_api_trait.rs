@@ -87,7 +87,7 @@ pub(super) trait ProviderApiTrait {
                         let body = response.bytes().await?;
                         let content = String::from_utf8_lossy(&body).to_string();
                         let content = format!("{}\n{}\n响应体: {}", status, headers, content);
-                        let error_report = eyre!("获取原始订阅文件失败: {}", content);
+                        let error_report = eyre!("获取原始订阅文件失败:\n{}", content);
                         Err(error_report)
                     }
                 },

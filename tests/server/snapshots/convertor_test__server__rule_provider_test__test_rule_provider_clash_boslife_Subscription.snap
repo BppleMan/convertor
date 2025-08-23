@@ -1,0 +1,6 @@
+---
+source: tests/server/rule_provider_test.rs
+expression: actual
+---
+payload:
+    - DOMAIN,localhost

@@ -1,0 +1,5 @@
+---
+source: tests/server/rule_provider_test.rs
+expression: actual
+---
+DOMAIN,trdy.subiway.com:8888
