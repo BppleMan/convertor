@@ -1,5 +1,5 @@
-use crate::common::config::provider::SubProvider;
-use crate::common::config::proxy_client::ProxyClient;
+use crate::common::config::provider_config::Provider;
+use crate::common::config::proxy_client_config::ProxyClient;
 use crate::common::encrypt::{EncryptError, encrypt};
 use crate::core::convertor_url::{ConvertorUrl, ConvertorUrlType};
 use crate::core::profile::policy::Policy;
@@ -14,7 +14,7 @@ pub struct UrlBuilder {
     pub secret: String,
     pub enc_secret: String,
     pub client: ProxyClient,
-    pub provider: SubProvider,
+    pub provider: Provider,
     pub server: Url,
     pub sub_url: Url,
     pub enc_sub_url: String,
@@ -28,7 +28,7 @@ impl UrlBuilder {
         secret: impl AsRef<str>,
         enc_secret: Option<String>,
         client: ProxyClient,
-        provider: SubProvider,
+        provider: Provider,
         server: Url,
         sub_url: Url,
         enc_sub_url: Option<String>,
@@ -90,7 +90,7 @@ impl UrlBuilder {
         secret: impl AsRef<str>,
         server: Url,
         client: ProxyClient,
-        provider: SubProvider,
+        provider: Provider,
     ) -> Result<Self, UrlBuilderError> {
         let secret = secret.as_ref();
         match url.query() {

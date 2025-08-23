@@ -1,6 +1,6 @@
-use crate::common::config::provider::{ApiConfig, CredentialConfig};
-use crate::common::config::proxy_client::ProxyClient;
-use crate::common::config::request::RequestConfig;
+use crate::common::config::provider_config::{ApiConfig, CredentialConfig};
+use crate::common::config::proxy_client_config::ProxyClient;
+use crate::common::config::request_config::RequestConfig;
 use serde::{Deserialize, Serialize};
 use url::Url;
 

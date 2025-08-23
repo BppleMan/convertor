@@ -1,5 +1,5 @@
 use crate::common::config::ConvertorConfig;
-use crate::common::config::provider::SubProvider;
+use crate::common::config::provider_config::Provider;
 use crate::common::ext::WatchDebounceExt;
 use crate::common::redis_info::REDIS_CONVERTOR_CONFIG_PUBLISH_CHANNEL;
 use crate::provider_api::ProviderApi;
@@ -27,7 +27,7 @@ pub mod service;
 pub async fn start_server(
     listen_addr: SocketAddrV4,
     config: ConvertorConfig,
-    api_map: HashMap<SubProvider, ProviderApi>,
+    api_map: HashMap<Provider, ProviderApi>,
     base_dir: impl AsRef<Path>,
     client: redis::Client,
 ) -> Result<()> {

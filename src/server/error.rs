@@ -1,4 +1,4 @@
-use crate::common::config::proxy_client::ProxyClient;
+use crate::common::config::proxy_client_config::ProxyClient;
 use crate::core::url_builder::UrlBuilderError;
 use crate::server::query::QueryError;
 use axum::http::StatusCode;

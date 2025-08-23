@@ -1,6 +1,6 @@
 use crate::common::config::ConvertorConfig;
-use crate::common::config::provider::SubProvider;
-use crate::common::config::proxy_client::{ClashConfig, ProxyClient, ProxyClientConfig, SurgeConfig};
+use crate::common::config::provider_config::Provider;
+use crate::common::config::proxy_client_config::{ClashConfig, ProxyClient, ProxyClientConfig, SurgeConfig};
 use crate::core::convertor_url::{ConvertorUrl, ConvertorUrlType};
 use crate::core::profile::Profile;
 use crate::core::profile::clash_profile::ClashProfile;
@@ -35,8 +35,8 @@ pub struct ProviderCmd {
     pub client: ProxyClient,
 
     /// 订阅提供商
-    #[arg(value_enum, default_value_t = SubProvider::BosLife)]
-    pub provider: SubProvider,
+    #[arg(value_enum, default_value_t = Provider::BosLife)]
+    pub provider: Provider,
 
     /// convertor 所在服务器的地址
     /// 格式为 `http://ip:port`
@@ -79,7 +79,7 @@ pub enum UrlSource {
 
 pub struct ProviderCli {
     pub config: ConvertorConfig,
-    pub api_map: HashMap<SubProvider, ProviderApi>,
+    pub api_map: HashMap<Provider, ProviderApi>,
 }
 
 #[allow(clippy::large_enum_variant)]
@@ -89,7 +89,7 @@ enum ClientProfile {
 }
 
 impl ProviderCli {
-    pub fn new(config: ConvertorConfig, api_map: HashMap<SubProvider, ProviderApi>) -> Self {
+    pub fn new(config: ConvertorConfig, api_map: HashMap<Provider, ProviderApi>) -> Self {
         Self { config, api_map }
     }
 
@@ -105,7 +105,7 @@ impl ProviderCli {
         let raw_profile_content = api
             .get_raw_profile(client, UserAgent::from_static("Surge Mac/8310"))
             .await?;
-        let uni_sub_host_port = url_builder.sub_url.host_port()?;
+        let sub_host = url_builder.sub_url.host_port()?;
         let (client_profile, policies) = match client {
             ProxyClient::Surge => {
                 let mut raw_profile = SurgeProfile::parse(raw_profile_content)?;
@@ -116,7 +116,7 @@ impl ProviderCli {
             }
             ProxyClient::Clash => {
                 let raw_profile = ClashProfile::parse(raw_profile_content)?;
-                let policies = extract_policies_for_rule_provider(&raw_profile.rules, uni_sub_host_port);
+                let policies = extract_policies_for_rule_provider(&raw_profile.rules, sub_host);
                 (ClientProfile::Clash(raw_profile), policies)
             }
         };

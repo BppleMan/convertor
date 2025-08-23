@@ -1,4 +1,4 @@
-use crate::common::config::proxy_client::ProxyClient;
+use crate::common::config::proxy_client_config::ProxyClient;
 use crate::core::profile::policy::Policy;
 use crate::core::profile::proxy::Proxy;
 use crate::core::profile::proxy_group::{ProxyGroup, ProxyGroupType};
@@ -61,14 +61,14 @@ pub fn extract_policies(rules: &[Rule]) -> Vec<Policy> {
     policies
 }
 
-pub fn extract_policies_for_rule_provider(rules: &[Rule], uni_sub_host_port: impl AsRef<str>) -> Vec<Policy> {
+pub fn extract_policies_for_rule_provider(rules: &[Rule], sub_host: impl AsRef<str>) -> Vec<Policy> {
     let mut policies = rules
         .iter()
         .map(|rule| {
             if rule
                 .value
                 .as_ref()
-                .map(|v| v.contains(uni_sub_host_port.as_ref()))
+                .map(|v| v.contains(sub_host.as_ref()))
                 .unwrap_or(false)
             {
                 Policy::subscription_policy()
@@ -153,7 +153,7 @@ pub trait Profile {
 
     #[instrument(skip_all)]
     fn optimize_rules(&mut self, url_builder: &UrlBuilder) -> ParseResult<()> {
-        let uni_sub_host_port = url_builder.sub_url.host_port()?;
+        let sub_host = url_builder.sub_url.host_port()?;
         let inner_span = span!(tracing::Level::INFO, "拆分内置规则和其他规则");
         let _guard = inner_span.entered();
         let (built_in_rules, other_rules): (Vec<Rule>, Vec<Rule>) = self
@@ -165,7 +165,7 @@ pub trait Profile {
         let inner_span = span!(tracing::Level::INFO, "处理其它规则");
         let _guard = inner_span.entered();
         for mut rule in other_rules {
-            if rule.value.as_ref().map(|v| v.contains(&uni_sub_host_port)) == Some(true) {
+            if rule.value.as_ref().map(|v| v.contains(&sub_host)) == Some(true) {
                 let inner_span = span!(tracing::Level::INFO, "Rule 转换为 ProviderRule");
                 let _inner_guard = inner_span.entered();
                 rule.policy.is_subscription = true;

@@ -1,12 +1,12 @@
-use crate::common::config::provider::{SubProvider, SubProviderConfig};
-use crate::common::config::proxy_client::ProxyClientConfig;
+use crate::common::config::provider_config::{Provider, ProviderConfig};
+use crate::common::config::proxy_client_config::ProxyClientConfig;
 use crate::common::encrypt::{decrypt, encrypt};
 use crate::common::redis_info::REDIS_CONVERTOR_CONFIG_KEY;
 use crate::core::url_builder::UrlBuilder;
 use color_eyre::Report;
 use color_eyre::eyre::{WrapErr, eyre};
 use dispatch_map::DispatchMap;
-use proxy_client::ProxyClient;
+use proxy_client_config::ProxyClient;
 use redis::AsyncTypedCommands;
 use redis::aio::MultiplexedConnection;
 use serde::{Deserialize, Serialize};
@@ -16,16 +16,15 @@ use std::str::FromStr;
 use tracing::{error, warn};
 use url::Url;
 
-pub mod config_cmd;
-pub mod provider;
-pub mod proxy_client;
-pub mod request;
+pub mod provider_config;
+pub mod proxy_client_config;
+pub mod request_config;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConvertorConfig {
     pub secret: String,
     pub server: Url,
-    pub providers: DispatchMap<SubProvider, SubProviderConfig>,
+    pub providers: DispatchMap<Provider, ProviderConfig>,
     #[serde(default)]
     pub clients: DispatchMap<ProxyClient, ProxyClientConfig>,
 }
@@ -36,7 +35,7 @@ impl ConvertorConfig {
         let server = Url::parse("http://127.0.0.1:8080").expect("不合法的服务器地址");
 
         let mut providers = DispatchMap::default();
-        providers.insert(SubProvider::BosLife, SubProviderConfig::boslife_template());
+        providers.insert(Provider::BosLife, ProviderConfig::boslife_template());
 
         let mut clients = DispatchMap::default();
         clients.insert(ProxyClient::Surge, ProxyClientConfig::surge_template());
@@ -106,9 +105,9 @@ impl ConvertorConfig {
         Ok(encrypt(self.secret.as_bytes(), &self.secret)?)
     }
 
-    pub fn create_url_builder(&self, client: ProxyClient, provider: SubProvider) -> color_eyre::Result<UrlBuilder> {
+    pub fn create_url_builder(&self, client: ProxyClient, provider: Provider) -> color_eyre::Result<UrlBuilder> {
         let sub_url = match self.providers.get(&provider) {
-            Some(SubProviderConfig::BosLife(provider_config)) => provider_config.sub_url.clone(),
+            Some(ProviderConfig::BosLife(provider_config)) => provider_config.sub_url.clone(),
             None => return Err(eyre!("未找到提供商配置: [providers.{}]", provider)),
         };
         let (interval, strict) = match self.clients.get(&client) {

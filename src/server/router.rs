@@ -1,6 +1,6 @@
-use crate::common::config::provider::SubProvider;
-use crate::common::config::proxy_client::ProxyClient;
-use crate::provider_api::boslife_log::BosLifeLogs;
+use crate::common::config::provider_config::Provider;
+use crate::common::config::proxy_client_config::ProxyClient;
+use crate::provider_api::BosLifeLogs;
 use crate::server::AppState;
 use crate::server::error::AppError;
 use crate::server::query::ConvertorQuery;
@@ -41,7 +41,7 @@ pub fn router(app_state: AppState) -> Router {
 }
 
 pub async fn raw_profile(
-    Path((client, provider)): Path<(ProxyClient, SubProvider)>,
+    Path((client, provider)): Path<(ProxyClient, Provider)>,
     Host(host): Host,
     scheme: Option<OptionalScheme>,
     TypedHeader(user_agent): TypedHeader<UserAgent>,
@@ -69,7 +69,7 @@ pub async fn raw_profile(
 
 #[instrument(skip_all)]
 pub async fn profile(
-    Path((client, provider)): Path<(ProxyClient, SubProvider)>,
+    Path((client, provider)): Path<(ProxyClient, Provider)>,
     Host(host): Host,
     scheme: Option<OptionalScheme>,
     TypedHeader(user_agent): TypedHeader<UserAgent>,
@@ -98,7 +98,7 @@ pub async fn profile(
 
 #[instrument(skip_all)]
 pub async fn rule_provider(
-    Path((client, provider)): Path<(ProxyClient, SubProvider)>,
+    Path((client, provider)): Path<(ProxyClient, Provider)>,
     Host(host): Host,
     scheme: Option<OptionalScheme>,
     TypedHeader(user_agent): TypedHeader<UserAgent>,
@@ -126,7 +126,7 @@ pub async fn rule_provider(
 }
 
 pub async fn sub_logs(
-    Path((client, provider)): Path<(ProxyClient, SubProvider)>,
+    Path((client, provider)): Path<(ProxyClient, Provider)>,
     Host(host): Host,
     scheme: Option<OptionalScheme>,
     State(state): State<Arc<AppState>>,

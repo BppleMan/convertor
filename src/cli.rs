@@ -1,7 +1,8 @@
+use crate::cli::config_cli::ConfigCmd;
 use crate::cli::provider_cli::ProviderCmd;
-use crate::common::config::config_cmd::ConfigCmd;
 use clap::Subcommand;
 
+pub mod config_cli;
 pub mod provider_cli;
 
 #[derive(Debug, Clone, Subcommand)]

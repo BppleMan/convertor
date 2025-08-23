@@ -1,5 +1,5 @@
-use crate::common::config::provider::{ParseProviderError, SubProvider};
-use crate::common::config::proxy_client::{ParseClientError, ProxyClient};
+use crate::common::config::provider_config::{ParseProviderError, Provider};
+use crate::common::config::proxy_client_config::{ParseClientError, ProxyClient};
 use crate::common::encrypt::{EncryptError, decrypt};
 use crate::core::profile::policy::Policy;
 use percent_encoding::{percent_decode_str, utf8_percent_encode};
@@ -14,7 +14,7 @@ pub struct ConvertorQuery {
     // common
     pub server: Url,
     pub client: ProxyClient,
-    pub provider: SubProvider,
+    pub provider: Provider,
     pub sub_url: Url,
     pub enc_sub_url: String,
     pub interval: u64,
@@ -36,7 +36,7 @@ impl ConvertorQuery {
         secret: impl AsRef<str>,
         server: Url,
         client: ProxyClient,
-        provider: SubProvider,
+        provider: Provider,
     ) -> Result<Self, QueryError> {
         let query_string = query_string.as_ref();
         let secret = secret.as_ref();

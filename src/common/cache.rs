@@ -1,4 +1,4 @@
-use crate::common::config::proxy_client::ProxyClient;
+use crate::common::config::proxy_client_config::ProxyClient;
 use color_eyre::Report;
 use moka::future::Cache as MokaCache;
 use redis::AsyncTypedCommands;

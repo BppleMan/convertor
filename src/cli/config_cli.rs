@@ -31,11 +31,11 @@ pub enum ConfigCmdOption {
     Redis,
 }
 
-pub struct ConfigCmdExecutor {
+pub struct ConfigCli {
     pub cmd: ConfigCmd,
 }
 
-impl ConfigCmdExecutor {
+impl ConfigCli {
     pub fn new(cmd: ConfigCmd) -> Self {
         Self { cmd }
     }

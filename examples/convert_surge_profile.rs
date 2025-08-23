@@ -1,8 +1,8 @@
 use axum_extra::headers::UserAgent;
 use color_eyre::eyre::eyre;
 use convertor::common::config::ConvertorConfig;
-use convertor::common::config::provider::SubProvider;
-use convertor::common::config::proxy_client::ProxyClient;
+use convertor::common::config::provider_config::Provider;
+use convertor::common::config::proxy_client_config::ProxyClient;
 use convertor::common::once::{init_backtrace, init_base_dir};
 use convertor::common::redis_info::{redis_client, redis_url};
 use convertor::core::profile::Profile;
@@ -19,7 +19,7 @@ async fn main() -> color_eyre::Result<()> {
     // 确定适用的客户端和订阅提供者
     // 这里使用 Surge 客户端和 BosLife 机场
     let client = ProxyClient::Surge;
-    let provider = SubProvider::BosLife;
+    let provider = Provider::BosLife;
 
     // 搜索可用配置文件
     let config = ConvertorConfig::search(&base_dir, Option::<&str>::None)?;
@@ -40,7 +40,7 @@ async fn main() -> color_eyre::Result<()> {
     // 解析原始配置文件内容为 SurgeProfile 对象
     let mut profile = SurgeProfile::parse(raw_sub_content)?;
     // 创建 UrlBuilder 对象, 该 UrlBuilder 可用于创建适用于 Surge 的且使用 BosLife 订阅的 URL
-    let url_builder = config.create_url_builder(ProxyClient::Surge, SubProvider::BosLife)?;
+    let url_builder = config.create_url_builder(ProxyClient::Surge, Provider::BosLife)?;
     // 转换 SurgeProfile 对象
     // 传入 UrlBuilder 对象有两个作用
     // - 用于生成 Surge 配置的托管链接

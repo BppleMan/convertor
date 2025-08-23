@@ -14,7 +14,7 @@ async fn main() -> color_eyre::Result<()> {
     let config = ConvertorConfig::search(&base_dir, Option::<&str>::None)?;
     let api_map = ProviderApi::create_api(config.providers, connection_manager);
     let api = api_map
-        .get(&convertor::common::config::provider::SubProvider::BosLife)
+        .get(&convertor::common::config::provider_config::Provider::BosLife)
         .ok_or_else(|| color_eyre::eyre::eyre!("未找到 BosLife 订阅提供者"))?;
 
     let logs = api.get_sub_logs().await?;

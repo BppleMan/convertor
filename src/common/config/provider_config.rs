@@ -13,31 +13,31 @@ use url::Url;
 #[derive(ValueEnum, Serialize, Deserialize)]
 #[derive(Display, IntoStaticStr, AsRefStr, VariantArray, EnumString)]
 #[serde(rename_all = "lowercase")]
-pub enum SubProvider {
+pub enum Provider {
     #[default]
     BosLife,
 }
 
-impl SubProvider {
+impl Provider {
     pub fn providers() -> [Self; 1] {
-        [SubProvider::BosLife]
+        [Provider::BosLife]
     }
 
     pub fn as_str(&self) -> &'static str {
         match self {
-            SubProvider::BosLife => "boslife",
+            Provider::BosLife => "boslife",
         }
     }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 #[serde(untagged)]
-pub enum SubProviderConfig {
+pub enum ProviderConfig {
     BosLife(BosLifeConfig),
 }
 
 dispatch_pattern! {
-    SubProvider::BosLife => SubProviderConfig::BosLife(BosLifeConfig),
+    Provider::BosLife => ProviderConfig::BosLife(BosLifeConfig),
 }
 
 #[derive(Default, Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
@@ -46,15 +46,15 @@ pub struct CredentialConfig {
     pub password: String,
 }
 
-impl SubProviderConfig {
+impl ProviderConfig {
     pub fn sub_url(&self) -> &Url {
         match self {
-            SubProviderConfig::BosLife(config) => &config.sub_url,
+            ProviderConfig::BosLife(config) => &config.sub_url,
         }
     }
 
     pub fn boslife_template() -> Self {
-        SubProviderConfig::BosLife(BosLifeConfig::template())
+        ProviderConfig::BosLife(BosLifeConfig::template())
     }
 }
 

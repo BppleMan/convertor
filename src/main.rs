@@ -1,9 +1,9 @@
 use clap::Parser;
 use color_eyre::Result;
 use convertor::cli::ConvertorCommand;
+use convertor::cli::config_cli::ConfigCli;
 use convertor::cli::provider_cli::ProviderCli;
 use convertor::common::config::ConvertorConfig;
-use convertor::common::config::config_cmd::ConfigCmdExecutor;
 use convertor::common::once::{init_backtrace, init_base_dir, init_log};
 use convertor::common::redis_info::{init_redis_info, redis_client, redis_url};
 use convertor::provider_api::ProviderApi;
@@ -39,7 +39,7 @@ async fn main() -> Result<()> {
     let redis_client = redis_client(redis_url())?;
     match args.command.take() {
         Some(ConvertorCommand::Config(config_cmd)) => {
-            ConfigCmdExecutor::new(config_cmd).execute(redis_client).await?;
+            ConfigCli::new(config_cmd).execute(redis_client).await?;
         }
         other => {
             let connection = redis_client.get_multiplexed_async_connection().await?;

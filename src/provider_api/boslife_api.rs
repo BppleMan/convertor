@@ -1,13 +1,14 @@
 use crate::common::cache::Cache;
-use crate::common::config::provider::{ApiConfig, BosLifeConfig};
-use crate::common::config::proxy_client::ProxyClient;
-use crate::common::config::request::RequestConfig;
+use crate::common::config::provider_config::{ApiConfig, BosLifeConfig};
+use crate::common::config::proxy_client_config::ProxyClient;
+use crate::common::config::request_config::RequestConfig;
 use crate::common::ext::NonEmptyOptStr;
-use crate::provider_api::boslife_log::BosLifeLogs;
 use crate::provider_api::provider_api_trait::ProviderApiTrait;
 use redis::aio::ConnectionManager;
 use reqwest::Client as ReqwestClient;
 use reqwest::{Method, Request, Url};
+use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 
 #[derive(Clone)]
 pub struct BosLifeApi {
@@ -129,5 +130,32 @@ impl ProviderApiTrait for BosLifeApi {
 
     fn cached_sub_logs(&self) -> &Cache<String, BosLifeLogs> {
         &self.cached_sub_logs
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BosLifeLog {
+    pub user_id: u64,
+    pub ip: String,
+    pub location: String,
+    pub isp: String,
+    pub host: String,
+    pub ua: String,
+    pub created_at: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BosLifeLogs(pub Vec<BosLifeLog>);
+
+impl Display for BosLifeLogs {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let string = serde_json::to_string_pretty(self).expect("JSON serialization failed");
+        write!(f, "{}", string)
+    }
+}
+
+impl From<String> for BosLifeLogs {
+    fn from(value: String) -> Self {
+        serde_json::from_str(&value).expect("JSON deserialization failed")
     }
 }

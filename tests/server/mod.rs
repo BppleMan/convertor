@@ -2,8 +2,8 @@ use axum::Router;
 use axum::routing::get;
 use color_eyre::Report;
 use convertor::common::config::ConvertorConfig;
-use convertor::common::config::provider::{BosLifeConfig, SubProvider, SubProviderConfig};
-use convertor::common::config::proxy_client::ProxyClient;
+use convertor::common::config::provider_config::{BosLifeConfig, Provider, ProviderConfig};
+use convertor::common::config::proxy_client_config::ProxyClient;
 use convertor::common::redis_info::{REDIS_CONVERTOR_PASSWORD, REDIS_CONVERTOR_USERNAME, REDIS_ENDPOINT};
 use convertor::core::url_builder::HostPort;
 use convertor::provider_api::ProviderApi;
@@ -52,12 +52,10 @@ pub async fn start_server() -> color_eyre::Result<ServerContext> {
     Ok(ServerContext { app, app_state })
 }
 
-pub async fn start_mock_provider_server(
-    providers: &mut DispatchMap<SubProvider, SubProviderConfig>,
-) -> Result<(), Report> {
+pub async fn start_mock_provider_server(providers: &mut DispatchMap<Provider, ProviderConfig>) -> Result<(), Report> {
     for (_, config) in providers.iter_mut() {
         match config {
-            SubProviderConfig::BosLife(config) => config.start_mock_provider_server().await?,
+            ProviderConfig::BosLife(config) => config.start_mock_provider_server().await?,
         };
     }
     Ok(())

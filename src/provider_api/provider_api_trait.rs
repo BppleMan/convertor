@@ -1,11 +1,11 @@
 use crate::common::cache::{
     CACHED_AUTH_TOKEN_KEY, CACHED_PROFILE_KEY, CACHED_SUB_LOGS_KEY, CACHED_SUB_URL_KEY, Cache, CacheKey,
 };
-use crate::common::config::provider::ApiConfig;
-use crate::common::config::proxy_client::ProxyClient;
-use crate::common::config::request::RequestConfig;
+use crate::common::config::provider_config::ApiConfig;
+use crate::common::config::proxy_client_config::ProxyClient;
+use crate::common::config::request_config::RequestConfig;
 use crate::common::ext::NonEmptyOptStr;
-use crate::provider_api::boslife_log::BosLifeLogs;
+use crate::provider_api::boslife_api::BosLifeLogs;
 use axum::http::HeaderValue;
 use axum_extra::headers::UserAgent;
 use color_eyre::eyre::{Context, eyre};

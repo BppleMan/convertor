@@ -2,11 +2,11 @@ use color_eyre::Report;
 use color_eyre::eyre::eyre;
 use convertor::cli::provider_cli::{ProviderCli, ProviderCmd};
 use convertor::common::config::ConvertorConfig;
-use convertor::common::config::proxy_client::ProxyClient;
+use convertor::common::config::proxy_client_config::ProxyClient;
 use convertor::provider_api::ProviderApi;
 
 use crate::server::{redis_url, start_mock_provider_server};
-use convertor::common::config::provider::SubProvider;
+use convertor::common::config::provider_config::Provider;
 use convertor::common::redis_info::{init_redis_info, redis_client};
 use convertor::core::url_builder::HostPort;
 use pretty_assertions::assert_str_eq;
@@ -27,7 +27,7 @@ pub async fn connection_manager() -> redis::aio::ConnectionManager {
         .expect("无法创建 Redis 连接管理器")
 }
 
-pub fn get_cmds(client: ProxyClient, provider: SubProvider) -> [ProviderCmd; 3] {
+pub fn get_cmds(client: ProxyClient, provider: Provider) -> [ProviderCmd; 3] {
     [
         ProviderCmd {
             client,
@@ -54,7 +54,7 @@ async fn test_subscription(
     convertor_config: &ConvertorConfig,
     connection_manager: redis::aio::ConnectionManager,
     client: ProxyClient,
-    provider: SubProvider,
+    provider: Provider,
     cmd: ProviderCmd,
 ) -> Result<(), Report> {
     let convertor_config = convertor_config.clone();
@@ -145,7 +145,7 @@ async fn test_subscription_surge_boslife() -> color_eyre::Result<()> {
     let convertor_config = convertor_config().await;
     let connection_manager = connection_manager().await;
     let client = ProxyClient::Surge;
-    let provider = SubProvider::BosLife;
+    let provider = Provider::BosLife;
     let cmds = get_cmds(client, provider);
     for cmd in cmds {
         test_subscription(&convertor_config, connection_manager.clone(), client, provider, cmd).await?;
@@ -158,7 +158,7 @@ async fn test_subscription_clash_boslife() -> color_eyre::Result<()> {
     let convertor_config = convertor_config().await;
     let connection_manager = connection_manager().await;
     let client = ProxyClient::Clash;
-    let provider = SubProvider::BosLife;
+    let provider = Provider::BosLife;
     let cmds = get_cmds(client, provider);
     for cmd in cmds {
         test_subscription(&convertor_config, connection_manager.clone(), client, provider, cmd).await?;

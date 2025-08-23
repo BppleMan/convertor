@@ -1,11 +1,11 @@
 use crate::init_test;
-use convertor::common::config::provider::SubProvider;
-use convertor::common::config::proxy_client::ProxyClient;
+use convertor::common::config::provider_config::Provider;
+use convertor::common::config::proxy_client_config::ProxyClient;
 use convertor::core::profile::policy::Policy;
 use convertor::core::url_builder::UrlBuilder;
 use url::Url;
 
-fn test_url_builder(client: ProxyClient, provider: SubProvider) -> color_eyre::Result<()> {
+fn test_url_builder(client: ProxyClient, provider: Provider) -> color_eyre::Result<()> {
     let server = Url::parse("http://127.0.0.1:8001")?;
     let sub_url = Url::parse("https://example.com/subscription?token=12345")?;
     let secret = "my_secret_key";
@@ -47,5 +47,5 @@ fn test_url_builder(client: ProxyClient, provider: SubProvider) -> color_eyre::R
 #[test]
 fn test_url_builder_surge_boslife() -> color_eyre::Result<()> {
     init_test();
-    test_url_builder(ProxyClient::Surge, SubProvider::BosLife)
+    test_url_builder(ProxyClient::Surge, Provider::BosLife)
 }

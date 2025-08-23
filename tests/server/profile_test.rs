@@ -2,15 +2,15 @@ use crate::init_test;
 use crate::server::{ServerContext, start_server};
 use axum::body::Body;
 use axum::extract::Request;
-use convertor::common::config::provider::SubProvider;
-use convertor::common::config::proxy_client::ProxyClient;
+use convertor::common::config::provider_config::Provider;
+use convertor::common::config::proxy_client_config::ProxyClient;
 use http_body_util::BodyExt;
 use tower::ServiceExt;
 
 async fn profile(
     server_context: &ServerContext,
     client: ProxyClient,
-    provider: SubProvider,
+    provider: Provider,
 ) -> color_eyre::Result<String> {
     let ServerContext { app, app_state, .. } = server_context;
     let url_builder = app_state.config.create_url_builder(client, provider)?;
@@ -37,7 +37,7 @@ async fn profile(
 async fn test_profile_surge_boslife() -> color_eyre::Result<()> {
     init_test();
     let server_context = start_server().await?;
-    let actual = profile(&server_context, ProxyClient::Surge, SubProvider::BosLife).await?;
+    let actual = profile(&server_context, ProxyClient::Surge, Provider::BosLife).await?;
     insta::assert_snapshot!(actual);
     Ok(())
 }
@@ -46,7 +46,7 @@ async fn test_profile_surge_boslife() -> color_eyre::Result<()> {
 async fn test_profile_clash_boslife() -> color_eyre::Result<()> {
     init_test();
     let server_context = start_server().await?;
-    let actual = profile(&server_context, ProxyClient::Clash, SubProvider::BosLife).await?;
+    let actual = profile(&server_context, ProxyClient::Clash, Provider::BosLife).await?;
     insta::assert_snapshot!(actual);
     Ok(())
 }

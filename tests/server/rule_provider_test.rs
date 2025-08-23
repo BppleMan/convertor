@@ -2,8 +2,8 @@ use crate::init_test;
 use crate::server::{ServerContext, start_server};
 use axum::body::Body;
 use axum::extract::Request;
-use convertor::common::config::provider::SubProvider;
-use convertor::common::config::proxy_client::ProxyClient;
+use convertor::common::config::provider_config::Provider;
+use convertor::common::config::proxy_client_config::ProxyClient;
 use convertor::core::profile::policy::Policy;
 use convertor::core::renderer::Renderer;
 use convertor::core::renderer::clash_renderer::ClashRenderer;
@@ -14,7 +14,7 @@ use tower::ServiceExt;
 async fn rule_provider(
     server_context: &ServerContext,
     client: ProxyClient,
-    provider: SubProvider,
+    provider: Provider,
     policy: Policy,
 ) -> color_eyre::Result<String> {
     let ServerContext { app, app_state, .. } = server_context;
@@ -58,7 +58,7 @@ async fn test_rule_provider_surge_boslife() -> color_eyre::Result<()> {
             "test_rule_provider_surge_boslife_{}",
             ClashRenderer::render_provider_name_for_policy(&policy)?
         );
-        let actual = rule_provider(&server_context, ProxyClient::Surge, SubProvider::BosLife, policy).await?;
+        let actual = rule_provider(&server_context, ProxyClient::Surge, Provider::BosLife, policy).await?;
         insta::assert_snapshot!(ctx, actual);
     }
     Ok(())
@@ -74,7 +74,7 @@ async fn test_rule_provider_clash_boslife() -> color_eyre::Result<()> {
             "test_rule_provider_clash_boslife_{}",
             ClashRenderer::render_provider_name_for_policy(&policy)?
         );
-        let actual = rule_provider(&server_context, ProxyClient::Clash, SubProvider::BosLife, policy).await?;
+        let actual = rule_provider(&server_context, ProxyClient::Clash, Provider::BosLife, policy).await?;
         insta::assert_snapshot!(ctx, actual);
     }
     Ok(())
