@@ -1,52 +1,30 @@
-use crate::{CLASH_MOCK_DIR, SURGE_MOCK_DIR, init_test};
+use crate::{CLASH_MOCK_DIR, SURGE_MOCK_DIR};
 use axum::Router;
 use axum::routing::get;
 use color_eyre::Report;
 use color_eyre::eyre::eyre;
-use convertor::api::SubProviderWrapper;
 use convertor::common::config::ConvertorConfig;
+use convertor::common::config::provider::{BosLifeConfig, SubProvider, SubProviderConfig};
 use convertor::common::config::proxy_client::ProxyClient;
-use convertor::common::config::sub_provider::{BosLifeConfig, SubProvider, SubProviderConfig};
-use convertor::common::redis_info::{
-    REDIS_CONVERTOR_PASSWORD, REDIS_CONVERTOR_USERNAME, REDIS_ENDPOINT, init_redis_info, redis_client,
-};
-use convertor::core::profile::policy::Policy;
-use convertor::core::renderer::Renderer;
-use convertor::core::renderer::clash_renderer::ClashRenderer;
+use convertor::common::redis_info::{REDIS_CONVERTOR_PASSWORD, REDIS_CONVERTOR_USERNAME, REDIS_ENDPOINT};
 use convertor::core::url_builder::HostPort;
+use convertor::provider_api::ProviderApi;
 use convertor::server::app_state::AppState;
-use convertor::server::router::{profile, rule_provider, sub_logs};
+use convertor::server::router::{profile, raw_profile, rule_provider};
 use dispatch_map::DispatchMap;
 use httpmock::Method::{GET, POST};
 use httpmock::MockServer;
 use moka::future::Cache;
-use redis::aio::ConnectionManager;
-use rstest::fixture;
 use std::sync::{Arc, LazyLock};
-use std::thread;
+use strum::VariantArray;
 use url::Url;
 
 mod profile_test;
-pub mod server_test;
+pub mod rule_provider_test;
 
 pub struct ServerContext {
     pub app: Router,
     pub app_state: Arc<AppState>,
-}
-
-#[fixture]
-#[once]
-pub fn server_context() -> ServerContext {
-    thread::spawn(|| {
-        let rt = tokio::runtime::Builder::new_current_thread()
-            .enable_io()
-            .enable_time()
-            .build()
-            .unwrap();
-        rt.block_on(async { start_server().await.unwrap() })
-    })
-    .join()
-    .unwrap()
 }
 
 pub fn redis_url() -> String {
@@ -66,15 +44,12 @@ pub async fn start_server() -> color_eyre::Result<ServerContext> {
     let mut config = ConvertorConfig::template();
     start_mock_provider_server(&mut config.providers).await?;
 
-    init_redis_info()?;
-    let redis = redis_client(redis_url())?;
-    let connection_manager = ConnectionManager::new(redis).await?;
-    let api = SubProviderWrapper::create_api(config.providers.clone(), connection_manager);
+    let api = ProviderApi::create_api_no_redis(config.providers.clone());
     let app_state = Arc::new(AppState::new(config, api));
     let app: Router = Router::new()
-        .route("/profile", get(profile))
-        .route("/rule-provider", get(rule_provider))
-        .route("/sub-logs", get(sub_logs))
+        .route("/raw-profile/{client}/{provider}", get(raw_profile))
+        .route("/profile/{client}/{provider}", get(profile))
+        .route("/rule-provider/{client}/{provider}", get(rule_provider))
         .with_state(app_state.clone());
 
     Ok(ServerContext { app, app_state })
@@ -86,7 +61,6 @@ static CACHED_MOCK_SERVER: LazyLock<Cache<SubProviderConfig, Arc<MockServer>>> =
 pub async fn start_mock_provider_server(
     providers: &mut DispatchMap<SubProvider, SubProviderConfig>,
 ) -> Result<(), Report> {
-    init_test();
     for (_, config) in providers.iter_mut() {
         CACHED_MOCK_SERVER
             .try_get_with(config.clone(), async {
@@ -108,7 +82,6 @@ pub(crate) trait MockServerExt {
 impl MockServerExt for BosLifeConfig {
     async fn start_mock_provider_server(&mut self) -> Result<MockServer, Report> {
         let mock_server = MockServer::start_async().await;
-        println!("Mock 服务器启动: {}", mock_server.base_url());
 
         // 将订阅地址导航至 mock server 的 /subscription 路径
         let subscribe_url_path = "/subscription";
@@ -116,15 +89,10 @@ impl MockServerExt for BosLifeConfig {
 
         self.sub_url =
             Url::parse(&mock_server.url(format!("{subscribe_url_path}?token={token}"))).expect("不合法的订阅地址");
-        self.api_host = Url::parse(&mock_server.base_url())?;
-
-        let mock_placeholder = MockPlaceholder {
-            uni_sub_host: self.sub_url.host_port()?,
-        };
 
         mock_server
             .mock_async(|when, then| {
-                when.method(POST).path(self.login_path());
+                when.method(POST).path(self.login_url_api().api);
                 let body = serde_json::json!({
                     "data": {
                         "auth_data": "mock_auth_token"
@@ -138,7 +106,7 @@ impl MockServerExt for BosLifeConfig {
 
         mock_server
             .mock_async(|when, then| {
-                when.method(GET).path(self.get_sub_url_path());
+                when.method(GET).path(self.get_sub_url_api().api);
                 let body = serde_json::json!({
                     "data": {
                         "subscribe_url": mock_server.url(format!("{subscribe_url_path}?token={token}")),
@@ -151,14 +119,15 @@ impl MockServerExt for BosLifeConfig {
             .await;
 
         // hook mock server 的 /subscription 路径，返回相应的 mock 数据
-        for client in ProxyClient::clients() {
+        let sub_host = self.sub_url.host_port()?;
+        for client in ProxyClient::VARIANTS {
             mock_server
                 .mock_async(|when, then| {
                     when.method(GET)
                         .path(subscribe_url_path)
-                        .query_param("flag", client.as_str())
+                        .query_param("flag", client.as_ref())
                         .query_param("token", token);
-                    let body = mock_profile(client, &mock_placeholder);
+                    let body = mock_profile(*client, &sub_host);
                     then.status(200)
                         .body(body)
                         .header("Content-Type", "text/plain; charset=utf-8");
@@ -170,36 +139,8 @@ impl MockServerExt for BosLifeConfig {
     }
 }
 
-pub struct MockPlaceholder {
-    pub uni_sub_host: String,
-}
-
-pub struct ExpectPlaceholder {
-    pub server: String,
-    pub interval: u64,
-    pub strict: bool,
-    pub uni_sub_host: String,
-    pub enc_sub_url: String,
-}
-
-pub fn mock_profile(client: ProxyClient, placeholder: &MockPlaceholder) -> String {
-    get_included_str(client, "mock").replace("{uni_sub_host}", &placeholder.uni_sub_host)
-}
-
-pub fn expect_profile(client: ProxyClient, expect_placeholder: &ExpectPlaceholder) -> String {
-    get_included_str(client, "expect")
-        .replace("{server}", &expect_placeholder.server)
-        .replace("{interval}", &expect_placeholder.interval.to_string())
-        .replace("{strict}", &expect_placeholder.strict.to_string())
-        .replace("{sub_url}", &expect_placeholder.enc_sub_url)
-        .replace("{CARGO_PKG_VERSION}", env!("CARGO_PKG_VERSION"))
-}
-
-pub fn expect_rule_provider(client: ProxyClient, policy: &Policy, expect_placeholder: &ExpectPlaceholder) -> String {
-    // 统一用 ClashRenderer 渲染策略名称, 作为文件名更方便
-    let name = ClashRenderer::render_provider_name_for_policy(policy).unwrap();
-    get_included_str(client, format!("rule_providers/{name}"))
-        .replace("{uni_sub_host}", &expect_placeholder.uni_sub_host)
+pub fn mock_profile(client: ProxyClient, sub_host: impl AsRef<str>) -> String {
+    get_included_str(client, "mock").replace("{sub_host}", sub_host.as_ref())
 }
 
 pub fn get_included_str(client: ProxyClient, file_name: impl AsRef<str>) -> String {

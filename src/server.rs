@@ -1,8 +1,8 @@
-use crate::api::SubProviderWrapper;
 use crate::common::config::ConvertorConfig;
-use crate::common::config::sub_provider::SubProvider;
+use crate::common::config::provider::SubProvider;
 use crate::common::ext::WatchDebounceExt;
 use crate::common::redis_info::REDIS_CONVERTOR_CONFIG_PUBLISH_CHANNEL;
+use crate::provider_api::ProviderApi;
 use crate::server::app_state::AppState;
 use axum::Router;
 use color_eyre::eyre::WrapErr;
@@ -19,17 +19,15 @@ use tokio_util::sync::CancellationToken;
 use tracing::{error, info, warn};
 
 pub mod app_state;
-pub mod clash_service;
 pub mod error;
 pub mod query;
-pub mod raw_service;
 pub mod router;
-pub mod surge_service;
+pub mod service;
 
 pub async fn start_server(
     listen_addr: SocketAddrV4,
     config: ConvertorConfig,
-    api_map: HashMap<SubProvider, SubProviderWrapper>,
+    api_map: HashMap<SubProvider, ProviderApi>,
     base_dir: impl AsRef<Path>,
     client: redis::Client,
 ) -> Result<()> {

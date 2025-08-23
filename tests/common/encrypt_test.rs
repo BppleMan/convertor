@@ -10,11 +10,32 @@ fn test_encrypt_and_decrypt() -> color_eyre::Result<()> {
 
     // 加密
     let encrypted = encrypt(secret, message)?;
-    insta::assert_snapshot!(encrypted, @"AAAAAAAAAAAAAAAA:ySjQlsiKDWUglgkbbu96L2ITbcWr6sIoKShyEQ5Nhc6sk+v2dWrC++4=");
+    insta::assert_snapshot!(encrypted, @"drjgraDxPZBAXWrlU4a9KL3SGbigje0acGn9tTwYzGmZBvRxAJCqF8bbX4IvnkC7n6rWzLVMOk8ndUZ85yvQXKY");
 
     // 解密
     let decrypted = decrypt(secret, &encrypted)?;
     insta::assert_snapshot!(decrypted, @"This is a secret message.");
+
+    Ok(())
+}
+
+#[test]
+fn test_decrypt() -> color_eyre::Result<()> {
+    init_test();
+
+    let secret = "bppleman";
+
+    let dec = decrypt(
+        secret.as_bytes(),
+        "qDbvzIt3DcfaQVl8UVdIjXck4D-42Eo3UN2hjcQ3B_IH9FI51WQX94QusyP4URwR4naCdMYFGV6aljrLzyNRhsJg9Cj55JszewkvSRXW5zMgUJCkai79FKZ4",
+    )?;
+    println!("{dec}");
+
+    let dec = decrypt(
+        secret.as_bytes(),
+        "qDbvzIt3DcfaQVl8UVdIjXck4D-42Eo3UN2hjcQ3B_IH9FI51WQX94QusiHxXxwR4naCdMYFGV6aljrLzyNRhsJg9Cj55Jszewk65g-J2hWsrxSAc1sHyTK1",
+    )?;
+    println!("{dec}");
 
     Ok(())
 }

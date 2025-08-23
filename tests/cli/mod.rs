@@ -1,1 +1,1 @@
-mod sub_provider_executor_test;
+mod provider_cli_test;

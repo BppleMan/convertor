@@ -201,7 +201,7 @@ pub trait Profile {
         let inner_span = span!(tracing::Level::INFO, "为每个策略添加规则提供者");
         let _guard = inner_span.entered();
         for policy in policy_list {
-            if let Err(e) = self.append_rule_provider(&policy, url_builder) {
+            if let Err(e) = self.append_rule_provider(url_builder, &policy) {
                 warn!("无法为 {:?} 添加 Rule Provider: {}", policy, e);
             }
         }
@@ -215,7 +215,7 @@ pub trait Profile {
         Ok(())
     }
 
-    fn append_rule_provider(&mut self, policy: &Policy, url_builder: &UrlBuilder) -> ParseResult<()>;
+    fn append_rule_provider(&mut self, url_builder: &UrlBuilder, policy: &Policy) -> ParseResult<()>;
 
     #[instrument(skip_all)]
     fn get_provider_rules_with_policy(&self, policy: &Policy) -> Option<&Vec<ProviderRule>> {

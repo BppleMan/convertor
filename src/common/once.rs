@@ -6,10 +6,11 @@ use tracing_subscriber::util::SubscriberInitExt;
 
 pub fn init_base_dir() -> std::path::PathBuf {
     #[cfg(debug_assertions)]
-    let base_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(".convertor.dev");
+    let base_dir = std::env::current_dir()
+        .expect("无法获取当前工作目录")
+        .join(".convertor");
     #[cfg(not(debug_assertions))]
-    let base_dir =
-        std::path::PathBuf::from(std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_string())).join(".convertor");
+    let base_dir = std::path::PathBuf::from(std::env::var("HOME").expect("没有找到 HOME 目录")).join(".convertor");
     base_dir
 }
 
@@ -25,8 +26,12 @@ pub fn init_backtrace() {
 
 static INITIALIZED_LOG: Once = Once::new();
 
-pub fn init_log(base_dir: impl AsRef<Path>) {
+pub fn init_log(base_dir: Option<&Path>) {
     INITIALIZED_LOG.call_once(|| {
+        let logs_dir = base_dir.map(|b| b.join("logs"));
+        #[cfg(debug_assertions)]
+        println!("Initializing log for {:?}", logs_dir);
+
         // 1. 灵活 EnvFilter（支持 RUST_LOG，否则用默认）
         let filter = EnvFilter::try_from_default_env()
             .unwrap_or_else(|_| EnvFilter::new("info"))
@@ -35,11 +40,13 @@ pub fn init_log(base_dir: impl AsRef<Path>) {
             .add_directive("moka=trace".parse().unwrap());
 
         // 2. 文件日志（每小时滚动）
-        let file_appender = tracing_appender::rolling::hourly(base_dir.as_ref().join("logs"), "convertor.log");
-        let file_layer = tracing_subscriber::fmt::layer()
-            .with_writer(file_appender)
-            .with_ansi(false)
-            .with_target(false);
+        let file_layer = logs_dir.map(|logs_dir| {
+            let file_appender = tracing_appender::rolling::hourly(logs_dir, "convertor.log");
+            tracing_subscriber::fmt::layer()
+                .with_writer(file_appender)
+                .with_ansi(false)
+                .with_target(false)
+        });
 
         // 3. 控制台日志（开发模式用 pretty，生产可换 compact）
         let stdout_layer = tracing_subscriber::fmt::layer()

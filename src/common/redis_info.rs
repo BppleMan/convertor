@@ -1,4 +1,4 @@
-use redis::{Client, TlsCertificates};
+use redis::Client;
 use std::sync::OnceLock;
 
 pub static REDIS_ENDPOINT: OnceLock<String> = OnceLock::new();
@@ -8,9 +8,9 @@ pub const REDIS_CONVERTOR_CONFIG_KEY: &str = "convertor:config.toml";
 pub const REDIS_CONVERTOR_CONFIG_PUBLISH_CHANNEL: &str = "convertor:config:publish";
 
 pub fn init_redis_info() -> color_eyre::Result<()> {
-    let endpoint = std::env::var("REDIS_ENDPOINT")?;
-    let username = std::env::var("REDIS_CONVERTOR_USERNAME")?;
-    let password = std::env::var("REDIS_CONVERTOR_PASSWORD")?;
+    let endpoint = std::env::var("REDIS_ENDPOINT").expect("REDIS_ENDPOINT not set");
+    let username = std::env::var("REDIS_CONVERTOR_USERNAME").expect("REDIS_CONVERTOR_USERNAME not set");
+    let password = std::env::var("REDIS_CONVERTOR_PASSWORD").expect("REDIS_CONVERTOR_PASSWORD not set");
     #[cfg(debug_assertions)]
     {
         println!("Redis Endpoint: {endpoint}");
@@ -41,15 +41,17 @@ pub fn redis_url() -> String {
 }
 
 pub fn redis_client(redis_url: impl AsRef<str>) -> color_eyre::Result<Client> {
+    println!("Redis URL: {}", redis_url.as_ref());
     let ca_cert = std::env::var("REDIS_CA_CERT")?;
     #[cfg(debug_assertions)]
-    println!("Redis CA Certificate: {ca_cert}");
+    println!("Redis CA Cert: {ca_cert}");
     let client = Client::build_with_tls(
         redis_url.as_ref(),
-        TlsCertificates {
+        redis::TlsCertificates {
             client_tls: None,
             root_cert: Some(ca_cert.into_bytes()),
         },
     )?;
+    // let client = Client::open(redis_url.as_ref())?;
     Ok(client)
 }

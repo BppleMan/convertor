@@ -1,14 +1,15 @@
+use axum_extra::headers::UserAgent;
 use color_eyre::eyre::eyre;
-use convertor::api::SubProviderWrapper;
 use convertor::common::config::ConvertorConfig;
+use convertor::common::config::provider::SubProvider;
 use convertor::common::config::proxy_client::ProxyClient;
-use convertor::common::config::sub_provider::SubProvider;
 use convertor::common::once::{init_backtrace, init_base_dir};
 use convertor::common::redis_info::{redis_client, redis_url};
 use convertor::core::profile::Profile;
 use convertor::core::profile::surge_profile::SurgeProfile;
 use convertor::core::renderer::Renderer;
 use convertor::core::renderer::surge_renderer::SurgeRenderer;
+use convertor::provider_api::ProviderApi;
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> color_eyre::Result<()> {
@@ -26,14 +27,16 @@ async fn main() -> color_eyre::Result<()> {
     let redis = redis_client(redis_url())?;
     let connection_manager = redis::aio::ConnectionManager::new(redis).await?;
     // 创建订阅供应商实例
-    let api_map = SubProviderWrapper::create_api(config.providers.clone(), connection_manager);
+    let api_map = ProviderApi::create_api(config.providers.clone(), connection_manager);
     // 获取 BosLife 的 API 实例
     let api = api_map
         .get(&provider)
         .ok_or_else(|| eyre!("未找到 BosLife 订阅提供者"))?;
 
     // 获取原始订阅配置文件内容: 来源于 BosLife 机场;适用于 Surge
-    let raw_sub_content = api.get_raw_profile(client).await?;
+    let raw_sub_content = api
+        .get_raw_profile(client, UserAgent::from_static("Surge Mac/8310"))
+        .await?;
     // 解析原始配置文件内容为 SurgeProfile 对象
     let mut profile = SurgeProfile::parse(raw_sub_content)?;
     // 创建 UrlBuilder 对象, 该 UrlBuilder 可用于创建适用于 Surge 的且使用 BosLife 订阅的 URL

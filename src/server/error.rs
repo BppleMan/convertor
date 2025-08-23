@@ -1,5 +1,6 @@
 use crate::common::config::proxy_client::ProxyClient;
-use crate::core::url_builder::ConvertorUrlError;
+use crate::core::url_builder::UrlBuilderError;
+use crate::server::query::QueryError;
 use axum::http::StatusCode;
 use axum::http::header::ToStrError;
 use axum::response::{IntoResponse, Response};
@@ -18,10 +19,13 @@ pub enum AppError {
     NoProxyClient,
 
     #[error(transparent)]
-    ConvertorUrl(#[from] ConvertorUrlError),
+    ConvertorUrl(#[from] UrlBuilderError),
 
     #[error("Unauthorized: {0}")]
     Unauthorized(String),
+
+    #[error(transparent)]
+    QueryError(#[from] QueryError),
 
     #[error(transparent)]
     Eyre(#[from] color_eyre::Report),

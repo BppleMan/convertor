@@ -28,18 +28,22 @@ ARG BIN_PATH=target/${TARGET_TRIPLE}/${PROFILE}/${BIN_NAME}
 
 # ====== 非 root 用户与工作目录 ======
 # 说明：使用固定 UID/GID，方便与宿主机/卷权限配合
-RUN addgroup -S -g 10001 app && adduser -S -u 10001 -G app app
+# 1) 非 root 用户（固定 uid/gid 便于卷权限）
+RUN addgroup -S -g 10001 app \
+    && adduser  -S -u 10001 -G app app
 WORKDIR /app
 
 # 复制本机已编译产物（用 --chown 直接赋权，避免额外层）
 COPY --chown=app:app ${BIN_PATH} /app/convertor
 
+# 3) 运行期可写目录
+ENV HOME=/app
+USER app:app
+
 # ====== 缺省环境变量（可被外部覆盖）======
 ENV RUST_LOG=info \
     SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
     TZ=UTC
-
-USER app
 
 # 文档化端口（容器间通信不依赖它，但利于可读性）
 EXPOSE 8080

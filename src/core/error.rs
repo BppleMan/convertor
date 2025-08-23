@@ -1,5 +1,6 @@
 use crate::core::profile::rule::Rule;
-use crate::core::url_builder::ConvertorUrlError;
+use crate::core::url_builder::UrlBuilderError;
+use crate::server::query::QueryError;
 use thiserror::Error;
 
 /// 所有解析失败场景的统一错误
@@ -33,7 +34,10 @@ pub enum ParseError {
     IntoProviderRule(Rule),
 
     #[error(transparent)]
-    ConvertorUrlError(#[from] ConvertorUrlError),
+    QueryError(#[from] QueryError),
+
+    #[error(transparent)]
+    ConvertorUrlError(#[from] UrlBuilderError),
 
     #[error(transparent)]
     RenderError(#[from] RenderError),

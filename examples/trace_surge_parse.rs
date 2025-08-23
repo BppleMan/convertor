@@ -1,6 +1,6 @@
 use convertor::common::config::ConvertorConfig;
+use convertor::common::config::provider::SubProvider;
 use convertor::common::config::proxy_client::ProxyClient;
-use convertor::common::config::sub_provider::SubProvider;
 use convertor::common::once::init_backtrace;
 use convertor::core::profile::Profile;
 use convertor::core::profile::surge_profile::SurgeProfile;

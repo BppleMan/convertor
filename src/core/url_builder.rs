@@ -1,28 +1,18 @@
+use crate::common::config::provider::SubProvider;
 use crate::common::config::proxy_client::ProxyClient;
-use crate::common::config::sub_provider::SubProvider;
 use crate::common::encrypt::{EncryptError, encrypt};
+use crate::core::convertor_url::{ConvertorUrl, ConvertorUrlType};
 use crate::core::profile::policy::Policy;
-use crate::core::profile::surge_header::{SurgeHeader, SurgeHeaderType};
-use crate::core::url_builder::profile_url::ProfileUrl;
-use crate::core::url_builder::raw_url::RawUrl;
-use crate::core::url_builder::rule_provider_url::RuleProviderUrl;
-use crate::core::url_builder::sub_logs_url::SubLogsUrl;
-use crate::server::query::error::QueryError;
-use crate::server::query::profile_query::ProfileQuery;
-use crate::server::query::rule_provider_query::RuleProviderQuery;
-use crate::server::query::sub_logs_query::SubLogsQuery;
+use crate::core::profile::surge_header::SurgeHeader;
+use crate::server::query::{ConvertorQuery, QueryError};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use url::Url;
 
-pub mod profile_url;
-pub mod raw_url;
-pub mod rule_provider_url;
-pub mod sub_logs_url;
-
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct UrlBuilder {
     pub secret: String,
+    pub enc_secret: String,
     pub client: ProxyClient,
     pub provider: SubProvider,
     pub server: Url,
@@ -36,6 +26,7 @@ impl UrlBuilder {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         secret: impl AsRef<str>,
+        enc_secret: Option<String>,
         client: ProxyClient,
         provider: SubProvider,
         server: Url,
@@ -43,14 +34,18 @@ impl UrlBuilder {
         enc_sub_url: Option<String>,
         interval: u64,
         strict: bool,
-    ) -> Result<Self, EncryptError> {
+    ) -> Result<Self, UrlBuilderError> {
         let secret = secret.as_ref().to_string();
+        let enc_secret = enc_secret
+            .map(Ok)
+            .unwrap_or_else(|| encrypt(secret.as_bytes(), secret.as_str()))?;
         let enc_sub_url = enc_sub_url
             .map(Ok)
             .unwrap_or_else(|| encrypt(secret.as_bytes(), sub_url.as_str()))?;
 
-        let url = Self {
+        let builder = Self {
             secret,
+            enc_secret,
             client,
             provider,
             server,
@@ -59,21 +54,27 @@ impl UrlBuilder {
             interval,
             strict,
         };
-        Ok(url)
+        Ok(builder)
     }
 
-    pub fn from_convertor_query(secret: impl AsRef<str>, query: ProfileQuery) -> Result<Self, EncryptError> {
-        let ProfileQuery {
+    pub fn from_convertor_query(query: ConvertorQuery, secret: impl AsRef<str>) -> Result<Self, UrlBuilderError> {
+        let ConvertorQuery {
+            server,
             client,
             provider,
-            server,
             sub_url,
             enc_sub_url,
             interval,
             strict,
+            secret: secret_opt,
+            enc_secret,
+            policy: _,
         } = query;
+        let secret = secret_opt.unwrap_or(secret.as_ref().to_string());
+        let strict = strict.unwrap_or(true);
         Self::new(
             secret,
+            enc_secret,
             client,
             provider,
             server,
@@ -84,125 +85,154 @@ impl UrlBuilder {
         )
     }
 
-    pub fn from_rule_provider_query(secret: impl AsRef<str>, query: &RuleProviderQuery) -> Result<Self, EncryptError> {
-        let RuleProviderQuery {
-            client,
-            provider,
-            server,
-            sub_url,
-            enc_sub_url,
-            interval,
-            policy: _,
-        } = query;
-        Self::new(
-            secret,
-            *client,
-            *provider,
-            server.clone(),
-            sub_url.clone(),
-            Some(enc_sub_url.clone()),
-            *interval,
-            true,
-        )
-    }
-
-    pub fn parse_from_url(url: &Url, secret: impl AsRef<str>) -> Result<Self, ConvertorUrlError> {
+    pub fn parse_from_url(
+        url: &Url,
+        secret: impl AsRef<str>,
+        server: Url,
+        client: ProxyClient,
+        provider: SubProvider,
+    ) -> Result<Self, UrlBuilderError> {
         let secret = secret.as_ref();
         match url.query() {
-            None => Err(ConvertorUrlError::ParseFromUrlNoQuery(url.clone())),
+            None => Err(UrlBuilderError::ParseFromUrlNoQuery(url.clone())),
             Some(query) => {
-                let query = ProfileQuery::parse_from_query_string(query, secret)?;
-                Ok(Self::from_convertor_query(secret, query)?)
+                let query = ConvertorQuery::parse_from_query_string(query, secret, server, client, provider)?;
+                Ok(Self::from_convertor_query(query, secret)?)
             }
         }
     }
 
     // 构造直通 raw 订阅链接
-    pub fn build_raw_url(&self) -> RawUrl {
-        let server = self.sub_url.clone();
-        let flag = self.client;
-        RawUrl { server, flag }
+    pub fn build_raw_url(&self) -> ConvertorUrl {
+        ConvertorUrl {
+            r#type: ConvertorUrlType::Raw,
+            server: self.sub_url.clone(),
+            path: String::new(),
+            query: format!("flag={}", self.client),
+        }
     }
 
     // 构造转发 raw 订阅链接
-    pub fn build_raw_profile_url(&self) -> ProfileUrl {
-        let server = self.server.clone();
-        let path = "/raw-profile".to_string();
-        let query = self.into();
-        ProfileUrl { server, path, query }
+    pub fn build_raw_profile_url(&self) -> Result<ConvertorUrl, UrlBuilderError> {
+        let url = ConvertorUrl {
+            r#type: ConvertorUrlType::RawProfile,
+            server: self.server.clone(),
+            path: format!("/raw-profile/{}/{}", self.client, self.provider),
+            query: self.as_profile_query().encode_to_profile_query()?,
+        };
+        Ok(url)
     }
 
     // 构造转发的 profile 链接
-    pub fn build_profile_url(&self) -> ProfileUrl {
-        let server = self.server.clone();
-        let path = "/profile".to_string();
-        let query = self.into();
-        ProfileUrl { server, path, query }
+    pub fn build_profile_url(&self) -> Result<ConvertorUrl, UrlBuilderError> {
+        let url = ConvertorUrl {
+            r#type: ConvertorUrlType::Profile,
+            server: self.server.clone(),
+            path: format!(
+                "/profile/{}/{}",
+                self.client.as_ref().to_ascii_lowercase(),
+                self.provider.as_ref().to_lowercase()
+            ),
+            query: self.as_profile_query().encode_to_profile_query()?,
+        };
+        Ok(url)
     }
 
     // 构造转发的 规则集 链接
-    pub fn build_rule_provider_url(&self, policy: &Policy) -> RuleProviderUrl {
-        let server = self.server.clone();
-        let path = "/rule-provider".to_string();
-        let query = RuleProviderQuery {
-            client: self.client,
-            provider: self.provider,
+    pub fn build_rule_provider_url(&self, policy: &Policy) -> Result<ConvertorUrl, UrlBuilderError> {
+        let url = ConvertorUrl {
+            r#type: ConvertorUrlType::RuleProvider,
             server: self.server.clone(),
-            sub_url: self.sub_url.clone(),
-            enc_sub_url: self.enc_sub_url.clone(),
-            interval: self.interval,
-            policy: policy.clone().into(),
+            path: format!(
+                "/rule-provider/{}/{}",
+                self.client.as_ref().to_ascii_lowercase(),
+                self.provider.as_ref().to_ascii_lowercase()
+            ),
+            query: self.as_rule_provider_query(policy).encode_to_rule_provider_query()?,
         };
-        RuleProviderUrl { server, path, query }
+        Ok(url)
     }
 
     // 构造转发的 订阅日志 链接
-    pub fn build_sub_logs_url(&self, page: usize, page_size: usize) -> Result<SubLogsUrl, ConvertorUrlError> {
-        let server = self.server.clone();
-        let path = "/sub-logs".to_string();
-        let enc_secret = encrypt(self.secret.as_bytes(), &self.secret)?;
-        let query = SubLogsQuery::new(self.provider, &self.secret, enc_secret, page, page_size);
-        Ok(SubLogsUrl { server, path, query })
+    pub fn build_sub_logs_url(&self) -> Result<ConvertorUrl, UrlBuilderError> {
+        let url = ConvertorUrl {
+            r#type: ConvertorUrlType::SubLogs,
+            server: self.server.clone(),
+            path: "/sub-logs".to_string(),
+            query: self.as_sub_logs_query().encode_to_sub_logs_query()?,
+        };
+        Ok(url)
     }
 
     // 构造专属 Surge 的订阅头
-    pub fn build_managed_config_header(&self, r#type: SurgeHeaderType) -> SurgeHeader {
-        match r#type {
-            SurgeHeaderType::Raw => SurgeHeader::new_raw(self.build_raw_url(), self.interval, self.strict),
-            SurgeHeaderType::RawProfile => {
-                SurgeHeader::new_convertor(self.build_raw_profile_url(), self.interval, self.strict)
-            }
-            SurgeHeaderType::Profile => {
-                SurgeHeader::new_convertor(self.build_profile_url(), self.interval, self.strict)
-            }
+    pub fn build_surge_header(&self, r#type: ConvertorUrlType) -> Result<SurgeHeader, UrlBuilderError> {
+        let url = match r#type {
+            ConvertorUrlType::Raw => self.build_raw_url(),
+            ConvertorUrlType::RawProfile => self.build_raw_profile_url()?,
+            ConvertorUrlType::Profile => self.build_profile_url()?,
+            _ => return Err(UrlBuilderError::UnsupportedUrlType(r#type)),
+        };
+        Ok(SurgeHeader::new(url, self.interval, self.strict))
+    }
+}
+
+impl UrlBuilder {
+    pub fn as_profile_query(&self) -> ConvertorQuery {
+        ConvertorQuery {
+            server: self.server.clone(),
+            client: self.client,
+            provider: self.provider,
+            sub_url: self.sub_url.clone(),
+            enc_sub_url: self.enc_sub_url.clone(),
+            interval: self.interval,
+            strict: Some(self.strict),
+            policy: None,
+            secret: None,
+            enc_secret: None,
         }
+    }
+
+    pub fn as_rule_provider_query(&self, policy: &Policy) -> ConvertorQuery {
+        let mut query = self.as_profile_query();
+        query.policy = Some(policy.clone());
+        query
+    }
+
+    pub fn as_sub_logs_query(&self) -> ConvertorQuery {
+        let mut query = self.as_profile_query();
+        query.secret = Some(self.secret.clone());
+        query.enc_secret = Some(self.enc_secret.clone());
+        query
     }
 }
 
 pub trait HostPort {
-    fn host_port(&self) -> Result<String, ConvertorUrlError>;
+    fn host_port(&self) -> Result<String, UrlBuilderError>;
 }
 
 impl HostPort for Url {
-    fn host_port(&self) -> Result<String, ConvertorUrlError> {
+    fn host_port(&self) -> Result<String, UrlBuilderError> {
         match (self.host_str(), self.port()) {
             (Some(host), Some(port)) => Ok(format!("{host}:{port}")),
             (Some(host), None) => Ok(host.to_string()),
-            _ => Err(ConvertorUrlError::NoUniSubHost(self.clone())),
+            _ => Err(UrlBuilderError::NoUniSubHost(self.clone())),
         }
     }
 }
 
 #[derive(Debug, Error)]
-pub enum ConvertorUrlError {
-    #[error("无法获取 uni_sub_host: {0}")]
+pub enum UrlBuilderError {
+    #[error("无法获取 sub_host: {0}")]
     NoUniSubHost(Url),
 
     #[error("从 URL 中解析失败, 没有 query 参数: {0}")]
     ParseFromUrlNoQuery(Url),
 
+    #[error("不支持将 {0} 构造为 SurgeHeader")]
+    UnsupportedUrlType(ConvertorUrlType),
+
     #[error(transparent)]
-    ConvertorQueryError(#[from] QueryError),
+    QueryError(#[from] QueryError),
 
     #[error("无法加密/解密 raw_sub_url: {0}")]
     EncryptError(#[from] EncryptError),

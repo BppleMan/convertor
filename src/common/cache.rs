@@ -22,7 +22,7 @@ where
     V: Clone + From<String> + ToString + Send + Sync + 'static,
 {
     memory: MokaCache<CacheKey<K>, V>,
-    redis: ConnectionManager,
+    redis: Option<ConnectionManager>,
     time_to_live: Duration,
 }
 
@@ -31,7 +31,7 @@ where
     K: Hash + Eq + Clone + Debug + Display + Send + Sync + 'static,
     V: Clone + From<String> + ToString + Send + Sync + 'static,
 {
-    pub fn new(redis: ConnectionManager, capacity: u64, time_to_live: Duration) -> Self {
+    pub fn new(redis: Option<ConnectionManager>, capacity: u64, time_to_live: Duration) -> Self {
         let memory = moka::future::Cache::builder()
             .max_capacity(capacity)
             .time_to_live(time_to_live)
@@ -48,15 +48,19 @@ where
         F: Future<Output = color_eyre::Result<V>>,
     {
         self.memory
-            .try_get_with(key.clone(), async { self.try_get_from_redis(key, init).await })
+            .try_get_with(key.clone(), async {
+                match self.redis.clone() {
+                    Some(redis) => self.try_get_from_redis(redis, key, init).await,
+                    None => init.await,
+                }
+            })
             .await
     }
 
-    async fn try_get_from_redis<F>(&self, key: CacheKey<K>, init: F) -> Result<V, Report>
+    async fn try_get_from_redis<F>(&self, mut redis: ConnectionManager, key: CacheKey<K>, init: F) -> Result<V, Report>
     where
         F: Future<Output = color_eyre::Result<V>>,
     {
-        let mut redis = self.redis.clone();
         let redis_key = key.as_redis_key();
         if let Ok(Some(raw)) = redis.get(&redis_key).await {
             debug!("命中 Redis 缓存: {}", redis_key);
@@ -190,7 +194,7 @@ where
         use std::fmt::Write;
         let mut key = format!("convertor:{}", self.prefix);
         if let Some(client) = &self.client {
-            write!(&mut key, ":{}", client.as_str()).expect("Failed to write client to key");
+            write!(&mut key, ":{}", client).expect("Failed to write client to key");
         }
         write!(&mut key, ":{}", self.hash).expect("Failed to write hash to key");
         key
@@ -208,32 +212,6 @@ where
             client,
         }
     }
-
-    // /// 生成 hash 文件名前缀，例如 "a4bc1398"
-    // pub fn hash_code(&self) -> u64 {
-    //     let mut hasher = DefaultHasher::default();
-    //     self.hash(&mut hasher);
-    //     hasher.finish()
-    // }
-    //
-    // pub fn prefix_path(&self) -> PathBuf {
-    //     let mut prefix_path = PathBuf::from(&self.prefix);
-    //     if let Some(client) = &self.client {
-    //         prefix_path = prefix_path.join(client.as_str())
-    //     };
-    //     prefix_path
-    // }
-    //
-    // /// 返回相对路径（不含 cache_dir）：<prefix>/<client>/<short_hash>__<expires>.txt
-    // pub fn relative_path(&self, expires_at: DateTime<Local>) -> PathBuf {
-    //     let file_name = format!("{}__{}.txt", self.hash_code(), expires_at.format("%Y-%m-%dT%H-%M-%S"));
-    //     self.prefix_path().join(file_name)
-    // }
-    //
-    // /// 返回完整缓存路径：<cache_dir>/<prefix>/<client>/<hash>__<expires>.txt
-    // pub fn to_full_path(&self, cache_dir: impl AsRef<Path>, expires_at: DateTime<Local>) -> PathBuf {
-    //     cache_dir.as_ref().join(self.relative_path(expires_at))
-    // }
 }
 
 impl<H> Display for CacheKey<H>
@@ -243,7 +221,7 @@ where
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.prefix)?;
         if let Some(client) = &self.client {
-            write!(f, ":{}", client.as_str())?;
+            write!(f, ":{}", client)?;
         }
         write!(f, ":{}", self.hash)
     }

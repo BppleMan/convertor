@@ -1,14 +1,12 @@
 use clap::Parser;
 use color_eyre::Result;
-use color_eyre::eyre::eyre;
-use convertor::api::SubProviderWrapper;
 use convertor::cli::ConvertorCommand;
-use convertor::cli::service_installer::ServiceInstaller;
-use convertor::cli::sub_provider_executor::SubProviderExecutor;
+use convertor::cli::provider_cli::ProviderCli;
 use convertor::common::config::ConvertorConfig;
 use convertor::common::config::config_cmd::ConfigCmdExecutor;
 use convertor::common::once::{init_backtrace, init_base_dir, init_log};
 use convertor::common::redis_info::{init_redis_info, redis_client, redis_url};
+use convertor::provider_api::ProviderApi;
 use convertor::server::start_server;
 use std::net::SocketAddrV4;
 use std::path::PathBuf;
@@ -34,7 +32,7 @@ pub struct Convertor {
 async fn main() -> Result<()> {
     let base_dir = init_base_dir();
     init_backtrace();
-    init_log(&base_dir);
+    init_log(Some(&base_dir));
     init_redis_info()?;
 
     let mut args = Convertor::parse();
@@ -45,22 +43,22 @@ async fn main() -> Result<()> {
         }
         other => {
             let connection = redis_client.get_multiplexed_async_connection().await?;
-            let connection_manager = redis::aio::ConnectionManager::new(redis_client.clone()).await?;
+            let connection_manager = redis::aio::ConnectionManager::new_with_config(
+                redis_client.clone(),
+                redis::aio::ConnectionManagerConfig::new()
+                    .set_number_of_retries(5)
+                    .set_max_delay(2000),
+            )
+            .await?;
             let config = ConvertorConfig::search_or_redis(&base_dir, args.config, connection).await?;
-            let mut api_map = SubProviderWrapper::create_api(config.providers.clone(), connection_manager);
+            let api_map = ProviderApi::create_api(config.providers.clone(), connection_manager);
 
             match other {
                 None => start_server(args.listen, config, api_map, &base_dir, redis_client).await?,
                 Some(ConvertorCommand::SubProvider(args)) => {
-                    let mut executor = SubProviderExecutor::new(config, api_map);
+                    let mut executor = ProviderCli::new(config, api_map);
                     let (url_builder, result) = executor.execute(args).await?;
                     executor.post_execute(url_builder, result);
-                }
-                Some(ConvertorCommand::Install { name, provider }) => {
-                    let Some(api) = api_map.remove(&provider) else {
-                        return Err(eyre!("没有找到对应的订阅提供者: {provider}"));
-                    };
-                    ServiceInstaller::new(name, base_dir, config, api).install().await?
                 }
                 _ => unreachable!(),
             }

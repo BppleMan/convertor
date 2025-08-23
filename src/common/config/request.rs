@@ -1,3 +1,4 @@
+use crate::common::ext::NonEmptyOptStr;
 use reqwest::RequestBuilder;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -38,20 +39,19 @@ impl RequestConfig {
         auth_token: Option<impl AsRef<str>>,
     ) -> RequestBuilder {
         let mut request_builder = request_builder;
-        if let Some(cookie) = &self.cookie {
+        if let Some(cookie) = self.cookie.filter_non_empty() {
             request_builder = request_builder.header("Cookie", cookie);
         }
-        if let Some(user_agent) = &self.user_agent {
+        if let Some(user_agent) = self.user_agent.filter_non_empty() {
             request_builder = request_builder.header("User-Agent", user_agent);
         }
         for (k, v) in &self.headers {
-            request_builder = request_builder.header(k, v);
-        }
-        match (auth_token, self.auth_token.as_ref()) {
-            (Some(auth_token), _) => {
-                request_builder = request_builder.header("Authorization", auth_token.as_ref());
+            if !k.trim().is_empty() && !v.trim().is_empty() {
+                request_builder = request_builder.header(k.trim(), v.trim());
             }
-            (None, Some(auth_token)) => {
+        }
+        match (auth_token.filter_non_empty(), self.auth_token.filter_non_empty()) {
+            (Some(auth_token), _) | (None, Some(auth_token)) => {
                 request_builder = request_builder.header("Authorization", auth_token);
             }
             _ => {}

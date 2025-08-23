@@ -1,5 +1,5 @@
-use crate::common::config::proxy_client::{ClashConfig, ProxyClientConfig, SurgeConfig};
-use crate::common::config::sub_provider::{BosLifeConfig, SubProvider, SubProviderConfig};
+use crate::common::config::provider::{SubProvider, SubProviderConfig};
+use crate::common::config::proxy_client::ProxyClientConfig;
 use crate::common::encrypt::{decrypt, encrypt};
 use crate::common::redis_info::REDIS_CONVERTOR_CONFIG_KEY;
 use crate::core::url_builder::UrlBuilder;
@@ -17,9 +17,9 @@ use tracing::{error, warn};
 use url::Url;
 
 pub mod config_cmd;
+pub mod provider;
 pub mod proxy_client;
 pub mod request;
-pub mod sub_provider;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConvertorConfig {
@@ -32,19 +32,19 @@ pub struct ConvertorConfig {
 
 impl ConvertorConfig {
     pub fn template() -> Self {
+        let secret = "bppleman".to_string();
+        let server = Url::parse("http://127.0.0.1:8080").expect("不合法的服务器地址");
+
         let mut providers = DispatchMap::default();
-        providers.insert(
-            SubProvider::BosLife,
-            SubProviderConfig::BosLife(BosLifeConfig::template()),
-        );
+        providers.insert(SubProvider::BosLife, SubProviderConfig::boslife_template());
 
         let mut clients = DispatchMap::default();
-        clients.insert(ProxyClient::Surge, ProxyClientConfig::Surge(SurgeConfig::template()));
-        clients.insert(ProxyClient::Clash, ProxyClientConfig::Clash(ClashConfig::template()));
+        clients.insert(ProxyClient::Surge, ProxyClientConfig::surge_template());
+        clients.insert(ProxyClient::Clash, ProxyClientConfig::clash_template());
 
         ConvertorConfig {
-            secret: "bppleman".to_string(),
-            server: Url::parse("http://127.0.0.1:8080").expect("不合法的服务器地址"),
+            secret,
+            server,
             providers,
             clients,
         }
@@ -69,27 +69,16 @@ impl ConvertorConfig {
         if let Some(path) = config_path {
             return Self::from_file(path);
         }
-        let mut current = cwd.as_ref().to_path_buf().canonicalize()?;
-        if !current.is_dir() {
-            return Err(eyre!("{} 不是一个目录", current.display()));
+        let work_dir = cwd.as_ref().to_path_buf();
+        if !work_dir.is_dir() {
+            return Err(eyre!("{} 不是一个目录", work_dir.display()));
         }
-        loop {
-            let file = current.join("convertor.toml");
-            if file.exists() {
-                return Self::from_file(file);
-            }
-            if !current.pop() {
-                break;
-            }
+        let work_dir = work_dir.canonicalize()?;
+        let convertor_toml = work_dir.join("convertor.toml");
+        if convertor_toml.exists() {
+            return Self::from_file(convertor_toml);
         }
-        #[cfg(not(debug_assertions))]
-        {
-            let home_dir = std::env::var("HOME")?;
-            let convertor_toml = Path::new(&home_dir).join(".convertor").join("convertor.toml");
-            if convertor_toml.exists() {
-                return Self::from_file(convertor_toml);
-            }
-        }
+
         Err(eyre!("未找到 convertor.toml 配置文件"))
     }
 
@@ -123,13 +112,23 @@ impl ConvertorConfig {
             None => return Err(eyre!("未找到提供商配置: [providers.{}]", provider)),
         };
         let (interval, strict) = match self.clients.get(&client) {
-            Some(ProxyClientConfig::Surge(config)) => (config.interval, config.strict),
-            Some(ProxyClientConfig::Clash(config)) => (config.interval, config.strict),
+            Some(client_config) => (client_config.interval(), client_config.strict()),
             None => return Err(eyre!("未找到代理客户端配置: [clients.{}]", client)),
         };
         let server = self.server.clone();
         let secret = self.secret.clone();
-        let url_builder = UrlBuilder::new(secret, client, provider, server, sub_url, None, interval, strict)?;
+        let enc_secret = encrypt(secret.as_bytes(), &secret)?;
+        let url_builder = UrlBuilder::new(
+            secret,
+            Some(enc_secret),
+            client,
+            provider,
+            server,
+            sub_url,
+            None,
+            interval,
+            strict,
+        )?;
         Ok(url_builder)
     }
 

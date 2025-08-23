@@ -1,28 +1,31 @@
-use crate::api::boslife_log::BosLifeLog;
+use crate::common::config::provider::SubProvider;
 use crate::common::config::proxy_client::ProxyClient;
+use crate::provider_api::boslife_log::BosLifeLogs;
 use crate::server::AppState;
 use crate::server::error::AppError;
-use crate::server::query::profile_query::ProfileQuery;
-use crate::server::query::rule_provider_query::RuleProviderQuery;
-use crate::server::query::sub_logs_query::SubLogsQuery;
-use axum::extract::{RawQuery, State};
+use crate::server::query::ConvertorQuery;
+use axum::extract::{FromRequestParts, OptionalFromRequestParts, Path, RawQuery, State};
+use axum::http::request::Parts;
 use axum::response::Html;
 use axum::routing::get;
 use axum::{Json, Router};
-use color_eyre::eyre::{OptionExt, WrapErr, eyre};
+use axum_extra::TypedHeader;
+use axum_extra::extract::Host;
+use axum_extra::headers::UserAgent;
+use color_eyre::eyre::{WrapErr, eyre};
 use std::sync::Arc;
 use tower_http::LatencyUnit;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer};
 use tracing::instrument;
+use url::Url;
 
 pub fn router(app_state: AppState) -> Router {
     Router::new()
         .route("/", get(|| async { Html(include_str!("../../assets/index.html")) }))
-        .route("/ready", get(|| async { "ok" }))
         .route("/healthy", get(|| async { "ok" }))
-        .route("/raw-profile", get(raw_profile))
-        .route("/profile", get(profile))
-        .route("/rule-provider", get(rule_provider))
+        .route("/raw-profile/{client}/{provider}", get(raw_profile))
+        .route("/profile/{client}/{provider}", get(profile))
+        .route("/rule-provider/{client}/{provider}", get(rule_provider))
         .route("/sub-logs", get(sub_logs))
         .with_state(Arc::new(app_state))
         .layer(
@@ -38,18 +41,26 @@ pub fn router(app_state: AppState) -> Router {
 }
 
 pub async fn raw_profile(
+    Path((client, provider)): Path<(ProxyClient, SubProvider)>,
+    Host(host): Host,
+    scheme: Option<OptionalScheme>,
+    TypedHeader(user_agent): TypedHeader<UserAgent>,
     State(state): State<Arc<AppState>>,
-    RawQuery(query): RawQuery,
-) -> color_eyre::Result<String, AppError> {
-    let query = query
-        .map(|query| ProfileQuery::parse_from_query_string(query, &state.config.secret))
+    RawQuery(query_string): RawQuery,
+) -> Result<String, AppError> {
+    let scheme = scheme.map(|s| s.0).unwrap_or("http".to_string());
+    let server = Url::parse(format!("{}://{}", scheme, host).as_str()).wrap_err("解析请求 URL 失败")?;
+    let query = query_string
+        .map(|query_string| {
+            ConvertorQuery::parse_from_query_string(query_string, &state.config.secret, server, client, provider)
+        })
         .ok_or_else(|| eyre!("查询参数不能为空"))?
         .wrap_err("解析查询字符串失败")?;
-    let client = query.client;
-    let Some(api) = state.api_map.get(&query.provider) else {
+    query.check_for_profile()?;
+    let Some(api) = state.api_map.get(&provider) else {
         return Err(AppError::NoSubProvider);
     };
-    let raw_profile = api.get_raw_profile(client).await?;
+    let raw_profile = api.get_raw_profile(client, user_agent).await?;
     match client {
         ProxyClient::Surge => Ok(state.surge_service.raw_profile(query, raw_profile).await?),
         ProxyClient::Clash => Err(AppError::RawProfileUnsupportedClient(client)),
@@ -58,18 +69,26 @@ pub async fn raw_profile(
 
 #[instrument(skip_all)]
 pub async fn profile(
+    Path((client, provider)): Path<(ProxyClient, SubProvider)>,
+    Host(host): Host,
+    scheme: Option<OptionalScheme>,
+    TypedHeader(user_agent): TypedHeader<UserAgent>,
     State(state): State<Arc<AppState>>,
-    RawQuery(query): RawQuery,
-) -> color_eyre::Result<String, AppError> {
-    let query = query
-        .map(|query| ProfileQuery::parse_from_query_string(query, &state.config.secret))
+    RawQuery(query_string): RawQuery,
+) -> Result<String, AppError> {
+    let scheme = scheme.map(|s| s.0).unwrap_or("http".to_string());
+    let server = Url::parse(format!("{}://{}", scheme, host).as_str()).wrap_err("解析请求 URL 失败")?;
+    let query = query_string
+        .map(|query_string| {
+            ConvertorQuery::parse_from_query_string(query_string, &state.config.secret, server, client, provider)
+        })
         .ok_or_else(|| eyre!("查询参数不能为空"))?
         .wrap_err("解析查询字符串失败")?;
-    let client = query.client;
-    let Some(api) = state.api_map.get(&query.provider) else {
+    query.check_for_profile()?;
+    let Some(api) = state.api_map.get(&provider) else {
         return Err(AppError::NoSubProvider);
     };
-    let raw_profile = api.get_raw_profile(client).await?;
+    let raw_profile = api.get_raw_profile(client, user_agent).await?;
     let profile = match client {
         ProxyClient::Surge => state.surge_service.profile(query, raw_profile).await,
         ProxyClient::Clash => state.clash_service.profile(query, raw_profile).await,
@@ -79,18 +98,26 @@ pub async fn profile(
 
 #[instrument(skip_all)]
 pub async fn rule_provider(
+    Path((client, provider)): Path<(ProxyClient, SubProvider)>,
+    Host(host): Host,
+    scheme: Option<OptionalScheme>,
+    TypedHeader(user_agent): TypedHeader<UserAgent>,
     State(state): State<Arc<AppState>>,
-    RawQuery(query): RawQuery,
+    RawQuery(query_string): RawQuery,
 ) -> color_eyre::Result<String, AppError> {
-    let query = query
-        .map(|query| RuleProviderQuery::parse_from_query_string(query, &state.config.secret))
+    let scheme = scheme.map(|s| s.0).unwrap_or("http".to_string());
+    let server = Url::parse(format!("{}://{}", scheme, host).as_str()).wrap_err("解析请求 URL 失败")?;
+    let query = query_string
+        .map(|query_string| {
+            ConvertorQuery::parse_from_query_string(query_string, &state.config.secret, server, client, provider)
+        })
         .ok_or_else(|| eyre!("查询参数不能为空"))?
         .wrap_err("解析查询字符串失败")?;
-    let client = &query.client;
-    let Some(api) = state.api_map.get(&query.provider) else {
+    query.check_for_rule_provider()?;
+    let Some(api) = state.api_map.get(&provider) else {
         return Err(AppError::NoSubProvider);
     };
-    let raw_profile = api.get_raw_profile(*client).await?;
+    let raw_profile = api.get_raw_profile(client, user_agent).await?;
     let rules = match client {
         ProxyClient::Surge => state.surge_service.rule_provider(query, raw_profile).await,
         ProxyClient::Clash => state.clash_service.rule_provider(query, raw_profile).await,
@@ -99,15 +126,50 @@ pub async fn rule_provider(
 }
 
 pub async fn sub_logs(
+    Path((client, provider)): Path<(ProxyClient, SubProvider)>,
+    Host(host): Host,
+    scheme: Option<OptionalScheme>,
     State(state): State<Arc<AppState>>,
-    RawQuery(query): RawQuery,
-) -> color_eyre::Result<Json<Vec<BosLifeLog>>, AppError> {
-    let query = query.as_ref().ok_or_eyre(eyre!("订阅记录必须传递参数"))?;
-    let sub_log_query = SubLogsQuery::decode_from_query_string(query, &state.config.secret)?;
-    let provider = sub_log_query.provider;
+    RawQuery(query_string): RawQuery,
+) -> Result<Json<BosLifeLogs>, AppError> {
+    let scheme = scheme.map(|s| s.0).unwrap_or("http".to_string());
+    let server = Url::parse(format!("{}://{}", scheme, host).as_str()).wrap_err("解析请求 URL 失败")?;
+    let query = query_string
+        .map(|query_string| {
+            ConvertorQuery::parse_from_query_string(query_string, &state.config.secret, server, client, provider)
+        })
+        .ok_or_else(|| eyre!("查询参数不能为空"))?
+        .wrap_err("解析查询字符串失败")?;
+    query.check_for_sub_logs()?;
+    if query.secret.as_ref().unwrap() != &state.config.secret {
+        return Err(AppError::Unauthorized("无效的密钥".to_string()));
+    }
     let Some(api) = state.api_map.get(&provider) else {
         return Err(AppError::NoSubProvider);
     };
-    let logs = state.surge_service.sub_logs(sub_log_query, api).await?;
+    let logs = state.surge_service.sub_logs(api).await?;
     Ok(Json(logs))
+}
+
+#[derive(Debug, Clone)]
+pub struct OptionalScheme(pub String);
+
+impl<S> OptionalFromRequestParts<S> for OptionalScheme
+where
+    S: Send + Sync,
+{
+    type Rejection = AppError;
+
+    fn from_request_parts(
+        parts: &mut Parts,
+        state: &S,
+    ) -> impl Future<Output = Result<Option<Self>, Self::Rejection>> + Send {
+        async {
+            let scheme = axum_extra::extract::Scheme::from_request_parts(parts, state).await;
+            match scheme {
+                Ok(scheme) => Ok(Some(OptionalScheme(scheme.0))),
+                Err(_) => Ok(None),
+            }
+        }
+    }
 }

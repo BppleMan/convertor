@@ -4,9 +4,7 @@ use crate::core::profile::clash_profile::ClashProfile;
 use crate::core::renderer::Renderer;
 use crate::core::renderer::clash_renderer::ClashRenderer;
 use crate::core::url_builder::UrlBuilder;
-use crate::server::app_state::ProfileCacheKey;
-use crate::server::query::profile_query::ProfileQuery;
-use crate::server::query::rule_provider_query::RuleProviderQuery;
+use crate::server::query::ConvertorQuery;
 use color_eyre::Report;
 use color_eyre::Result;
 use color_eyre::eyre::eyre;
@@ -17,7 +15,7 @@ use tracing::instrument;
 #[derive(Clone)]
 pub struct ClashService {
     pub config: Arc<ConvertorConfig>,
-    pub profile_cache: Cache<ProfileCacheKey, ClashProfile>,
+    pub profile_cache: Cache<ConvertorQuery, ClashProfile>,
 }
 
 impl ClashService {
@@ -28,19 +26,18 @@ impl ClashService {
     }
 
     #[instrument(skip_all)]
-    pub async fn profile(&self, query: ProfileQuery, raw_profile: String) -> Result<String> {
-        let cache_key = query.cache_key();
-        let url_builder = UrlBuilder::from_convertor_query(&self.config.secret, query)?;
-        let profile = self.try_get_profile(cache_key, &url_builder, raw_profile).await?;
+    pub async fn profile(&self, query: ConvertorQuery, raw_profile: String) -> Result<String> {
+        let url_builder = UrlBuilder::from_convertor_query(query.clone(), &self.config.secret)?;
+        let profile = self.try_get_profile(query, &url_builder, raw_profile).await?;
         Ok(ClashRenderer::render_profile(&profile)?)
     }
 
     #[instrument(skip_all)]
-    pub async fn rule_provider(&self, query: RuleProviderQuery, raw_profile: String) -> Result<String> {
-        let cache_key = query.cache_key();
-        let url_builder = UrlBuilder::from_rule_provider_query(&self.config.secret, &query)?;
-        let profile = self.try_get_profile(cache_key, &url_builder, raw_profile).await?;
-        match profile.get_provider_rules_with_policy(&query.policy.into()) {
+    pub async fn rule_provider(&self, query: ConvertorQuery, raw_profile: String) -> Result<String> {
+        let policy = query.policy.as_ref().unwrap().clone();
+        let url_builder = UrlBuilder::from_convertor_query(query.clone(), &self.config.secret)?;
+        let profile = self.try_get_profile(query, &url_builder, raw_profile).await?;
+        match profile.get_provider_rules_with_policy(&policy) {
             None => Ok(String::new()),
             Some(provider_rules) => Ok(ClashRenderer::render_provider_rules(provider_rules)?),
         }
@@ -48,12 +45,12 @@ impl ClashService {
 
     async fn try_get_profile(
         &self,
-        cache_key: ProfileCacheKey,
+        query: ConvertorQuery,
         url_builder: &UrlBuilder,
         raw_profile: String,
     ) -> Result<ClashProfile> {
         self.profile_cache
-            .try_get_with(cache_key, async {
+            .try_get_with(query, async {
                 let profile = ClashProfile::parse(raw_profile)?;
                 let mut template = ClashProfile::template()?;
                 template.patch(profile)?;

@@ -1,34 +1,35 @@
-use crate::api::SubProviderWrapper;
-use crate::cli::sub_provider_executor::result::{SubProviderExecutorLink, SubProviderExecutorResult};
 use crate::common::config::ConvertorConfig;
+use crate::common::config::provider::SubProvider;
 use crate::common::config::proxy_client::{ClashConfig, ProxyClient, ProxyClientConfig, SurgeConfig};
-use crate::common::config::sub_provider::SubProvider;
+use crate::core::convertor_url::{ConvertorUrl, ConvertorUrlType};
 use crate::core::profile::Profile;
 use crate::core::profile::clash_profile::ClashProfile;
 use crate::core::profile::extract_policies_for_rule_provider;
 use crate::core::profile::policy::Policy;
 use crate::core::profile::rule::Rule;
-use crate::core::profile::surge_header::{SurgeHeader, SurgeHeaderType};
+use crate::core::profile::surge_header::SurgeHeader;
 use crate::core::profile::surge_profile::SurgeProfile;
 use crate::core::renderer::Renderer;
 use crate::core::renderer::clash_renderer::ClashRenderer;
 use crate::core::renderer::surge_renderer::SurgeRenderer;
 use crate::core::renderer::surge_renderer::{SURGE_RULE_PROVIDER_COMMENT_END, SURGE_RULE_PROVIDER_COMMENT_START};
 use crate::core::result::ParseResult;
-use crate::core::url_builder::{HostPort, UrlBuilder};
+use crate::core::url_builder::{HostPort, UrlBuilder, UrlBuilderError};
+use crate::provider_api::ProviderApi;
+use axum_extra::headers::UserAgent;
 use clap::{Args, Subcommand};
 use color_eyre::Result;
 use color_eyre::eyre::eyre;
 use color_eyre::owo_colors::OwoColorize;
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::fmt;
+use std::fmt::Display;
 use std::path::Path;
 use url::Url;
 
-pub mod result;
-
 #[derive(Default, Debug, Clone, Args)]
-pub struct SubProviderCmd {
+pub struct ProviderCmd {
     /// 构造适用于不同客户端的订阅地址
     #[arg(value_enum)]
     pub client: ProxyClient,
@@ -76,9 +77,9 @@ pub enum UrlSource {
     Decode { profile_url: Url },
 }
 
-pub struct SubProviderExecutor {
+pub struct ProviderCli {
     pub config: ConvertorConfig,
-    pub api_map: HashMap<SubProvider, SubProviderWrapper>,
+    pub api_map: HashMap<SubProvider, ProviderApi>,
 }
 
 #[allow(clippy::large_enum_variant)]
@@ -87,24 +88,23 @@ enum ClientProfile {
     Clash(ClashProfile),
 }
 
-impl SubProviderExecutor {
-    pub fn new(config: ConvertorConfig, api_map: HashMap<SubProvider, SubProviderWrapper>) -> Self {
+impl ProviderCli {
+    pub fn new(config: ConvertorConfig, api_map: HashMap<SubProvider, ProviderApi>) -> Self {
         Self { config, api_map }
     }
 
-    pub async fn execute(&mut self, cmd: SubProviderCmd) -> Result<(UrlBuilder, SubProviderExecutorResult)> {
+    pub async fn execute(&mut self, cmd: ProviderCmd) -> Result<(UrlBuilder, ProviderCliResult)> {
         let client = cmd.client;
-        let sub_provider = cmd.provider;
+        let provider = cmd.provider;
         let url_builder = self.create_url_builder(&cmd).await?;
-        let raw_profile_content = match self.api_map.get_mut(&sub_provider) {
-            Some(api) => {
-                api.set_sub_url(url_builder.sub_url.clone());
-                api.get_raw_profile(client).await?
-            }
-            None => {
-                return Err(eyre!("无法取得订阅供应商的 api 实现: {}", &sub_provider));
-            }
-        };
+        let api = self
+            .api_map
+            .get_mut(&provider)
+            .ok_or(eyre!("无法取得订阅供应商的 api 实现: {}", &provider))?;
+        api.set_sub_url(url_builder.sub_url.clone());
+        let raw_profile_content = api
+            .get_raw_profile(client, UserAgent::from_static("Surge Mac/8310"))
+            .await?;
         let uni_sub_host_port = url_builder.sub_url.host_port()?;
         let (client_profile, policies) = match client {
             ProxyClient::Surge => {
@@ -121,40 +121,27 @@ impl SubProviderExecutor {
             }
         };
 
-        let raw_sub_url = url_builder.build_raw_url();
-        let profile_url = url_builder.build_profile_url();
-        let raw_profile_url = url_builder.build_raw_profile_url();
-        let sub_logs_url = url_builder.build_sub_logs_url(1, 20)?;
-
-        let raw_link = SubProviderExecutorLink::raw((&raw_sub_url).into());
-        let profile_link = SubProviderExecutorLink::profile((&profile_url).into());
-        let raw_profile_link = SubProviderExecutorLink::raw_profile((&raw_profile_url).into());
-        let logs_link = SubProviderExecutorLink::logs((&sub_logs_url).into());
-        let rule_provider_links = policies
+        let raw_url = url_builder.build_raw_url();
+        let profile_url = url_builder.build_profile_url()?;
+        let raw_profile_url = url_builder.build_raw_profile_url()?;
+        let sub_logs_url = url_builder.build_sub_logs_url()?;
+        let rule_provider_urls = policies
             .iter()
-            .map(|policy| {
-                let name = match client {
-                    ProxyClient::Surge => SurgeRenderer::render_provider_name_for_policy(policy)?,
-                    ProxyClient::Clash => ClashRenderer::render_provider_name_for_policy(policy)?,
-                };
-                let url = url_builder.build_rule_provider_url(policy);
-                Ok(SubProviderExecutorLink::rule_provider(name, (&url).into()))
-            })
-            .collect::<Result<Vec<_>>>()?;
-        let result = SubProviderExecutorResult {
-            raw_link,
-            raw_profile_link,
-            profile_link,
-            logs_link,
-            rule_provider_links,
+            .map(|policy| url_builder.build_rule_provider_url(policy))
+            .collect::<Result<Vec<_>, UrlBuilderError>>()?;
+        let result = ProviderCliResult {
+            raw_url,
+            raw_profile_url,
+            profile_url,
+            sub_logs_url,
+            rule_provider_urls,
         };
 
         // 副作用逻辑后置，主流程只负责数据流
         if cmd.update {
             match client_profile {
                 ClientProfile::Surge => {
-                    self.update_surge_config(&url_builder, &result.logs_link, &policies)
-                        .await?;
+                    self.update_surge_config(&url_builder, &policies).await?;
                 }
                 ClientProfile::Clash(profile) => {
                     self.update_clash_config(&url_builder, profile).await?;
@@ -164,12 +151,12 @@ impl SubProviderExecutor {
         Ok((url_builder, result))
     }
 
-    pub fn post_execute(&self, _url_builder: UrlBuilder, result: SubProviderExecutorResult) {
+    pub fn post_execute(&self, _url_builder: UrlBuilder, result: ProviderCliResult) {
         println!("{result}");
     }
 
-    async fn create_url_builder(&self, cmd: &SubProviderCmd) -> Result<UrlBuilder> {
-        let SubProviderCmd {
+    async fn create_url_builder(&self, cmd: &ProviderCmd) -> Result<UrlBuilder> {
+        let ProviderCmd {
             client,
             provider,
             server,
@@ -213,7 +200,13 @@ impl SubProviderExecutor {
                 };
                 url_builder
             }
-            Some(UrlSource::Decode { profile_url }) => UrlBuilder::parse_from_url(profile_url, &self.config.secret)?,
+            Some(UrlSource::Decode { profile_url }) => UrlBuilder::parse_from_url(
+                profile_url,
+                &self.config.secret,
+                self.config.server.clone(),
+                *client,
+                *provider,
+            )?,
         };
 
         if let Some(server) = server {
@@ -232,11 +225,10 @@ impl SubProviderExecutor {
     async fn update_surge_config(
         &self,
         url_builder: &UrlBuilder,
-        sub_logs_link: &SubProviderExecutorLink,
-        policies: &[Policy],
+        policies: impl IntoIterator<Item = &Policy>,
     ) -> Result<()> {
         if let Some(ProxyClientConfig::Surge(config)) = self.config.clients.get(&ProxyClient::Surge) {
-            config.update_surge_config(url_builder, sub_logs_link, policies).await?;
+            config.update_surge_config(url_builder, policies).await?;
         } else {
             eprintln!("{}", "Surge 配置未找到，请检查配置文件是否正确设置".red().bold());
         }
@@ -258,34 +250,39 @@ impl SubProviderExecutor {
 impl SurgeConfig {
     async fn update_surge_config(
         &self,
-        url: &UrlBuilder,
-        sub_logs_link: &SubProviderExecutorLink,
-        policies: &[Policy],
+        url_builder: &UrlBuilder,
+        policies: impl IntoIterator<Item = &Policy>,
     ) -> Result<()> {
         // 更新主订阅配置，即由 convertor 生成的订阅配置
-        let header = url.build_managed_config_header(SurgeHeaderType::Profile);
-        Self::update_conf(&self.main_profile_path(), header).await?;
+        Self::update_conf(
+            &self.main_profile_path(),
+            url_builder.build_surge_header(ConvertorUrlType::Profile)?,
+        )
+        .await?;
 
         // 更新转发原始订阅配置，即由 convertor 生成的原始订阅配置
         if let Some(raw_profile_path) = self.raw_profile_path() {
-            let header = url.build_managed_config_header(SurgeHeaderType::RawProfile);
-            Self::update_conf(raw_profile_path, header).await?;
+            Self::update_conf(
+                raw_profile_path,
+                url_builder.build_surge_header(ConvertorUrlType::RawProfile)?,
+            )
+            .await?;
         }
 
         // 更新原始订阅配置，即由订阅提供商生成的订阅配置，如果存在的话
         if let Some(raw_sub_path) = self.raw_sub_path() {
-            let header = url.build_managed_config_header(SurgeHeaderType::Raw);
-            Self::update_conf(raw_sub_path, header).await?;
+            Self::update_conf(raw_sub_path, url_builder.build_surge_header(ConvertorUrlType::Raw)?).await?;
         }
 
         // 更新 rules.dconf 中的 RULE-SET 规则，规则提供者将从 policies 中生成 URL
         if let Some(rules_path) = self.rules_path() {
-            self.update_surge_rule_providers(rules_path, url, policies).await?;
+            self.update_surge_rule_providers(rules_path, url_builder, policies)
+                .await?;
         }
 
         // 更新 subscription_logs.js 中的请求订阅日志的 URL
         if let Some(sub_logs_path) = self.sub_logs_path() {
-            self.update_surge_sub_logs_url(sub_logs_path, sub_logs_link.url.as_str())
+            self.update_surge_sub_logs_url(sub_logs_path, url_builder.build_sub_logs_url()?)
                 .await?;
         }
         Ok(())
@@ -294,8 +291,8 @@ impl SurgeConfig {
     async fn update_surge_rule_providers(
         &self,
         rules_path: impl AsRef<Path>,
-        url: &UrlBuilder,
-        policies: &[Policy],
+        url_builder: &UrlBuilder,
+        policies: impl IntoIterator<Item = &Policy>,
     ) -> Result<()> {
         let content = tokio::fs::read_to_string(&rules_path).await?;
         let mut lines = content.lines().map(Cow::Borrowed).collect::<Vec<_>>();
@@ -312,10 +309,10 @@ impl SurgeConfig {
         });
 
         let provider_rules = policies
-            .iter()
+            .into_iter()
             .map(|policy| {
                 let name = SurgeRenderer::render_provider_name_for_policy(policy)?;
-                let url = url.build_rule_provider_url(policy);
+                let url = url_builder.build_rule_provider_url(policy)?;
                 Ok(Rule::surge_rule_provider(policy, name, url))
             })
             .collect::<ParseResult<Vec<_>>>()?;
@@ -335,11 +332,11 @@ impl SurgeConfig {
     async fn update_surge_sub_logs_url(
         &self,
         sub_logs_path: impl AsRef<Path>,
-        sub_logs_link: impl AsRef<str>,
+        sub_logs_url: ConvertorUrl,
     ) -> Result<()> {
         let content = tokio::fs::read_to_string(&sub_logs_path).await?;
         let mut lines = content.lines().map(Cow::Borrowed).collect::<Vec<_>>();
-        lines[0] = Cow::Owned(format!(r#"const sub_logs_link = "{}""#, sub_logs_link.as_ref()));
+        lines[0] = Cow::Owned(format!(r#"const sub_logs_link = "{}""#, sub_logs_url));
         let content = lines.join("\n");
         tokio::fs::write(sub_logs_path, &content).await?;
         Ok(())
@@ -358,13 +355,13 @@ impl SurgeConfig {
 impl ClashConfig {
     async fn update_clash_config(
         &self,
-        url: &UrlBuilder,
+        url_builder: &UrlBuilder,
         raw_profile: ClashProfile,
         secret: impl AsRef<str>,
     ) -> Result<()> {
         let mut template = ClashProfile::template()?;
         template.patch(raw_profile)?;
-        template.convert(url)?;
+        template.convert(url_builder)?;
         template.secret = Some(secret.as_ref().to_string());
         let clash_config = ClashRenderer::render_profile(&template)?;
         let main_sub_path = self.main_sub_path();
@@ -374,6 +371,28 @@ impl ClashConfig {
             }
         }
         tokio::fs::write(main_sub_path, clash_config).await?;
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ProviderCliResult {
+    pub raw_url: ConvertorUrl,
+    pub raw_profile_url: ConvertorUrl,
+    pub profile_url: ConvertorUrl,
+    pub sub_logs_url: ConvertorUrl,
+    pub rule_provider_urls: Vec<ConvertorUrl>,
+}
+
+impl Display for ProviderCliResult {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "{}", self.raw_url)?;
+        writeln!(f, "{}", self.profile_url)?;
+        writeln!(f, "{}", self.raw_profile_url)?;
+        writeln!(f, "{}", self.sub_logs_url)?;
+        for link in &self.rule_provider_urls {
+            writeln!(f, "{link}")?;
+        }
         Ok(())
     }
 }

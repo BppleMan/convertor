@@ -89,16 +89,16 @@ impl Profile for ClashProfile {
         ClashParser::parse(content)
     }
 
-    fn convert(&mut self, url: &UrlBuilder) -> ParseResult<()> {
+    fn convert(&mut self, url_builder: &UrlBuilder) -> ParseResult<()> {
         self.optimize_proxies()?;
-        self.optimize_rules(url)?;
+        self.optimize_rules(url_builder)?;
         Ok(())
     }
 
-    fn append_rule_provider(&mut self, policy: &Policy, url: &UrlBuilder) -> ParseResult<()> {
+    fn append_rule_provider(&mut self, url_builder: &UrlBuilder, policy: &Policy) -> ParseResult<()> {
         let name = ClashRenderer::render_provider_name_for_policy(policy)?;
-        let rule_provider_url = url.build_rule_provider_url(policy);
-        let rule_provider = RuleProvider::new(rule_provider_url, name.clone(), url.interval);
+        let rule_provider_url = url_builder.build_rule_provider_url(policy)?;
+        let rule_provider = RuleProvider::new(rule_provider_url, name.clone(), url_builder.interval);
         self.rule_providers.push((name.clone(), rule_provider));
         let rule = Rule::clash_rule_provider(policy, name);
         self.rules.push(rule);

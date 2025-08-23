@@ -47,7 +47,7 @@ proxy-groups:
 
 rules:
     # Subscription Direct
-    - "DOMAIN,{uni_sub_host},DIRECT"
+    - "DOMAIN,{sub_host},DIRECT"
     - "DOMAIN,trdy.subiway.com:8888,DIRECT"
 
     # Process Name
