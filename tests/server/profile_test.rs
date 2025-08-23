@@ -38,7 +38,6 @@ async fn test_profile_surge_boslife() -> color_eyre::Result<()> {
     init_test();
     let server_context = start_server().await?;
     let actual = profile(&server_context, ProxyClient::Surge, SubProvider::BosLife).await?;
-    println!("{}", actual);
     insta::assert_snapshot!(actual);
     Ok(())
 }

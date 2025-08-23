@@ -1,8 +1,6 @@
-use crate::{CLASH_MOCK_DIR, SURGE_MOCK_DIR};
 use axum::Router;
 use axum::routing::get;
 use color_eyre::Report;
-use color_eyre::eyre::eyre;
 use convertor::common::config::ConvertorConfig;
 use convertor::common::config::provider::{BosLifeConfig, SubProvider, SubProviderConfig};
 use convertor::common::config::proxy_client::ProxyClient;
@@ -14,13 +12,12 @@ use convertor::server::router::{profile, raw_profile, rule_provider};
 use dispatch_map::DispatchMap;
 use httpmock::Method::{GET, POST};
 use httpmock::MockServer;
-use moka::future::Cache;
-use std::sync::{Arc, LazyLock};
+use std::sync::Arc;
 use strum::VariantArray;
 use url::Url;
 
 mod profile_test;
-pub mod rule_provider_test;
+mod rule_provider_test;
 
 pub struct ServerContext {
     pub app: Router,
@@ -55,22 +52,13 @@ pub async fn start_server() -> color_eyre::Result<ServerContext> {
     Ok(ServerContext { app, app_state })
 }
 
-static CACHED_MOCK_SERVER: LazyLock<Cache<SubProviderConfig, Arc<MockServer>>> =
-    LazyLock::new(|| Cache::builder().max_capacity(100).build());
-
 pub async fn start_mock_provider_server(
     providers: &mut DispatchMap<SubProvider, SubProviderConfig>,
 ) -> Result<(), Report> {
     for (_, config) in providers.iter_mut() {
-        CACHED_MOCK_SERVER
-            .try_get_with(config.clone(), async {
-                let mock_server = match config {
-                    SubProviderConfig::BosLife(config) => config.start_mock_provider_server().await?,
-                };
-                Ok::<_, Report>(Arc::new(mock_server))
-            })
-            .await
-            .map_err(|e| eyre!(e))?;
+        match config {
+            SubProviderConfig::BosLife(config) => config.start_mock_provider_server().await?,
+        };
     }
     Ok(())
 }
@@ -140,21 +128,15 @@ impl MockServerExt for BosLifeConfig {
 }
 
 pub fn mock_profile(client: ProxyClient, sub_host: impl AsRef<str>) -> String {
-    get_included_str(client, "mock").replace("{sub_host}", sub_host.as_ref())
-}
-
-pub fn get_included_str(client: ProxyClient, file_name: impl AsRef<str>) -> String {
-    let ext = match client {
-        ProxyClient::Surge => "conf",
-        ProxyClient::Clash => "yaml",
-    };
     match client {
-        ProxyClient::Surge => &SURGE_MOCK_DIR,
-        ProxyClient::Clash => &CLASH_MOCK_DIR,
+        ProxyClient::Surge => include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test-assets/surge/mock_profile.conf"
+        )),
+        ProxyClient::Clash => include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test-assets/clash/mock_profile.yaml"
+        )),
     }
-    .get_file(format!("{}.{}", file_name.as_ref(), ext))
-    .unwrap_or_else(|| panic!("无法找到文件: {}", file_name.as_ref()))
-    .contents_utf8()
-    .unwrap_or_else(|| panic!("无法解析 {} 文件内容", file_name.as_ref()))
-    .to_string()
+    .replace("{sub_host}", sub_host.as_ref())
 }
