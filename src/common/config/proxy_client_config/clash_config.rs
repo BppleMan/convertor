@@ -4,9 +4,9 @@ use std::path::PathBuf;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ClashConfig {
-    clash_dir: String,
     interval: u64,
     strict: bool,
+    clash_dir: String,
     main_sub_name: String,
     install_path: Option<String>,
 }

@@ -1,12 +1,11 @@
-mod boslife_config;
+pub mod boslife_config;
 
-pub use boslife_config::*;
 use clap::ValueEnum;
-use dispatch_map::dispatch_pattern;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::hash::Hash;
+use std::ops::Deref;
 use strum::{AsRefStr, Display, EnumString, IntoStaticStr, VariantArray};
-use thiserror::Error;
 use url::Url;
 
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -18,51 +17,59 @@ pub enum Provider {
     BosLife,
 }
 
-impl Provider {
-    pub fn providers() -> [Self; 1] {
-        [Provider::BosLife]
-    }
-
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Provider::BosLife => "boslife",
-        }
-    }
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct ProviderConfig {
+    pub provider: Provider,
+    pub sub_url: Url,
+    pub api_config: ApiConfig,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum ProviderConfig {
-    BosLife(BosLifeConfig),
+pub struct ApiConfig {
+    pub host: Url,
+    pub prefix: String,
+    pub headers: Headers,
+    pub credential: Credential,
+    pub login_api: Api,
+    pub get_sub_api: Api,
+    pub reset_sub_api: Api,
+    pub sub_logs_api: Option<Api>,
 }
 
-dispatch_pattern! {
-    Provider::BosLife => ProviderConfig::BosLife(BosLifeConfig),
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct Api {
+    pub path: String,
+    pub json_path: String,
 }
 
 #[derive(Default, Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct CredentialConfig {
+pub struct Credential {
     pub username: String,
     pub password: String,
 }
 
-impl ProviderConfig {
-    pub fn sub_url(&self) -> &Url {
-        match self {
-            ProviderConfig::BosLife(config) => &config.sub_url,
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct Headers(pub HashMap<String, String>);
+
+impl Hash for Headers {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        for (key, value) in &self.0 {
+            key.hash(state);
+            value.hash(state);
         }
     }
+}
 
-    pub fn boslife_template() -> Self {
-        ProviderConfig::BosLife(BosLifeConfig::template())
+impl AsRef<HashMap<String, String>> for Headers {
+    fn as_ref(&self) -> &HashMap<String, String> {
+        &self.0
     }
 }
 
-pub struct ApiConfig {
-    pub api: &'static str,
-    pub json_path: &'static str,
-}
+impl Deref for Headers {
+    type Target = HashMap<String, String>;
 
-#[derive(Debug, Error)]
-#[error("无法解析提供商: {0}")]
-pub struct ParseProviderError(String);
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}

@@ -21,14 +21,14 @@ pub enum ProviderApi {
 
 impl ProviderApi {
     pub fn create_api(
-        providers: DispatchMap<Provider, ProviderConfig>,
+        providers: HashMap<Provider, ProviderConfig>,
         redis: ConnectionManager,
     ) -> HashMap<Provider, ProviderApi> {
         providers
             .into_iter()
-            .map(|(provider, config)| match (provider, config) {
-                (Provider::BosLife, ProviderConfig::BosLife(config)) => (
-                    Provider::BosLife,
+            .map(|(provider, config)| match &provider {
+                Provider::BosLife => (
+                    provider,
                     ProviderApi::BosLife(BosLifeApi::new(config, Some(redis.clone()))),
                 ),
             })
@@ -38,10 +38,8 @@ impl ProviderApi {
     pub fn create_api_no_redis(providers: DispatchMap<Provider, ProviderConfig>) -> HashMap<Provider, ProviderApi> {
         providers
             .into_iter()
-            .map(|(provider, config)| match (provider, config) {
-                (Provider::BosLife, ProviderConfig::BosLife(config)) => {
-                    (Provider::BosLife, ProviderApi::BosLife(BosLifeApi::new(config, None)))
-                }
+            .map(|(provider, config)| match &provider {
+                Provider::BosLife => (provider, ProviderApi::BosLife(BosLifeApi::new(config, None))),
             })
             .collect()
     }

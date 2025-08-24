@@ -1,18 +1,27 @@
 use clap::Parser;
+use clap::builder::Styles;
+use clap::builder::styling::AnsiColor;
 use color_eyre::Result;
 use convertor::cli::ConvertorCommand;
 use convertor::cli::config_cli::ConfigCli;
 use convertor::cli::provider_cli::ProviderCli;
 use convertor::common::config::ConvertorConfig;
 use convertor::common::once::{init_backtrace, init_base_dir, init_log};
-use convertor::common::redis_info::{init_redis_info, redis_client, redis_url};
+use convertor::common::redis::{init_redis, redis_client, redis_url};
 use convertor::provider_api::ProviderApi;
 use convertor::server::start_server;
 use std::net::SocketAddrV4;
 use std::path::PathBuf;
 
+// 定义一个静态的 Styles 常量，设置我们想要的颜色样式
+const STYLES: Styles = Styles::styled()
+    .header(AnsiColor::Yellow.on_default().bold()) // 一级标题（如 "Usage:", "Options:"）使用黄色粗体
+    .usage(AnsiColor::Green.on_default().bold()) // Usage 行使用绿色粗体
+    .literal(AnsiColor::Blue.on_default().bold()) // 字面量文本（比如命令名、旗标）使用蓝色粗体
+    .placeholder(AnsiColor::Cyan.on_default()); // 占位符（比如 <参数>）使用青色
+
 #[derive(Debug, Parser)]
-#[clap(version, author)]
+#[clap(version, author, styles = STYLES)]
 /// 启动 Convertor 服务
 pub struct Convertor {
     /// 监听地址, 不需要指定协议
@@ -33,7 +42,7 @@ async fn main() -> Result<()> {
     let base_dir = init_base_dir();
     init_backtrace();
     init_log(Some(&base_dir));
-    init_redis_info()?;
+    init_redis()?;
 
     let mut args = Convertor::parse();
     let redis_client = redis_client(redis_url())?;

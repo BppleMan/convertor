@@ -4,7 +4,7 @@ use convertor::common::config::ConvertorConfig;
 use convertor::common::config::provider_config::Provider;
 use convertor::common::config::proxy_client_config::ProxyClient;
 use convertor::common::once::{init_backtrace, init_base_dir};
-use convertor::common::redis_info::{redis_client, redis_url};
+use convertor::common::redis::{redis_client, redis_url};
 use convertor::core::profile::Profile;
 use convertor::core::profile::surge_profile::SurgeProfile;
 use convertor::core::renderer::Renderer;

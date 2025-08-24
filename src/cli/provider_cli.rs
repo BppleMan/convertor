@@ -16,8 +16,9 @@ use crate::core::renderer::surge_renderer::{SURGE_RULE_PROVIDER_COMMENT_END, SUR
 use crate::core::result::ParseResult;
 use crate::core::url_builder::{HostPort, UrlBuilder, UrlBuilderError};
 use crate::provider_api::ProviderApi;
+use crate::server::query::ConvertorQuery;
 use axum_extra::headers::UserAgent;
-use clap::{Args, Subcommand};
+use clap::Args;
 use color_eyre::Result;
 use color_eyre::eyre::eyre;
 use color_eyre::owo_colors::OwoColorize;
@@ -38,8 +39,14 @@ pub struct ProviderCmd {
     #[arg(value_enum, default_value_t = Provider::BosLife)]
     pub provider: Provider,
 
+    /// 订阅链接, 可以是 转换器链接(profile_url) 或 原始订阅链接(raw_url)
+    /// 将会自动判断链接类型, 仅根据 host 部分与 server 进行匹配
+    /// 可选的参数, 如果不指定, 则通过 provider 来获取 raw_url
+    #[arg()]
+    pub url: Option<Url>,
+
     /// convertor 所在服务器的地址
-    /// 格式为 `http://ip:port`
+    /// 格式为 `http://host:port`
     /// 未指定时，使用配置文件中的默认值
     #[arg(short, long)]
     pub server: Option<Url>,
@@ -58,23 +65,9 @@ pub struct ProviderCmd {
     #[arg(short, long, default_value_t = false)]
     pub update: bool,
 
-    #[command(subcommand)]
-    pub url_source: Option<UrlSource>,
-}
-
-#[derive(Debug, Clone, Subcommand)]
-pub enum UrlSource {
-    /// 使用 订阅提供商API 获取最新订阅链接
-    Get,
-
-    /// 使用重置的原始订阅链接
-    Reset,
-
-    /// 解码 订阅提供商 的原始订阅链接
-    Raw { sub_url: Option<Url> },
-
-    /// 解码 convertor 的完整订阅链接
-    Decode { profile_url: Url },
+    /// 是否重置订阅链接
+    #[arg(short, long, default_value_t = false)]
+    pub reset: bool,
 }
 
 pub struct ProviderCli {
@@ -159,67 +152,97 @@ impl ProviderCli {
         let ProviderCmd {
             client,
             provider,
+            url,
             server,
             interval,
-            update: _update,
             strict,
-            url_source,
+            reset,
+            update: _,
         } = cmd;
-        let mut url_builder = match url_source {
-            None => self.config.create_url_builder(*client, *provider)?,
-            Some(UrlSource::Get) => {
-                let sub_url = self
-                    .api_map
-                    .get(provider)
+
+        // 从 client_config 中取参数的 fallback
+        let client_config = self
+            .config
+            .clients
+            .get(client)
+            .ok_or(eyre!("无法取得代理客户端的配置: {}", client))?;
+
+        let server = server.clone().unwrap_or_else(|| self.config.server.clone());
+        let mut enc_secret = None;
+        let mut enc_sub_url = None;
+        let mut interval = interval
+            .as_ref()
+            .map(|i| *i)
+            .unwrap_or_else(|| client_config.interval());
+        let mut strict = strict.as_ref().map(|s| *s).unwrap_or_else(|| client_config.strict());
+
+        let url_type = self.detect_url(cmd);
+        let sub_url = match (url_type, reset) {
+            // Get sub_url
+            (None, false) => {
+                self.api_map
+                    .get(&provider)
                     .ok_or(eyre!("无法取得订阅供应商的 api 实现: {}", &provider))?
                     .get_sub_url()
-                    .await?;
-                let mut url_builder = self.config.create_url_builder(*client, *provider)?;
-                url_builder.sub_url = sub_url;
-                url_builder
+                    .await?
             }
-            Some(UrlSource::Reset) => {
-                let sub_url = self
-                    .api_map
-                    .get(provider)
+            // Reset sub_url
+            (None, true) => {
+                self.api_map
+                    .get(&provider)
                     .ok_or(eyre!("无法取得订阅供应商的 api 实现: {}", &provider))?
                     .reset_sub_url()
-                    .await?;
-                let mut url_builder = self.config.create_url_builder(*client, *provider)?;
-                url_builder.sub_url = sub_url;
-                url_builder
+                    .await?
             }
-            Some(UrlSource::Raw { sub_url }) => {
-                let mut url_builder = self.config.create_url_builder(*client, *provider)?;
-                url_builder.sub_url = match (sub_url, self.config.providers.get(provider)) {
-                    (Some(sub_url), _) => sub_url.clone(),
-                    (None, Some(config)) => config.sub_url().clone(),
-                    _ => {
-                        return Err(eyre!("未找到订阅提供商的原始订阅链接，请检查参数是否完整"));
-                    }
-                };
-                url_builder
+            // Use sub_url
+            (Some(ConvertorUrlType::Raw), _) => url.clone().unwrap(),
+            // Decode profile_url
+            (Some(ConvertorUrlType::Profile), _) => {
+                let profile_query = url.as_ref().and_then(Url::query).ok_or(eyre!("订阅链接缺少查询参数"))?;
+                let query = ConvertorQuery::parse_from_query_string(
+                    profile_query,
+                    &self.config.secret,
+                    server.clone(),
+                    *client,
+                    *provider,
+                )?;
+                enc_secret = query.enc_secret.clone();
+                enc_sub_url = Some(query.enc_sub_url.clone());
+                interval = query.interval;
+                strict = query.strict.unwrap_or(strict);
+                query.sub_url.clone()
             }
-            Some(UrlSource::Decode { profile_url }) => UrlBuilder::parse_from_url(
-                profile_url,
-                &self.config.secret,
-                self.config.server.clone(),
-                *client,
-                *provider,
-            )?,
+            _ => unreachable!("不支持的订阅链接类型"),
         };
 
-        if let Some(server) = server {
-            url_builder.server = server.clone();
-        }
-        if let Some(interval) = interval {
-            url_builder.interval = *interval;
-        }
-        if let Some(strict) = strict {
-            url_builder.strict = *strict;
-        }
+        let url_builder = UrlBuilder::new(
+            self.config.secret.clone(),
+            enc_secret,
+            *client,
+            *provider,
+            server,
+            sub_url,
+            enc_sub_url,
+            interval,
+            strict,
+        )?;
 
         Ok(url_builder)
+    }
+
+    fn detect_url(&self, cmd: &ProviderCmd) -> Option<ConvertorUrlType> {
+        let ProviderCmd { url, server, .. } = cmd;
+        let server = server
+            .as_ref()
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| self.config.server.to_string());
+        url.as_ref().map(|url| {
+            if url.as_str().starts_with(&server) {
+                ConvertorUrlType::Profile
+            } else {
+                ConvertorUrlType::Raw
+            }
+        })
     }
 
     async fn update_surge_config(

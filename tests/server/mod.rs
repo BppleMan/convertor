@@ -2,9 +2,9 @@ use axum::Router;
 use axum::routing::get;
 use color_eyre::Report;
 use convertor::common::config::ConvertorConfig;
-use convertor::common::config::provider_config::{BosLifeConfig, Provider, ProviderConfig};
+use convertor::common::config::provider_config::{Provider, ProviderConfig};
 use convertor::common::config::proxy_client_config::ProxyClient;
-use convertor::common::redis_info::{REDIS_CONVERTOR_PASSWORD, REDIS_CONVERTOR_USERNAME, REDIS_ENDPOINT};
+use convertor::core::profile::policy::Policy;
 use convertor::core::url_builder::HostPort;
 use convertor::provider_api::ProviderApi;
 use convertor::server::app_state::AppState;
@@ -22,19 +22,6 @@ mod rule_provider_test;
 pub struct ServerContext {
     pub app: Router,
     pub app_state: Arc<AppState>,
-}
-
-pub fn redis_url() -> String {
-    format!(
-        "rediss://{}:{}@{}/2?protocol=resp3",
-        REDIS_CONVERTOR_USERNAME
-            .get()
-            .expect("REDIS_CONVERTOR_USERNAME not set"),
-        REDIS_CONVERTOR_PASSWORD
-            .get()
-            .expect("REDIS_CONVERTOR_PASSWORD not set"),
-        REDIS_ENDPOINT.get().expect("REDIS_ENDPOINT not set")
-    )
 }
 
 pub async fn start_server() -> color_eyre::Result<ServerContext> {
@@ -65,7 +52,7 @@ pub(crate) trait MockServerExt {
     async fn start_mock_provider_server(&mut self) -> Result<MockServer, Report>;
 }
 
-impl MockServerExt for BosLifeConfig {
+impl MockServerExt for ProviderConfig {
     async fn start_mock_provider_server(&mut self) -> Result<MockServer, Report> {
         let mock_server = MockServer::start_async().await;
 
@@ -78,7 +65,7 @@ impl MockServerExt for BosLifeConfig {
 
         mock_server
             .mock_async(|when, then| {
-                when.method(POST).path(self.login_url_api().api);
+                when.method(POST).path(self.login_url_api().path);
                 let body = serde_json::json!({
                     "data": {
                         "auth_data": "mock_auth_token"
@@ -92,11 +79,23 @@ impl MockServerExt for BosLifeConfig {
 
         mock_server
             .mock_async(|when, then| {
-                when.method(GET).path(self.get_sub_url_api().api);
+                when.method(GET).path(self.get_sub_url_api().path);
                 let body = serde_json::json!({
                     "data": {
                         "subscribe_url": mock_server.url(format!("{subscribe_url_path}?token={token}")),
                     }
+                });
+                then.status(200)
+                    .body(serde_json::to_string(&body).unwrap())
+                    .header("Content-Type", "application/json");
+            })
+            .await;
+
+        mock_server
+            .mock_async(|when, then| {
+                when.method(POST).path(self.reset_sub_url_api().path);
+                let body = serde_json::json!({
+                    "data": mock_server.url(format!("{subscribe_url_path}?token=reset_{token}")),
                 });
                 then.status(200)
                     .body(serde_json::to_string(&body).unwrap())
@@ -137,4 +136,16 @@ pub fn mock_profile(client: ProxyClient, sub_host: impl AsRef<str>) -> String {
         )),
     }
     .replace("{sub_host}", sub_host.as_ref())
+}
+
+pub fn policies() -> [Policy; 7] {
+    [
+        Policy::subscription_policy(),
+        Policy::new("BosLife", None, false),
+        Policy::new("BosLife", Some("no-resolve"), false),
+        Policy::new("BosLife", Some("force-remote-dns"), false),
+        Policy::direct_policy(None),
+        Policy::direct_policy(Some("no-resolve")),
+        Policy::direct_policy(Some("force-remote-dns")),
+    ]
 }

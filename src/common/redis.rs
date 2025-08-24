@@ -7,7 +7,7 @@ pub static REDIS_CONVERTOR_PASSWORD: OnceLock<String> = OnceLock::new();
 pub const REDIS_CONVERTOR_CONFIG_KEY: &str = "convertor:config.toml";
 pub const REDIS_CONVERTOR_CONFIG_PUBLISH_CHANNEL: &str = "convertor:config:publish";
 
-pub fn init_redis_info() -> color_eyre::Result<()> {
+pub fn init_redis() -> color_eyre::Result<()> {
     let endpoint = std::env::var("REDIS_ENDPOINT").expect("REDIS_ENDPOINT not set");
     let username = std::env::var("REDIS_CONVERTOR_USERNAME").expect("REDIS_CONVERTOR_USERNAME not set");
     let password = std::env::var("REDIS_CONVERTOR_PASSWORD").expect("REDIS_CONVERTOR_PASSWORD not set");

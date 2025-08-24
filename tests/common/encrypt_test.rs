@@ -29,13 +29,13 @@ fn test_decrypt() -> color_eyre::Result<()> {
         secret.as_bytes(),
         "qDbvzIt3DcfaQVl8UVdIjXck4D-42Eo3UN2hjcQ3B_IH9FI51WQX94QusyP4URwR4naCdMYFGV6aljrLzyNRhsJg9Cj55JszewkvSRXW5zMgUJCkai79FKZ4",
     )?;
-    println!("{dec}");
+    insta::assert_snapshot!(dec, @"http://127.0.0.1:64287/subscription?token=bppleman");
 
     let dec = decrypt(
         secret.as_bytes(),
         "qDbvzIt3DcfaQVl8UVdIjXck4D-42Eo3UN2hjcQ3B_IH9FI51WQX94QusiHxXxwR4naCdMYFGV6aljrLzyNRhsJg9Cj55Jszewk65g-J2hWsrxSAc1sHyTK1",
     )?;
-    println!("{dec}");
+    insta::assert_snapshot!(dec, @"http://127.0.0.1:65019/subscription?token=bppleman");
 
     Ok(())
 }

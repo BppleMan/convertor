@@ -1,8 +1,6 @@
 use crate::common::cache::Cache;
-use crate::common::config::provider_config::{ApiConfig, BosLifeConfig};
+use crate::common::config::provider_config::{ApiConfig, ProviderConfig};
 use crate::common::config::proxy_client_config::ProxyClient;
-use crate::common::config::request_config::RequestConfig;
-use crate::common::ext::NonEmptyOptStr;
 use crate::provider_api::provider_api_trait::ProviderApiTrait;
 use redis::aio::ConnectionManager;
 use reqwest::Client as ReqwestClient;
@@ -12,7 +10,7 @@ use std::fmt::Display;
 
 #[derive(Clone)]
 pub struct BosLifeApi {
-    pub config: BosLifeConfig,
+    pub config: ProviderConfig,
     pub client: ReqwestClient,
     pub cached_auth_token: Cache<String, String>,
     pub cached_sub_profile: Cache<String, String>,
@@ -21,7 +19,7 @@ pub struct BosLifeApi {
 }
 
 impl BosLifeApi {
-    pub fn new(config: BosLifeConfig, redis: Option<ConnectionManager>) -> Self {
+    pub fn new(config: ProviderConfig, redis: Option<ConnectionManager>) -> Self {
         let client = ReqwestClient::builder()
             .cookie_store(true)
             .use_rustls_tls()
@@ -44,28 +42,14 @@ impl BosLifeApi {
 }
 
 impl ProviderApiTrait for BosLifeApi {
-    fn request_config(&self) -> Option<&RequestConfig> {
-        self.config.request.as_ref()
+    fn api_config(&self) -> &ApiConfig {
+        &self.config.api_config
     }
 
-    fn login_url_api(&self) -> ApiConfig {
-        self.config.login_url_api()
-    }
-
-    fn get_sub_url_api(&self) -> ApiConfig {
-        self.config.get_sub_url_api()
-    }
-
-    fn reset_sub_url_api(&self) -> ApiConfig {
-        self.config.reset_sub_url_api()
-    }
-
-    fn get_sub_logs_url_api(&self) -> ApiConfig {
-        self.config.get_sub_logs_url_api()
-    }
-
-    fn build_raw_sub_url(&self, client: ProxyClient) -> Url {
-        self.config.build_raw_sub_url(client)
+    fn build_raw_url(&self, client: ProxyClient) -> Url {
+        let mut sub_url = self.config.sub_url.clone();
+        sub_url.query_pairs_mut().append_pair("flag", client.into());
+        sub_url
     }
 
     fn client(&self) -> &reqwest::Client {
@@ -73,46 +57,41 @@ impl ProviderApiTrait for BosLifeApi {
     }
 
     fn login_request(&self) -> color_eyre::Result<Request> {
-        let url = self.login_url_api().api;
-        let mut builder = self.client.request(Method::POST, url).form(&[
-            ("email", self.config.credential.username.clone()),
-            ("password", self.config.credential.password.clone()),
+        let url = &self.api_config().login_api.path;
+        let builder = self.client.request(Method::POST, url).form(&[
+            ("email", self.api_config().credential.username.clone()),
+            ("password", self.api_config().credential.password.clone()),
         ]);
-        if let Some(config) = self.config.request.as_ref() {
-            if let Some(user_agent) = config.user_agent.filter_non_empty() {
-                builder = builder.header("User-Agent", user_agent);
-            }
-            for (k, v) in &config.headers {
-                builder = builder.header(k, v);
-            }
-        }
         Ok(builder.build()?)
     }
 
-    fn get_sub_url_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request> {
-        let url = self.get_sub_url_api().api;
-        let mut builder = self.client.request(Method::GET, url);
-        if let Some(config) = self.config.request.as_ref() {
-            builder = config.patch_request(builder, Some(auth_token));
-        }
+    fn get_sub_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request> {
+        let url = &self.api_config().get_sub_api.path;
+        let builder = self
+            .client
+            .request(Method::GET, url)
+            .header("Authorization", auth_token.as_ref());
         Ok(builder.build()?)
     }
 
-    fn reset_sub_url_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request> {
-        let url = self.reset_sub_url_api().api;
-        let mut builder = self.client.request(Method::POST, url);
-        if let Some(config) = self.config.request.as_ref() {
-            builder = config.patch_request(builder, Some(auth_token));
-        }
+    fn reset_sub_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request> {
+        let url = &self.api_config().reset_sub_api.path;
+        let builder = self
+            .client
+            .request(Method::POST, url)
+            .header("Authorization", auth_token.as_ref());
         Ok(builder.build()?)
     }
 
     fn get_sub_logs_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request> {
-        let url = self.get_sub_logs_url_api().api;
-        let mut builder = self.client.request(Method::GET, url);
-        if let Some(config) = self.config.request.as_ref() {
-            builder = config.patch_request(builder, Some(auth_token));
-        }
+        let Some(api) = &self.api_config().sub_logs_api else {
+            return Err(color_eyre::eyre::eyre!("订阅日志接口未配置"));
+        };
+        let url = &api.path;
+        let builder = self
+            .client
+            .request(Method::GET, url)
+            .header("Authorization", auth_token.as_ref());
         Ok(builder.build()?)
     }
 

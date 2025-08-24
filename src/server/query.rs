@@ -1,4 +1,4 @@
-use crate::common::config::provider_config::{ParseProviderError, Provider};
+use crate::common::config::provider_config::Provider;
 use crate::common::config::proxy_client_config::{ParseClientError, ProxyClient};
 use crate::common::encrypt::{EncryptError, decrypt};
 use crate::core::profile::policy::Policy;
@@ -254,9 +254,6 @@ pub enum ParseError {
 
     #[error(transparent)]
     ParseClientError(#[from] ParseClientError),
-
-    #[error(transparent)]
-    ParseProviderError(#[from] ParseProviderError),
 
     #[error(transparent)]
     ParseServerError(#[from] url::ParseError),

@@ -1,6 +1,6 @@
 use convertor::common::config::ConvertorConfig;
 use convertor::common::once::{init_backtrace, init_base_dir};
-use convertor::common::redis_info::{redis_client, redis_url};
+use convertor::common::redis::{redis_client, redis_url};
 use convertor::provider_api::ProviderApi;
 
 #[tokio::main(flavor = "multi_thread")]

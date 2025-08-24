@@ -1,7 +1,7 @@
 use crate::common::config::ConvertorConfig;
 use crate::common::config::provider_config::Provider;
 use crate::common::ext::WatchDebounceExt;
-use crate::common::redis_info::REDIS_CONVERTOR_CONFIG_PUBLISH_CHANNEL;
+use crate::common::redis::REDIS_CONVERTOR_CONFIG_PUBLISH_CHANNEL;
 use crate::provider_api::ProviderApi;
 use crate::server::app_state::AppState;
 use axum::Router;

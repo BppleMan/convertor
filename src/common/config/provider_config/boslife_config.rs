@@ -1,63 +1,51 @@
-use crate::common::config::provider_config::{ApiConfig, CredentialConfig};
-use crate::common::config::proxy_client_config::ProxyClient;
-use crate::common::config::request_config::RequestConfig;
-use serde::{Deserialize, Serialize};
+use crate::common::config::provider_config::{Api, ApiConfig, Credential, Headers, Provider, ProviderConfig};
 use url::Url;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct BosLifeConfig {
-    pub sub_url: Url,
-    #[serde(default)]
-    pub request: Option<RequestConfig>,
-    pub credential: CredentialConfig,
-}
-
-impl BosLifeConfig {
-    pub fn template() -> Self {
+impl ProviderConfig {
+    pub fn boslife_template() -> Self {
         Self {
+            provider: Provider::BosLife,
             sub_url: Url::parse("http://127.0.0.1:8080/subscription?token=bppleman").expect("不合法的订阅地址"),
-            request: Some(RequestConfig::template()),
-            credential: CredentialConfig {
-                username: "optional[boslife.username]".to_string(),
-                password: "optional[boslife.password]".to_string(),
+            api_config: ApiConfig {
+                host: Url::parse("https://www.blnew.com").expect("不合法的 API 地址"),
+                prefix: "/proxy/".to_string(),
+                headers: Headers(
+                    [
+                        ("Accept", "application/json"),
+                        ("Content-Type", "application/json"),
+                        ("User-Agent", concat!("Convertor/", env!("CARGO_PKG_VERSION"))),
+                        ("Authorization", "optional"),
+                        ("Cookie", "optional"),
+                        (
+                            "sec-ch-ua",
+                            r#""Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138""#,
+                        ),
+                    ]
+                    .into_iter()
+                    .map(|(k, v)| (k.to_string(), v.to_string()))
+                    .collect(),
+                ),
+                credential: Credential {
+                    username: "boslife.username".to_string(),
+                    password: "boslife.password".to_string(),
+                },
+                login_api: Api {
+                    path: "passport/auth/login".to_string(),
+                    json_path: "$.data.auth_data".to_string(),
+                },
+                get_sub_api: Api {
+                    path: "user/getSubscribe".to_string(),
+                    json_path: "$.data.subscribe_url".to_string(),
+                },
+                reset_sub_api: Api {
+                    path: "user/resetSubscribe".to_string(),
+                    json_path: "$.data".to_string(),
+                },
+                sub_logs_api: Some(Api {
+                    path: "user/stat/getSubscribeLog".to_string(),
+                    json_path: "$.data.subscribe_url".to_string(),
+                }),
             },
-        }
-    }
-
-    pub fn build_raw_sub_url(&self, client: ProxyClient) -> Url {
-        let mut url = self.sub_url.clone();
-        // BosLife 的字段是 `flag` 不可改为client
-        url.query_pairs_mut().append_pair("flag", client.into());
-        url
-    }
-}
-
-impl BosLifeConfig {
-    pub fn login_url_api(&self) -> ApiConfig {
-        ApiConfig {
-            api: "https://www.blnew.com/proxy/passport/auth/login",
-            json_path: "$.data.auth_data",
-        }
-    }
-
-    pub fn get_sub_url_api(&self) -> ApiConfig {
-        ApiConfig {
-            api: "https://www.blnew.com/proxy/user/getSubscribe",
-            json_path: "$.data.subscribe_url",
-        }
-    }
-
-    pub fn reset_sub_url_api(&self) -> ApiConfig {
-        ApiConfig {
-            api: "https://www.blnew.com/proxy/user/resetSecurity",
-            json_path: "$.data",
-        }
-    }
-
-    pub fn get_sub_logs_url_api(&self) -> ApiConfig {
-        ApiConfig {
-            api: "https://www.blnew.com/proxy/user/stat/getSubscribeLog",
-            json_path: "$.data",
         }
     }
 }

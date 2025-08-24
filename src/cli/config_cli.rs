@@ -1,5 +1,5 @@
 use crate::common::config::ConvertorConfig;
-use crate::common::redis_info::{REDIS_CONVERTOR_CONFIG_KEY, REDIS_CONVERTOR_CONFIG_PUBLISH_CHANNEL};
+use crate::common::redis::{REDIS_CONVERTOR_CONFIG_KEY, REDIS_CONVERTOR_CONFIG_PUBLISH_CHANNEL};
 use clap::{Args, Subcommand};
 use redis::{AsyncTypedCommands, Client};
 use std::path::PathBuf;

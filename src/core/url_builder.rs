@@ -85,29 +85,12 @@ impl UrlBuilder {
         )
     }
 
-    pub fn parse_from_url(
-        url: &Url,
-        secret: impl AsRef<str>,
-        server: Url,
-        client: ProxyClient,
-        provider: Provider,
-    ) -> Result<Self, UrlBuilderError> {
-        let secret = secret.as_ref();
-        match url.query() {
-            None => Err(UrlBuilderError::ParseFromUrlNoQuery(url.clone())),
-            Some(query) => {
-                let query = ConvertorQuery::parse_from_query_string(query, secret, server, client, provider)?;
-                Ok(Self::from_convertor_query(query, secret)?)
-            }
-        }
-    }
-
     // 构造直通 raw 订阅链接
     pub fn build_raw_url(&self) -> ConvertorUrl {
         ConvertorUrl {
             r#type: ConvertorUrlType::Raw,
             server: self.sub_url.clone(),
-            path: String::new(),
+            path: self.sub_url.path().to_string(),
             query: format!("flag={}", self.client),
         }
     }
@@ -117,7 +100,11 @@ impl UrlBuilder {
         let url = ConvertorUrl {
             r#type: ConvertorUrlType::RawProfile,
             server: self.server.clone(),
-            path: format!("/raw-profile/{}/{}", self.client, self.provider),
+            path: format!(
+                "/raw-profile/{}/{}",
+                self.client.as_ref().to_ascii_lowercase(),
+                self.provider.as_ref().to_ascii_lowercase()
+            ),
             query: self.as_profile_query().encode_to_profile_query()?,
         };
         Ok(url)

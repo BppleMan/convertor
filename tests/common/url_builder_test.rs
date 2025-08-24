@@ -1,14 +1,16 @@
 use crate::init_test;
+use crate::server::policies;
 use convertor::common::config::provider_config::Provider;
 use convertor::common::config::proxy_client_config::ProxyClient;
-use convertor::core::profile::policy::Policy;
+use convertor::core::renderer::Renderer;
+use convertor::core::renderer::clash_renderer::ClashRenderer;
 use convertor::core::url_builder::UrlBuilder;
 use url::Url;
 
-fn test_url_builder(client: ProxyClient, provider: Provider) -> color_eyre::Result<()> {
-    let server = Url::parse("http://127.0.0.1:8001")?;
-    let sub_url = Url::parse("https://example.com/subscription?token=12345")?;
-    let secret = "my_secret_key";
+fn url_builder(client: ProxyClient, provider: Provider) -> color_eyre::Result<UrlBuilder> {
+    let server = Url::parse("http://127.0.0.1:8080")?;
+    let sub_url = Url::parse("https://localhost/subscription?token=bppleman")?;
+    let secret = "bppleman_secret";
     let url_builder = UrlBuilder::new(
         secret,
         None,
@@ -20,32 +22,55 @@ fn test_url_builder(client: ProxyClient, provider: Provider) -> color_eyre::Resu
         86400,
         true,
     )?;
-    let encoded_sub_url = url_builder.enc_sub_url.clone();
-
-    let raw_sub_url = url_builder.build_raw_url();
-    pretty_assertions::assert_str_eq!(format!("{sub_url}&flag={client}"), raw_sub_url.to_string());
-
-    let sub_url = url_builder.build_profile_url()?;
-    pretty_assertions::assert_eq!(
-        format!(
-            "{server}profile?client={client}&provider={provider}&server={server}&interval=86400&strict=true&sub_url={encoded_sub_url}",
-        ),
-        sub_url.to_string()
-    );
-
-    let rule_provider_url = url_builder.build_rule_provider_url(&Policy::subscription_policy())?;
-    pretty_assertions::assert_eq!(
-        format!(
-            "{server}rule-provider?client={client}&provider={provider}&server={server}&interval=86400&policy.name=DIRECT&policy.is_subscription=true&sub_url={encoded_sub_url}",
-        ),
-        rule_provider_url.to_string()
-    );
-
-    Ok(())
+    Ok(url_builder)
 }
 
 #[test]
 fn test_url_builder_surge_boslife() -> color_eyre::Result<()> {
     init_test();
-    test_url_builder(ProxyClient::Surge, Provider::BosLife)
+    let url_builder = url_builder(ProxyClient::Surge, Provider::BosLife)?;
+    let raw_url = url_builder.build_raw_url();
+    insta::assert_snapshot!(raw_url.to_string(), @"https://localhost/subscription?flag=Surge");
+
+    let raw_profile_url = url_builder.build_raw_profile_url()?;
+    insta::assert_snapshot!(raw_profile_url.to_string(), @"http://127.0.0.1:8080/raw-profile/surge/boslife?interval=86400&strict=true&sub_url=qDbvzIt3DcfaQVl8UVdIjXck4D-42Eo3c6g0ZR2cc7lpxUFnkUEWW0fTRfMAmY3yU3f-ESJYD93o5YDKtEzSe1ATkzfrq9RxPdh7fMif0IOZXScDcg");
+
+    let profile_url = url_builder.build_profile_url()?;
+    insta::assert_snapshot!(profile_url.to_string(), @"http://127.0.0.1:8080/profile/surge/boslife?interval=86400&strict=true&sub_url=qDbvzIt3DcfaQVl8UVdIjXck4D-42Eo3c6g0ZR2cc7lpxUFnkUEWW0fTRfMAmY3yU3f-ESJYD93o5YDKtEzSe1ATkzfrq9RxPdh7fMif0IOZXScDcg");
+
+    let policies = policies();
+    for policy in policies {
+        let ctx = format!(
+            "test_url_builder_surge_boslife_{}",
+            ClashRenderer::render_provider_name_for_policy(&policy)?
+        );
+        let rule_provider_url = url_builder.build_rule_provider_url(&policy)?;
+        insta::assert_snapshot!(ctx, rule_provider_url.to_string());
+    }
+    Ok(())
+}
+
+#[test]
+fn test_url_builder_clash_boslife() -> color_eyre::Result<()> {
+    init_test();
+    let url_builder = url_builder(ProxyClient::Clash, Provider::BosLife)?;
+    let raw_url = url_builder.build_raw_url();
+    insta::assert_snapshot!(raw_url.to_string(), @"https://localhost/subscription?flag=Clash");
+
+    let raw_profile_url = url_builder.build_raw_profile_url()?;
+    insta::assert_snapshot!(raw_profile_url.to_string(), @"http://127.0.0.1:8080/raw-profile/clash/boslife?interval=86400&strict=true&sub_url=qDbvzIt3DcfaQVl8UVdIjXck4D-42Eo3c6g0ZR2cc7lpxUFnkUEWW0fTRfMAmY3yU3f-ESJYD93o5YDKtEzSe1ATkzfrq9RxPdh7fMif0IOZXScDcg");
+
+    let profile_url = url_builder.build_profile_url()?;
+    insta::assert_snapshot!(profile_url.to_string(), @"http://127.0.0.1:8080/profile/clash/boslife?interval=86400&strict=true&sub_url=qDbvzIt3DcfaQVl8UVdIjXck4D-42Eo3c6g0ZR2cc7lpxUFnkUEWW0fTRfMAmY3yU3f-ESJYD93o5YDKtEzSe1ATkzfrq9RxPdh7fMif0IOZXScDcg");
+
+    let policies = policies();
+    for policy in policies {
+        let ctx = format!(
+            "test_url_builder_clash_boslife_{}",
+            ClashRenderer::render_provider_name_for_policy(&policy)?
+        );
+        let rule_provider_url = url_builder.build_rule_provider_url(&policy)?;
+        insta::assert_snapshot!(ctx, rule_provider_url.to_string());
+    }
+    Ok(())
 }

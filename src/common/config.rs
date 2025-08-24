@@ -1,7 +1,7 @@
 use crate::common::config::provider_config::{Provider, ProviderConfig};
 use crate::common::config::proxy_client_config::ProxyClientConfig;
 use crate::common::encrypt::{decrypt, encrypt};
-use crate::common::redis_info::REDIS_CONVERTOR_CONFIG_KEY;
+use crate::common::redis::REDIS_CONVERTOR_CONFIG_KEY;
 use crate::core::url_builder::UrlBuilder;
 use color_eyre::Report;
 use color_eyre::eyre::{WrapErr, eyre};
@@ -10,6 +10,7 @@ use proxy_client_config::ProxyClient;
 use redis::AsyncTypedCommands;
 use redis::aio::MultiplexedConnection;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 use std::path::Path;
 use std::str::FromStr;
@@ -18,13 +19,12 @@ use url::Url;
 
 pub mod provider_config;
 pub mod proxy_client_config;
-pub mod request_config;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConvertorConfig {
     pub secret: String,
     pub server: Url,
-    pub providers: DispatchMap<Provider, ProviderConfig>,
+    pub providers: HashMap<Provider, ProviderConfig>,
     #[serde(default)]
     pub clients: DispatchMap<ProxyClient, ProxyClientConfig>,
 }
@@ -34,7 +34,7 @@ impl ConvertorConfig {
         let secret = "bppleman".to_string();
         let server = Url::parse("http://127.0.0.1:8080").expect("不合法的服务器地址");
 
-        let mut providers = DispatchMap::default();
+        let mut providers = HashMap::default();
         providers.insert(Provider::BosLife, ProviderConfig::boslife_template());
 
         let mut clients = DispatchMap::default();
@@ -107,7 +107,7 @@ impl ConvertorConfig {
 
     pub fn create_url_builder(&self, client: ProxyClient, provider: Provider) -> color_eyre::Result<UrlBuilder> {
         let sub_url = match self.providers.get(&provider) {
-            Some(ProviderConfig::BosLife(provider_config)) => provider_config.sub_url.clone(),
+            Some(provider_config) => provider_config.sub_url.clone(),
             None => return Err(eyre!("未找到提供商配置: [providers.{}]", provider)),
         };
         let (interval, strict) = match self.clients.get(&client) {

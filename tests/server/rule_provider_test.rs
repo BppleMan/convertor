@@ -1,5 +1,5 @@
 use crate::init_test;
-use crate::server::{ServerContext, start_server};
+use crate::server::{ServerContext, policies, start_server};
 use axum::body::Body;
 use axum::extract::Request;
 use convertor::common::config::provider_config::Provider;
@@ -34,18 +34,6 @@ async fn rule_provider(
         .replace(&url_builder.sub_url.host_port()?, "localhost");
 
     Ok(actual)
-}
-
-fn policies() -> [Policy; 7] {
-    [
-        Policy::subscription_policy(),
-        Policy::new("BosLife", None, false),
-        Policy::new("BosLife", Some("no-resolve"), false),
-        Policy::new("BosLife", Some("force-remote-dns"), false),
-        Policy::direct_policy(None),
-        Policy::direct_policy(Some("no-resolve")),
-        Policy::direct_policy(Some("force-remote-dns")),
-    ]
 }
 
 #[tokio::test]
