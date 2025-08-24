@@ -4,6 +4,8 @@ use clap::Subcommand;
 
 pub mod config_cli;
 pub mod provider_cli;
+#[cfg(feature = "update_local")]
+pub(self) mod update_local;
 
 #[derive(Debug, Clone, Subcommand)]
 #[allow(clippy::large_enum_variant)]

@@ -235,8 +235,7 @@ features = ["filters"]
 
 [features]
 default = []
-server = []
-cli = []
+update_local = []
 bench = ["tracing-span-tree", "tracing-profile", "tokio/macros"]
 otel = [
     "opentelemetry",
