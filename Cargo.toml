@@ -29,7 +29,7 @@ features = ["macros"]
 
 # async runtime
 [dependencies.tokio]
-version = "1.46.1"
+version = "1.47.1"
 default-features = false
 features = ["fs", "rt-multi-thread", "signal", "macros"]
 
@@ -234,6 +234,9 @@ version = "1.43.1"
 features = ["filters"]
 
 [features]
+default = []
+server = []
+cli = []
 bench = ["tracing-span-tree", "tracing-profile", "tokio/macros"]
 otel = [
     "opentelemetry",
