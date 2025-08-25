@@ -58,7 +58,10 @@ impl ProviderApiTrait for BosLifeApi {
     }
 
     fn login_request(&self) -> color_eyre::Result<Request> {
-        let url = &self.api_config().login_api.path;
+        let mut url = self.api_config().host.clone();
+        let path = format!("{}{}", self.api_config().prefix, self.api_config().login_api.path);
+        url.set_path(&path);
+        println!("login url: {}", url);
         let builder = self.client.request(Method::POST, url).form(&[
             ("email", self.api_config().credential.username.clone()),
             ("password", self.api_config().credential.password.clone()),

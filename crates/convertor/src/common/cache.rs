@@ -1,10 +1,7 @@
 use crate::common::config::proxy_client_config::ProxyClient;
-use crate::provider_api::provider_api_trait::ReportWrapper;
-use color_eyre::Report;
 use moka::future::Cache as MokaCache;
 use redis::AsyncTypedCommands;
 use redis::aio::ConnectionManager;
-use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 use std::future::Future;
 use std::hash::Hash;
@@ -45,10 +42,10 @@ where
         }
     }
 
-    pub async fn try_get_with<F, E>(&self, key: CacheKey<K>, init: F) -> Result<V, ArcReport<E>>
+    pub async fn try_get_with<F, E>(&self, key: CacheKey<K>, init: F) -> Result<V, Arc<E>>
     where
         F: Future<Output = Result<V, E>>,
-        E: Sync + Send + Error + 'static,
+        E: Sync + Send + 'static,
     {
         self.memory
             .try_get_with(key.clone(), async {
@@ -58,7 +55,6 @@ where
                 }
             })
             .await
-            .map_err(|r| ArcReport(r))
     }
 
     async fn try_get_from_redis<F, E>(&self, mut redis: ConnectionManager, key: CacheKey<K>, init: F) -> Result<V, E>
@@ -83,101 +79,6 @@ where
 
         Ok(value)
     }
-
-    // async fn try_get_from_file_with<F>(&self, key: &CacheKey<K>, init: F) -> Result<V, Report>
-    // where
-    //     F: Future<Output = color_eyre::Result<V>>,
-    // {
-    //     let now = Self::now_ts();
-    //
-    //     if let Some(path) = self.find_valid_cache_file(key, now).await? {
-    //         debug!("命中缓存文件: {}", path.display());
-    //         let raw = tokio::fs::read_to_string(path).await?;
-    //         return Ok(V::from(raw));
-    //     }
-    //
-    //     let value = init.await?;
-    //     let raw = value.to_string();
-    //
-    //     let expire_time = Local::now() + chrono::Duration::from_std(self.time_to_live)?;
-    //     let full_path = key.to_full_path(&self.cache_dir, expire_time);
-    //
-    //     // 确保目录存在
-    //     if let Some(parent) = full_path.parent() {
-    //         tokio::fs::create_dir_all(parent).await?;
-    //     }
-    //
-    //     tokio::fs::write(&full_path, raw).await?;
-    //     Ok(value)
-    // }
-    //
-    // async fn find_valid_cache_file(&self, key: &CacheKey<K>, now_ts: u64) -> Result<Option<PathBuf>, Report> {
-    //     use tokio_stream::{StreamExt, wrappers::ReadDirStream};
-    //
-    //     let target_dir = self.cache_dir.join(key.prefix_path());
-    //     let hash_prefix = key.hash_code();
-    //
-    //     let mut read_dir = match tokio::fs::read_dir(&target_dir).await {
-    //         Ok(rd) => ReadDirStream::new(rd),
-    //         Err(_) => return Ok(None), // 无目录直接返回 None
-    //     };
-    //
-    //     while let Some(entry) = read_dir.next().await {
-    //         let entry = entry?;
-    //         let path = entry.path();
-    //
-    //         let Some(file_stem) = path.file_stem().and_then(|f| f.to_str()) else {
-    //             continue; // 无法读取文件名，跳过
-    //         };
-    //
-    //         let Some((hash, expires_at)) = Self::decode_file_stem(file_stem) else {
-    //             continue; // 非法文件名，跳过
-    //         };
-    //
-    //         if hash != hash_prefix {
-    //             continue; // 不匹配当前 key，跳过
-    //         }
-    //
-    //         if expires_at > now_ts {
-    //             return Ok(Some(path)); // 命中有效缓存
-    //         }
-    //
-    //         // 过期：尝试删除
-    //         match tokio::fs::remove_file(&path).await {
-    //             Ok(_) => debug!("清理过期缓存文件: {}", path.display()),
-    //             Err(e) => error!("无法删除过期缓存文件 {}: {}", path.display(), e),
-    //         }
-    //     }
-    //
-    //     Ok(None)
-    // }
-    //
-    // /// 从干净的 file_stem 中提取 `(hash, expires_ts)`
-    // /// 要求传入格式为：`<hash_prefix>__<datetime>`
-    // /// 如：`abc123__2025-07-02T12-00-00`
-    // fn decode_file_stem(file_stem: &str) -> Option<(u64, u64)> {
-    //     let (hash, time_str) = file_stem.rsplit_once("__")?;
-    //     let naive = NaiveDateTime::parse_from_str(time_str, "%Y-%m-%dT%H-%M-%S").ok()?;
-    //     let local = Local.from_local_datetime(&naive).single()?;
-    //     let hash_code = hash.parse::<u64>().ok()?;
-    //     Some((hash_code, local.timestamp() as u64))
-    // }
-    //
-    // fn now_ts() -> u64 {
-    //     SystemTime::now()
-    //         .duration_since(UNIX_EPOCH)
-    //         .expect("System time before epoch")
-    //         .as_secs()
-    // }
-    //
-    // fn clone_shallow(&self) -> Self {
-    //     Self {
-    //         memory: self.memory.clone(),
-    //         redis: self.redis.clone(),
-    //         capacity: self.capacity,
-    //         time_to_live: self.time_to_live,
-    //     }
-    // }
 }
 
 pub trait AsRedisKey {
@@ -229,28 +130,5 @@ where
             write!(f, ":{}", client)?;
         }
         write!(f, ":{}", self.hash)
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct ArcReport<E>(pub Arc<E>)
-where
-    E: Error + 'static;
-
-impl<E> Display for ArcReport<E>
-where
-    E: Error + 'static,
-{
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl<E> Error for ArcReport<E>
-where
-    E: Error + 'static,
-{
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        self.0.source()
     }
 }
