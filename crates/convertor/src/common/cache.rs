@@ -1,8 +1,10 @@
 use crate::common::config::proxy_client_config::ProxyClient;
+use crate::provider_api::provider_api_trait::ReportWrapper;
 use color_eyre::Report;
 use moka::future::Cache as MokaCache;
 use redis::AsyncTypedCommands;
 use redis::aio::ConnectionManager;
+use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 use std::future::Future;
 use std::hash::Hash;

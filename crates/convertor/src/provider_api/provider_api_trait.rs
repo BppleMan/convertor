@@ -60,6 +60,7 @@ pub(super) trait ProviderApiTrait {
             .try_get_with(
                 CacheKey::new(CACHED_PROFILE_KEY, raw_sub_url.to_string(), Some(client)),
                 async {
+                    // 这里内部是出错点
                     let request = self
                         .client()
                         .request(Method::GET, raw_sub_url)
@@ -96,17 +97,18 @@ pub(super) trait ProviderApiTrait {
                     None,
                 ),
                 async {
-                    let request = self
-                        .login_request()
-                        .map_err(ReportWrapper)
-                        .map_err(anyhow::Error::new)?;
-                    let response = self.execute(request).await.map_err(|e| anyhow!(e))?;
+                    let request = self.login_request().map_err(ReportWrapper)?;
+                    let response = self.execute(request).await.map_err(ReportWrapper)?;
                     let json_path = &self.api_config().login_api.json_path;
                     if response.status().is_success() {
-                        let json_response = response.text().await.map_err(|e| anyhow!(e))?;
+                        let json_response = response
+                            .text()
+                            .await
+                            .wrap_err("获取 response text 失败")
+                            .map_err(ReportWrapper)?;
                         let auth_token = jsonpath_lib::select_as(&json_response, json_path)
                             .wrap_err_with(|| format!("无法选择 json_path: {json_path}"))
-                            .map_err(|e| anyhow!(e))?
+                            .map_err(ReportWrapper)?
                             .remove(0);
                         Ok(auth_token)
                     } else {
@@ -118,15 +120,13 @@ pub(super) trait ProviderApiTrait {
                             .wrap_err("获取错误信息失败")
                             .unwrap_or_else(|e| e)
                             .wrap_err(format!("登录服务商失败: {status}"));
-                        // .map_err(|e| anyhow!(e))?;
-                        Err(anyhow!(error_report))
+                        Err(ReportWrapper(error_report))
                     }
                 },
             )
             .await
-            .map_err(SharedAnyhow)
-            .wrap_err("登录服务商失败")
-            .unwrap();
+            .map_err(SharedReportWrapper)?;
+        // .wrap_err("登录服务商失败")?;
         Ok(result)
     }
 
@@ -136,15 +136,20 @@ pub(super) trait ProviderApiTrait {
             .try_get_with(
                 CacheKey::new(CACHED_SUB_URL_KEY, self.api_config().get_sub_api.path.to_string(), None),
                 async {
-                    let auth_token = self.login().await?;
+                    let auth_token = self.login().await.map_err(ReportWrapper)?;
                     println!("{auth_token}");
-                    let request = self.get_sub_request(auth_token).wrap_err("无法获取 get_sub 请求体")?;
-                    let response = self.execute(request).await?;
+                    let request = self.get_sub_request(auth_token).map_err(ReportWrapper)?;
+                    let response = self.execute(request).await.map_err(ReportWrapper)?;
                     if response.status().is_success() {
-                        let json_response = response.text().await?;
+                        let json_response = response
+                            .text()
+                            .await
+                            .wrap_err("获取 response text 失败")
+                            .map_err(ReportWrapper)?;
                         let json_path = &self.api_config().get_sub_api.json_path;
                         let url_str: String = jsonpath_lib::select_as(&json_response, json_path)
-                            .wrap_err_with(|| format!("failed to select json_path: {json_path}"))?
+                            .wrap_err_with(|| format!("failed to select json_path: {json_path}"))
+                            .map_err(ReportWrapper)?
                             .remove(0);
                         Ok(url_str)
                     } else {
@@ -156,14 +161,14 @@ pub(super) trait ProviderApiTrait {
                             .wrap_err("获取错误信息失败")
                             .unwrap_or_else(|e| e)
                             .wrap_err(format!("请求服务商原始订阅链接失败: {status}"));
-                        Err(error_report)
+                        Err(ReportWrapper(error_report))
                     }
                 },
             )
             .await
-            .map_err(|e| eyre!(e))
-            .wrap_err("获取订阅链接失败")
-            .and_then(|s| Ok(Url::parse(&s)?))?;
+            .map_err(SharedReportWrapper)?;
+        // .wrap_err("获取订阅链接失败")
+        let result = Url::parse(result.as_str())?;
         Ok(result)
     }
 
@@ -214,22 +219,6 @@ pub(super) trait ProviderApiTrait {
     }
 }
 
-#[derive(Debug, Clone)]
-// #[error("{0}")]
-pub struct SharedAnyhow(pub Arc<anyhow::Error>);
-
-impl Display for SharedAnyhow {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0.as_ref())
-    }
-}
-
-impl std::error::Error for SharedAnyhow {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        Some(self.0.as_ref().as_ref())
-    }
-}
-
 #[derive(Debug)]
 pub struct ReportWrapper(pub Report);
 
@@ -242,5 +231,20 @@ impl Display for ReportWrapper {
 impl std::error::Error for ReportWrapper {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         self.0.source()
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct SharedReportWrapper(pub Arc<ReportWrapper>);
+
+impl Display for SharedReportWrapper {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0.as_ref())
+    }
+}
+
+impl std::error::Error for SharedReportWrapper {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        self.0.as_ref().source()
     }
 }
