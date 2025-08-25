@@ -55,6 +55,12 @@ impl ProviderApi {
         }
     }
 
+    pub async fn login(&self) -> color_eyre::Result<String> {
+        match self {
+            ProviderApi::BosLife(api) => api.login().await,
+        }
+    }
+
     // sub_url 是订阅地址并且应该指定客户端
     pub async fn get_raw_profile(&self, client: ProxyClient, user_agent: UserAgent) -> color_eyre::Result<String> {
         match self {

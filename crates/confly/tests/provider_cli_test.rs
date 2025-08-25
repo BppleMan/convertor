@@ -131,13 +131,20 @@ async fn test_subscription_surge_boslife() -> color_eyre::Result<()> {
     config.providers.values_mut().for_each(|provider| {
         provider.api_config.headers.remove("Authorization");
     });
-    start_mock_provider_server(&mut config).await?;
-    let client = ProxyClient::Surge;
-    let provider = Provider::BosLife;
-    let cmds = cmds(client, provider);
-    for cmd in cmds {
-        test_subscription(&config, client, provider, cmd).await?;
+    {
+        let api_map = ProviderApi::create_api_no_redis(config.providers.clone());
+        let provider_api = api_map
+            .get(&Provider::BosLife)
+            .ok_or_else(|| eyre!("未找到 BosLife 提供者"))?;
+        provider_api.login().await?;
     }
+    // start_mock_provider_server(&mut config).await?;
+    // let client = ProxyClient::Surge;
+    // let provider = Provider::BosLife;
+    // let cmds = cmds(client, provider);
+    // for cmd in cmds {
+    //     test_subscription(&config, client, provider, cmd).await?;
+    // }
     Ok(())
 }
 

@@ -45,10 +45,10 @@ where
         }
     }
 
-    pub async fn try_get_with<F, E>(&self, key: CacheKey<K>, init: F) -> Result<V, Arc<E>>
+    pub async fn try_get_with<F, E>(&self, key: CacheKey<K>, init: F) -> Result<V, ArcReport<E>>
     where
         F: Future<Output = Result<V, E>>,
-        E: Sync + Send + 'static,
+        E: Sync + Send + Error + 'static,
     {
         self.memory
             .try_get_with(key.clone(), async {
@@ -58,6 +58,7 @@ where
                 }
             })
             .await
+            .map_err(|r| ArcReport(r))
     }
 
     async fn try_get_from_redis<F, E>(&self, mut redis: ConnectionManager, key: CacheKey<K>, init: F) -> Result<V, E>
@@ -228,5 +229,28 @@ where
             write!(f, ":{}", client)?;
         }
         write!(f, ":{}", self.hash)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ArcReport<E>(pub Arc<E>)
+where
+    E: Error + 'static;
+
+impl<E> Display for ArcReport<E>
+where
+    E: Error + 'static,
+{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl<E> Error for ArcReport<E>
+where
+    E: Error + 'static,
+{
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        self.0.source()
     }
 }

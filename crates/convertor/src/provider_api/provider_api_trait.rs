@@ -56,7 +56,8 @@ pub(super) trait ProviderApiTrait {
 
     async fn get_raw_profile(&self, client: ProxyClient, user_agent: UserAgent) -> color_eyre::Result<String> {
         let raw_sub_url = self.build_raw_url(client);
-        self.cached_profile()
+        let result = self
+            .cached_profile()
             .try_get_with(
                 CacheKey::new(CACHED_PROFILE_KEY, raw_sub_url.to_string(), Some(client)),
                 async {
@@ -65,23 +66,33 @@ pub(super) trait ProviderApiTrait {
                         .client()
                         .request(Method::GET, raw_sub_url)
                         .header("User-Agent", user_agent.as_str())
-                        .build()?;
-                    let response = self.execute(request).await?;
+                        .build()
+                        .wrap_err("构建 get_raw_profile 请求失败")
+                        .map_err(ReportWrapper)?;
+                    let response = self.execute(request).await.map_err(ReportWrapper)?;
                     let status = format!("响应状态: {:?}", response.status());
                     let headers = format!("响应头: {:?}", response.headers());
                     if response.status().is_success() {
-                        response.text().await.map_err(Into::into)
+                        response
+                            .text()
+                            .await
+                            .wrap_err("获取 response text 失败")
+                            .map_err(ReportWrapper)
                     } else {
-                        let body = response.bytes().await?;
+                        let body = response
+                            .bytes()
+                            .await
+                            .wrap_err("获取 response bytes 失败")
+                            .map_err(ReportWrapper)?;
                         let content = String::from_utf8_lossy(&body).to_string();
                         let content = format!("{}\n{}\n响应体: {}", status, headers, content);
                         let error_report = eyre!("获取原始订阅文件失败:\n{}", content);
-                        Err(error_report)
+                        Err(ReportWrapper(error_report))
                     }
                 },
             )
-            .await
-            .map_err(|e| eyre!(e))
+            .await?;
+        Ok(result)
     }
 
     async fn login(&self) -> color_eyre::Result<String> {
@@ -124,9 +135,7 @@ pub(super) trait ProviderApiTrait {
                     }
                 },
             )
-            .await
-            .map_err(SharedReportWrapper)?;
-        // .wrap_err("登录服务商失败")?;
+            .await?;
         Ok(result)
     }
 
@@ -165,9 +174,7 @@ pub(super) trait ProviderApiTrait {
                     }
                 },
             )
-            .await
-            .map_err(SharedReportWrapper)?;
-        // .wrap_err("获取订阅链接失败")
+            .await?;
         let result = Url::parse(result.as_str())?;
         Ok(result)
     }
@@ -200,22 +207,33 @@ pub(super) trait ProviderApiTrait {
         let Some(api) = self.api_config().sub_logs_api.as_ref() else {
             return Err(eyre!("该提供商未配置订阅日志接口"));
         };
-        self.cached_sub_logs()
+        let result = self
+            .cached_sub_logs()
             .try_get_with(CacheKey::new(CACHED_SUB_LOGS_KEY, api.path.to_string(), None), async {
-                let auth_token = self.login().await?;
-                let request = self.get_sub_logs_request(auth_token)?;
-                let response = self.execute(request).await?;
+                let auth_token = self.login().await.map_err(ReportWrapper)?;
+                let request = self.get_sub_logs_request(auth_token).map_err(ReportWrapper)?;
+                let response = self.execute(request).await.map_err(ReportWrapper)?;
                 if response.status().is_success() {
-                    let response = response.text().await?;
+                    let response = response
+                        .text()
+                        .await
+                        .wrap_err("获取 response text 错误")
+                        .map_err(ReportWrapper)?;
                     let json_path = &api.json_path;
-                    let response: BosLifeLogs = jsonpath_lib::select_as(&response, &json_path)?.remove(0);
+                    let response: BosLifeLogs = jsonpath_lib::select_as(&response, &json_path)
+                        .wrap_err_with(|| format!("failed to select json_path: {json_path}"))
+                        .map_err(ReportWrapper)?
+                        .remove(0);
                     Ok(response)
                 } else {
-                    Err(eyre!("Get subscription log failed: {}", response.status()))
+                    Err(ReportWrapper(eyre!(
+                        "Get subscription log failed: {}",
+                        response.status()
+                    )))
                 }
             })
-            .await
-            .map_err(|e| eyre!(e))
+            .await?;
+        Ok(result)
     }
 }
 
