@@ -1,0 +1,52 @@
+[package]
+name = "confly"
+description.workspace = true
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+convertor = { workspace = true }
+
+# async runtime
+tokio = { version = "1.46.1", default-features = false, features = ["fs", "rt-multi-thread", "signal", "macros"] }
+tokio-stream = { version = "0.1.17", default-features = false, features = ["fs"] }
+tokio-util = { version = "0.7.16", default-features = false, features = [] }
+
+# cli
+clap = { version = "4.5.45", default-features = true, features = ["cargo", "derive"] }
+
+# error/result
+thiserror = { version = "2.0.12", default-features = false }
+color-eyre = { version = "0.6.5", default-features = false }
+
+# tracing
+tracing = { version = "0.1.41", default-features = false, features = ["attributes"] }
+tracing-subscriber = { version = "0.3.19", features = ["env-filter", "json", "local-time"] }
+tracing-appender = { version = "0.2.3", default-features = false }
+
+# cache
+redis = { version = "0.32.5", default-features = true, features = ["tokio-rustls-comp", "streams", "connection-manager"] }
+
+# encoding/decoding
+url = { version = "2.5.4", default-features = false, features = ["serde"] }
+
+# other
+regex = { version = "1.11.1", default-features = false }
+strum = { version = "0.27.2", features = ["derive"] }
+headers = { version = "0.4.1", default-features = false }
+
+[dev-dependencies]
+convertor = { workspace = true, features = ["testkit"] }
+
+serde_json = { version = "1.0.141", default-features = false }
+httpmock = { version = "0.7.0", default-features = false, features = ["colored"] }
+tower = { version = "0.5.2", default-features = false }
+http-body-util = { version = "0.1.3", default-features = false }
+pretty_assertions = { version = "1.4.1", default-features = false, features = ["std"] }
+insta = { version = "1.43.1", features = ["filters"] }
+
+[features]
+update = []

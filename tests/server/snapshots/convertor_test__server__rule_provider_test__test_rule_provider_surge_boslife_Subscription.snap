@@ -1,6 +1,0 @@
----
-source: tests/server/rule_provider_test.rs
-expression: actual
----
-// Subscription Direct
-DOMAIN,localhost

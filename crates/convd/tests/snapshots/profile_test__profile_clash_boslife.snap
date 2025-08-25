@@ -1,0 +1,79 @@
+---
+source: crates/convd/tests/profile_test.rs
+expression: actual
+---
+port: 7890
+socks-port: 7891
+redir-port: 7892
+allow-lan: true
+mode: rule
+log-level: info
+external-controller: 0.0.0.0:9091
+external-ui: ui
+secret: ""
+
+proxies:
+    - { name: "订阅提供商信息", type: "ss", server: "bppleman.com", port: 24000, password: "bppleman", udp: true, cipher: aes-128-gcm }
+    - { name: "🇭🇰 香港 01", type: "ss", server: "bppleman.com", port: 24000, password: "bppleman", udp: true, cipher: aes-128-gcm }
+    - { name: "🇭🇰 香港 02", type: "ss", server: "bppleman.com", port: 24001, password: "bppleman", udp: true, cipher: aes-128-gcm }
+    - { name: "🇭🇰 香港 03", type: "ss", server: "bppleman.com", port: 24002, password: "bppleman", udp: true, cipher: aes-128-gcm }
+    - { name: "🇭🇰 香港 04", type: "ss", server: "bppleman.com", port: 24003, password: "bppleman", udp: true, cipher: aes-128-gcm }
+    - { name: "🇭🇰 香港 05 - YouTube免广", type: "ss", server: "bppleman.com", port: 24004, password: "bppleman", udp: true, cipher: aes-128-gcm }
+    - { name: "🏳️‍🌈 台湾 01", type: "ss", server: "bppleman.com", port: 23010, password: "bppleman", udp: true, cipher: chacha20-ietf-poly1305 }
+    - { name: "🏳️‍🌈 台湾 02", type: "ss", server: "bppleman.com", port: 23011, password: "bppleman", udp: true, cipher: chacha20-ietf-poly1305 }
+    - { name: "🏳️‍🌈 台湾 03", type: "ss", server: "bppleman.com", port: 23012, password: "bppleman", udp: true, cipher: chacha20-ietf-poly1305 }
+    - { name: "🏳️‍🌈 台湾 04", type: "ss", server: "bppleman.com", port: 23013, password: "bppleman", udp: true, cipher: chacha20-ietf-poly1305 }
+    - { name: "🏳️‍🌈 台湾 05", type: "ss", server: "bppleman.com", port: 23014, password: "bppleman", udp: true, cipher: chacha20-ietf-poly1305 }
+    - { name: "🇸🇬 新加坡 01", type: "ss", server: "bppleman.com", port: 23001, password: "bppleman", udp: true, cipher: chacha20-ietf-poly1305 }
+    - { name: "🇸🇬 新加坡 02", type: "ss", server: "bppleman.com", port: 23002, password: "bppleman", udp: true, cipher: chacha20-ietf-poly1305 }
+    - { name: "🇸🇬 新加坡 03", type: "ss", server: "bppleman.com", port: 23003, password: "bppleman", udp: true, cipher: chacha20-ietf-poly1305 }
+    - { name: "🇸🇬 新加坡 04", type: "ss", server: "bppleman.com", port: 23004, password: "bppleman", udp: true, cipher: chacha20-ietf-poly1305 }
+    - { name: "🇸🇬 新加坡 05", type: "ss", server: "bppleman.com", port: 23005, password: "bppleman", udp: true, cipher: chacha20-ietf-poly1305 }
+    - { name: "🇯🇵 日本 01", type: "ss", server: "bppleman.com", port: 23020, password: "bppleman", udp: true, cipher: chacha20-ietf-poly1305 }
+    - { name: "🇯🇵 日本 02", type: "ss", server: "bppleman.com", port: 23021, password: "bppleman", udp: true, cipher: chacha20-ietf-poly1305 }
+    - { name: "🇯🇵 日本 03", type: "ss", server: "bppleman.com", port: 23022, password: "bppleman", udp: true, cipher: chacha20-ietf-poly1305 }
+    - { name: "🇯🇵 日本 04", type: "ss", server: "bppleman.com", port: 23023, password: "bppleman", udp: true, cipher: chacha20-ietf-poly1305 }
+    - { name: "🇯🇵 日本 05", type: "ss", server: "bppleman.com", port: 23024, password: "bppleman", udp: true, cipher: chacha20-ietf-poly1305 }
+    - { name: "🇺🇸 美国 01", type: "ss", server: "bppleman.com", port: 24050, password: "bppleman", udp: true, cipher: aes-128-gcm }
+    - { name: "🇺🇸 美国 02", type: "ss", server: "bppleman.com", port: 24051, password: "bppleman", udp: true, cipher: aes-128-gcm }
+    - { name: "🇺🇸 美国 03", type: "ss", server: "bppleman.com", port: 24052, password: "bppleman", udp: true, cipher: aes-128-gcm }
+    - { name: "🇺🇸 美国 04", type: "ss", server: "bppleman.com", port: 24053, password: "bppleman", udp: true, cipher: aes-128-gcm }
+    - { name: "🇺🇸 美国 05", type: "ss", server: "bppleman.com", port: 24054, password: "bppleman", udp: true, cipher: aes-128-gcm }
+    - { name: "🇨🇦 加拿大 01", type: "ss", server: "bppleman.com", port: 24060, password: "bppleman", udp: true, cipher: aes-128-gcm }
+    - { name: "🇰🇷 韩国 01", type: "trojan", server: "bppleman.com", port: 60101, password: "bppleman", udp: true, sni: "video-caps.wetvinfo.com", skip-cert-verify: true }
+    - { name: "🇬🇧 英国 01", type: "trojan", server: "bppleman.com", port: 60082, password: "bppleman", udp: true, sni: "video-caps.wetvinfo.com", skip-cert-verify: true }
+    - { name: "🇫🇷 法国 01", type: "trojan", server: "bppleman.com", port: 60138, password: "bppleman", udp: true, sni: "video-caps.wetvinfo.com", skip-cert-verify: true }
+    - { name: "🇩🇪 德国 01", type: "trojan", server: "bppleman.com", port: 60125, password: "bppleman", udp: true, sni: "video-caps.wetvinfo.com", skip-cert-verify: true }
+    - { name: "🇦🇺 澳洲 01", type: "trojan", server: "bppleman.com", port: 60092, password: "bppleman", udp: true, sni: "video-caps.wetvinfo.com", skip-cert-verify: true }
+proxy-groups:
+    - { name: "BosLife", type: "select", proxies: [ 🇭🇰 香港, 🇨🇳🏳️‍🌈 台湾, 🇸🇬 新加坡, 🇯🇵 日本, 🇺🇸 美国, 🇨🇦 加拿大, 🇰🇷 韩国, 🇬🇧 英国, 🇫🇷 法国, 🇩🇪 德国, 🇦🇺 澳洲 ] }
+    - { name: "Subscription Info", type: "select", proxies: [ 订阅提供商信息 ] }
+    - { name: "🇭🇰 香港", type: "url-test", proxies: [ 🇭🇰 香港 01, 🇭🇰 香港 02, 🇭🇰 香港 03, 🇭🇰 香港 04, 🇭🇰 香港 05 - YouTube免广 ] }
+    - { name: "🇨🇳🏳️‍🌈 台湾", type: "url-test", proxies: [ 🏳️‍🌈 台湾 01, 🏳️‍🌈 台湾 02, 🏳️‍🌈 台湾 03, 🏳️‍🌈 台湾 04, 🏳️‍🌈 台湾 05 ] }
+    - { name: "🇸🇬 新加坡", type: "url-test", proxies: [ 🇸🇬 新加坡 01, 🇸🇬 新加坡 02, 🇸🇬 新加坡 03, 🇸🇬 新加坡 04, 🇸🇬 新加坡 05 ] }
+    - { name: "🇯🇵 日本", type: "url-test", proxies: [ 🇯🇵 日本 01, 🇯🇵 日本 02, 🇯🇵 日本 03, 🇯🇵 日本 04, 🇯🇵 日本 05 ] }
+    - { name: "🇺🇸 美国", type: "url-test", proxies: [ 🇺🇸 美国 01, 🇺🇸 美国 02, 🇺🇸 美国 03, 🇺🇸 美国 04, 🇺🇸 美国 05 ] }
+    - { name: "🇨🇦 加拿大", type: "url-test", proxies: [ 🇨🇦 加拿大 01 ] }
+    - { name: "🇰🇷 韩国", type: "url-test", proxies: [ 🇰🇷 韩国 01 ] }
+    - { name: "🇬🇧 英国", type: "url-test", proxies: [ 🇬🇧 英国 01 ] }
+    - { name: "🇫🇷 法国", type: "url-test", proxies: [ 🇫🇷 法国 01 ] }
+    - { name: "🇩🇪 德国", type: "url-test", proxies: [ 🇩🇪 德国 01 ] }
+    - { name: "🇦🇺 澳洲", type: "url-test", proxies: [ 🇦🇺 澳洲 01 ] }
+rule-providers:
+    Subscription: { type: "http", url: "http://127.0.0.1/rule-provider/clash/boslife?interval=43200&policy[name]=DIRECT&policy[is_subscription]=true&sub_url=http://127.0.0.1:8080/subscription?token=bppleman", path: "./rule_providers/Subscription.yaml", interval: 43200, size-limit: 0, format: "yaml", behavior: "classical" }
+    BosLife_policy: { type: "http", url: "http://127.0.0.1/rule-provider/clash/boslife?interval=43200&policy[name]=BosLife&policy[is_subscription]=false&sub_url=http://127.0.0.1:8080/subscription?token=bppleman", path: "./rule_providers/BosLife_policy.yaml", interval: 43200, size-limit: 0, format: "yaml", behavior: "classical" }
+    BosLife_no_resolve: { type: "http", url: "http://127.0.0.1/rule-provider/clash/boslife?interval=43200&policy[name]=BosLife&policy[option]=no-resolve&policy[is_subscription]=false&sub_url=http://127.0.0.1:8080/subscription?token=bppleman", path: "./rule_providers/BosLife_no_resolve.yaml", interval: 43200, size-limit: 0, format: "yaml", behavior: "classical" }
+    BosLife_force_remote_dns: { type: "http", url: "http://127.0.0.1/rule-provider/clash/boslife?interval=43200&policy[name]=BosLife&policy[option]=force-remote-dns&policy[is_subscription]=false&sub_url=http://127.0.0.1:8080/subscription?token=bppleman", path: "./rule_providers/BosLife_force_remote_dns.yaml", interval: 43200, size-limit: 0, format: "yaml", behavior: "classical" }
+    DIRECT_policy: { type: "http", url: "http://127.0.0.1/rule-provider/clash/boslife?interval=43200&policy[name]=DIRECT&policy[is_subscription]=false&sub_url=http://127.0.0.1:8080/subscription?token=bppleman", path: "./rule_providers/DIRECT_policy.yaml", interval: 43200, size-limit: 0, format: "yaml", behavior: "classical" }
+    DIRECT_no_resolve: { type: "http", url: "http://127.0.0.1/rule-provider/clash/boslife?interval=43200&policy[name]=DIRECT&policy[option]=no-resolve&policy[is_subscription]=false&sub_url=http://127.0.0.1:8080/subscription?token=bppleman", path: "./rule_providers/DIRECT_no_resolve.yaml", interval: 43200, size-limit: 0, format: "yaml", behavior: "classical" }
+    DIRECT_force_remote_dns: { type: "http", url: "http://127.0.0.1/rule-provider/clash/boslife?interval=43200&policy[name]=DIRECT&policy[option]=force-remote-dns&policy[is_subscription]=false&sub_url=http://127.0.0.1:8080/subscription?token=bppleman", path: "./rule_providers/DIRECT_force_remote_dns.yaml", interval: 43200, size-limit: 0, format: "yaml", behavior: "classical" }
+rules:
+    - RULE-SET,Subscription,DIRECT
+    - RULE-SET,BosLife_policy,BosLife
+    - RULE-SET,BosLife_no_resolve,BosLife,no-resolve
+    - RULE-SET,BosLife_force_remote_dns,BosLife,force-remote-dns
+    - RULE-SET,DIRECT_policy,DIRECT
+    - RULE-SET,DIRECT_no_resolve,DIRECT,no-resolve
+    - RULE-SET,DIRECT_force_remote_dns,DIRECT,force-remote-dns
+    - GEOIP,CN,DIRECT
+    - MATCH,DIRECT

@@ -6,6 +6,15 @@ prepare:
     cargo install cargo-zigbuild
     brew install zig
 
+all:
+    cargo build --workspace --all-targets
+
+test-convertor:
+    cargo insta test -p convertor --features=testkit
+
+test-convd:
+    cargo insta test -p convd
+
 install:
     cargo install --bin convertor --path .
 
