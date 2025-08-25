@@ -2,6 +2,7 @@ use crate::common::cache::Cache;
 use crate::common::config::provider_config::{ApiConfig, ProviderConfig};
 use crate::common::config::proxy_client_config::ProxyClient;
 use crate::provider_api::provider_api_trait::ProviderApiTrait;
+use color_eyre::eyre::{Context, eyre};
 use redis::aio::ConnectionManager;
 use reqwest::Client as ReqwestClient;
 use reqwest::{Method, Request, Url};
@@ -62,7 +63,7 @@ impl ProviderApiTrait for BosLifeApi {
             ("email", self.api_config().credential.username.clone()),
             ("password", self.api_config().credential.password.clone()),
         ]);
-        Ok(builder.build()?)
+        builder.build().wrap_err(eyre!("构建登录请求失败"))
     }
 
     fn get_sub_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request> {

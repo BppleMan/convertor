@@ -128,6 +128,9 @@ async fn test_subscription(
 async fn test_subscription_surge_boslife() -> color_eyre::Result<()> {
     init_test();
     let mut config = ConvertorConfig::template();
+    config.providers.values_mut().for_each(|provider| {
+        provider.api_config.headers.remove("Authorization");
+    });
     start_mock_provider_server(&mut config).await?;
     let client = ProxyClient::Surge;
     let provider = Provider::BosLife;

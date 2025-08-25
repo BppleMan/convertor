@@ -43,9 +43,10 @@ where
         }
     }
 
-    pub async fn try_get_with<F>(&self, key: CacheKey<K>, init: F) -> Result<V, Arc<Report>>
+    pub async fn try_get_with<F, E>(&self, key: CacheKey<K>, init: F) -> Result<V, Arc<E>>
     where
-        F: Future<Output = color_eyre::Result<V>>,
+        F: Future<Output = Result<V, E>>,
+        E: Sync + Send + 'static,
     {
         self.memory
             .try_get_with(key.clone(), async {
@@ -57,9 +58,10 @@ where
             .await
     }
 
-    async fn try_get_from_redis<F>(&self, mut redis: ConnectionManager, key: CacheKey<K>, init: F) -> Result<V, Report>
+    async fn try_get_from_redis<F, E>(&self, mut redis: ConnectionManager, key: CacheKey<K>, init: F) -> Result<V, E>
     where
-        F: Future<Output = color_eyre::Result<V>>,
+        F: Future<Output = Result<V, E>>,
+        E: Sync + Send,
     {
         let redis_key = key.as_redis_key();
         if let Ok(Some(raw)) = redis.get(&redis_key).await {

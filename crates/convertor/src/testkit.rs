@@ -41,6 +41,7 @@ impl MockServerExt for ProviderConfig {
 
         self.sub_url =
             Url::parse(&mock_server.url(format!("{subscribe_url_path}?token={token}"))).expect("不合法的订阅地址");
+        self.api_config.host = Url::parse(&mock_server.url("/")).expect("不合法的 API 地址");
 
         mock_server
             .mock_async(|when, then| {

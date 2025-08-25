@@ -4,7 +4,7 @@ use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::hash::Hash;
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 use strum::{AsRefStr, Display, EnumString, IntoStaticStr, VariantArray};
 use url::Url;
 
@@ -71,5 +71,17 @@ impl Deref for Headers {
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl AsMut<HashMap<String, String>> for Headers {
+    fn as_mut(&mut self) -> &mut HashMap<String, String> {
+        &mut self.0
+    }
+}
+
+impl DerefMut for Headers {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }

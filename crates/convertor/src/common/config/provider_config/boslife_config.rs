@@ -14,8 +14,8 @@ impl ProviderConfig {
                         ("Accept", "application/json"),
                         ("Content-Type", "application/json"),
                         ("User-Agent", concat!("Convertor/", env!("CARGO_PKG_VERSION"))),
-                        ("Authorization", "optional"),
-                        ("Cookie", "optional"),
+                        ("Authorization", "optional[auth_token]"),
+                        ("Cookie", "optional[cookie]"),
                         (
                             "sec-ch-ua",
                             r#""Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138""#,

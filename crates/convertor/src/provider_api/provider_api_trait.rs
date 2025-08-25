@@ -5,11 +5,18 @@ use crate::common::config::provider_config::ApiConfig;
 use crate::common::config::proxy_client_config::ProxyClient;
 use crate::common::ext::NonEmptyOptStr;
 use crate::provider_api::boslife_api::BosLifeLogs;
+use anyhow::anyhow;
+use color_eyre::Report;
 use color_eyre::eyre::{Context, eyre};
 use headers::UserAgent;
 use reqwest::header::{HeaderName, HeaderValue};
 use reqwest::{Method, Request, Response};
+use std::error::Error;
+use std::fmt::{Display, Formatter};
 use std::str::FromStr;
+use std::sync::Arc;
+use thiserror::__private::AsDynError;
+use thiserror::Error;
 use url::Url;
 
 pub(super) trait ProviderApiTrait {
@@ -80,7 +87,8 @@ pub(super) trait ProviderApiTrait {
         if let Some(auth_token) = self.api_config().headers.get("Authorization").filter_non_empty() {
             return Ok(auth_token.to_string());
         }
-        self.cached_auth_token()
+        let result = self
+            .cached_auth_token()
             .try_get_with(
                 CacheKey::new(
                     CACHED_AUTH_TOKEN_KEY,
@@ -88,13 +96,17 @@ pub(super) trait ProviderApiTrait {
                     None,
                 ),
                 async {
-                    let request = self.login_request()?;
-                    let response = self.execute(request).await?;
+                    let request = self
+                        .login_request()
+                        .map_err(ReportWrapper)
+                        .map_err(anyhow::Error::new)?;
+                    let response = self.execute(request).await.map_err(|e| anyhow!(e))?;
                     let json_path = &self.api_config().login_api.json_path;
                     if response.status().is_success() {
-                        let json_response = response.text().await?;
-                        let auth_token = jsonpath_lib::select_as(&json_response, &json_path)
-                            .wrap_err_with(|| format!("无法选择 json_path: {}", &json_path))?
+                        let json_response = response.text().await.map_err(|e| anyhow!(e))?;
+                        let auth_token = jsonpath_lib::select_as(&json_response, json_path)
+                            .wrap_err_with(|| format!("无法选择 json_path: {json_path}"))
+                            .map_err(|e| anyhow!(e))?
                             .remove(0);
                         Ok(auth_token)
                     } else {
@@ -105,22 +117,28 @@ pub(super) trait ProviderApiTrait {
                             .map(|msg| eyre!(msg))
                             .wrap_err("获取错误信息失败")
                             .unwrap_or_else(|e| e)
-                            .wrap_err(format!("登录服务商失败: {}", status));
-                        Err(error_report)
+                            .wrap_err(format!("登录服务商失败: {status}"));
+                        // .map_err(|e| anyhow!(e))?;
+                        Err(anyhow!(error_report))
                     }
                 },
             )
             .await
-            .map_err(|e| eyre!(e))
+            .map_err(SharedAnyhow)
+            .wrap_err("登录服务商失败")
+            .unwrap();
+        Ok(result)
     }
 
     async fn get_sub_url(&self) -> color_eyre::Result<Url> {
-        self.cached_sub_url()
+        let result = self
+            .cached_sub_url()
             .try_get_with(
                 CacheKey::new(CACHED_SUB_URL_KEY, self.api_config().get_sub_api.path.to_string(), None),
                 async {
                     let auth_token = self.login().await?;
-                    let request = self.get_sub_request(auth_token)?;
+                    println!("{auth_token}");
+                    let request = self.get_sub_request(auth_token).wrap_err("无法获取 get_sub 请求体")?;
                     let response = self.execute(request).await?;
                     if response.status().is_success() {
                         let json_response = response.text().await?;
@@ -137,14 +155,16 @@ pub(super) trait ProviderApiTrait {
                             .map(|msg| eyre!(msg))
                             .wrap_err("获取错误信息失败")
                             .unwrap_or_else(|e| e)
-                            .wrap_err(format!("请求服务商原始订阅链接失败: {}", status));
+                            .wrap_err(format!("请求服务商原始订阅链接失败: {status}"));
                         Err(error_report)
                     }
                 },
             )
             .await
-            .map(|s| Ok(Url::parse(&s)?))
-            .map_err(|e| eyre!(e))?
+            .map_err(|e| eyre!(e))
+            .wrap_err("获取订阅链接失败")
+            .and_then(|s| Ok(Url::parse(&s)?))?;
+        Ok(result)
     }
 
     async fn reset_sub_url(&self) -> color_eyre::Result<Url> {
@@ -191,5 +211,36 @@ pub(super) trait ProviderApiTrait {
             })
             .await
             .map_err(|e| eyre!(e))
+    }
+}
+
+#[derive(Debug, Clone)]
+// #[error("{0}")]
+pub struct SharedAnyhow(pub Arc<anyhow::Error>);
+
+impl Display for SharedAnyhow {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0.as_ref())
+    }
+}
+
+impl std::error::Error for SharedAnyhow {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        Some(self.0.as_ref().as_ref())
+    }
+}
+
+#[derive(Debug)]
+pub struct ReportWrapper(pub Report);
+
+impl Display for ReportWrapper {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl std::error::Error for ReportWrapper {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        self.0.source()
     }
 }
