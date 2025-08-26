@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 use std::path::Path;
 use std::str::FromStr;
-use tracing::{error, warn};
+use tracing::{debug, error, warn};
 use url::Url;
 
 pub mod client_config;
@@ -72,6 +72,7 @@ impl ConvertorConfig {
         }
         let work_dir = work_dir.canonicalize()?;
         let convertor_toml = work_dir.join("convertor.toml");
+        debug!("尝试加载配置文件: {}", convertor_toml.display());
         if convertor_toml.exists() {
             return Self::from_file(convertor_toml);
         }

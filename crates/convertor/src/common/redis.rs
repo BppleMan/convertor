@@ -1,5 +1,6 @@
 use redis::Client;
 use std::sync::OnceLock;
+use tracing::debug;
 
 pub static REDIS_ENDPOINT: OnceLock<String> = OnceLock::new();
 pub static REDIS_CONVERTOR_USERNAME: OnceLock<String> = OnceLock::new();
@@ -41,10 +42,17 @@ pub fn redis_url() -> String {
 }
 
 pub fn redis_client(redis_url: impl AsRef<str>) -> color_eyre::Result<Client> {
-    println!("Redis URL: {}", redis_url.as_ref());
+    debug!("Redis URL: {}", redis_url.as_ref());
     let ca_cert = std::env::var("REDIS_CA_CERT")?;
     #[cfg(debug_assertions)]
-    println!("Redis CA Cert: {ca_cert}");
+    {
+        // 校验 ca cert 格式
+        if !ca_cert.contains("BEGIN CERTIFICATE") || !ca_cert.contains("END CERTIFICATE") {
+            panic!("REDIS_CA_CERT 格式错误, 必须包含 -----BEGIN CERTIFICATE----- 和 -----END CERTIFICATE-----");
+        } else {
+            debug!("Redis CA Cert: 已加载");
+        }
+    }
     let client = Client::build_with_tls(
         redis_url.as_ref(),
         redis::TlsCertificates {

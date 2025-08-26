@@ -36,6 +36,8 @@ pub fn init_log(base_dir: Option<&Path>) {
         let filter = EnvFilter::try_from_default_env()
             .unwrap_or_else(|_| EnvFilter::new("info"))
             .add_directive("convertor=trace".parse().unwrap())
+            .add_directive("convd=trace".parse().unwrap())
+            .add_directive("confly=trace".parse().unwrap())
             .add_directive("tower_http=trace".parse().unwrap())
             .add_directive("moka=trace".parse().unwrap());
 

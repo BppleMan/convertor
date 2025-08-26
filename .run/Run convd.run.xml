@@ -1,7 +1,6 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Run convert_surge_profile" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-    <option name="buildProfileId" value="dev" />
-    <option name="command" value="run --package convertor --example convert_surge_profile" />
+  <configuration default="false" name="Run convd" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+    <option name="command" value="run --package convd --bin convd" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$" />
     <envs />
     <option name="emulateTerminal" value="true" />

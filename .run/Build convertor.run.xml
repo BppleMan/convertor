@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Run sub surge" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+  <configuration default="false" name="Build convertor" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
     <option name="buildProfileId" value="dev" />
-    <option name="command" value="run --package convertor --bin convertor -- sub surge" />
+    <option name="command" value="build --package convertor --lib" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$" />
     <envs />
     <option name="emulateTerminal" value="true" />

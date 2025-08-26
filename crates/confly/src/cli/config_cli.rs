@@ -29,6 +29,10 @@ pub enum ConfigCmdOption {
     /// 从 Redis 获取配置
     #[command(name = "redis")]
     Redis,
+
+    /// 从文件获取配置
+    #[command(name = "file")]
+    File,
 }
 
 pub struct ConfigCli {
@@ -55,6 +59,11 @@ impl ConfigCli {
             (None, Some(ConfigCmdOption::Redis)) => {
                 let connection = client.get_multiplexed_async_connection().await?;
                 let config = ConvertorConfig::from_redis(connection).await?;
+                println!("{config}");
+                config
+            }
+            (None, Some(ConfigCmdOption::File)) => {
+                let config = ConvertorConfig::search(std::env::current_dir()?, None::<&str>)?;
                 println!("{config}");
                 config
             }

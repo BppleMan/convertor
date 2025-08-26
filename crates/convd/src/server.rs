@@ -9,7 +9,6 @@ use convertor::config::provider_config::Provider;
 use convertor::provider_api::ProviderApi;
 use std::collections::HashMap;
 use std::net::{SocketAddr, SocketAddrV4};
-use std::path::Path;
 use tokio::net::{TcpListener, TcpSocket};
 use tokio::signal;
 use tokio::sync::watch;
@@ -28,10 +27,8 @@ pub async fn start_server(
     listen_addr: SocketAddrV4,
     config: ConvertorConfig,
     api_map: HashMap<Provider, ProviderApi>,
-    base_dir: impl AsRef<Path>,
     client: redis::Client,
 ) -> Result<()> {
-    info!("工作环境: {}", base_dir.as_ref().display());
     info!("监听中: {}", &listen_addr);
     warn!("建议使用 nginx 等网关进行反向代理，以开启 HTTPS 支持");
 
