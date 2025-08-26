@@ -19,7 +19,7 @@ tokio-util = { version = "0.7.16", default-features = false, features = [] }
 axum = { version = "0.8.4", default-features = false, features = ["query", "json", "tokio", "http2", "macros"] }
 axum-extra = { version = "0.10.1", features = ["typed-header", "scheme", "tracing"] }
 tower = { version = "0.5.2", default-features = false, features = [] }
-tower-http = { version = "0.6.6", default-features = false, features = ["trace"] }
+tower-http = { version = "0.6.6", default-features = false, features = ["trace", "fs"] }
 
 # encoding/decoding
 url = { version = "2.5.4", default-features = false, features = ["serde"] }

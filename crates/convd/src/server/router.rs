@@ -4,8 +4,8 @@ use crate::server::AppState;
 use crate::server::error::AppError;
 use axum::extract::{FromRequestParts, OptionalFromRequestParts, Path, RawQuery, State};
 use axum::http::request::Parts;
-use axum::response::Html;
-use axum::routing::get;
+use axum::response::Redirect;
+use axum::routing::{get, get_service};
 use axum::{Json, Router};
 use axum_extra::TypedHeader;
 use axum_extra::extract::Host;
@@ -15,15 +15,33 @@ use convertor::config::client_config::ProxyClient;
 use convertor::config::provider_config::Provider;
 use convertor::provider_api::BosLifeLogs;
 use convertor::url::query::ConvertorQuery;
+use std::future::{Ready, ready};
+use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Duration;
 use tower_http::LatencyUnit;
-use tower_http::trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer};
-use tracing::instrument;
+use tower_http::classify::StatusInRangeAsFailures;
+use tower_http::services::{ServeDir, ServeFile};
+use tower_http::trace::{
+    DefaultMakeSpan, DefaultOnFailure, DefaultOnRequest, DefaultOnResponse, OnResponse, TraceLayer,
+};
+use tracing::{Level, Span, event, instrument};
 use url::Url;
 
 pub fn router(app_state: AppState) -> Router {
+    // 你的目录: crates/convd/assets
+    let assets = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets");
+
     Router::new()
-        .route("/", get(|| async { Html(include_str!("../../assets/index.html")) }))
+        // 1) 根路径返回首页
+        .route_service("/", get_service(ServeFile::new(assets.join("index.html"))))
+        // 可选：/index.html 也给首页，但更推荐重定向到 /
+        .route("/index.html", get(|| async { Redirect::permanent("/") }))
+        // 2) /dashboard 重定向到 /
+        .route("/dashboard", get(|| async { Redirect::permanent("/") }))
+        // 3) 静态资源目录，index.html 内请用绝对路径引用：/static/xxx
+        .nest_service("/static", ServeDir::new(assets.join("static")))
+        // .route("/", get(|| async { Html(include_str!("../../assets/index.html")) }))
         .route("/healthy", get(|| async { "ok" }))
         .route("/redis", get(actuator::redis))
         .route("/version", get(actuator::version))
@@ -33,14 +51,15 @@ pub fn router(app_state: AppState) -> Router {
         .route("/sub-logs/{provider}", get(sub_logs))
         .with_state(Arc::new(app_state))
         .layer(
-            TraceLayer::new_for_http()
+            TraceLayer::new(StatusInRangeAsFailures::new(400..=599).into_make_classifier())
                 .make_span_with(DefaultMakeSpan::new().include_headers(true))
                 .on_request(DefaultOnRequest::new().level(tracing::Level::INFO))
                 .on_response(
                     DefaultOnResponse::new()
                         .level(tracing::Level::INFO)
                         .latency_unit(LatencyUnit::Millis),
-                ),
+                )
+                .on_failure(DefaultOnFailure::new().level(tracing::Level::ERROR)),
         )
 }
 
@@ -175,5 +194,32 @@ where
                 Err(_) => Ok(None),
             }
         }
+    }
+}
+
+struct StatusLevelOnResponse;
+
+impl<B> OnResponse<B> for StatusLevelOnResponse {
+    fn on_response(self, res: &axum::http::Response<B>, latency: Duration, span: &Span) {
+        let status = res.status();
+
+        // 你想要的策略：404 => ERROR；5xx => ERROR；其它按需
+        let level = if status == axum::http::StatusCode::NOT_FOUND {
+            Level::ERROR
+        } else if status.is_server_error() {
+            Level::ERROR
+        } else if status.is_client_error() {
+            Level::WARN
+        } else {
+            Level::INFO
+        };
+
+        event!(
+            parent: span,
+            level,
+            %status,
+            latency_ms = latency.as_millis(),
+            "finished processing request"
+        );
     }
 }
