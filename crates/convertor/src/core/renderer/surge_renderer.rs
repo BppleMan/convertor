@@ -1,3 +1,4 @@
+use crate::config::proxy_client_config::ProxyClient;
 use crate::core::profile::policy::Policy;
 use crate::core::profile::proxy::Proxy;
 use crate::core::profile::proxy_group::ProxyGroup;
@@ -17,8 +18,8 @@ pub struct SurgeRenderer;
 impl Renderer for SurgeRenderer {
     type PROFILE = SurgeProfile;
 
-    fn client() -> crate::common::config::proxy_client_config::ProxyClient {
-        crate::common::config::proxy_client_config::ProxyClient::Surge
+    fn client() -> ProxyClient {
+        ProxyClient::Surge
     }
 
     fn render_profile(profile: &Self::PROFILE) -> RenderResult<String> {

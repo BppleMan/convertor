@@ -3,8 +3,8 @@ mod server;
 
 use axum::body::Body;
 use axum::extract::Request;
-use convertor::common::config::provider_config::Provider;
-use convertor::common::config::proxy_client_config::ProxyClient;
+use convertor::config::provider_config::Provider;
+use convertor::config::proxy_client_config::ProxyClient;
 use convertor::core::profile::policy::Policy;
 use convertor::core::renderer::Renderer;
 use convertor::core::renderer::clash_renderer::ClashRenderer;

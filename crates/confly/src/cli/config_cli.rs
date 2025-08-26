@@ -1,6 +1,6 @@
 use clap::{Args, Subcommand};
-use convertor::common::config::ConvertorConfig;
 use convertor::common::redis::{REDIS_CONVERTOR_CONFIG_KEY, REDIS_CONVERTOR_CONFIG_PUBLISH_CHANNEL};
+use convertor::config::ConvertorConfig;
 use redis::{AsyncTypedCommands, Client};
 use std::path::PathBuf;
 use tracing::info;

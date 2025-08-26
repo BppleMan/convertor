@@ -2,7 +2,7 @@ use axum::Router;
 use axum::routing::get;
 use convd::server::app_state::AppState;
 use convd::server::router::{profile, raw_profile, rule_provider};
-use convertor::common::config::ConvertorConfig;
+use convertor::config::ConvertorConfig;
 use convertor::provider_api::ProviderApi;
 use convertor::testkit::start_mock_provider_server;
 use std::sync::Arc;

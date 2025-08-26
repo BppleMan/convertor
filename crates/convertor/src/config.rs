@@ -1,7 +1,7 @@
-use crate::common::config::provider_config::{Provider, ProviderConfig};
-use crate::common::config::proxy_client_config::ProxyClientConfig;
 use crate::common::encrypt::{decrypt, encrypt};
 use crate::common::redis::REDIS_CONVERTOR_CONFIG_KEY;
+use crate::config::provider_config::{Provider, ProviderConfig};
+use crate::config::proxy_client_config::ProxyClientConfig;
 use crate::url::url_builder::UrlBuilder;
 use color_eyre::Report;
 use color_eyre::eyre::{WrapErr, eyre};

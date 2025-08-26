@@ -1,5 +1,4 @@
 pub mod cache;
-pub mod config;
 pub mod encrypt;
 pub mod ext;
 pub mod once;

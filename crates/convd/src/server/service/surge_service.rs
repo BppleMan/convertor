@@ -1,7 +1,7 @@
 use color_eyre::Report;
 use color_eyre::Result;
 use color_eyre::eyre::eyre;
-use convertor::common::config::ConvertorConfig;
+use convertor::config::ConvertorConfig;
 use convertor::core::profile::Profile;
 use convertor::core::profile::surge_profile::SurgeProfile;
 use convertor::core::renderer::Renderer;

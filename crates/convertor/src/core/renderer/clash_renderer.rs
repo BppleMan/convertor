@@ -1,3 +1,4 @@
+use crate::config::proxy_client_config::ProxyClient;
 use crate::core::profile::clash_profile::ClashProfile;
 use crate::core::profile::policy::Policy;
 use crate::core::profile::proxy::Proxy;
@@ -14,8 +15,8 @@ pub struct ClashRenderer;
 impl Renderer for ClashRenderer {
     type PROFILE = ClashProfile;
 
-    fn client() -> crate::common::config::proxy_client_config::ProxyClient {
-        crate::common::config::proxy_client_config::ProxyClient::Clash
+    fn client() -> ProxyClient {
+        ProxyClient::Clash
     }
 
     #[instrument(skip_all)]

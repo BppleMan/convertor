@@ -1,9 +1,9 @@
-use convertor::common::config::ConvertorConfig;
-use convertor::common::config::proxy_client_config::ProxyClient;
+use convertor::config::ConvertorConfig;
+use convertor::config::proxy_client_config::ProxyClient;
 use convertor::provider_api::ProviderApi;
 
 use confly::cli::provider_cli::{ProviderCli, ProviderCmd};
-use convertor::common::config::provider_config::Provider;
+use convertor::config::provider_config::Provider;
 use convertor::testkit::{init_test, start_mock_provider_server};
 use url::Url;
 

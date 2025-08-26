@@ -1,5 +1,5 @@
-use crate::common::config::ConvertorConfig;
-use crate::common::config::proxy_client_config::{ClashConfig, ProxyClient, ProxyClientConfig, SurgeConfig};
+use crate::config::ConvertorConfig;
+use crate::config::proxy_client_config::{ClashConfig, ProxyClient, ProxyClientConfig, SurgeConfig};
 use crate::core::convertor_url::{ConvertorUrl, ConvertorUrlType};
 use crate::core::profile::Profile;
 use crate::core::profile::clash_profile::ClashProfile;

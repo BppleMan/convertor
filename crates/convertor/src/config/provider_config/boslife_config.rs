@@ -1,4 +1,4 @@
-use crate::common::config::provider_config::{Api, ApiConfig, Credential, Headers, Provider, ProviderConfig};
+use super::{Api, ApiConfig, Credential, Headers, Provider, ProviderConfig};
 use url::Url;
 
 impl ProviderConfig {

@@ -1,6 +1,6 @@
 use crate::server::service::{ClashService, SurgeService};
-use convertor::common::config::ConvertorConfig;
-use convertor::common::config::provider_config::Provider;
+use convertor::config::ConvertorConfig;
+use convertor::config::provider_config::Provider;
 use convertor::provider_api::ProviderApi;
 use std::collections::HashMap;
 use std::sync::Arc;

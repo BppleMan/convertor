@@ -5,9 +5,9 @@ use color_eyre::Result;
 use confly::cli::ConvertorCommand;
 use confly::cli::config_cli::ConfigCli;
 use confly::cli::provider_cli::ProviderCli;
-use convertor::common::config::ConvertorConfig;
 use convertor::common::once::{init_backtrace, init_base_dir, init_log};
 use convertor::common::redis::{init_redis, redis_client, redis_url};
+use convertor::config::ConvertorConfig;
 use convertor::provider_api::ProviderApi;
 use std::path::PathBuf;
 
