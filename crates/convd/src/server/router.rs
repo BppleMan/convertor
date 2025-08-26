@@ -1,3 +1,5 @@
+mod actuator;
+
 use crate::server::AppState;
 use crate::server::error::AppError;
 use axum::extract::{FromRequestParts, OptionalFromRequestParts, Path, RawQuery, State};
@@ -23,6 +25,8 @@ pub fn router(app_state: AppState) -> Router {
     Router::new()
         .route("/", get(|| async { Html(include_str!("../../assets/index.html")) }))
         .route("/healthy", get(|| async { "ok" }))
+        .route("/redis", get(actuator::redis))
+        .route("/version", get(actuator::version))
         .route("/raw-profile/{client}/{provider}", get(raw_profile))
         .route("/profile/{client}/{provider}", get(profile))
         .route("/rule-provider/{client}/{provider}", get(rule_provider))

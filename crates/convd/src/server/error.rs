@@ -3,6 +3,7 @@ use axum::http::header::ToStrError;
 use axum::response::{IntoResponse, Response};
 use convertor::config::client_config::ProxyClient;
 use convertor::url::url_error::{QueryError, UrlBuilderError};
+use redis::RedisError;
 use std::sync::Arc;
 use thiserror::Error;
 
@@ -14,8 +15,6 @@ pub enum AppError {
     #[error("没有找到对应的订阅提供者")]
     NoSubProvider,
 
-    // #[error("没有找到对应的代理客户端")]
-    // NoProxyClient,
     #[error(transparent)]
     ConvertorUrl(#[from] UrlBuilderError),
 
@@ -36,8 +35,9 @@ pub enum AppError {
 
     #[error(transparent)]
     CacheError(#[from] Arc<AppError>),
-    // #[error("读写锁异常: {0}")]
-    // RwLockError(String),
+
+    #[error("Redis 错误: {0:?}")]
+    RedisError(#[from] RedisError),
 }
 
 impl IntoResponse for AppError {
