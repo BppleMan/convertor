@@ -15,6 +15,9 @@ test-convertor:
 test-convd:
     cargo insta test -p convd
 
+test-confly:
+    cargo insta test -p confly
+
 install:
     cargo install --bin convertor --path .
 

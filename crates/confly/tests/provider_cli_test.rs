@@ -7,7 +7,7 @@ use convertor::common::config::provider_config::Provider;
 use convertor::testkit::{init_test, start_mock_provider_server};
 use url::Url;
 
-pub fn cmds(client: ProxyClient, provider: Provider) -> [ProviderCmd; 3] {
+pub fn cmds(client: ProxyClient, provider: Provider) -> [ProviderCmd; 4] {
     [
         ProviderCmd {
             client,
@@ -25,6 +25,12 @@ pub fn cmds(client: ProxyClient, provider: Provider) -> [ProviderCmd; 3] {
             provider,
             interval: Some(86400),
             strict: Some(false),
+            ..Default::default()
+        },
+        ProviderCmd {
+            client,
+            provider,
+            reset: true,
             ..Default::default()
         },
     ]

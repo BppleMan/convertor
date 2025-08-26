@@ -659,23 +659,11 @@ dependencies = [
  "color-eyre",
  "convertor",
  "headers",
- "http-body-util",
- "httpmock",
  "insta",
- "pretty_assertions",
  "redis",
- "regex",
  "serde",
- "serde_json",
- "strum",
- "thiserror 2.0.12",
  "tokio",
- "tokio-stream",
- "tokio-util",
- "tower",
  "tracing",
- "tracing-appender",
- "tracing-subscriber",
  "url",
 ]
 
@@ -712,26 +700,17 @@ dependencies = [
  "console 0.16.0",
  "convertor",
  "http-body-util",
- "httpmock",
  "insta",
- "jsonpath_lib",
  "moka",
- "percent-encoding",
- "pretty_assertions",
  "redis",
- "serde",
  "serde_json",
- "serde_yaml",
  "thiserror 2.0.12",
  "tokio",
  "tokio-stream",
  "tokio-util",
- "toml",
  "tower",
  "tower-http",
  "tracing",
- "tracing-appender",
- "tracing-subscriber",
  "url",
 ]
 
@@ -744,11 +723,9 @@ dependencies = [
  "chacha20poly1305",
  "clap",
  "color-eyre",
- "console 0.16.0",
  "dispatch_map",
  "futures-util",
  "headers",
- "http-body-util",
  "httpmock",
  "insta",
  "jsonpath_lib",
@@ -757,7 +734,6 @@ dependencies = [
  "opentelemetry-otlp",
  "opentelemetry_sdk",
  "percent-encoding",
- "pretty_assertions",
  "rand_chacha",
  "rand_core 0.9.3",
  "redis",
@@ -768,16 +744,10 @@ dependencies = [
  "serde_yaml",
  "strum",
  "thiserror 2.0.12",
- "tokio",
- "tokio-stream",
- "tokio-util",
  "toml",
- "tower",
  "tracing",
  "tracing-appender",
  "tracing-opentelemetry",
- "tracing-profile",
- "tracing-span-tree",
  "tracing-subscriber",
  "url",
 ]
@@ -879,12 +849,6 @@ checksum = "9c9e6a11ca8224451684bc0d7d5a7adbf8f2fd6887261a1cfc3c0432f9d4068e"
 dependencies = [
  "powerfmt",
 ]
-
-[[package]]
-name = "diff"
-version = "0.1.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "56254986775e3233ffa9c4d7d3faaf6d36a2c09d30b20687e9f88bc8bafc16c8"
 
 [[package]]
 name = "digest"
@@ -2215,16 +2179,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "85eae3c4ed2f50dcfe72643da4befc30deadb458a9b590d720cde2f2b1e97da9"
 dependencies = [
  "zerocopy",
-]
-
-[[package]]
-name = "pretty_assertions"
-version = "1.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ae130e2f271fbc2ac3a40fb1d07180839cdbbe443c7a27e1e3c13c5cac0116d"
-dependencies = [
- "diff",
- "yansi",
 ]
 
 [[package]]
@@ -3944,12 +3898,6 @@ name = "writeable"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ea2f10b9bb0928dfb1b42b65e1f9e36f7f54dbdf08457afefb38afcdec4fa2bb"
-
-[[package]]
-name = "yansi"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfe53a6657fd280eaa890a3bc59152892ffa3e30101319d168b781ed6529b049"
 
 [[package]]
 name = "yoke"

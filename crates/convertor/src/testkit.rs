@@ -100,6 +100,23 @@ impl MockServerExt for ProviderConfig {
                 .await;
         }
 
+        // hook mock server 的 /subscription 路径，返回相应的 mock 数据
+        let sub_host = self.sub_url.host_port()?;
+        for client in ProxyClient::VARIANTS {
+            mock_server
+                .mock_async(|when, then| {
+                    when.method(GET)
+                        .path(subscribe_url_path)
+                        .query_param("flag", client.as_ref())
+                        .query_param("token", format!("reset_{token}"));
+                    let body = mock_profile(*client, &sub_host);
+                    then.status(200)
+                        .body(body)
+                        .header("Content-Type", "text/plain; charset=utf-8");
+                })
+                .await;
+        }
+
         Ok(mock_server)
     }
 }
