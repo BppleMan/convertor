@@ -29,7 +29,7 @@ fn test_url_builder_surge_boslife() -> color_eyre::Result<()> {
     init_test();
     let url_builder = url_builder(ProxyClient::Surge, Provider::BosLife)?;
     let raw_url = url_builder.build_raw_url();
-    insta::assert_snapshot!(raw_url.to_string(), @"https://localhost/subscription?flag=Surge");
+    insta::assert_snapshot!(raw_url.to_string(), @"https://localhost/subscription?token=bppleman&flag=Surge");
 
     let raw_profile_url = url_builder.build_raw_profile_url()?;
     insta::assert_snapshot!(raw_profile_url.to_string(), @"http://127.0.0.1:8080/raw-profile/surge/boslife?interval=86400&strict=true&sub_url=qDbvzIt3DcfaQVl8UVdIjXck4D-42Eo3c6g0ZR2cc7lpxUFnkUEWW0fTRfMAmY3yU3f-ESJYD93o5YDKtEzSe1ATkzfrq9RxPdh7fMif0IOZXScDcg");
@@ -54,7 +54,7 @@ fn test_url_builder_clash_boslife() -> color_eyre::Result<()> {
     init_test();
     let url_builder = url_builder(ProxyClient::Clash, Provider::BosLife)?;
     let raw_url = url_builder.build_raw_url();
-    insta::assert_snapshot!(raw_url.to_string(), @"https://localhost/subscription?flag=Clash");
+    insta::assert_snapshot!(raw_url.to_string(), @"https://localhost/subscription?token=bppleman&flag=Clash");
 
     let raw_profile_url = url_builder.build_raw_profile_url()?;
     insta::assert_snapshot!(raw_profile_url.to_string(), @"http://127.0.0.1:8080/raw-profile/clash/boslife?interval=86400&strict=true&sub_url=qDbvzIt3DcfaQVl8UVdIjXck4D-42Eo3c6g0ZR2cc7lpxUFnkUEWW0fTRfMAmY3yU3f-ESJYD93o5YDKtEzSe1ATkzfrq9RxPdh7fMif0IOZXScDcg");
