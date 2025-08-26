@@ -2,8 +2,8 @@ use crate::common::cache::{
     CACHED_AUTH_TOKEN_KEY, CACHED_PROFILE_KEY, CACHED_SUB_LOGS_KEY, CACHED_SUB_URL_KEY, Cache, CacheKey,
 };
 use crate::common::ext::NonEmptyOptStr;
+use crate::config::client_config::ProxyClient;
 use crate::config::provider_config::ApiConfig;
-use crate::config::proxy_client_config::ProxyClient;
 use crate::provider_api::api_response::{ApiFailed, ApiResponse};
 use crate::provider_api::boslife_api::BosLifeLogs;
 use color_eyre::eyre::{Context, eyre};

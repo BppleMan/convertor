@@ -1,5 +1,5 @@
 use crate::common::encrypt::EncryptError;
-use crate::config::proxy_client_config::ParseClientError;
+use crate::config::client_config::ParseClientError;
 use crate::url::convertor_url::ConvertorUrlType;
 use std::str::Utf8Error;
 use thiserror::Error;

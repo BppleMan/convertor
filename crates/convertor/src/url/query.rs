@@ -1,6 +1,6 @@
 use crate::common::encrypt::decrypt;
+use crate::config::client_config::ProxyClient;
 use crate::config::provider_config::Provider;
-use crate::config::proxy_client_config::ProxyClient;
 use crate::core::profile::policy::Policy;
 use crate::url::url_error::{EncodeError, ParseError, QueryError};
 use percent_encoding::{percent_decode_str, utf8_percent_encode};

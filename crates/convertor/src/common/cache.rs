@@ -1,4 +1,4 @@
-use crate::config::proxy_client_config::ProxyClient;
+use crate::config::client_config::ProxyClient;
 use moka::future::Cache as MokaCache;
 use redis::AsyncTypedCommands;
 use redis::aio::ConnectionManager;

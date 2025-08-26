@@ -1,6 +1,6 @@
 use crate::common::encrypt::encrypt;
+use crate::config::client_config::ProxyClient;
 use crate::config::provider_config::Provider;
-use crate::config::proxy_client_config::ProxyClient;
 use crate::core::profile::policy::Policy;
 use crate::core::profile::surge_header::SurgeHeader;
 use crate::url::convertor_url::{ConvertorUrl, ConvertorUrlType};

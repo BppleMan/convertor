@@ -1,8 +1,8 @@
 use crate::common::encrypt::nonce_rng_use_seed;
 use crate::common::once::{init_backtrace, init_log};
 use crate::config::ConvertorConfig;
+use crate::config::client_config::ProxyClient;
 use crate::config::provider_config::ProviderConfig;
-use crate::config::proxy_client_config::ProxyClient;
 use crate::core::profile::policy::Policy;
 use crate::url::url_builder::HostPort;
 use color_eyre::Report;

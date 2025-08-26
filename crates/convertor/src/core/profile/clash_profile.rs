@@ -1,4 +1,4 @@
-use crate::config::proxy_client_config::ProxyClient;
+use crate::config::client_config::ProxyClient;
 
 use crate::core::parser::clash_parser::ClashParser;
 use crate::core::profile::Profile;

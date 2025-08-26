@@ -1,5 +1,5 @@
 use convertor::config::ConvertorConfig;
-use convertor::config::proxy_client_config::ProxyClient;
+use convertor::config::client_config::ProxyClient;
 use convertor::provider_api::ProviderApi;
 
 use confly::cli::provider_cli::{ProviderCli, ProviderCmd};

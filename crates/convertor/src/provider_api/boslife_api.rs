@@ -1,6 +1,6 @@
 use crate::common::cache::Cache;
+use crate::config::client_config::ProxyClient;
 use crate::config::provider_config::{ApiConfig, ProviderConfig};
-use crate::config::proxy_client_config::ProxyClient;
 use crate::provider_api::provider_api_trait::ProviderApiTrait;
 use color_eyre::eyre::{Context, eyre};
 use redis::aio::ConnectionManager;

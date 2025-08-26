@@ -1,7 +1,7 @@
 use convertor::common::once::init_backtrace;
 use convertor::config::ConvertorConfig;
+use convertor::config::client_config::ProxyClient;
 use convertor::config::provider_config::Provider;
-use convertor::config::proxy_client_config::ProxyClient;
 use convertor::core::profile::Profile;
 use convertor::core::profile::surge_profile::SurgeProfile;
 use std::path::Path;

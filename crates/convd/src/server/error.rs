@@ -1,7 +1,7 @@
 use axum::http::StatusCode;
 use axum::http::header::ToStrError;
 use axum::response::{IntoResponse, Response};
-use convertor::config::proxy_client_config::ProxyClient;
+use convertor::config::client_config::ProxyClient;
 use convertor::url::url_error::{QueryError, UrlBuilderError};
 use std::sync::Arc;
 use thiserror::Error;
