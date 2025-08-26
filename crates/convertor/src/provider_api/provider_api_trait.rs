@@ -92,14 +92,12 @@ pub trait ProviderApiTrait: Clone + Send {
     async fn get_raw_profile(&self, client: ProxyClient, user_agent: UserAgent) -> color_eyre::Result<String> {
         let raw_sub_url = self.build_raw_url(client);
         let key = CacheKey::new(CACHED_PROFILE_KEY, raw_sub_url.to_string(), Some(client));
-        let this = self.clone();
         let result = self
             .cached_profile()
             .try_get_with(key, async {
-                let inner_this = this.clone();
-                match this
+                match self
                     .execute(
-                        || async move { inner_this.get_raw_profile_request(raw_sub_url.clone(), user_agent.clone()) },
+                        || async { self.get_raw_profile_request(raw_sub_url.clone(), user_agent.clone()) },
                         |text| async { Ok(text) },
                     )
                     .await
@@ -120,18 +118,14 @@ pub trait ProviderApiTrait: Clone + Send {
             return Ok(auth_token.to_string());
         }
         let key = CacheKey::new(CACHED_AUTH_TOKEN_KEY, self.api_config().login_url().to_string(), None);
-        let this = self.clone();
         let result = self
             .cached_auth_token()
-            .try_get_with(key, async move {
-                let req_this = this.clone();
-                let rep_this = this.clone();
-                match this
+            .try_get_with(key, async {
+                match self
                     .execute(
-                        || async move { req_this.login_request() },
+                        || async { self.login_request() },
                         |text| async move {
-                            let text = text;
-                            let json_path = &rep_this.api_config().login_api.json_path;
+                            let json_path = &self.api_config().login_api.json_path;
                             jsonpath_lib::select_as::<String>(&text, json_path)
                                 .wrap_err(format!("无法选择 json_path: {json_path}"))?
                                 .into_iter()
@@ -154,21 +148,17 @@ pub trait ProviderApiTrait: Clone + Send {
 
     async fn get_sub_url(&self) -> color_eyre::Result<Url> {
         let key = CacheKey::new(CACHED_SUB_URL_KEY, self.api_config().get_sub_url().to_string(), None);
-        let this = self.clone();
         let result = self
             .cached_sub_url()
             .try_get_with(key, async {
-                let req_this = this.clone();
-                let rep_this = this.clone();
-                match this
+                match self
                     .execute(
-                        || async move {
-                            let auth_token = req_this.login().await?;
-                            req_this.get_sub_request(auth_token)
+                        || async {
+                            let auth_token = self.login().await?;
+                            self.get_sub_request(auth_token)
                         },
                         |text| async move {
-                            let text = text;
-                            let json_path = &rep_this.api_config().get_sub_api.json_path;
+                            let json_path = &self.api_config().get_sub_api.json_path;
                             jsonpath_lib::select_as::<String>(&text, json_path)
                                 .wrap_err(format!("无法选择 json_path: {json_path}"))?
                                 .into_iter()
@@ -192,17 +182,14 @@ pub trait ProviderApiTrait: Clone + Send {
     }
 
     async fn reset_sub_url(&self) -> color_eyre::Result<Url> {
-        let req_this = self.clone();
-        let rep_this = self.clone();
         let response = self
             .execute(
-                || async move {
-                    let auth_token = req_this.login().await?;
-                    req_this.reset_sub_request(auth_token)
+                || async {
+                    let auth_token = self.login().await?;
+                    self.reset_sub_request(auth_token)
                 },
                 |text| async move {
-                    let text = text;
-                    let json_path = &rep_this.api_config().reset_sub_api.json_path;
+                    let json_path = &self.api_config().reset_sub_api.json_path;
                     jsonpath_lib::select_as::<String>(&text, json_path)
                         .wrap_err(format!("无法选择 json_path: {json_path}"))?
                         .into_iter()
@@ -220,21 +207,17 @@ pub trait ProviderApiTrait: Clone + Send {
     async fn get_sub_logs(&self) -> color_eyre::Result<BosLifeLogs> {
         let sub_logs_url = self.api_config().sub_logs_url().ok_or(eyre!("订阅日志接口未配置"))?;
         let key = CacheKey::new(CACHED_SUB_LOGS_KEY, sub_logs_url.to_string(), None);
-        let this = self.clone();
         let result = self
             .cached_sub_logs()
             .try_get_with(key, async {
-                let req_this = this.clone();
-                let rep_this = this.clone();
-                match this
+                match self
                     .execute(
-                        || async move {
-                            let auth_token = req_this.login().await?;
-                            req_this.get_sub_logs_request(auth_token)
+                        || async {
+                            let auth_token = self.login().await?;
+                            self.get_sub_logs_request(auth_token)
                         },
                         |text| async move {
-                            let text = text;
-                            let json_path = rep_this
+                            let json_path = self
                                 .api_config()
                                 .sub_logs_api
                                 .as_ref()
