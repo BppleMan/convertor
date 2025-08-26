@@ -7,7 +7,7 @@ impl ProviderConfig {
             provider: Provider::BosLife,
             sub_url: Url::parse("http://127.0.0.1:8080/subscription?token=bppleman").expect("不合法的订阅地址"),
             api_config: ApiConfig {
-                host: Url::parse("https://www.blnew.com").expect("不合法的 API 地址"),
+                host: Url::parse("https://www.bppleman.com").expect("不合法的 API 地址"),
                 prefix: "/proxy/".to_string(),
                 headers: Headers(
                     [

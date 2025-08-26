@@ -323,6 +323,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "021e862c184ae977658b36c4500f7feac3221ca5da43e3f25bd04ab6c79a29b5"
 dependencies = [
  "axum-core",
+ "axum-macros",
  "bytes",
  "form_urlencoded",
  "futures-util",
@@ -391,6 +392,17 @@ dependencies = [
  "tower",
  "tower-layer",
  "tower-service",
+]
+
+[[package]]
+name = "axum-macros"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "604fde5e028fea851ce1d8570bbdc034bec850d157f7569d10f347d06808c05c"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.91",
 ]
 
 [[package]]
@@ -701,15 +713,19 @@ dependencies = [
  "http-body-util",
  "httpmock",
  "insta",
+ "jsonpath_lib",
  "moka",
  "percent-encoding",
  "pretty_assertions",
  "redis",
+ "serde",
  "serde_json",
+ "serde_yaml",
  "thiserror 2.0.12",
  "tokio",
  "tokio-stream",
  "tokio-util",
+ "toml",
  "tower",
  "tower-http",
  "tracing",
@@ -722,13 +738,14 @@ dependencies = [
 name = "convertor"
 version = "2.5.2"
 dependencies = [
- "anyhow",
+ "async-trait",
  "base64 0.22.1",
  "chacha20poly1305",
  "clap",
  "color-eyre",
  "console 0.16.0",
  "dispatch_map",
+ "futures-util",
  "headers",
  "http-body-util",
  "httpmock",

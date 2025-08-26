@@ -1,4 +1,3 @@
-use crate::server::error::AppError;
 use color_eyre::Report;
 use color_eyre::Result;
 use color_eyre::eyre::eyre;
@@ -57,8 +56,9 @@ impl SurgeService {
     }
 
     #[instrument(skip_all)]
-    pub async fn sub_logs(&self, api: &ProviderApi) -> Result<BosLifeLogs, AppError> {
-        Ok(api.get_sub_logs().await?)
+    pub async fn sub_logs(&self, api: ProviderApi) -> Result<String> {
+        let logs: BosLifeLogs = api.get_sub_logs().await?;
+        Ok(serde_json::to_string_pretty(&logs)?)
     }
 
     async fn try_get_profile(

@@ -45,7 +45,7 @@ impl MockServerExt for ProviderConfig {
 
         mock_server
             .mock_async(|when, then| {
-                when.method(POST).path(&self.api_config.login_api.path);
+                when.method(POST).path(self.api_config.login_path());
                 let body = serde_json::json!({
                     "data": {
                         "auth_data": "mock_auth_token"
@@ -59,7 +59,7 @@ impl MockServerExt for ProviderConfig {
 
         mock_server
             .mock_async(|when, then| {
-                when.method(GET).path(&self.api_config.get_sub_api.path);
+                when.method(GET).path(self.api_config.get_sub_path());
                 let body = serde_json::json!({
                     "data": {
                         "subscribe_url": mock_server.url(format!("{subscribe_url_path}?token={token}")),
@@ -73,7 +73,7 @@ impl MockServerExt for ProviderConfig {
 
         mock_server
             .mock_async(|when, then| {
-                when.method(POST).path(&self.api_config.reset_sub_api.path);
+                when.method(POST).path(self.api_config.reset_sub_path());
                 let body = serde_json::json!({
                     "data": mock_server.url(format!("{subscribe_url_path}?token=reset_{token}")),
                 });

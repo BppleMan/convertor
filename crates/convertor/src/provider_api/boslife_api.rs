@@ -58,11 +58,7 @@ impl ProviderApiTrait for BosLifeApi {
     }
 
     fn login_request(&self) -> color_eyre::Result<Request> {
-        let mut url = self.api_config().host.clone();
-        let path = format!("{}{}", self.api_config().prefix, self.api_config().login_api.path);
-        url.set_path(&path);
-        println!("login url: {}", url);
-        let builder = self.client.request(Method::POST, url).form(&[
+        let builder = self.client.request(Method::POST, self.api_config().login_url()).form(&[
             ("email", self.api_config().credential.username.clone()),
             ("password", self.api_config().credential.password.clone()),
         ]);
@@ -70,28 +66,23 @@ impl ProviderApiTrait for BosLifeApi {
     }
 
     fn get_sub_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request> {
-        let url = &self.api_config().get_sub_api.path;
         let builder = self
             .client
-            .request(Method::GET, url)
+            .request(Method::GET, self.api_config().get_sub_url())
             .header("Authorization", auth_token.as_ref());
         Ok(builder.build()?)
     }
 
     fn reset_sub_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request> {
-        let url = &self.api_config().reset_sub_api.path;
         let builder = self
             .client
-            .request(Method::POST, url)
+            .request(Method::POST, self.api_config().reset_sub_url())
             .header("Authorization", auth_token.as_ref());
         Ok(builder.build()?)
     }
 
     fn get_sub_logs_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request> {
-        let Some(api) = &self.api_config().sub_logs_api else {
-            return Err(color_eyre::eyre::eyre!("订阅日志接口未配置"));
-        };
-        let url = &api.path;
+        let url = self.api_config().sub_logs_url().ok_or(eyre!("订阅日志接口未配置"))?;
         let builder = self
             .client
             .request(Method::GET, url)

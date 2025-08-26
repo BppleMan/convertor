@@ -51,6 +51,58 @@ pub struct Credential {
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Headers(pub HashMap<String, String>);
 
+impl ApiConfig {
+    pub fn login_url(&self) -> Url {
+        let mut url = self.host.clone();
+        url.set_path(&self.login_path());
+        url
+    }
+
+    pub fn login_path(&self) -> String {
+        format!("{}{}", self.prefix.trim(), self.login_api.path.trim())
+            .trim()
+            .to_string()
+    }
+
+    pub fn get_sub_url(&self) -> Url {
+        let mut url = self.host.clone();
+        url.set_path(&self.get_sub_path());
+        url
+    }
+
+    pub fn get_sub_path(&self) -> String {
+        format!("{}{}", self.prefix.trim(), self.get_sub_api.path.trim())
+            .trim()
+            .to_string()
+    }
+
+    pub fn reset_sub_url(&self) -> Url {
+        let mut url = self.host.clone();
+        url.set_path(&self.reset_sub_path());
+        url
+    }
+
+    pub fn reset_sub_path(&self) -> String {
+        format!("{}{}", self.prefix.trim(), self.reset_sub_api.path.trim())
+            .trim()
+            .to_string()
+    }
+
+    pub fn sub_logs_url(&self) -> Option<Url> {
+        self.sub_logs_path().map(|path| {
+            let mut url = self.host.clone();
+            url.set_path(&path);
+            url
+        })
+    }
+
+    pub fn sub_logs_path(&self) -> Option<String> {
+        self.sub_logs_api
+            .as_ref()
+            .map(|api| format!("{}{}", self.prefix.trim(), api.path.trim()).trim().to_string())
+    }
+}
+
 impl Hash for Headers {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         for (key, value) in &self.0 {

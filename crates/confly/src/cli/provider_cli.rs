@@ -185,7 +185,7 @@ impl ProviderCli {
             // Get sub_url
             (None, false) => {
                 self.api_map
-                    .get(&provider)
+                    .get(provider)
                     .ok_or(eyre!("无法取得订阅供应商的 api 实现: {}", &provider))?
                     .get_sub_url()
                     .await?
@@ -193,7 +193,7 @@ impl ProviderCli {
             // Reset sub_url
             (None, true) => {
                 self.api_map
-                    .get(&provider)
+                    .get(provider)
                     .ok_or(eyre!("无法取得订阅供应商的 api 实现: {}", &provider))?
                     .reset_sub_url()
                     .await?

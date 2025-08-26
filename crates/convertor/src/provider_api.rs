@@ -10,6 +10,7 @@ use url::Url;
 use crate::provider_api::boslife_api::BosLifeApi;
 pub use boslife_api::{BosLifeLog, BosLifeLogs};
 
+mod api_response;
 mod boslife_api;
 pub mod provider_api_trait;
 

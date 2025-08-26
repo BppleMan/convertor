@@ -45,30 +45,29 @@ where
     pub async fn try_get_with<F, E>(&self, key: CacheKey<K>, init: F) -> Result<V, Arc<E>>
     where
         F: Future<Output = Result<V, E>>,
-        E: Sync + Send + 'static,
+        E: Display + Send + Sync + 'static,
     {
+        futures_util::pin_mut!(init);
         self.memory
-            .try_get_with(key.clone(), async {
-                match self.redis.clone() {
-                    Some(redis) => self.try_get_from_redis(redis, key, init).await,
-                    None => init.await,
-                }
-            })
+            .try_get_with(key.clone(), async { self.try_get_from_redis(key, init).await })
             .await
     }
 
-    async fn try_get_from_redis<F, E>(&self, mut redis: ConnectionManager, key: CacheKey<K>, init: F) -> Result<V, E>
+    async fn try_get_from_redis<F, E>(&self, key: CacheKey<K>, init: F) -> Result<V, E>
     where
         F: Future<Output = Result<V, E>>,
-        E: Sync + Send,
+        E: Display + Send + Sync + 'static,
     {
+        let Some(redis) = self.redis.as_ref() else {
+            return init.await;
+        };
+        let mut redis = redis.clone();
         let redis_key = key.as_redis_key();
         if let Ok(Some(raw)) = redis.get(&redis_key).await {
             debug!("命中 Redis 缓存: {}", redis_key);
             return Ok(V::from(raw));
         }
 
-        // 如果 Redis 中没有命中，则尝试从文件系统获取
         let value = init.await?;
         let raw = value.to_string();
 

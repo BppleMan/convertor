@@ -26,7 +26,7 @@ pub fn router(app_state: AppState) -> Router {
         .route("/raw-profile/{client}/{provider}", get(raw_profile))
         .route("/profile/{client}/{provider}", get(profile))
         .route("/rule-provider/{client}/{provider}", get(rule_provider))
-        .route("/sub-logs", get(sub_logs))
+        .route("/sub-logs/{provider}", get(sub_logs))
         .with_state(Arc::new(app_state))
         .layer(
             TraceLayer::new_for_http()
@@ -49,7 +49,7 @@ pub async fn raw_profile(
     RawQuery(query_string): RawQuery,
 ) -> Result<String, AppError> {
     let scheme = scheme.map(|s| s.0).unwrap_or("http".to_string());
-    let server = Url::parse(format!("{}://{}", scheme, host).as_str()).wrap_err("解析请求 URL 失败")?;
+    let server = Url::parse(format!("{scheme}://{host}").as_str()).wrap_err("解析请求 URL 失败")?;
     let query = query_string
         .map(|query_string| {
             ConvertorQuery::parse_from_query_string(query_string, &state.config.secret, server, client, provider)
@@ -77,7 +77,7 @@ pub async fn profile(
     RawQuery(query_string): RawQuery,
 ) -> Result<String, AppError> {
     let scheme = scheme.map(|s| s.0).unwrap_or("http".to_string());
-    let server = Url::parse(format!("{}://{}", scheme, host).as_str()).wrap_err("解析请求 URL 失败")?;
+    let server = Url::parse(format!("{scheme}://{host}").as_str()).wrap_err("解析请求 URL 失败")?;
     let query = query_string
         .map(|query_string| {
             ConvertorQuery::parse_from_query_string(query_string, &state.config.secret, server, client, provider)
@@ -106,7 +106,7 @@ pub async fn rule_provider(
     RawQuery(query_string): RawQuery,
 ) -> color_eyre::Result<String, AppError> {
     let scheme = scheme.map(|s| s.0).unwrap_or("http".to_string());
-    let server = Url::parse(format!("{}://{}", scheme, host).as_str()).wrap_err("解析请求 URL 失败")?;
+    let server = Url::parse(format!("{scheme}://{host}").as_str()).wrap_err("解析请求 URL 失败")?;
     let query = query_string
         .map(|query_string| {
             ConvertorQuery::parse_from_query_string(query_string, &state.config.secret, server, client, provider)
@@ -126,14 +126,15 @@ pub async fn rule_provider(
 }
 
 pub async fn sub_logs(
-    Path((client, provider)): Path<(ProxyClient, Provider)>,
+    Path(provider): Path<Provider>,
     Host(host): Host,
     scheme: Option<OptionalScheme>,
     State(state): State<Arc<AppState>>,
     RawQuery(query_string): RawQuery,
 ) -> Result<Json<BosLifeLogs>, AppError> {
+    let client = ProxyClient::Surge; // 订阅日志只支持 Surge 客户端
     let scheme = scheme.map(|s| s.0).unwrap_or("http".to_string());
-    let server = Url::parse(format!("{}://{}", scheme, host).as_str()).wrap_err("解析请求 URL 失败")?;
+    let server = Url::parse(format!("{scheme}://{host}").as_str()).wrap_err("解析请求 URL 失败")?;
     let query = query_string
         .map(|query_string| {
             ConvertorQuery::parse_from_query_string(query_string, &state.config.secret, server, client, provider)
@@ -147,8 +148,7 @@ pub async fn sub_logs(
     let Some(api) = state.api_map.get(&provider) else {
         return Err(AppError::NoSubProvider);
     };
-    let logs = state.surge_service.sub_logs(api).await?;
-    Ok(Json(logs))
+    Ok(Json(api.get_sub_logs().await?))
 }
 
 #[derive(Debug, Clone)]

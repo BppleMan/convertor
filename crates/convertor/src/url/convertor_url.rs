@@ -6,15 +6,40 @@ use url::Url;
 pub struct ConvertorUrl {
     pub r#type: ConvertorUrlType,
     pub server: Url,
-    pub path: String,
-    pub query: String,
+    pub path: Option<String>,
+    pub query: Option<String>,
+}
+
+impl ConvertorUrl {
+    pub fn new(r#type: ConvertorUrlType, server: Url) -> Self {
+        Self {
+            r#type,
+            server,
+            path: None,
+            query: None,
+        }
+    }
+
+    pub fn with_path(mut self, path: impl AsRef<str>) -> Self {
+        self.path = Some(path.as_ref().to_string());
+        self
+    }
+
+    pub fn with_query(mut self, query: impl AsRef<str>) -> Self {
+        self.query = Some(query.as_ref().to_string());
+        self
+    }
 }
 
 impl From<&ConvertorUrl> for Url {
     fn from(value: &ConvertorUrl) -> Self {
         let mut url = value.server.clone();
-        url.set_path(&value.path);
-        url.set_query(Some(&value.query));
+        if let Some(path) = &value.path {
+            url.set_path(path);
+        }
+        if let Some(query) = &value.query {
+            url.set_query(Some(query));
+        }
         url
     }
 }
