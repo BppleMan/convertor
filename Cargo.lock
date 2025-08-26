@@ -653,7 +653,7 @@ dependencies = [
 
 [[package]]
 name = "confly"
-version = "2.5.2"
+version = "2.6.0+alpha"
 dependencies = [
  "clap",
  "color-eyre",
@@ -691,7 +691,7 @@ dependencies = [
 
 [[package]]
 name = "convd"
-version = "2.5.2"
+version = "2.6.0+alpha"
 dependencies = [
  "axum",
  "axum-extra",
@@ -716,7 +716,7 @@ dependencies = [
 
 [[package]]
 name = "convertor"
-version = "2.5.2"
+version = "2.6.0+alpha"
 dependencies = [
  "async-trait",
  "base64 0.22.1",
@@ -957,7 +957,7 @@ dependencies = [
 
 [[package]]
 name = "example"
-version = "2.5.2"
+version = "2.6.0+alpha"
 dependencies = [
  "clap",
  "color-eyre",

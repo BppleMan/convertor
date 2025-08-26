@@ -10,7 +10,7 @@ members = [
 [workspace.package]
 description = "A profile converter for surge/clash."
 authors = ["BppleMan"]
-version = "2.5.2"
+version = "2.6.0+alpha"
 edition = "2024"
 license = "Apache-2.0"
 repository = "https://github.com/BppleMan/convertor"

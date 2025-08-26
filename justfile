@@ -6,8 +6,37 @@ prepare:
     cargo install cargo-zigbuild
     brew install zig
 
+#╭──────────────────────────────────────────────╮
+#│                   release                    │
+#╰──────────────────────────────────────────────╯
+
+install:
+    cargo install --bin convertor --path .
+
+release:
+    cargo build --release --bin convertor
+
+publish:
+    cargo publish -p convertor
+    cargo publish -p convd
+    cargo publish -p confly
+
+#╭──────────────────────────────────────────────╮
+#│                    build                     │
+#╰──────────────────────────────────────────────╯
+
 all:
-    cargo build --workspace --all-targets
+    time cargo build --workspace --all-targets
+
+build-convd:
+    time cargo build --bin convd
+
+build-confly:
+    time cargo build --bin confly
+
+#╭──────────────────────────────────────────────╮
+#│                     test                     │
+#╰──────────────────────────────────────────────╯
 
 test-convertor:
     cargo insta test -p convertor --features=testkit
@@ -18,11 +47,9 @@ test-convd:
 test-confly:
     cargo insta test -p confly
 
-install:
-    cargo install --bin convertor --path .
-
-release:
-    cargo build --release --bin convertor
+#╭──────────────────────────────────────────────╮
+#│                    linux                     │
+#╰──────────────────────────────────────────────╯
 
 linux:
     time CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=x86_64-linux-gnu-gcc \
@@ -38,32 +65,9 @@ zig-linux:
     time CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=./zig-cc \
     cargo build --release --bin convertor --target x86_64-unknown-linux-gnu
 
-deploy profile="release":
-    echo "Stopping remote service..."
-    ssh convertor "rc-service convertor stop"
-
-    echo "Uploading file..."
-    scp target/x86_64-unknown-linux-musl/{{ profile }}/convertor convertor:/root/convertor
-    # scp ~/.convertor/convertor.toml convertor:/root/.convertor/convertor.toml
-
-    ssh convertor "rc-service convertor restart"
-    ssh convertor "rc-service convertor status"
-
-# 用法: just deploy user@host path/to/local/file /remote/path your-service-name
-deploy_ubuntu:
-    echo "Stopping remote service..."
-    ssh ubuntu "systemctl stop convertor"
-    ssh ubuntu "systemctl daemon-reload"
-
-    echo "Uploading file..."
-    scp target/x86_64-unknown-linux-gnu/release/convertor ubuntu:/root/.cargo/bin/convertor
-    scp ~/.convertor/convertor.toml ubuntu:/root/.convertor/convertor.toml
-
-    echo "Restarting remote service..."
-    ssh ubuntu "systemctl restart convertor"
-    ssh ubuntu "systemctl status convertor"
-
-# ===== 基础参数，可改 =====
+#╭──────────────────────────────────────────────╮
+#│                    docker                    │
+#╰──────────────────────────────────────────────╯
 
 TARGET := "x86_64-unknown-linux-musl"
 BIN := "convertor"
