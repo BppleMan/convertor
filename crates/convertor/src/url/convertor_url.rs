@@ -1,8 +1,9 @@
+use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use strum::{AsRefStr, Display, EnumString, IntoStaticStr, VariantArray};
 use url::Url;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConvertorUrl {
     pub r#type: ConvertorUrlType,
     pub server: Url,
@@ -51,6 +52,7 @@ impl Display for ConvertorUrl {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Deserialize)]
 #[derive(Display, IntoStaticStr, AsRefStr, VariantArray, EnumString)]
 pub enum ConvertorUrlType {
     Raw,

@@ -665,6 +665,7 @@ dependencies = [
  "pretty_assertions",
  "redis",
  "regex",
+ "serde",
  "serde_json",
  "strum",
  "thiserror 2.0.12",
@@ -1643,6 +1644,7 @@ dependencies = [
  "console 0.15.11",
  "once_cell",
  "regex",
+ "serde",
  "similar",
 ]
 

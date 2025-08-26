@@ -1,6 +1,7 @@
 use clap::Args;
 use color_eyre::Result;
 use color_eyre::eyre::eyre;
+use color_eyre::owo_colors::OwoColorize;
 use convertor::common::config::ConvertorConfig;
 use convertor::common::config::provider_config::Provider;
 use convertor::common::config::proxy_client_config::ProxyClient;
@@ -15,12 +16,13 @@ use convertor::url::query::ConvertorQuery;
 use convertor::url::url_builder::{HostPort, UrlBuilder};
 use convertor::url::url_error::UrlBuilderError;
 use headers::UserAgent;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Display;
 use url::Url;
 
-#[derive(Default, Debug, Clone, Args)]
+#[derive(Default, Debug, Clone, Hash, Args)]
 pub struct ProviderCmd {
     /// 构造适用于不同客户端的订阅地址
     #[arg(value_enum)]
@@ -250,7 +252,7 @@ impl ProviderCli {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProviderCliResult {
     pub raw_url: ConvertorUrl,
     pub raw_profile_url: ConvertorUrl,
@@ -261,13 +263,46 @@ pub struct ProviderCliResult {
 
 impl Display for ProviderCliResult {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "{}", self.raw_url.r#type.blue())?;
         writeln!(f, "{}", self.raw_url)?;
+        writeln!(f, "{}", self.profile_url.r#type.blue())?;
         writeln!(f, "{}", self.profile_url)?;
+        writeln!(f, "{}", self.raw_profile_url.r#type.blue())?;
         writeln!(f, "{}", self.raw_profile_url)?;
+        writeln!(f, "{}", self.sub_logs_url.r#type.blue())?;
         writeln!(f, "{}", self.sub_logs_url)?;
+        writeln!(f, "{}", ConvertorUrlType::RuleProvider.to_string().blue())?;
         for link in &self.rule_provider_urls {
             writeln!(f, "{link}")?;
         }
         Ok(())
+    }
+}
+
+impl ProviderCmd {
+    pub fn snapshot_name(&self) -> String {
+        let client = self.client.to_string();
+        let provider = self.provider.to_string();
+        let url = self
+            .url
+            .as_ref()
+            .map_or("no_url".to_string(), |url| url.host_port().unwrap());
+        let server = self
+            .server
+            .as_ref()
+            .map_or("no_server".to_string(), |server| server.to_string());
+        let interval = self
+            .interval
+            .map_or("no_interval".to_string(), |interval| interval.to_string());
+        let strict = self.strict.map_or("no_strict".to_string(), |_| "strict".to_string());
+        let reset = if self.reset { "reset" } else { "no_reset" };
+
+        #[cfg(feature = "update")]
+        let update = if self.update { "update" } else { "no_update" };
+
+        #[cfg(not(feature = "update"))]
+        let update = "no_update";
+
+        format!("{client}-{provider}-{url}-{server}-{interval}-{strict}-{reset}-{update}")
     }
 }

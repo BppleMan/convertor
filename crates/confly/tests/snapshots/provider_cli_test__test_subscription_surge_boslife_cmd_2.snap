@@ -1,0 +1,20 @@
+---
+source: crates/confly/tests/provider_cli_test.rs
+expression: result
+---
+[34mRaw[39m
+http://127.0.0.1:<PORT>/subscription?token=bppleman&flag=Surge
+[34mProfile[39m
+<SERVER>profile/surge/boslife?interval=86400&strict=false&sub_url=<ENC_SUB_URL>
+[34mRawProfile[39m
+<SERVER>raw-profile/surge/boslife?interval=86400&strict=false&sub_url=<ENC_SUB_URL>
+[34mSubLogs[39m
+<SERVER>sub-logs?secret=KbchdpzmTkPVcTOwdNg51THtHyhRCvtFf99LWQSE6ULTZ1Y6DoVx2ClrEx8YLo35
+[34mRuleProvider[39m
+<SERVER>rule-provider/surge/boslife?interval=86400&policy[name]=DIRECT&policy[is_subscription]=true&sub_url=<ENC_SUB_URL>
+<SERVER>rule-provider/surge/boslife?interval=86400&policy[name]=BosLife&policy[is_subscription]=false&sub_url=<ENC_SUB_URL>
+<SERVER>rule-provider/surge/boslife?interval=86400&policy[name]=BosLife&policy[option]=no-resolve&policy[is_subscription]=false&sub_url=<ENC_SUB_URL>
+<SERVER>rule-provider/surge/boslife?interval=86400&policy[name]=BosLife&policy[option]=force-remote-dns&policy[is_subscription]=false&sub_url=<ENC_SUB_URL>
+<SERVER>rule-provider/surge/boslife?interval=86400&policy[name]=DIRECT&policy[is_subscription]=false&sub_url=<ENC_SUB_URL>
+<SERVER>rule-provider/surge/boslife?interval=86400&policy[name]=DIRECT&policy[option]=no-resolve&policy[is_subscription]=false&sub_url=<ENC_SUB_URL>
+<SERVER>rule-provider/surge/boslife?interval=86400&policy[name]=DIRECT&policy[option]=force-remote-dns&policy[is_subscription]=false&sub_url=<ENC_SUB_URL>

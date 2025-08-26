@@ -57,4 +57,4 @@ httpmock = { version = "0.7.0", default-features = false, features = ["colored"]
 tower = { version = "0.5.2", default-features = false }
 http-body-util = { version = "0.1.3", default-features = false }
 pretty_assertions = { version = "1.4.1", default-features = false, features = ["std"] }
-insta = { version = "1.43.1", features = ["filters"] }
+insta = { version = "1.43.1", features = [] }
