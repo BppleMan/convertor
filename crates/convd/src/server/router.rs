@@ -15,6 +15,7 @@ use convertor::url::query::ConvertorQuery;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
+use tower_http::cors::CorsLayer;
 use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::{DefaultMakeSpan, DefaultOnRequest, OnResponse, TraceLayer};
 use tracing::{Level, Span, event};
@@ -33,7 +34,7 @@ pub fn router(app_state: AppState) -> Router {
         .route("/dashboard", get(|| async { Redirect::permanent("/") }))
         // 3) 静态资源目录，index.html 内请用绝对路径引用：/static/xxx
         .nest_service("/static", ServeDir::new(assets.join("static")))
-        .route("/healthy", get(|| async { "ok" }))
+        .route("/healthy", get(actuator::healthy))
         .route("/redis", get(actuator::redis))
         .route("/version", get(actuator::version))
         .route("/raw-profile/{client}/{provider}", get(profile::raw_profile))
@@ -42,6 +43,7 @@ pub fn router(app_state: AppState) -> Router {
         .route("/subscription", get(subscription::subscription))
         .route("/sub-logs/{provider}", get(subscription::sub_logs))
         .with_state(Arc::new(app_state))
+        .layer(CorsLayer::very_permissive())
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(DefaultMakeSpan::new().include_headers(true))

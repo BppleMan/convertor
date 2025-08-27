@@ -703,6 +703,7 @@ dependencies = [
  "insta",
  "moka",
  "redis",
+ "serde",
  "serde_json",
  "thiserror 2.0.12",
  "tokio",

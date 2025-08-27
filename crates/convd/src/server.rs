@@ -14,6 +14,7 @@ use tokio_stream::StreamExt;
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, error, info, warn};
 
+mod actuator_response;
 pub mod app_state;
 pub mod error;
 pub mod query;

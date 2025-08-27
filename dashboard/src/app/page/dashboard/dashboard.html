@@ -1,0 +1,72 @@
+<mat-toolbar>
+    <span>Convertor · Dashboard</span>
+    <span class="example-spacer"></span>
+    <button class="example-icon favorite-icon" matIconButton>
+        <mat-icon>favorite</mat-icon>
+    </button>
+    <button class="example-icon" matIconButton>
+        <mat-icon>share</mat-icon>
+    </button>
+</mat-toolbar>
+<div class="dashboard-content">
+    <div class="dashboard-row">
+        <app-dashboard-card name="Environment">
+            <mat-card-content>
+                <p>card-content</p>
+            </mat-card-content>
+            <mat-card-footer>
+                <p>card-footer</p>
+            </mat-card-footer>
+        </app-dashboard-card>
+    </div>
+    <div class="dashboard-row actuator">
+        <app-dashboard-card name="Healthy">
+            <mat-card-content>
+                <span>status:</span>
+                <span>{{ healthy() }}</span>
+            </mat-card-content>
+            <mat-card-footer>
+                <p>card-footer</p>
+                <button (click)="healthCheck($event)" mat-button>test</button>
+            </mat-card-footer>
+        </app-dashboard-card>
+        <app-dashboard-card name="Redis">
+            <mat-card-content>
+                <p>card-content</p>
+            </mat-card-content>
+            <mat-card-footer>
+                <p>card-footer</p>
+            </mat-card-footer>
+        </app-dashboard-card>
+    </div>
+    <div class="dashboard-row">
+        <app-dashboard-card name="Profile">
+            <mat-card-content>
+                <p>card-content</p>
+            </mat-card-content>
+            <mat-card-footer>
+                <p>card-footer</p>
+            </mat-card-footer>
+        </app-dashboard-card>
+    </div>
+    <div class="dashboard-row">
+        <app-dashboard-card name="Benchmark">
+            <mat-card-content>
+                <p>card-content</p>
+            </mat-card-content>
+            <mat-card-footer>
+                <p>card-footer</p>
+            </mat-card-footer>
+        </app-dashboard-card>
+    </div>
+    <div class="dashboard-row">
+        <app-dashboard-card name="History">
+            <mat-card-content>
+                <p>card-content</p>
+            </mat-card-content>
+            <mat-card-footer>
+                <p>card-footer</p>
+            </mat-card-footer>
+        </app-dashboard-card>
+    </div>
+</div>

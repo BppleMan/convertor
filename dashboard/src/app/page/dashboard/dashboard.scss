@@ -1,0 +1,26 @@
+:host {
+    display:        flex;
+    overflow:       hidden;
+    flex-direction: column;
+    height:         100%;
+
+    .dashboard-content {
+        display:         flex;
+        flex:            1 1 auto;
+        flex-direction:  column;
+        justify-content: space-between;
+
+        .dashboard-row {
+            display:        flex;
+            flex-direction: row;
+            flex-wrap:      wrap;
+        }
+
+        .actuator {
+        }
+    }
+
+    .example-spacer {
+        flex: 1 1 auto;
+    }
+}

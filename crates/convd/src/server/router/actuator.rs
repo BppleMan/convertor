@@ -1,26 +1,33 @@
+use crate::server::actuator_response::ActuatorResponse;
 use crate::server::app_state::AppState;
 use crate::server::error::AppError;
 use axum::Json;
 use axum::extract::State;
 use color_eyre::eyre::OptionExt;
 use redis::AsyncTypedCommands;
-use std::collections::HashMap;
+use serde_json::json;
 use std::sync::Arc;
 
-pub async fn redis(State(state): State<Arc<AppState>>) -> Result<Json<HashMap<String, String>>, AppError> {
+pub type AnyJsonResponse = Json<ActuatorResponse<serde_json::Value>>;
+
+pub async fn healthy() -> Json<ActuatorResponse<()>> {
+    Json(ActuatorResponse::<()>::ok())
+}
+
+pub async fn redis(State(state): State<Arc<AppState>>) -> Result<AnyJsonResponse, AppError> {
     let pong = state
         .redis_connection
         .clone()
         .ok_or_eyre("没有 Redis 连接")?
         .ping()
         .await?;
-    let mut result = HashMap::new();
-    result.insert("pong".to_string(), pong);
-    Ok(Json(result))
+    Ok(Json(ActuatorResponse::ok_data(json!({
+        "pong": pong
+    }))))
 }
 
-pub async fn version() -> Result<Json<HashMap<String, String>>, AppError> {
-    let mut result = HashMap::new();
-    result.insert("version".to_string(), env!("CARGO_PKG_VERSION").to_string());
-    Ok(Json(result))
+pub async fn version() -> Result<Json<ActuatorResponse<serde_json::Value>>, AppError> {
+    Ok(Json(ActuatorResponse::ok_data(json!({
+        "version": env!("CARGO_PKG_VERSION").to_string()
+    }))))
 }
