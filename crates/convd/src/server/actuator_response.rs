@@ -14,8 +14,8 @@ where
 {
     fn default() -> Self {
         Self {
-            status: ActuatorResponseStatus::OK,
-            message: "OK".to_string(),
+            status: ActuatorResponseStatus::OK.value(),
+            message: ActuatorResponseStatus::OK.label().to_string(),
             data: None,
         }
     }
@@ -26,11 +26,7 @@ where
     T: Serialize + DeserializeOwned,
 {
     pub fn ok() -> ActuatorResponse<T> {
-        Self {
-            status: 0,
-            message: "OK".to_string(),
-            data: None,
-        }
+        Self::default()
     }
 
     pub fn with_data(mut self, data: T) -> Self {
@@ -40,8 +36,8 @@ where
 
     pub fn ok_data(data: T) -> Self {
         Self {
-            status: 200,
-            message: "OK".to_string(),
+            status: ActuatorResponseStatus::OK.value(),
+            message: ActuatorResponseStatus::OK.label().to_string(),
             data: Some(data),
         }
     }
@@ -50,5 +46,19 @@ where
 #[derive(Default, Serialize, Deserialize)]
 pub enum ActuatorResponseStatus {
     #[default]
-    OK = 0,
+    OK,
+}
+
+impl ActuatorResponseStatus {
+    pub fn value(&self) -> u16 {
+        match self {
+            ActuatorResponseStatus::OK => 0,
+        }
+    }
+
+    pub fn label(&self) -> &'static str {
+        match self {
+            ActuatorResponseStatus::OK => "OK",
+        }
+    }
 }
