@@ -1,6 +1,4 @@
 use crate::common::encrypt::decrypt;
-use crate::config::client_config::ProxyClient;
-use crate::config::provider_config::Provider;
 use crate::core::profile::policy::Policy;
 use crate::url::url_error::{EncodeError, ParseError, QueryError};
 use percent_encoding::{percent_decode_str, utf8_percent_encode};
@@ -13,8 +11,6 @@ use url::Url;
 pub struct ConvertorQuery {
     // common
     pub server: Url,
-    pub client: ProxyClient,
-    pub provider: Provider,
     pub sub_url: Url,
     pub enc_sub_url: String,
     pub interval: u64,
@@ -35,8 +31,6 @@ impl ConvertorQuery {
         query_string: impl AsRef<str>,
         secret: impl AsRef<str>,
         server: Url,
-        client: ProxyClient,
-        provider: Provider,
     ) -> Result<Self, QueryError> {
         let query_string = query_string.as_ref();
         let secret = secret.as_ref();
@@ -86,8 +80,6 @@ impl ConvertorQuery {
 
         Ok(Self {
             server,
-            client,
-            provider,
             sub_url,
             enc_sub_url,
             interval,
@@ -204,30 +196,34 @@ impl ConvertorQuery {
 }
 
 impl ConvertorQuery {
-    pub fn check_for_profile(&self) -> Result<(), QueryError> {
+    pub fn check_for_profile(self) -> Result<Self, QueryError> {
         if self.strict.is_none() {
             return Err(QueryError::Encode(EncodeError::NotFoundParam("profile", "strict")));
         }
-        Ok(())
+        Ok(self)
     }
 
-    pub fn check_for_rule_provider(&self) -> Result<(), QueryError> {
-        if self.policy.is_none() {
+    pub fn check_for_rule_provider(self) -> Result<(Self, Policy), QueryError> {
+        let Some(policy) = self.policy.clone() else {
             return Err(QueryError::Encode(EncodeError::NotFoundParam(
                 "rule provider",
                 "policy",
             )));
-        }
-        Ok(())
+        };
+        Ok((self, policy))
     }
 
-    pub fn check_for_sub_logs(&self) -> Result<(), QueryError> {
+    pub fn check_for_sub_logs(self, secret: impl AsRef<str>) -> Result<Self, QueryError> {
+        let secret = secret.as_ref();
         if self.secret.is_none() {
             return Err(QueryError::Encode(EncodeError::NotFoundParam("sub logs", "secret")));
         }
         if self.enc_secret.is_none() {
             return Err(QueryError::Encode(EncodeError::NotFoundParam("sub logs", "enc_secret")));
         }
-        Ok(())
+        if self.secret.as_deref() != Some(secret) {
+            return Err(QueryError::Unauthorized("无效的密钥".to_string()));
+        }
+        Ok(self)
     }
 }

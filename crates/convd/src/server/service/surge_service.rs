@@ -3,12 +3,12 @@ use color_eyre::Result;
 use color_eyre::eyre::eyre;
 use convertor::config::ConvertorConfig;
 use convertor::core::profile::Profile;
+use convertor::core::profile::policy::Policy;
 use convertor::core::profile::surge_profile::SurgeProfile;
 use convertor::core::renderer::Renderer;
 use convertor::core::renderer::surge_renderer::SurgeRenderer;
 use convertor::provider_api::{BosLifeLogs, ProviderApi};
 use convertor::url::convertor_url::ConvertorUrlType;
-use convertor::url::query::ConvertorQuery;
 use convertor::url::url_builder::UrlBuilder;
 use moka::future::Cache;
 use std::sync::Arc;
@@ -17,7 +17,7 @@ use tracing::instrument;
 #[derive(Clone)]
 pub struct SurgeService {
     pub config: Arc<ConvertorConfig>,
-    pub profile_cache: Cache<ConvertorQuery, SurgeProfile>,
+    pub profile_cache: Cache<UrlBuilder, SurgeProfile>,
 }
 
 impl SurgeService {
@@ -28,15 +28,13 @@ impl SurgeService {
     }
 
     #[instrument(skip_all)]
-    pub async fn profile(&self, query: ConvertorQuery, raw_profile: String) -> Result<String> {
-        let url_builder = UrlBuilder::from_convertor_query(query.clone(), &self.config.secret)?;
-        let profile = self.try_get_profile(query, &url_builder, raw_profile).await?;
+    pub async fn profile(&self, url_builder: UrlBuilder, raw_profile: String) -> Result<String> {
+        let profile = self.try_get_profile(url_builder, raw_profile).await?;
         Ok(SurgeRenderer::render_profile(&profile)?)
     }
 
     #[instrument(skip_all)]
-    pub async fn raw_profile(&self, query: ConvertorQuery, raw_profile: String) -> Result<String> {
-        let url_builder = UrlBuilder::from_convertor_query(query, &self.config.secret)?;
+    pub async fn raw_profile(&self, url_builder: UrlBuilder, raw_profile: String) -> Result<String> {
         let surge_header = url_builder.build_surge_header(ConvertorUrlType::RawProfile)?;
         let (_, right) = raw_profile
             .split_once('\n')
@@ -45,10 +43,8 @@ impl SurgeService {
     }
 
     #[instrument(skip_all)]
-    pub async fn rule_provider(&self, query: ConvertorQuery, raw_profile: String) -> Result<String> {
-        let policy = query.policy.as_ref().unwrap().clone();
-        let url_builder = UrlBuilder::from_convertor_query(query.clone(), &self.config.secret)?;
-        let profile = self.try_get_profile(query, &url_builder, raw_profile).await?;
+    pub async fn rule_provider(&self, url_builder: UrlBuilder, raw_profile: String, policy: Policy) -> Result<String> {
+        let profile = self.try_get_profile(url_builder, raw_profile).await?;
         match profile.get_provider_rules_with_policy(&policy) {
             None => Ok(String::new()),
             Some(provider_rules) => Ok(SurgeRenderer::render_provider_rules(provider_rules)?),
@@ -61,14 +57,9 @@ impl SurgeService {
         Ok(serde_json::to_string_pretty(&logs)?)
     }
 
-    async fn try_get_profile(
-        &self,
-        query: ConvertorQuery,
-        url_builder: &UrlBuilder,
-        raw_profile: String,
-    ) -> Result<SurgeProfile> {
+    async fn try_get_profile(&self, url_builder: UrlBuilder, raw_profile: String) -> Result<SurgeProfile> {
         self.profile_cache
-            .try_get_with(query, async {
+            .try_get_with(url_builder.clone(), async {
                 let mut profile = SurgeProfile::parse(raw_profile.clone())?;
                 profile.convert(&url_builder)?;
                 Ok::<_, Report>(profile)

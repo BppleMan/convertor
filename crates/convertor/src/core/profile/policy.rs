@@ -1,6 +1,6 @@
 use color_eyre::Report;
 use color_eyre::eyre::eyre;
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -14,7 +14,7 @@ static OPTION_RANK: LazyLock<HashMap<Option<&str>, usize>> = LazyLock::new(|| {
         .collect()
 });
 
-#[derive(Default, Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Default, Debug, Clone, Eq, PartialEq, Hash, Serialize)]
 pub struct Policy {
     pub name: String,
     pub option: Option<String>,

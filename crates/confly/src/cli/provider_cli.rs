@@ -205,13 +205,8 @@ impl ProviderCli {
             // Decode profile_url
             (Some(ConvertorUrlType::Profile), _) => {
                 let profile_query = url.as_ref().and_then(Url::query).ok_or(eyre!("订阅链接缺少查询参数"))?;
-                let query = ConvertorQuery::parse_from_query_string(
-                    profile_query,
-                    &self.config.secret,
-                    server.clone(),
-                    *client,
-                    *provider,
-                )?;
+                let query =
+                    ConvertorQuery::parse_from_query_string(profile_query, &self.config.secret, server.clone())?;
                 enc_secret = query.enc_secret.clone();
                 enc_sub_url = Some(query.enc_sub_url.clone());
                 interval = query.interval;

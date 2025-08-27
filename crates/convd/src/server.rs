@@ -33,18 +33,14 @@ pub async fn start_server(listen_addr: SocketAddrV4, config: ConvertorConfig) ->
             .set_max_delay(2000),
     )
     .await?;
+    let cancel_token = CancellationToken::new();
+    let mut config_receiver = start_sub_config(redis_client.clone(), config);
+    let mut current_config = config_receiver.borrow().clone();
     info!("Redis 连接就绪");
 
     info!("+──────────────────────────────────────────────+");
     info!("│                 启动服务...                  │");
     info!("+──────────────────────────────────────────────+");
-    info!("监听中: {}", &listen_addr);
-    warn!("建议使用 nginx 等网关进行反向代理，以开启 HTTPS 支持");
-
-    let cancel_token = CancellationToken::new();
-    let mut config_receiver = start_sub_config(redis_client.clone(), config);
-    let mut current_config = config_receiver.borrow().clone();
-
     loop {
         // 1) 启一个子 token 控制“本轮” server
         let stop_this = cancel_token.child_token();
@@ -64,7 +60,8 @@ pub async fn start_server(listen_addr: SocketAddrV4, config: ConvertorConfig) ->
         let serve_handle = tokio::spawn({
             let stop_this = stop_this.clone();
             async move {
-                info!("服务启动，使用 Ctrl+C 或 SIGTERM 关闭服务");
+                warn!("使用 Ctrl+C 或 SIGTERM 关闭服务, 建议使用 nginx 等网关进行反向代理, 以开启 HTTPS 支持");
+                info!("服务启动, 监听于: {listen_addr}");
                 axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
                     .with_graceful_shutdown(async move { stop_this.cancelled().await })
                     .await

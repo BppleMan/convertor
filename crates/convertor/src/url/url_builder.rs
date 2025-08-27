@@ -57,11 +57,14 @@ impl UrlBuilder {
         Ok(builder)
     }
 
-    pub fn from_convertor_query(query: ConvertorQuery, secret: impl AsRef<str>) -> Result<Self, UrlBuilderError> {
+    pub fn from_convertor_query(
+        query: ConvertorQuery,
+        secret: impl AsRef<str>,
+        client: ProxyClient,
+        provider: Provider,
+    ) -> Result<Self, UrlBuilderError> {
         let ConvertorQuery {
             server,
-            client,
-            provider,
             sub_url,
             enc_sub_url,
             interval,
@@ -156,8 +159,6 @@ impl UrlBuilder {
     pub fn as_profile_query(&self) -> ConvertorQuery {
         ConvertorQuery {
             server: self.server.clone(),
-            client: self.client,
-            provider: self.provider,
             sub_url: self.sub_url.clone(),
             enc_sub_url: self.enc_sub_url.clone(),
             interval: self.interval,

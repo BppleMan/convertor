@@ -28,6 +28,9 @@ pub enum QueryError {
     #[error("无法加密/解密 raw_sub_url: {0}")]
     EncryptError(#[from] EncryptError),
 
+    #[error("Unauthorized: {0}")]
+    Unauthorized(String),
+
     #[error(transparent)]
     Parse(#[from] ParseError),
 

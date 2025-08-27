@@ -4,14 +4,14 @@
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <title>Convertor · Glass Dashboard+</title>
+    <title>Convertor · Dashboard</title>
     <link rel="stylesheet" href="/static/index.css">
 </head>
 
 <body>
 <div class="page">
     <div class="header">
-        <h1>Service Status · Glass Dashboard+</h1>
+        <h1>Convertor · Dashboard</h1>
         <div class="actions">
             <button id="runAllButton">Run all</button>
             <button id="runBenchmarkButton">One-Click Benchmark</button>
@@ -87,33 +87,6 @@
             </div>
         </div>
 
-        <!-- 依赖面板（可配置多端点） -->
-        <div class="card full" data-kind="deps">
-            <div class="kv" style="grid-column:1/-1">
-                <div class="row" style="justify-content:space-between;align-items:center">
-                    <b>依赖</b>
-                    <div class="row">
-                        <button id="depsRunAllButton">Run</button>
-                    </div>
-                </div>
-                <div class="deps-grid" id="depsGrid"></div>
-            </div>
-        </div>
-
-        <!-- 静态资源热身（CDN/缓存预热） -->
-        <div class="card full" data-kind="assets">
-            <div class="kv" style="grid-column:1/-1">
-                <div><b>静态资源热身</b></div>
-                <div class="row">
-                    <label>URL 列表 <input id="assetsInput" type="text" placeholder="/assets/a.js,/assets/b.css"/></label>
-                    <label>并发 <input id="assetsConcurrencyInput" type="number" min="1" max="32" value="4"/></label>
-                    <button id="assetsStartButton">Start</button>
-                </div>
-                <div class="progress" style="margin:8px 0"><span id="assetsProgressBar"></span></div>
-                <div id="assetsStats" class="muted">—</div>
-            </div>
-        </div>
-
         <!-- 一键压测 -->
         <div class="card full" data-kind="bench">
             <div class="kv" style="grid-column:1/-1">
@@ -132,13 +105,13 @@
         </div>
 
         <!-- 预留：日志面板（UI 占位，不含文案） -->
-        <div class="card full" data-kind="logs">
-            <div class="kv" style="grid-column:1/-1">
-                <div><b>日志</b></div>
-                <div id="logsPlaceholder"
-                     style="height:220px;background:#070a0f;border:1px solid var(--border);border-radius:12px"></div>
-            </div>
-        </div>
+        <!--        <div class="card full" data-kind="logs">-->
+        <!--            <div class="kv" style="grid-column:1/-1">-->
+        <!--                <div><b>日志</b></div>-->
+        <!--                <div id="logsPlaceholder"-->
+        <!--                     style="height:220px;background:#070a0f;border:1px solid var(&#45;&#45;border);border-radius:12px"></div>-->
+        <!--            </div>-->
+        <!--        </div>-->
 
     </div>
 
