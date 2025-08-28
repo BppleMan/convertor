@@ -2,9 +2,21 @@ import type { BarSeriesOption, LineSeriesOption, PieSeriesOption } from "echarts
 // 图表
 import { BarChart, LineChart, PieChart } from "echarts/charts";
 
-import type { DatasetComponentOption, GridComponentOption, LegendComponentOption, TitleComponentOption, TooltipComponentOption } from "echarts/components";
 // 组件
-import { DatasetComponent, GridComponent, LegendComponent, TitleComponent, TooltipComponent, TransformComponent } from "echarts/components";
+import {
+    DatasetComponent,
+    DatasetComponentOption,
+    GridComponent,
+    GridComponentOption,
+    LegendComponent,
+    LegendComponentOption,
+    TitleComponent,
+    TitleComponentOption,
+    TooltipComponent,
+    TooltipComponentOption,
+    TransformComponent,
+    VisualMapComponent,
+} from "echarts/components";
 import type { ComposeOption } from "echarts/core";
 import * as echarts from "echarts/core";
 
@@ -38,6 +50,7 @@ echarts.use([
     LegendComponent,
     DatasetComponent,
     TransformComponent,
+    VisualMapComponent,
 
     LabelLayout,
     UniversalTransition,

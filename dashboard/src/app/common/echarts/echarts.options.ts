@@ -7,16 +7,54 @@ export function lineOption(
 ): ECOption {
     return {
         title: title ? { text: title } : undefined,
-        grid: { left: 40, right: 10, top: 20, bottom: 30 },
-        tooltip: { trigger: "axis" },
-        xAxis: { type: "time" },             // 时间轴（若用类目，改为 'category' 并给 data）
-        yAxis: { type: "value", scale: true },
+        grid: {
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+        },
+        animationDuration: 300,          // 首次渲染 300ms 内完成
+        animationEasing: "linear",       // 线性更利落
+        animationDelay: 0,
+        animationDurationUpdate: 200,    // 后续更新也快一点
+        animationEasingUpdate: "linear",
+        // visualMap: [
+        //     {
+        //         show: false,
+        //         type: "continuous",
+        //         seriesIndex: 0,
+        //         min: 0,
+        //         max: 1000,
+        //     },
+        // ],
+        tooltip: {
+            trigger: "axis",
+            axisPointer: {
+                animation: false,
+            },
+        },
+        xAxis: {
+            type: "time",
+            axisLabel: undefined,
+            axisLine: undefined,
+            splitLine: undefined,
+            min: Date.now() - 10_000,
+            max: Date.now(),
+        },
+        yAxis: {
+            type: "value",
+            axisLabel: undefined,
+            axisLine: undefined,
+            splitLine: undefined,
+            min: extent => Math.max(extent.min - 1, -1),
+            max: extent => extent.max + 1,
+        },
         series: [
             {
                 type: "line",
                 showSymbol: false,
                 data, // [[timestamp, value], ...]
-                // smooth: true, // 如需平滑
+                smooth: false,
             },
         ],
 

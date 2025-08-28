@@ -44,7 +44,16 @@ export class LineChart<T extends SampleData> implements AfterViewInit {
         // } else {
         //     this.offTick = this.tickerService.onTick(this.onTick.bind(this));
         // }
-        this.chartHandle?.chart.setOption(lineOption([ [ Date.now(), 5 ] ]));
+        this.chartHandle?.chart.resize();
+        let now = Date.now();
+        this.chartHandle?.chart.setOption(
+            lineOption(
+                Array.from(
+                    { length: 20 },
+                    (_, i) => [ now - (10 - i) * 1000, Math.ceil(Math.random() * 5) + 20 ],
+                ),
+            ),
+        );
         console.log(this.host.nativeElement.clientWidth, this.host.nativeElement.clientHeight);
     }
 
