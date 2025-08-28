@@ -1,4 +1,4 @@
-export default class ApiResponse<T> {
+export class ApiResponse<T> {
     constructor(
         public status: number,
         public message?: string,

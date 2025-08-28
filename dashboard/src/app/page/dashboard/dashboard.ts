@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from "@angular/core";
+import { ChangeDetectionStrategy, Component, inject, signal } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
 import { MatButton, MatIconButton } from "@angular/material/button";
 import { MatCardContent, MatCardFooter } from "@angular/material/card";
@@ -6,7 +6,8 @@ import { MatIcon } from "@angular/material/icon";
 import { MatToolbar } from "@angular/material/toolbar";
 import { catchError, EMPTY, filter, map, startWith, Subject, switchMap } from "rxjs";
 import { DashboardService } from "../../service/dashboard-service";
-import { DashboardCard } from "../shared/dashboard-card/dashboard-card";
+import { LineChart } from "../shared/charts/line-chart/line-chart";
+import { DashboardPanel } from "../shared/dashboard-panel/dashboard-panel";
 
 @Component({
     selector: "app-dashboard",
@@ -14,10 +15,11 @@ import { DashboardCard } from "../shared/dashboard-card/dashboard-card";
         MatToolbar,
         MatIconButton,
         MatIcon,
-        DashboardCard,
         MatCardContent,
         MatCardFooter,
         MatButton,
+        DashboardPanel,
+        LineChart,
     ],
     templateUrl: "./dashboard.html",
     styleUrl: "./dashboard.scss",
@@ -41,6 +43,8 @@ export class Dashboard {
             map(apiResponse => apiResponse.status),
         ),
     );
+
+    readonly healthData = signal<{ sentAt: number; latency: number }[]>([]);
 
     healthCheck(event: PointerEvent) {
         this.refresh.next(DashboardService.HEALTHY_ENDPOINT);

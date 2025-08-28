@@ -10,63 +10,56 @@
 </mat-toolbar>
 <div class="dashboard-content">
     <div class="dashboard-row">
-        <app-dashboard-card name="Environment">
-            <mat-card-content>
-                <p>card-content</p>
-            </mat-card-content>
-            <mat-card-footer>
-                <p>card-footer</p>
-            </mat-card-footer>
-        </app-dashboard-card>
     </div>
     <div class="dashboard-row actuator">
-        <app-dashboard-card name="Healthy">
+        <app-dashboard-panel name="Healthy">
             <mat-card-content>
                 <span>status:</span>
                 <span>{{ healthy() }}</span>
+                <app-line-chart [data]="healthData()"></app-line-chart>
             </mat-card-content>
             <mat-card-footer>
                 <p>card-footer</p>
                 <button (click)="healthCheck($event)" mat-button>test</button>
             </mat-card-footer>
-        </app-dashboard-card>
-        <app-dashboard-card name="Redis">
+        </app-dashboard-panel>
+        <app-dashboard-panel name="Redis">
             <mat-card-content>
                 <p>card-content</p>
             </mat-card-content>
             <mat-card-footer>
                 <p>card-footer</p>
             </mat-card-footer>
-        </app-dashboard-card>
+        </app-dashboard-panel>
     </div>
     <div class="dashboard-row">
-        <app-dashboard-card name="Profile">
+        <app-dashboard-panel name="Profile">
             <mat-card-content>
                 <p>card-content</p>
             </mat-card-content>
             <mat-card-footer>
                 <p>card-footer</p>
             </mat-card-footer>
-        </app-dashboard-card>
+        </app-dashboard-panel>
     </div>
     <div class="dashboard-row">
-        <app-dashboard-card name="Benchmark">
+        <app-dashboard-panel name="Benchmark">
             <mat-card-content>
                 <p>card-content</p>
             </mat-card-content>
             <mat-card-footer>
                 <p>card-footer</p>
             </mat-card-footer>
-        </app-dashboard-card>
+        </app-dashboard-panel>
     </div>
     <div class="dashboard-row">
-        <app-dashboard-card name="History">
+        <app-dashboard-panel name="History">
             <mat-card-content>
                 <p>card-content</p>
             </mat-card-content>
             <mat-card-footer>
                 <p>card-footer</p>
             </mat-card-footer>
-        </app-dashboard-card>
+        </app-dashboard-panel>
     </div>
 </div>
