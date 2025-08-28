@@ -79,7 +79,7 @@ pub trait Renderer {
 
     fn render_rule_provider(rule_provider: &(String, RuleProvider)) -> RenderResult<String>;
 
-    fn render_provider_name_for_policy(policy: &Policy) -> RenderResult<String>;
+    fn render_provider_name_for_policy(policy: &Policy) -> String;
 
     fn render_lines<T, F>(lines: impl IntoIterator<Item = T>, map: F) -> RenderResult<String>
     where

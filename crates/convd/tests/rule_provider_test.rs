@@ -47,7 +47,7 @@ async fn test_rule_provider_surge_boslife() -> color_eyre::Result<()> {
     for policy in policies {
         let ctx = format!(
             "test_rule_provider_surge_boslife_{}",
-            ClashRenderer::render_provider_name_for_policy(&policy)?
+            ClashRenderer::render_provider_name_for_policy(&policy)
         );
         let actual = rule_provider(&server_context, ProxyClient::Surge, Provider::BosLife, policy).await?;
         insta::assert_snapshot!(ctx, actual);
@@ -63,7 +63,7 @@ async fn test_rule_provider_clash_boslife() -> color_eyre::Result<()> {
     for policy in policies {
         let ctx = format!(
             "test_rule_provider_clash_boslife_{}",
-            ClashRenderer::render_provider_name_for_policy(&policy)?
+            ClashRenderer::render_provider_name_for_policy(&policy)
         );
         let actual = rule_provider(&server_context, ProxyClient::Clash, Provider::BosLife, policy).await?;
         insta::assert_snapshot!(ctx, actual);

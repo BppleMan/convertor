@@ -79,7 +79,7 @@ impl Profile for SurgeProfile {
 
     #[instrument(skip_all)]
     fn append_rule_provider(&mut self, url_builder: &UrlBuilder, policy: &Policy) -> ParseResult<()> {
-        let name = SurgeRenderer::render_provider_name_for_policy(policy)?;
+        let name = SurgeRenderer::render_provider_name_for_policy(policy);
         let url = url_builder.build_rule_provider_url(policy)?;
         let rule = Rule::surge_rule_provider(policy, name, url);
         self.rules.push(rule);

@@ -68,19 +68,19 @@ Subscription Info=select,订阅提供商信息
 🇦🇺 澳洲=smart,🇦🇺 澳洲 01
 
 [Rule]
-// [Subscription] by convertor/2.6.0+alpha
+// [Subscription]
 RULE-SET,http://127.0.0.1/rule-provider/surge/boslife?interval=43200&policy[name]=DIRECT&policy[is_subscription]=true&sub_url=http://127.0.0.1:8080/subscription?token=bppleman,DIRECT
-// [BosLife] by convertor/2.6.0+alpha
+// [BosLife]
 RULE-SET,http://127.0.0.1/rule-provider/surge/boslife?interval=43200&policy[name]=BosLife&policy[is_subscription]=false&sub_url=http://127.0.0.1:8080/subscription?token=bppleman,BosLife
-// [BosLife: no-resolve] by convertor/2.6.0+alpha
+// [BosLife: no-resolve]
 RULE-SET,http://127.0.0.1/rule-provider/surge/boslife?interval=43200&policy[name]=BosLife&policy[option]=no-resolve&policy[is_subscription]=false&sub_url=http://127.0.0.1:8080/subscription?token=bppleman,BosLife,no-resolve
-// [BosLife: force-remote-dns] by convertor/2.6.0+alpha
+// [BosLife: force-remote-dns]
 RULE-SET,http://127.0.0.1/rule-provider/surge/boslife?interval=43200&policy[name]=BosLife&policy[option]=force-remote-dns&policy[is_subscription]=false&sub_url=http://127.0.0.1:8080/subscription?token=bppleman,BosLife,force-remote-dns
-// [DIRECT] by convertor/2.6.0+alpha
+// [DIRECT]
 RULE-SET,http://127.0.0.1/rule-provider/surge/boslife?interval=43200&policy[name]=DIRECT&policy[is_subscription]=false&sub_url=http://127.0.0.1:8080/subscription?token=bppleman,DIRECT
-// [DIRECT: no-resolve] by convertor/2.6.0+alpha
+// [DIRECT: no-resolve]
 RULE-SET,http://127.0.0.1/rule-provider/surge/boslife?interval=43200&policy[name]=DIRECT&policy[option]=no-resolve&policy[is_subscription]=false&sub_url=http://127.0.0.1:8080/subscription?token=bppleman,DIRECT,no-resolve
-// [DIRECT: force-remote-dns] by convertor/2.6.0+alpha
+// [DIRECT: force-remote-dns]
 RULE-SET,http://127.0.0.1/rule-provider/surge/boslife?interval=43200&policy[name]=DIRECT&policy[option]=force-remote-dns&policy[is_subscription]=false&sub_url=http://127.0.0.1:8080/subscription?token=bppleman,DIRECT,force-remote-dns
 
 GEOIP,CN,DIRECT

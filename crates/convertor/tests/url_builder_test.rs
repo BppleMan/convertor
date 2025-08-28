@@ -41,7 +41,7 @@ fn test_url_builder_surge_boslife() -> color_eyre::Result<()> {
     for policy in policies {
         let ctx = format!(
             "test_url_builder_surge_boslife_{}",
-            ClashRenderer::render_provider_name_for_policy(&policy)?
+            ClashRenderer::render_provider_name_for_policy(&policy)
         );
         let rule_provider_url = url_builder.build_rule_provider_url(&policy)?;
         insta::assert_snapshot!(ctx, rule_provider_url.to_string());
@@ -66,7 +66,7 @@ fn test_url_builder_clash_boslife() -> color_eyre::Result<()> {
     for policy in policies {
         let ctx = format!(
             "test_url_builder_clash_boslife_{}",
-            ClashRenderer::render_provider_name_for_policy(&policy)?
+            ClashRenderer::render_provider_name_for_policy(&policy)
         );
         let rule_provider_url = url_builder.build_rule_provider_url(&policy)?;
         insta::assert_snapshot!(ctx, rule_provider_url.to_string());

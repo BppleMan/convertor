@@ -1,7 +1,6 @@
 use clap::Args;
 use color_eyre::Result;
 use color_eyre::eyre::eyre;
-use color_eyre::owo_colors::OwoColorize;
 use convertor::config::ConvertorConfig;
 use convertor::config::client_config::ProxyClient;
 use convertor::config::provider_config::Provider;
@@ -11,15 +10,13 @@ use convertor::core::profile::extract_policies_for_rule_provider;
 use convertor::core::profile::policy::Policy;
 use convertor::core::profile::surge_profile::SurgeProfile;
 use convertor::provider_api::ProviderApi;
-use convertor::url::convertor_url::{ConvertorUrl, ConvertorUrlType};
+use convertor::url::convertor_url::ConvertorUrlType;
 use convertor::url::query::ConvertorQuery;
 use convertor::url::url_builder::{HostPort, UrlBuilder};
 use convertor::url::url_error::UrlBuilderError;
+use convertor::url::url_result::UrlResult;
 use headers::UserAgent;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fmt;
-use std::fmt::Display;
 use url::Url;
 
 #[derive(Default, Debug, Clone, Hash, Args)]
@@ -83,7 +80,7 @@ impl ProviderCli {
         Self { config, api_map }
     }
 
-    pub async fn execute(&mut self, cmd: ProviderCmd) -> Result<(UrlBuilder, ProviderCliResult)> {
+    pub async fn execute(&mut self, cmd: ProviderCmd) -> Result<(UrlBuilder, UrlResult)> {
         let client = cmd.client;
         let provider = cmd.provider;
         let url_builder = self.create_url_builder(&cmd).await?;
@@ -126,7 +123,7 @@ impl ProviderCli {
             .iter()
             .map(|policy| url_builder.build_rule_provider_url(policy))
             .collect::<Result<Vec<_>, UrlBuilderError>>()?;
-        let result = ProviderCliResult {
+        let result = UrlResult {
             raw_url,
             raw_profile_url,
             profile_url,
@@ -149,7 +146,7 @@ impl ProviderCli {
         Ok((url_builder, result))
     }
 
-    pub fn post_execute(&self, _url_builder: UrlBuilder, result: ProviderCliResult) {
+    pub fn post_execute(&self, _url_builder: UrlBuilder, result: UrlResult) {
         println!("{result}");
     }
 
@@ -244,33 +241,6 @@ impl ProviderCli {
                 ConvertorUrlType::Raw
             }
         })
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ProviderCliResult {
-    pub raw_url: ConvertorUrl,
-    pub raw_profile_url: ConvertorUrl,
-    pub profile_url: ConvertorUrl,
-    pub sub_logs_url: ConvertorUrl,
-    pub rule_provider_urls: Vec<ConvertorUrl>,
-}
-
-impl Display for ProviderCliResult {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "{}", self.raw_url.r#type.blue())?;
-        writeln!(f, "{}", self.raw_url)?;
-        writeln!(f, "{}", self.profile_url.r#type.blue())?;
-        writeln!(f, "{}", self.profile_url)?;
-        writeln!(f, "{}", self.raw_profile_url.r#type.blue())?;
-        writeln!(f, "{}", self.raw_profile_url)?;
-        writeln!(f, "{}", self.sub_logs_url.r#type.blue())?;
-        writeln!(f, "{}", self.sub_logs_url)?;
-        writeln!(f, "{}", ConvertorUrlType::RuleProvider.to_string().blue())?;
-        for link in &self.rule_provider_urls {
-            writeln!(f, "{link}")?;
-        }
-        Ok(())
     }
 }
 

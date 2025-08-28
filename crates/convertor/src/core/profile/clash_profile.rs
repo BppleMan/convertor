@@ -96,7 +96,7 @@ impl Profile for ClashProfile {
     }
 
     fn append_rule_provider(&mut self, url_builder: &UrlBuilder, policy: &Policy) -> ParseResult<()> {
-        let name = ClashRenderer::render_provider_name_for_policy(policy)?;
+        let name = ClashRenderer::render_provider_name_for_policy(policy);
         let rule_provider_url = url_builder.build_rule_provider_url(policy)?;
         let rule_provider = RuleProvider::new(rule_provider_url, name.clone(), url_builder.interval);
         self.rule_providers.push((name.clone(), rule_provider));

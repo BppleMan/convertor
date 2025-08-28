@@ -145,19 +145,17 @@ impl Renderer for SurgeRenderer {
         todo!("SurgeRenderer 不会渲染 RuleProvider");
     }
 
-    fn render_provider_name_for_policy(policy: &Policy) -> RenderResult<String> {
-        let mut output = String::new();
-        write!(output, "[")?;
-        if policy.is_subscription {
-            write!(output, "Subscription")?;
+    fn render_provider_name_for_policy(policy: &Policy) -> String {
+        let mut output = if policy.is_subscription {
+            "[Subscription".to_string()
         } else {
-            write!(output, "{}", policy.name)?;
-        }
+            format!("[{}", policy.name)
+        };
         if let Some(option) = policy.option.as_ref() {
-            write!(output, ": {option}")?;
+            output += format!(": {option}").as_str();
         }
-        write!(output, "] by convertor/{}", env!("CARGO_PKG_VERSION"))?;
-        Ok(output)
+        output.push(']');
+        output
     }
 }
 

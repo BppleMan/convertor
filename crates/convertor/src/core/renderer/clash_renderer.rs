@@ -141,15 +141,21 @@ impl Renderer for ClashRenderer {
         ))
     }
 
-    fn render_provider_name_for_policy(policy: &Policy) -> RenderResult<String> {
-        if policy == &Policy::subscription_policy() {
-            return Ok("Subscription".to_string());
+    fn render_provider_name_for_policy(policy: &Policy) -> String {
+        let mut output = if policy.is_subscription {
+            "Subscription".to_string()
+        } else {
+            policy.name.clone()
+        };
+        match &policy.option {
+            Some(option) => {
+                output.push('_');
+                output.push_str(option.replace('-', "_").as_str());
+            }
+            None => {
+                output.push_str("_policy");
+            }
         }
-        let output = format!(
-            "{}_{}",
-            policy.name,
-            policy.option.as_ref().unwrap_or(&"policy".to_string())
-        );
-        Ok(output.replace("-", "_"))
+        output
     }
 }
