@@ -28,10 +28,10 @@ publish:
 all:
     time cargo build --workspace --all-targets
 
-build-convd:
-    time cargo build --bin convd
+build-convd profile="dev":
+    time cargo build --bin convd --profile {{ profile }}
 
-build-confly:
+build-confly profile="dev":
     time cargo build --bin confly
 
 #╭──────────────────────────────────────────────╮

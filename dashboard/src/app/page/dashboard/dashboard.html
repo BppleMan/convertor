@@ -14,18 +14,19 @@
     <div class="dashboard-row actuator">
         <app-dashboard-panel name="Healthy">
             <mat-card-content>
-                <span>status:</span>
-                <span>{{ healthy() }}</span>
-                <app-line-chart [data]="healthData()"></app-line-chart>
+                <span>GET</span>
+                <span>/healthy</span>
+                <app-health-chart [valueTicker]="refresh"></app-health-chart>
             </mat-card-content>
             <mat-card-footer>
                 <p>card-footer</p>
-                <button (click)="healthCheck($event)" mat-button>test</button>
             </mat-card-footer>
         </app-dashboard-panel>
         <app-dashboard-panel name="Redis">
             <mat-card-content>
-                <p>card-content</p>
+                <span>GET</span>
+                <span>/redis</span>
+                <app-redis-chart [valueTicker]="refresh"></app-redis-chart>
             </mat-card-content>
             <mat-card-footer>
                 <p>card-footer</p>

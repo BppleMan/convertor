@@ -1,8 +1,13 @@
 import type { ECOption } from "./echarts.registry";
 
+export interface SampleData {
+    time: number;
+    value: number;
+}
+
 // 折线图
 export function lineOption(
-    data: Array<[ number | string | Date, number ]>,
+    data: SampleData[],
     title?: string,
 ): ECOption {
     return {
@@ -10,8 +15,8 @@ export function lineOption(
         grid: {
             left: 0,
             right: 0,
-            top: 0,
-            bottom: 0,
+            top: 2,
+            bottom: 2,
         },
         animationDuration: 300,          // 首次渲染 300ms 内完成
         animationEasing: "linear",       // 线性更利落
@@ -27,6 +32,10 @@ export function lineOption(
         //         max: 1000,
         //     },
         // ],
+        dataset: {
+            dimensions: [ "time", "value" ],
+            source: data,
+        },
         tooltip: {
             trigger: "axis",
             axisPointer: {
@@ -38,23 +47,24 @@ export function lineOption(
             axisLabel: undefined,
             axisLine: undefined,
             splitLine: undefined,
-            min: Date.now() - 10_000,
-            max: Date.now(),
         },
         yAxis: {
             type: "value",
-            axisLabel: undefined,
-            axisLine: undefined,
-            splitLine: undefined,
-            min: extent => Math.max(extent.min - 1, -1),
+            // axisLabel: undefined,
+            // axisLine: undefined,
+            // splitLine: undefined,
+            min: extent => Math.max(extent.min, -1),
             max: extent => extent.max + 1,
+            splitNumber: 2,
         },
         series: [
             {
+                id: "latency",
                 type: "line",
                 showSymbol: false,
-                data, // [[timestamp, value], ...]
-                smooth: false,
+                encode: { x: "time", y: "value" },
+                smooth: true,
+                progressive: 0,
             },
         ],
 

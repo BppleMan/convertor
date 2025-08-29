@@ -34,9 +34,9 @@ pub fn router(app_state: AppState) -> Router {
         .route("/dashboard", get(|| async { Redirect::permanent("/") }))
         // 3) 静态资源目录，index.html 内请用绝对路径引用：/static/xxx
         .nest_service("/static", ServeDir::new(assets.join("static")))
-        .route("/healthy", get(actuator::healthy))
-        .route("/redis", get(actuator::redis))
-        .route("/version", get(actuator::version))
+        .route("/actuator/healthy", get(actuator::healthy))
+        .route("/actuator/redis", get(actuator::redis))
+        .route("/actuator/version", get(actuator::version))
         .route("/raw-profile/{client}/{provider}", get(profile::raw_profile))
         .route("/profile/{client}/{provider}", get(profile::profile))
         .route("/rule-provider/{client}/{provider}", get(profile::rule_provider))

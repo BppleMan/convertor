@@ -1,14 +1,20 @@
 import { HttpErrorResponse } from "@angular/common/http";
 import { catchError, defer, map, OperatorFunction, throwError } from "rxjs";
+import { SampleData } from "../echarts/echarts.options";
 import { ApiResponse } from "../response/response";
 
-export class LatencyWrapper<T> {
+export class LatencyWrapper<T> implements SampleData {
+    time: number;
+    value: number;
+
     constructor(
         public sentAt: number,
         public latency: number,
         public response?: ApiResponse<T>,
         public error?: HttpErrorResponse,
     ) {
+        this.time = this.sentAt;
+        this.value = Math.ceil(this.latency);
     }
 }
 

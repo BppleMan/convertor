@@ -1,13 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from "@angular/core";
-import { toSignal } from "@angular/core/rxjs-interop";
-import { MatButton, MatIconButton } from "@angular/material/button";
+import { ChangeDetectionStrategy, Component } from "@angular/core";
+import { MatIconButton } from "@angular/material/button";
 import { MatCardContent, MatCardFooter } from "@angular/material/card";
 import { MatIcon } from "@angular/material/icon";
 import { MatToolbar } from "@angular/material/toolbar";
-import { catchError, EMPTY, filter, map, startWith, Subject, switchMap } from "rxjs";
-import { DashboardService } from "../../service/dashboard-service";
-import { LineChart } from "../shared/charts/line-chart/line-chart";
-import { DashboardPanel } from "../shared/dashboard-panel/dashboard-panel";
+import { interval } from "rxjs";
+import { HealthChart } from "../shared/charts/health-chart/health-chart";
+import { RedisChart } from "../shared/charts/redis-chart/redis-chart";
+import { DashboardPanel } from "./dashboard-panel/dashboard-panel";
 
 @Component({
     selector: "app-dashboard",
@@ -17,36 +16,19 @@ import { DashboardPanel } from "../shared/dashboard-panel/dashboard-panel";
         MatIcon,
         MatCardContent,
         MatCardFooter,
-        MatButton,
         DashboardPanel,
-        LineChart,
+        HealthChart,
+        RedisChart,
     ],
     templateUrl: "./dashboard.html",
     styleUrl: "./dashboard.scss",
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Dashboard {
-    readonly dashboardService: DashboardService = inject<DashboardService>(DashboardService);
+    public readonly refresh = interval(1000);
 
-    readonly refresh = new Subject<string>();
-    readonly healthy = toSignal<number>(
-        this.refresh.pipe(
-            startWith(null),
-            filter(endpoint => endpoint != null && endpoint === DashboardService.HEALTHY_ENDPOINT),
-            switchMap(() => this.dashboardService.healthCheck().pipe(
-                catchError(error => {
-                    console.log(error);
-                    return EMPTY;
-                }),
-                // finalize(/* 可以清理某些遗留状态 */)
-            )),
-            map(apiResponse => apiResponse.status),
-        ),
-    );
-
-    readonly healthData = signal<{ sentAt: number; latency: number }[]>([]);
 
     healthCheck(event: PointerEvent) {
-        this.refresh.next(DashboardService.HEALTHY_ENDPOINT);
+        // this.refresh.next(DashboardService.HEALTHY_ENDPOINT);
     }
 }
