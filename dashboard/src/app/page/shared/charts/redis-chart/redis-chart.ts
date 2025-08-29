@@ -16,7 +16,7 @@ export class RedisChart extends DashboardLineChart {
         effect(() => {
             this.valueTicker().pipe(
                 switchMap(() => this.dashboardService.redisLatency()),
-                map(latency => ({ time: latency.startedAtEpochMs, value: latency.totalLatencyMs })),
+                map(latency => ({ time: latency.startedAt, value: latency.totalMs })),
             ).subscribe((latency: SampleData) => {
                 this.next.next(latency);
             });

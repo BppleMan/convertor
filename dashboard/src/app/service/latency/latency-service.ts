@@ -1,255 +1,175 @@
 import { Injectable } from "@angular/core";
 import { ApiResponse } from "../../common/response/response";
-import { FetchLatencyOptions, LatencyResult, LatencyState, ReadBodyMode } from "./latency-types";
-import { addRtidToUrl, buildPhaseBreakdown, createAbortControllerWithTimeout, getResourceTimingByExactUrl, hrToEpochMs, isApiResponseLike, isJsonContentType, nextFrame, parseServerTiming, round } from "./latency-utils";
+// 按你的项目路径导入 ApiResponse（这里示例性指向 ./api-response）
+import { LatencyResult, LatencyStatus, MeasureOptions } from "./latency-types";
+import { addRtid, buildPhases, getExactResourceTimingByName, isAbortError, nextFrame, nowEpochMs, parseServerTimingHeader, toEpochMs } from "./latency-utils";
 
-/**
- * LatencyService：使用原生 fetch + Resource Timing 进行延迟测量（rtid 精确匹配）
- */
-@Injectable({
-    providedIn: "root",
-})
+@Injectable({ providedIn: "root" })
 export class LatencyService {
-    /** rtid 参数名默认值 */
-    private static readonly DEFAULT_RTID_PARAM = "rtid";
-
     /**
-     * 发送请求并测量延迟（优先使用 Performance Resource Timing）
+     * 发起 JSON 请求并测量延迟，自动注入 rtid，用 Performance 覆盖自测
      */
-    public async fetchWithLatency<T = unknown>(
-        input: RequestInfo | URL,
-        options: FetchLatencyOptions = {},
+    public async fetchWithLatency<T = void>(
+        input: string | URL,
+        options: MeasureOptions = {},
     ): Promise<LatencyResult<T>> {
-        const method = (options.method ?? "GET").toString().toUpperCase();
-
-        // 1) 生成 rtid 并构造最终 URL
-        const rtidParam = options.rtidParam ?? LatencyService.DEFAULT_RTID_PARAM;
+        const method = (options.method ?? "GET").toUpperCase();
         const rtid = crypto.randomUUID();
-        const url = options.appendRtid === false ? this.toUrlString(input) : addRtidToUrl(input, rtidParam, rtid);
+        const rtidParam = options.rtidParam ?? "rtid";
 
-        // 2) 超时控制器
-        const { controller, cancelTimer, didTimeout } = createAbortControllerWithTimeout(
-            options.timeoutMs ?? 5_000,
-            options.signal,
-        );
+        const url = addRtid(input, rtid, rtidParam);
 
-        // 3) 启动本地计时（回退用）；优先期望用 RT 的时间轴
-        const perfNow = () => performance.now();
-        let startedAtLocal = perfNow();
-        let headersAtLocal = startedAtLocal;
-        let endedAtLocal = startedAtLocal;
+        // 构建 Abort + 超时
+        const ac = new AbortController();
+        const userSignal = options.signal;
+        if (userSignal?.aborted) ac.abort();
+        else if (userSignal) userSignal.addEventListener("abort", () => ac.abort(), { once: true });
 
-        // 4) 组装基础结果
-        const base: LatencyResult<T> = {
-            url,
-            method,
-            state: LatencyState.Error,
-            status: 0,
-            ok: false,
-            rtid,
+        let timeoutId: number | undefined;
+        if (typeof options.timeoutMs === "number" && options.timeoutMs > 0) {
+            timeoutId = window.setTimeout(() => ac.abort(), options.timeoutMs);
+        }
 
-            startedAtMs: startedAtLocal,
-            headersAtMs: headersAtLocal,
-            endedAtMs: endedAtLocal,
-            startedAtEpochMs: startedAtLocal,
-            headersAtEpochMs: headersAtLocal,
-            endedAtEpochMs: endedAtLocal,
-
-            headersLatencyMs: 0,
-            totalLatencyMs: 0,
-        };
+        // ===== 1) 自测：记录关键时间点（Epoch ms）
+        let startedAt = nowEpochMs();
+        let headersAt = startedAt;
+        let endedAt = startedAt;
+        let httpStatus = 0;
+        let httpOk = false;
+        let serverTiming: Record<string, number> | undefined;
+        let responseObj: ApiResponse<T> | undefined;
+        let status: LatencyStatus = LatencyStatus.ERROR;
+        let errorMessage: string | undefined;
 
         try {
-            // 5) 发起请求
-            const resp = await fetch(url, { ...options, signal: controller.signal });
-            headersAtLocal = perfNow();
+            const resp = await fetch(url, {
+                ...options,
+                signal: ac.signal,
+            });
 
-            base.response = resp;
-            base.status = resp.status;
-            base.ok = resp.ok;
+            headersAt = nowEpochMs();
+            httpStatus = resp.status;
+            httpOk = resp.ok;
 
-            // Server-Timing
-            const stHeader = resp.headers.get("server-timing");
-            if (stHeader) base.serverTiming = parseServerTiming(stHeader);
+            serverTiming = parseServerTimingHeader(resp.headers.get("server-timing"));
 
-            // 6) 等待一帧，读取 RT（rtid 确保唯一）
-            let entry = undefined as PerformanceResourceTiming | undefined;
-            if (options.useResourceTiming !== false) {
-                await nextFrame();
-                entry = getResourceTimingByExactUrl(url);
-                console.log(entry);
-            }
+            // 一律按 JSON 解析并包装为 ApiResponse<T>
+            const raw = await resp.json();
+            responseObj = ApiResponse.deserialize<T>(raw);
 
-            // 7) 读取响应体（根据模式）
-            const readMode = options.readBody ?? ReadBodyMode.Json;
+            endedAt = nowEpochMs();
 
-            let parsedValue: unknown = undefined;
-            let sizeBytes: number | undefined = undefined;
+            // 先用自测结果给出粗略值
+            let ttfbMs = Math.max(0, headersAt - startedAt);
+            let totalMs = Math.max(0, endedAt - startedAt);
 
-            switch (readMode) {
-                case ReadBodyMode.None: {
-                    // 不读取 body，释放流
-                    try {
-                        await resp.body?.cancel();
-                    } catch { /* noop */
-                    }
-                    break;
-                }
-                case ReadBodyMode.Drain: {
-                    // 流式把字节读掉，不保留内容
-                    if (resp.body) {
-                        const reader = resp.body.getReader();
-                        sizeBytes = 0;
-                        while (true) {
-                            const { done, value } = await reader.read();
-                            if (done) break;
-                            sizeBytes += value?.byteLength ?? 0;
-                        }
-                    } else {
-                        const cl = resp.headers.get("content-length");
-                        if (cl) sizeBytes = Number(cl);
-                        const buf = await resp.arrayBuffer().catch(() => undefined);
-                        if (buf && sizeBytes === undefined) sizeBytes = buf.byteLength;
-                    }
-                    break;
-                }
-                case ReadBodyMode.Json: {
-                    parsedValue = await resp.json();
-                    // 如果像 ApiResponse 结构，就包装起来
-                    if (isApiResponseLike(parsedValue)) {
-                        parsedValue = ApiResponse.deserialize(parsedValue);
-                    }
-                    // 计算体积（尽力）
-                    const s = JSON.stringify(parsedValue);
-                    sizeBytes = new TextEncoder().encode(s).byteLength;
-                    break;
-                }
-                case ReadBodyMode.Text: {
-                    const text = await resp.text();
-                    parsedValue = text;
-                    sizeBytes = new TextEncoder().encode(text).byteLength;
-                    break;
-                }
-                case ReadBodyMode.ArrayBuffer: {
-                    const buf = await resp.arrayBuffer();
-                    parsedValue = buf;
-                    sizeBytes = buf.byteLength;
-                    break;
-                }
-                case ReadBodyMode.Blob: {
-                    const blob = await resp.blob();
-                    parsedValue = blob;
-                    sizeBytes = blob.size;
-                    break;
-                }
-                default: {
-                    // 枚举防御式：理论不会到这里
-                    break;
-                }
-            }
-
-            // 如果没按 Json 模式，但 Content-Type 显示是 JSON，也帮你包装成 ApiResponse<T>
-            // （满足“如果返回 content-type 是 json，直接包装”的诉求，同时保守判断结构）
-            if (parsedValue === undefined && isJsonContentType(resp.headers.get("content-type"))) {
-                try {
-                    const val = await resp.clone().json();
-                    parsedValue = isApiResponseLike(val) ? ApiResponse.deserialize<T>(val) : (val as unknown as T);
-                    const s = JSON.stringify(val);
-                    sizeBytes ??= new TextEncoder().encode(s).byteLength;
-                } catch {
-                    // JSON 解析失败则忽略自动包装
-                }
-            }
-
-            // 8) 结束时间（本地）
-            endedAtLocal = perfNow();
-
-            // 9) 优先使用 RT 计算时间轴（rtid 精准匹配）
+            // ===== 2) 尝试用 PerformanceResourceTiming 覆盖（rtid 唯一匹配）
+            await nextFrame(); // 等待 RT 入队
+            const entry = getExactResourceTimingByName(url);
             if (entry) {
-                const start = entry.startTime;
-                const headersAt = entry.responseStart ? start + entry.responseStart : headersAtLocal;
-                // 下载结束（若读取模式为 None，仅以 headers 为结束；否则以网络下载完成为结束）
-                const end =
-                    (readMode === ReadBodyMode.None)
-                        ? headersAt
-                        : (entry.responseEnd ? start + entry.responseEnd : endedAtLocal);
+                // 所有时间转换为 Epoch 毫秒
+                const pStart = toEpochMs(entry.startTime);
+                const pHeaders = toEpochMs(entry.responseStart);
+                const pEnd = toEpochMs(entry.responseEnd);
 
-                base.startedAtMs = start;
-                base.headersAtMs = headersAt;
-                base.endedAtMs = end;
+                startedAt = pStart;
+                headersAt = pHeaders;
+                endedAt = pEnd;
 
-                base.headersLatencyMs = round(headersAt - start);
-                base.totalLatencyMs = round(end - start);
-
-                base.phases = buildPhaseBreakdown(entry);
-
-                // 优先用 RT 提供的大小
-                if (sizeBytes === undefined) {
-                    sizeBytes = entry.decodedBodySize || entry.encodedBodySize || entry.transferSize || undefined;
+                // duration 更精准（浏览器内部更靠近真实区间）
+                totalMs = Math.max(0, Math.round(entry.duration));
+                // TTFB 用 responseStart - requestStart
+                if (Number.isFinite(entry.requestStart) && Number.isFinite(entry.responseStart)) {
+                    ttfbMs = Math.max(0, Math.round(entry.responseStart - entry.requestStart));
                 }
-            } else {
-                // 回退：使用本地时间（在你的环境里通常不会走到）
-                base.startedAtMs = startedAtLocal;
-                base.headersAtMs = headersAtLocal;
-                base.endedAtMs = endedAtLocal;
-                base.headersLatencyMs = round(headersAtLocal - startedAtLocal);
-                base.totalLatencyMs = round(endedAtLocal - startedAtLocal);
+
+                const phases = buildPhases(entry);
+                return {
+                    url,
+                    method,
+                    status: LatencyStatus.OK,
+                    httpStatus,
+                    httpOk,
+                    startedAt,
+                    headersAt,
+                    endedAt,
+                    ttfbMs,
+                    totalMs,
+                    serverTiming,
+                    phases,
+                    response: responseObj,
+                    rtid,
+                };
             }
 
-            base.sizeBytes = sizeBytes;
-            base.value = parsedValue as T;
-
-            // 10) 状态判定（enum）
-            base.state = this.toState(didTimeout(), resp.ok);
-
-            // HTTP 非 ok 也视为错误（但不是 Timeout）
-            if (!resp.ok && base.state === LatencyState.Ok) {
-                base.state = LatencyState.Error;
-            }
-
-            base.startedAtEpochMs = hrToEpochMs(base.startedAtMs);
-            base.headersAtEpochMs = hrToEpochMs(base.headersAtMs);
-            base.endedAtEpochMs = hrToEpochMs(base.endedAtMs);
-
-            return base;
+            // 没拿到 Performance：回退到自测
+            status = LatencyStatus.OK;
+            return {
+                url,
+                method,
+                status,
+                httpStatus,
+                httpOk,
+                startedAt,
+                headersAt,
+                endedAt,
+                ttfbMs,
+                totalMs,
+                serverTiming,
+                response: responseObj,
+                rtid,
+            };
         } catch (err: unknown) {
-            // 失败路径：网络/解析/Abort 等
-            base.error = String((err as any)?.message ?? err);
-            base.aborted = controller.signal.aborted;
-            base.status = 0;
-            base.ok = false;
+            endedAt = nowEpochMs();
 
-            const end = perfNow();
-            base.endedAtMs = end;
-            base.totalLatencyMs = round(end - base.startedAtMs);
-            base.headersLatencyMs = base.headersLatencyMs || 0;
+            if (isAbortError(err)) {
+                status = LatencyStatus.TIMEOUT;
+                errorMessage = "Request timed out or aborted";
+            } else {
+                status = LatencyStatus.ERROR;
+                errorMessage = (err as any)?.message ?? String(err);
+            }
 
-            base.state = didTimeout() ? LatencyState.Timeout : LatencyState.Error;
+            // 即便出错/超时，也尝试用 Performance 修正起止时间（如果记录到了）
+            try {
+                await nextFrame();
+                const entry = getExactResourceTimingByName(url);
+                if (entry) {
+                    const pStart = toEpochMs(entry.startTime);
+                    const pHeaders = toEpochMs(entry.responseStart);
+                    const pEnd = toEpochMs(entry.responseEnd);
+                    startedAt = pStart;
+                    // 若失败时 headers 未必达到，用 Performance 的字段更可信
+                    headersAt = Number.isFinite(entry.responseStart) ? pHeaders : startedAt;
+                    endedAt = Number.isFinite(entry.responseEnd) ? pEnd : endedAt;
+                }
+            } catch {
+                // 忽略二次错误
+            }
 
-            base.startedAtEpochMs = hrToEpochMs(base.startedAtMs);
-            base.headersAtEpochMs = hrToEpochMs(base.headersAtMs);
-            base.endedAtEpochMs = hrToEpochMs(base.endedAtMs);
+            const ttfbMs = Math.max(0, headersAt - startedAt);
+            const totalMs = Math.max(0, endedAt - startedAt);
 
-            return base;
+            return {
+                url,
+                method,
+                status,
+                httpStatus,
+                httpOk,
+                startedAt,
+                headersAt,
+                endedAt,
+                ttfbMs,
+                totalMs,
+                serverTiming,
+                response: responseObj,
+                errorMessage,
+                rtid,
+            };
         } finally {
-            cancelTimer();
+            if (timeoutId !== undefined) {
+                clearTimeout(timeoutId);
+            }
         }
-    }
-
-    /**
-     * 将输入转为 URL 字符串
-     */
-    private toUrlString(input: RequestInfo | URL): string {
-        return typeof input === "string"
-            ? input
-            : (input as Request).url ?? (input as URL).toString?.() ?? String(input);
-    }
-
-    /**
-     * 将 ok/timeout 映射到枚举状态
-     */
-    private toState(timedOut: boolean, httpOk: boolean): LatencyState {
-        if (timedOut) return LatencyState.Timeout;
-        return httpOk ? LatencyState.Ok : LatencyState.Error;
     }
 }

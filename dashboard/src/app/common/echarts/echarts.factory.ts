@@ -48,7 +48,11 @@ export function initEChart(
     let onWinResize: ((this: Window, ev: UIEvent) => any) | null = null;
 
     if (typeof ResizeObserver !== "undefined") {
-        ro = new ResizeObserver(() => scheduleResize());
+        ro = new ResizeObserver((entries, observer) => {
+            console.log(entries);
+            console.log(observer);
+            scheduleResize();
+        });
         ro.observe(dom);
     } else if (fallbackToWindow) {
         onWinResize = () => scheduleResize();

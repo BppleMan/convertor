@@ -16,7 +16,7 @@ export abstract class DashboardLineChart implements AfterViewInit {
 
     // 参数
     public readonly valueTicker = input.required<Observable<number>>();
-    public readonly windowMs = input<number>(30_000);
+    public readonly windowMs = input<number>(10_000);
     public readonly shiftDelayMs = input<number>(2_000);
     public readonly targetFps = input<Hz>(144);
 
@@ -34,7 +34,7 @@ export abstract class DashboardLineChart implements AfterViewInit {
         this.subscribeNext = this.next.pipe(
             scan((acc: SampleData[], value) => {
                 acc.push(value);
-                if (acc.length > 33) {
+                if (acc.length > 13) {
                     acc.shift();
                 }
                 return acc;
@@ -62,8 +62,8 @@ export abstract class DashboardLineChart implements AfterViewInit {
 
     onTick(nowMs: number, dtMs: number) {
         const now = Date.now();
-        const windowMs = this.windowMs() ?? 30_000;
-        const shiftDelayMs = this.shiftDelayMs() ?? 2_000;
+        const windowMs = this.windowMs();
+        const shiftDelayMs = this.shiftDelayMs();
         const min = now - windowMs - shiftDelayMs;
         const max = now - shiftDelayMs;
         let options: ECOption = {
