@@ -1,3 +1,4 @@
+import { DataZoomComponentOption, VisualMapComponentOption } from "echarts";
 import type { BarSeriesOption, LineSeriesOption, PieSeriesOption } from "echarts/charts";
 // 图表
 import { BarChart, LineChart, PieChart } from "echarts/charts";
@@ -6,6 +7,7 @@ import { BarChart, LineChart, PieChart } from "echarts/charts";
 import {
     DatasetComponent,
     DatasetComponentOption,
+    DataZoomComponent,
     GridComponent,
     GridComponentOption,
     LegendComponent,
@@ -35,6 +37,8 @@ export type ECOption = ComposeOption<
     | TooltipComponentOption
     | LegendComponentOption
     | DatasetComponentOption
+    | VisualMapComponentOption
+    | DataZoomComponentOption
 >;
 
 // —— 注册必须的图表与组件 ——
@@ -51,6 +55,7 @@ echarts.use([
     DatasetComponent,
     TransformComponent,
     VisualMapComponent,
+    DataZoomComponent,
 
     LabelLayout,
     UniversalTransition,

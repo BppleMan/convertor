@@ -3,7 +3,7 @@ import { ApiResponse } from "../../common/response/response";
 /**
  * 测速状态：成功、超时、出错
  */
-export enum LatencyStatus {
+export enum ResponseStatus {
     OK = "OK",
     TIMEOUT = "TIMEOUT",
     ERROR = "ERROR",
@@ -72,7 +72,7 @@ export interface LatencyResult<T = void> {
     method: string;
 
     /** 测速状态：OK/TIMEOUT/ERROR */
-    status: LatencyStatus;
+    status: ResponseStatus;
 
     /** HTTP 状态码（若出错/超时可能为 0） */
     httpStatus: number;

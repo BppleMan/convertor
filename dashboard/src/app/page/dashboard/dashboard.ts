@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component } from "@angular/core";
-import { MatIconButton } from "@angular/material/button";
+import { MatButton, MatIconButton } from "@angular/material/button";
 import { MatCardContent, MatCardFooter } from "@angular/material/card";
 import { MatIcon } from "@angular/material/icon";
 import { MatToolbar } from "@angular/material/toolbar";
-import { interval } from "rxjs";
-import { HealthChart } from "../shared/charts/health-chart/health-chart";
-import { RedisChart } from "../shared/charts/redis-chart/redis-chart";
+import { BehaviorSubject, filter, interval } from "rxjs";
+import { DashboardService } from "../../service/dashboard-service";
+import { ActuatorLineChart } from "../shared/charts/actuator-line-chart/actuator-line-chart";
+import { BenchAction, BenchBarChart } from "../shared/charts/bench-bar-chart/bench-bar-chart";
 import { DashboardPanel } from "./dashboard-panel/dashboard-panel";
 
 @Component({
@@ -17,8 +18,9 @@ import { DashboardPanel } from "./dashboard-panel/dashboard-panel";
         MatCardContent,
         MatCardFooter,
         DashboardPanel,
-        HealthChart,
-        RedisChart,
+        BenchBarChart,
+        MatButton,
+        ActuatorLineChart,
     ],
     templateUrl: "./dashboard.html",
     styleUrl: "./dashboard.scss",
@@ -27,8 +29,21 @@ import { DashboardPanel } from "./dashboard-panel/dashboard-panel";
 export class Dashboard {
     public readonly refresh = interval(1000);
 
+    public startBenchAction = new BehaviorSubject<BenchAction | null>(null);
+    public startBenchAction$ = this.startBenchAction.pipe(
+        filter(action => !!action),
+    );
 
-    healthCheck(event: PointerEvent) {
-        // this.refresh.next(DashboardService.HEALTHY_ENDPOINT);
+    public abortBenchAction = new BehaviorSubject<{} | null>(null);
+    public abortBenchAction$ = this.abortBenchAction.pipe(
+        filter(action => action !== null),
+    );
+
+    public startBench() {
+        this.startBenchAction.next({ url: DashboardService.HEALTH_ENDPOINT, count: 1000 });
+    }
+
+    public abortBench() {
+        this.abortBenchAction.next({});
     }
 }

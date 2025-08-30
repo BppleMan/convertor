@@ -1,7 +1,6 @@
 import { Component, effect } from "@angular/core";
 import { map, switchMap } from "rxjs";
-import { SampleData } from "../../../../common/echarts/echarts.options";
-import { DashboardLineChart } from "../dashboard-line-chart";
+import { DashboardLineChart, LineChartSample } from "../dashboard-line-chart";
 
 @Component({
     selector: "app-redis-chart",
@@ -17,7 +16,7 @@ export class RedisChart extends DashboardLineChart {
             this.valueTicker().pipe(
                 switchMap(() => this.dashboardService.redisLatency()),
                 map(latency => ({ time: latency.startedAt, value: latency.totalMs })),
-            ).subscribe((latency: SampleData) => {
+            ).subscribe((latency: LineChartSample) => {
                 this.next.next(latency);
             });
         });

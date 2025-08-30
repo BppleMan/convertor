@@ -49,8 +49,7 @@ export function initEChart(
 
     if (typeof ResizeObserver !== "undefined") {
         ro = new ResizeObserver((entries, observer) => {
-            console.log(entries);
-            console.log(observer);
+            console.log("ResizeObserver", entries[0], observer);
             scheduleResize();
         });
         ro.observe(dom);

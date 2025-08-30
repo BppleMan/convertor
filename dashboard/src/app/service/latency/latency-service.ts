@@ -1,7 +1,8 @@
 import { Injectable } from "@angular/core";
+import { Observable } from "rxjs";
 import { ApiResponse } from "../../common/response/response";
 // 按你的项目路径导入 ApiResponse（这里示例性指向 ./api-response）
-import { LatencyResult, LatencyStatus, MeasureOptions } from "./latency-types";
+import { LatencyResult, MeasureOptions, ResponseStatus } from "./latency-types";
 import { addRtid, buildPhases, getExactResourceTimingByName, isAbortError, nextFrame, nowEpochMs, parseServerTimingHeader, toEpochMs } from "./latency-utils";
 
 @Injectable({ providedIn: "root" })
@@ -38,7 +39,7 @@ export class LatencyService {
         let httpOk = false;
         let serverTiming: Record<string, number> | undefined;
         let responseObj: ApiResponse<T> | undefined;
-        let status: LatencyStatus = LatencyStatus.ERROR;
+        let status: ResponseStatus = ResponseStatus.ERROR;
         let errorMessage: string | undefined;
 
         try {
@@ -87,7 +88,7 @@ export class LatencyService {
                 return {
                     url,
                     method,
-                    status: LatencyStatus.OK,
+                    status: ResponseStatus.OK,
                     httpStatus,
                     httpOk,
                     startedAt,
@@ -103,7 +104,7 @@ export class LatencyService {
             }
 
             // 没拿到 Performance：回退到自测
-            status = LatencyStatus.OK;
+            status = ResponseStatus.OK;
             return {
                 url,
                 method,
@@ -123,10 +124,10 @@ export class LatencyService {
             endedAt = nowEpochMs();
 
             if (isAbortError(err)) {
-                status = LatencyStatus.TIMEOUT;
+                status = ResponseStatus.TIMEOUT;
                 errorMessage = "Request timed out or aborted";
             } else {
-                status = LatencyStatus.ERROR;
+                status = ResponseStatus.ERROR;
                 errorMessage = (err as any)?.message ?? String(err);
             }
 
@@ -172,4 +173,39 @@ export class LatencyService {
             }
         }
     }
+
+    /**
+     * RxJS 封装：取消订阅（unsubscribe）将触发 fetch 的 Abort
+     */
+    public fetchWithLatency$<T = void>(
+        input: string | URL,
+        options: MeasureOptions = {},
+    ): Observable<LatencyResult<T>> {
+        return new Observable<LatencyResult<T>>((subscriber) => {
+            // 外层控制器：用于订阅的取消
+            const ctrl = new AbortController();
+            // 把外层 signal 透传给底层（底层会把它“联动”到内部控制器）
+            const opts: MeasureOptions = { ...options, signal: ctrl.signal };
+
+            // 绑定 teardown：unsubscribe 时自动 abort
+            subscriber.add(() => {
+                try {
+                    ctrl.abort();
+                } catch { /* noop */
+                }
+            });
+
+            this.fetchWithLatency<T>(input, opts)
+                .then((res) => {
+                    if (subscriber.closed) return;
+                    subscriber.next(res);
+                    subscriber.complete();
+                })
+                .catch((err) => {
+                    if (subscriber.closed) return;
+                    subscriber.error(err);
+                });
+        });
+    }
+
 }
