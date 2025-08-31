@@ -30,22 +30,22 @@ export class ActuatorLineChart implements AfterViewInit {
     public readonly valueTicker = interval(1000);
     public readonly next: BehaviorSubject<LineChartSample[]> = new BehaviorSubject([] as LineChartSample[]);
     public readonly next$ = this.next.pipe(
-        filter(v => !!v && v.length === 2),
+        filter(v => !!v && v.length > 0),
         map(v => v!),
     );
     protected nextSubscription: Subscription = this.next$.pipe(
         scan((acc: LineChartSample[][], value) => {
-            acc[0].push(value[0]);
-            if (acc[0].length > 13) {
-                acc[0].shift();
+            while (acc.length < value.length) {
+                acc.push([]);
             }
-
-            acc[1].push(value[1]);
-            if (acc[1].length > 13) {
-                acc[1].shift();
+            for (let i = 0; i < acc.length; ++i) {
+                acc[i].push(value[i]);
+                if (acc[i].length > 13) {
+                    acc[i].shift();
+                }
             }
             return acc;
-        }, [ [], [] ]),
+        }, []),
     ).subscribe(source => {
         this.pendingSources = source;
     });
@@ -146,24 +146,24 @@ export class ActuatorLineChart implements AfterViewInit {
                     source: [],
                 },
             ],
-            dataZoom: [
-                {
-                    // id: 'dataZoomY',
-                    type: "inside",
-                    yAxisIndex: 0,
-                    filterMode: "none",
-                    startValue: 0,
-                    endValue: 10,
-                },
-                {
-                    // id: 'dataZoomY',
-                    type: "inside",
-                    yAxisIndex: 0,
-                    filterMode: "none",
-                    startValue: 240,
-                    endValue: 340,
-                },
-            ],
+            // dataZoom: [
+            //     {
+            //         // id: 'dataZoomY',
+            //         type: "inside",
+            //         yAxisIndex: 0,
+            //         filterMode: "none",
+            //         startValue: 0,
+            //         endValue: 10,
+            //     },
+            //     {
+            //         // id: 'dataZoomY',
+            //         type: "inside",
+            //         yAxisIndex: 0,
+            //         filterMode: "none",
+            //         startValue: 240,
+            //         endValue: 340,
+            //     },
+            // ],
             tooltip: {
                 trigger: "axis",
                 axisPointer: {
@@ -187,8 +187,6 @@ export class ActuatorLineChart implements AfterViewInit {
                     max: extent => extent.max + 1,
                     scale: true,
                     splitNumber: 4,
-                    // min: 0,
-                    // max: 260,
                 },
             ],
             series: [

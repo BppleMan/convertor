@@ -40,7 +40,7 @@ export class Dashboard {
     );
 
     public startBench() {
-        this.startBenchAction.next({ url: DashboardService.HEALTH_ENDPOINT, count: 1000 });
+        this.startBenchAction.next({ url: DashboardService.HEALTH_ENDPOINT, count: 100 });
     }
 
     public abortBench() {

@@ -1,4 +1,4 @@
-import { DataZoomComponentOption, VisualMapComponentOption } from "echarts";
+import type { DataZoomComponentOption, VisualMapComponentOption } from "echarts";
 import type { BarSeriesOption, LineSeriesOption, PieSeriesOption } from "echarts/charts";
 // 图表
 import { BarChart, LineChart, PieChart } from "echarts/charts";

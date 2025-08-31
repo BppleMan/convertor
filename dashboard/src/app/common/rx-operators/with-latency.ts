@@ -1,9 +1,8 @@
 import { HttpErrorResponse } from "@angular/common/http";
 import { catchError, defer, map, OperatorFunction, throwError } from "rxjs";
-import { LineChartSample } from "../../page/shared/charts/dashboard-line-chart";
 import { ApiResponse } from "../response/response";
 
-export class LatencyWrapper<T> implements LineChartSample {
+export class LatencyWrapper<T> {
     time: number;
     value: number;
 

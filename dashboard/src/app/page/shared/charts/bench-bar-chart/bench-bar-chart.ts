@@ -134,20 +134,22 @@ export class BenchBarChart implements AfterViewInit {
                     id: "latency",
                     type: "bar",
                     encode: { x: "index", y: "value" },
+                    itemStyle: {
+                        color: (p) => {
+                            switch ((p.value as BarChartSample).state) {
+                                case BarChartState.PENDING:
+                                    return "#999999";
+                                case BarChartState.OK:
+                                    return "#4caf50";
+                                case BarChartState.ERROR:
+                                    return "#f44336";
+                                case BarChartState.TIMEOUT:
+                                    return "#ff9800";
+                            }
+                        },
+                    },
                 },
             ],
-            visualMap: {
-                type: "piecewise",
-                show: true,
-                orient: "horizontal",
-                left: "center",
-                bottom: 0,
-                // dimension: "state",
-                categories: [ BarChartState.PENDING, BarChartState.OK, BarChartState.ERROR, BarChartState.TIMEOUT ],
-                inRange: {
-                    color: [ "#999999", "#4caf50", "#f44336", "#ff9800" ],
-                },
-            },
         };
     }
 }
