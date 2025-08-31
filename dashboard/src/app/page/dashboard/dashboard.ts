@@ -1,26 +1,15 @@
 import { ChangeDetectionStrategy, Component } from "@angular/core";
-import { MatButton, MatIconButton } from "@angular/material/button";
-import { MatCardContent, MatCardFooter } from "@angular/material/card";
-import { MatIcon } from "@angular/material/icon";
-import { MatToolbar } from "@angular/material/toolbar";
 import { BehaviorSubject, filter, interval } from "rxjs";
 import { DashboardService } from "../../service/dashboard-service";
-import { ActuatorLineChart } from "../shared/charts/actuator-line-chart/actuator-line-chart";
-import { BenchAction, BenchBarChart } from "../shared/charts/bench-bar-chart/bench-bar-chart";
-import { DashboardPanel } from "./dashboard-panel/dashboard-panel";
+import { BenchAction } from "../shared/charts/bench-bar-chart/bench-bar-chart";
+import { DashboardInfo } from "./dashboard-info/dashboard-info";
+import { DashboardSub } from "./dashboard-sub/dashboard-sub";
 
 @Component({
     selector: "app-dashboard",
     imports: [
-        MatToolbar,
-        MatIconButton,
-        MatIcon,
-        MatCardContent,
-        MatCardFooter,
-        DashboardPanel,
-        BenchBarChart,
-        MatButton,
-        ActuatorLineChart,
+        DashboardInfo,
+        DashboardSub,
     ],
     templateUrl: "./dashboard.html",
     styleUrl: "./dashboard.scss",
