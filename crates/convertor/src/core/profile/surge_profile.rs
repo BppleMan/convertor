@@ -23,6 +23,7 @@ pub struct SurgeProfile {
     pub url_rewrite: Vec<String>,
     pub misc: Vec<(String, Vec<String>)>,
     pub policy_of_rules: HashMap<Policy, Vec<ProviderRule>>,
+    pub sorted_policy_list: Vec<Policy>,
 }
 
 impl Profile for SurgeProfile {
@@ -64,6 +65,14 @@ impl Profile for SurgeProfile {
         &mut self.policy_of_rules
     }
 
+    fn sorted_policy_list(&self) -> &[Policy] {
+        &self.sorted_policy_list
+    }
+
+    fn sorted_policy_list_mut(&mut self) -> &mut Vec<Policy> {
+        &mut self.sorted_policy_list
+    }
+
     #[instrument(skip_all)]
     fn parse(content: String) -> ParseResult<Self::PROFILE> {
         SurgeParser::parse_profile(content)
@@ -78,11 +87,12 @@ impl Profile for SurgeProfile {
     }
 
     #[instrument(skip_all)]
-    fn append_rule_provider(&mut self, url_builder: &UrlBuilder, policy: &Policy) -> ParseResult<()> {
-        let name = SurgeRenderer::render_provider_name_for_policy(policy);
-        let url = url_builder.build_rule_provider_url(policy)?;
-        let rule = Rule::surge_rule_provider(policy, name, url);
+    fn append_rule_provider(&mut self, url_builder: &UrlBuilder, policy: Policy) -> ParseResult<()> {
+        let name = SurgeRenderer::render_provider_name_for_policy(&policy);
+        let url = url_builder.build_rule_provider_url(&policy)?;
+        let rule = Rule::surge_rule_provider(&policy, name, url);
         self.rules.push(rule);
+        self.sorted_policy_list_mut().push(policy);
         Ok(())
     }
 }

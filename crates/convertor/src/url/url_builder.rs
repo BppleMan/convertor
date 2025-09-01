@@ -139,7 +139,7 @@ impl UrlBuilder {
 
     pub fn build_sub_logs_url(&self) -> Result<ConvertorUrl, UrlBuilderError> {
         let query = self.as_sub_logs_query().encode_to_sub_logs_query()?;
-        let url = ConvertorUrl::sub_logs(self.server.clone(), "/sub-logs", query);
+        let url = ConvertorUrl::sub_logs(self.server.clone(), "/api/sub-logs", query);
         Ok(url)
     }
 

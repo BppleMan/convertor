@@ -7,6 +7,7 @@ use convertor::core::profile::clash_profile::ClashProfile;
 use convertor::core::profile::policy::Policy;
 use convertor::core::renderer::Renderer;
 use convertor::core::renderer::clash_renderer::ClashRenderer;
+use convertor::core::renderer::surge_renderer::SurgeRenderer;
 use convertor::url::url_builder::UrlBuilder;
 use moka::future::Cache;
 use std::sync::Arc;
@@ -38,6 +39,13 @@ impl ClashService {
             None => Ok(String::new()),
             Some(provider_rules) => Ok(ClashRenderer::render_provider_rules(provider_rules)?),
         }
+    }
+
+    #[instrument(skip_all)]
+    pub async fn subscription(&self, url_builder: UrlBuilder, raw_profile: String) -> Result<String> {
+        let profile = self.try_get_profile(url_builder, raw_profile).await?;
+
+        Ok(ClashRenderer::render_profile(&profile)?)
     }
 
     async fn try_get_profile(&self, url_builder: UrlBuilder, raw_profile: String) -> Result<ClashProfile> {

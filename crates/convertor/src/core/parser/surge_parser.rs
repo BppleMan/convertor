@@ -62,6 +62,7 @@ impl SurgeParser {
             url_rewrite,
             misc,
             policy_of_rules: HashMap::new(),
+            sorted_policy_list: Vec::new(),
         })
     }
 

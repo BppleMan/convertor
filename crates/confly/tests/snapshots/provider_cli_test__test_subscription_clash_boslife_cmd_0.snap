@@ -9,7 +9,7 @@ http://127.0.0.1:<PORT>/subscription?token=bppleman&flag=Clash
 [34m转发原始订阅[39m
 <SERVER>raw-profile/clash/boslife?interval=43200&strict=true&sub_url=<ENC_SUB_URL>
 [34m订阅日志记录[39m
-<SERVER>sub-logs?secret=drjgraDxPZBAXWrlU4a9KL3SGbigje0akusEDqw1tReCupBBX-o6PGTKRGGrhztH
+<SERVER>api/sub-logs?secret=drjgraDxPZBAXWrlU4a9KL3SGbigje0akusEDqw1tReCupBBX-o6PGTKRGGrhztH
 [34m规则集: [Subscription][39m
 <SERVER>rule-provider/clash/boslife?interval=43200&policy[name]=DIRECT&policy[is_subscription]=true&sub_url=<ENC_SUB_URL>
 [34m规则集: [BosLife][39m

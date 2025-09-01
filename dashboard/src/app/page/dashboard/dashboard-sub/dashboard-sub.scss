@@ -12,8 +12,13 @@
         font-weight: 500;
     }
 
+    form {
+        display:        flex;
+        flex-direction: row;
+        gap:            12px;
+    }
+
     section {
-        // display:    grid;
         display:        flex;
         overflow-y:     auto;
         flex:           1 1 auto;

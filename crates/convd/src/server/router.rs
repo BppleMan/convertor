@@ -1,6 +1,6 @@
 pub mod actuator;
+pub mod api;
 pub mod profile;
-pub mod subscription;
 
 use crate::server::AppState;
 use crate::server::error::AppError;
@@ -40,8 +40,11 @@ pub fn router(app_state: AppState) -> Router {
         .route("/raw-profile/{client}/{provider}", get(profile::raw_profile))
         .route("/profile/{client}/{provider}", get(profile::profile))
         .route("/rule-provider/{client}/{provider}", get(profile::rule_provider))
-        .route("/subscription", get(subscription::subscription))
-        .route("/sub-logs/{provider}", get(subscription::sub_logs))
+        .route(
+            "/api/subscription/{client}/{provider}",
+            get(api::subscription::subscription),
+        )
+        .route("/api/sub-logs/{provider}", get(api::subscription::sub_logs))
         .with_state(Arc::new(app_state))
         .layer(CorsLayer::very_permissive())
         .layer(

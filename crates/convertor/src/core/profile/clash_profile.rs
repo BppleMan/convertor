@@ -44,6 +44,8 @@ pub struct ClashProfile {
     pub rule_providers: Vec<(String, RuleProvider)>,
     #[serde(default)]
     pub policy_of_rules: HashMap<Policy, Vec<ProviderRule>>,
+    #[serde(default)]
+    pub sorted_policy_list: Vec<Policy>,
 }
 
 impl Profile for ClashProfile {
@@ -95,13 +97,22 @@ impl Profile for ClashProfile {
         Ok(())
     }
 
-    fn append_rule_provider(&mut self, url_builder: &UrlBuilder, policy: &Policy) -> ParseResult<()> {
-        let name = ClashRenderer::render_provider_name_for_policy(policy);
-        let rule_provider_url = url_builder.build_rule_provider_url(policy)?;
+    fn sorted_policy_list(&self) -> &[Policy] {
+        &self.sorted_policy_list
+    }
+
+    fn sorted_policy_list_mut(&mut self) -> &mut Vec<Policy> {
+        &mut self.sorted_policy_list
+    }
+
+    fn append_rule_provider(&mut self, url_builder: &UrlBuilder, policy: Policy) -> ParseResult<()> {
+        let name = ClashRenderer::render_provider_name_for_policy(&policy);
+        let rule_provider_url = url_builder.build_rule_provider_url(&policy)?;
         let rule_provider = RuleProvider::new(rule_provider_url, name.clone(), url_builder.interval);
         self.rule_providers.push((name.clone(), rule_provider));
-        let rule = Rule::clash_rule_provider(policy, name);
+        let rule = Rule::clash_rule_provider(&policy, name);
         self.rules.push(rule);
+        self.sorted_policy_list_mut().push(policy);
         Ok(())
     }
 }

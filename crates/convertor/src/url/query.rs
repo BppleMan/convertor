@@ -226,4 +226,8 @@ impl ConvertorQuery {
         }
         Ok(self)
     }
+
+    pub fn check_for_subscription(self, secret: impl AsRef<str>) -> Result<Self, QueryError> {
+        self.check_for_sub_logs(secret)
+    }
 }

@@ -104,6 +104,10 @@ pub trait Profile {
 
     fn policy_of_rules_mut(&mut self) -> &mut HashMap<Policy, Vec<ProviderRule>>;
 
+    fn sorted_policy_list(&self) -> &[Policy];
+
+    fn sorted_policy_list_mut(&mut self) -> &mut Vec<Policy>;
+
     fn parse(content: String) -> ParseResult<Self::PROFILE>;
 
     fn convert(&mut self, url_builder: &UrlBuilder) -> ParseResult<()>;
@@ -165,7 +169,7 @@ pub trait Profile {
         let inner_span = span!(tracing::Level::INFO, "处理其它规则");
         let _guard = inner_span.entered();
         for mut rule in other_rules {
-            if rule.value.as_ref().map(|v| v.contains(&sub_host)) == Some(true) {
+            if rule.value.as_ref().map(|v| v.contains(&sub_host)).unwrap_or(false) {
                 let inner_span = span!(tracing::Level::INFO, "Rule 转换为 ProviderRule");
                 let _inner_guard = inner_span.entered();
                 rule.policy.is_subscription = true;
@@ -201,8 +205,8 @@ pub trait Profile {
         let inner_span = span!(tracing::Level::INFO, "为每个策略添加规则提供者");
         let _guard = inner_span.entered();
         for policy in policy_list {
-            if let Err(e) = self.append_rule_provider(url_builder, &policy) {
-                warn!("无法为 {:?} 添加 Rule Provider: {}", policy, e);
+            if let Err(e) = self.append_rule_provider(url_builder, policy) {
+                warn!("无法添加 Rule Provider: {}", e);
             }
         }
         drop(_guard);
@@ -215,7 +219,7 @@ pub trait Profile {
         Ok(())
     }
 
-    fn append_rule_provider(&mut self, url_builder: &UrlBuilder, policy: &Policy) -> ParseResult<()>;
+    fn append_rule_provider(&mut self, url_builder: &UrlBuilder, policy: Policy) -> ParseResult<()>;
 
     #[instrument(skip_all)]
     fn get_provider_rules_with_policy(&self, policy: &Policy) -> Option<&Vec<ProviderRule>> {

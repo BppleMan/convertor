@@ -4,9 +4,12 @@ use crate::server::error::AppError;
 use axum::Json;
 use axum::extract::State;
 use color_eyre::eyre::OptionExt;
+use convertor::config::client_config::ProxyClient;
+use convertor::config::provider_config::Provider;
 use redis::AsyncTypedCommands;
 use serde_json::json;
 use std::sync::Arc;
+use strum::VariantArray;
 
 pub type AnyJsonResponse = Json<ActuatorResponse<serde_json::Value>>;
 
@@ -28,6 +31,8 @@ pub async fn redis(State(state): State<Arc<AppState>>) -> Result<AnyJsonResponse
 
 pub async fn version() -> Result<Json<ActuatorResponse<serde_json::Value>>, AppError> {
     Ok(Json(ActuatorResponse::ok_data(json!({
+        "clients": ProxyClient::VARIANTS,
+        "providers": Provider::VARIANTS,
         "version": env!("CARGO_PKG_VERSION").to_string()
     }))))
 }
