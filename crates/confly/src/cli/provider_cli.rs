@@ -128,7 +128,7 @@ impl ProviderCli {
             raw_profile_url,
             profile_url,
             sub_logs_url,
-            rule_provider_urls,
+            rule_providers_url: rule_provider_urls,
         };
 
         #[cfg(feature = "update")]

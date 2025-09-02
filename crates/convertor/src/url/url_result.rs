@@ -10,7 +10,7 @@ pub struct UrlResult {
     pub raw_profile_url: ConvertorUrl,
     pub profile_url: ConvertorUrl,
     pub sub_logs_url: ConvertorUrl,
-    pub rule_provider_urls: Vec<ConvertorUrl>,
+    pub rule_providers_url: Vec<ConvertorUrl>,
 }
 
 impl Display for UrlResult {
@@ -23,7 +23,7 @@ impl Display for UrlResult {
         writeln!(f, "{}", self.raw_profile_url)?;
         writeln!(f, "{}", self.sub_logs_url.desc.blue())?;
         writeln!(f, "{}", self.sub_logs_url)?;
-        for url in &self.rule_provider_urls {
+        for url in &self.rule_providers_url {
             writeln!(f, "{}", url.desc.blue())?;
             writeln!(f, "{url}")?;
         }

@@ -1,6 +1,6 @@
 use color_eyre::Report;
 use color_eyre::eyre::eyre;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -14,7 +14,8 @@ static OPTION_RANK: LazyLock<HashMap<Option<&str>, usize>> = LazyLock::new(|| {
         .collect()
 });
 
-#[derive(Default, Debug, Clone, Eq, PartialEq, Hash, Serialize)]
+#[derive(Default, Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[serde(try_from = "PolicySerialHelper")]
 pub struct Policy {
     pub name: String,
     pub option: Option<String>,
@@ -93,28 +94,76 @@ impl Ord for Policy {
     }
 }
 
-impl<'de> Deserialize<'de> for Policy {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        struct PolicyVisitor;
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum PolicySerialHelper {
+    Str(String),
+    Obj {
+        name: String,
+        option: Option<String>,
+        #[serde(default)]
+        is_subscription: bool,
+    },
+}
 
-        impl<'de> serde::de::Visitor<'de> for PolicyVisitor {
-            type Value = Policy;
+impl TryFrom<PolicySerialHelper> for Policy {
+    type Error = Report;
 
-            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-                write!(formatter, "策略语法应该形如: 策略名称[,选项]")
-            }
-
-            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-            where
-                E: serde::de::Error,
-            {
-                Policy::from_str(v).map_err(E::custom)
+    fn try_from(repr: PolicySerialHelper) -> Result<Self, Self::Error> {
+        match repr {
+            PolicySerialHelper::Str(s) => Policy::from_str(&s),
+            PolicySerialHelper::Obj {
+                name,
+                option,
+                is_subscription,
+            } => {
+                if name.trim().is_empty() {
+                    return Err(eyre!("name 不能为空"));
+                }
+                Ok(Policy {
+                    name,
+                    option,
+                    is_subscription,
+                })
             }
         }
-
-        deserializer.deserialize_str(PolicyVisitor)
     }
 }
+
+// impl<'de> Deserialize<'de> for Policy {
+//     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+//     where
+//         D: Deserializer<'de>,
+//     {
+//         struct PolicyVisitor;
+//
+//         impl<'de> serde::de::Visitor<'de> for PolicyVisitor {
+//             type Value = Policy;
+//
+//             fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+//                 write!(formatter, "策略语法应该形如: 策略名称[,选项]")
+//             }
+//
+//             fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+//             where
+//                 E: serde::de::Error,
+//             {
+//                 Policy::from_str(v).map_err(E::custom)
+//             }
+//         }
+//
+//         #[derive(Deserialize)]
+//         pub struct SerializePolicy {
+//             pub name: String,
+//             pub option: Option<String>,
+//             pub is_subscription: bool,
+//         }
+//
+//         match deserializer.deserialize_str(PolicyVisitor) {
+//             Ok(policy) => Ok(policy),
+//             Err(err) => {
+//                 let sp = SerializePolicy::deserialize(deserializer)?;
+//             }
+//         }
+//     }
+// }

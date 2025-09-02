@@ -57,14 +57,7 @@ impl SurgeService {
         Ok(serde_json::to_string_pretty(&logs)?)
     }
 
-    #[instrument(skip_all)]
-    pub async fn subscription(&self, url_builder: UrlBuilder, raw_profile: String) -> Result<String> {
-        let profile = self.try_get_profile(url_builder, raw_profile).await?;
-
-        Ok(SurgeRenderer::render_profile(&profile)?)
-    }
-
-    async fn try_get_profile(&self, url_builder: UrlBuilder, raw_profile: String) -> Result<SurgeProfile> {
+    pub async fn try_get_profile(&self, url_builder: UrlBuilder, raw_profile: String) -> Result<SurgeProfile> {
         self.profile_cache
             .try_get_with(url_builder.clone(), async {
                 let mut profile = SurgeProfile::parse(raw_profile.clone())?;
