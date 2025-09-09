@@ -30,6 +30,8 @@
         "@angular/material": "^20.2.0",
         "@angular/platform-browser": "^20.2.0",
         "@angular/router": "^20.2.0",
+        "@ngx-pwa/local-storage": "20.0.0",
+        "@noble/ciphers": "^2.0.0",
         "echarts": "^6.0.0",
         "rxjs": "~7.8.0",
         "tslib": "^2.3.0"

@@ -214,20 +214,30 @@ impl ConvertorQuery {
     }
 
     pub fn check_for_sub_logs(self, secret: impl AsRef<str>) -> Result<Self, QueryError> {
+        self.validate_secret(secret)
+    }
+
+    pub fn check_for_subscription(self, secret: impl AsRef<str>) -> Result<Self, QueryError> {
+        self.check_for_profile()
+    }
+
+    fn validate_secret(self, secret: impl AsRef<str>) -> Result<Self, QueryError> {
         let secret = secret.as_ref();
         if self.secret.is_none() {
-            return Err(QueryError::Encode(EncodeError::NotFoundParam("sub logs", "secret")));
+            return Err(QueryError::Encode(EncodeError::NotFoundParam(
+                "validate secret",
+                "secret",
+            )));
         }
         if self.enc_secret.is_none() {
-            return Err(QueryError::Encode(EncodeError::NotFoundParam("sub logs", "enc_secret")));
+            return Err(QueryError::Encode(EncodeError::NotFoundParam(
+                "validate secret",
+                "enc_secret",
+            )));
         }
         if self.secret.as_deref() != Some(secret) {
             return Err(QueryError::Unauthorized("无效的密钥".to_string()));
         }
         Ok(self)
-    }
-
-    pub fn check_for_subscription(self, secret: impl AsRef<str>) -> Result<Self, QueryError> {
-        self.check_for_sub_logs(secret)
     }
 }

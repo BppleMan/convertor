@@ -12,7 +12,18 @@ pub mod subscription {
     use convertor::provider_api::BosLifeLogs;
     use convertor::url::url_builder::UrlBuilder;
     use convertor::url::url_result::UrlResult;
+    use serde::{Deserialize, Serialize};
     use std::sync::Arc;
+
+    #[derive(Default, Clone, Serialize, Deserialize)]
+    pub struct ApiResponse<T>
+    where
+        T: serde::Serialize,
+    {
+        pub status: usize,
+        pub message: String,
+        pub data: T,
+    }
 
     #[allow(unused)]
     pub async fn subscription(
@@ -22,7 +33,7 @@ pub mod subscription {
         TypedHeader(user_agent): TypedHeader<UserAgent>,
         State(state): State<Arc<AppState>>,
         RawQuery(query_string): RawQuery,
-    ) -> Result<Json<UrlResult>, AppError> {
+    ) -> Result<Json<ApiResponse<UrlResult>>, AppError> {
         let query = parse_query(state.as_ref(), scheme, host.as_str(), query_string)?
             .check_for_subscription(&state.config.secret)?;
         let url_builder = UrlBuilder::from_convertor_query(query, &state.config.secret, client, provider)?;
@@ -59,7 +70,11 @@ pub mod subscription {
             sub_logs_url,
             rule_providers_url,
         };
-        Ok(Json(url_result))
+        Ok(Json(ApiResponse {
+            status: 0,
+            message: "success".to_string(),
+            data: url_result,
+        }))
     }
 
     pub async fn sub_logs(

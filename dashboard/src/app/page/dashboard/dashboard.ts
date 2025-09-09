@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component } from "@angular/core";
 import { BehaviorSubject, filter, interval } from "rxjs";
-import { DashboardService } from "../../service/dashboard-service";
+import { DashboardService } from "../../service/dashboard.service";
 import { BenchAction } from "../shared/charts/bench-bar-chart/bench-bar-chart";
 import { DashboardInfo } from "./dashboard-info/dashboard-info";
 import { DashboardSub } from "./dashboard-sub/dashboard-sub";

@@ -70,7 +70,7 @@ pub fn encrypt(secret: &[u8], plaintext: &str) -> Result<String, EncryptError> {
     let nonce = XNonce::from_slice(&nonce_bytes);
 
     let ciphertext = cipher
-        .encrypt(&nonce, plaintext.as_bytes())
+        .encrypt(nonce, plaintext.as_bytes())
         .map_err(|_| EncryptError::Encrypt)?;
 
     // URL-safe, no padding；不加任何分隔符

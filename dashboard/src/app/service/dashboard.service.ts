@@ -1,6 +1,8 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
-import { map, Observable } from "rxjs";
+import { map, Observable, tap } from "rxjs";
+import ConvertorQuery from "../common/model/convertor_query";
+import { UrlResult } from "../common/model/url_result";
 import { ApiResponse } from "../common/response/response";
 import { LatencyService } from "./latency/latency-service";
 import { LatencyResult } from "./latency/latency-types";
@@ -9,8 +11,9 @@ import { LatencyResult } from "./latency/latency-types";
     providedIn: "root",
 })
 export class DashboardService {
-    public static readonly HEALTH_ENDPOINT = "http://localhost:8080/actuator/healthy";
-    public static readonly REDIS_ENDPOINT = "http://localhost:8080/actuator/redis";
+    public static readonly BASE_URL = "http://localhost:8080";
+    public static readonly HEALTH_ENDPOINT = `${DashboardService.BASE_URL}/actuator/healthy`;
+    public static readonly REDIS_ENDPOINT = `${DashboardService.BASE_URL}/actuator/redis`;
 
     public constructor(
         private http: HttpClient,
@@ -20,9 +23,9 @@ export class DashboardService {
 
     public healthCheck(): Observable<ApiResponse> {
         return this.http.get<ApiResponse>(DashboardService.HEALTH_ENDPOINT)
-            .pipe(
-                map(response => ApiResponse.deserialize(response)),
-            );
+        .pipe(
+            map(response => ApiResponse.deserialize(response)),
+        );
     }
 
     public async healthLatency(): Promise<LatencyResult> {
@@ -31,12 +34,20 @@ export class DashboardService {
 
     public redisCheck(): Observable<ApiResponse> {
         return this.http.get<ApiResponse>(DashboardService.REDIS_ENDPOINT)
-            .pipe(
-                map(response => ApiResponse.deserialize(response)),
-            );
+        .pipe(
+            map(response => ApiResponse.deserialize(response)),
+        );
     }
 
     public async redisLatency(): Promise<LatencyResult> {
         return await this.latencyService.fetchWithLatency(DashboardService.REDIS_ENDPOINT);
+    }
+
+    public getSubscription(query: ConvertorQuery): Observable<ApiResponse<UrlResult>> {
+        const url = `${DashboardService.BASE_URL}/${query.subscriptionPath()}`;
+        return this.http.get(url).pipe(
+            tap(console.log),
+            map(response => ApiResponse.deserialize(response, UrlResult)),
+        );
     }
 }

@@ -1,6 +1,6 @@
 <h2>订阅链接</h2>
 
-<form [formGroup]="subscriptionForm">
+<form (submit)="submit()" [formGroup]="subscriptionForm">
     <div class="form-row">
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Secret</mat-label>

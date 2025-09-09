@@ -2,8 +2,8 @@ import { AfterViewInit, Component, DestroyRef, effect, ElementRef, inject, input
 import { BehaviorSubject, filter, interval, map, scan, Subscription, switchMap } from "rxjs";
 import { EChartHandle, initEChart } from "../../../../common/echarts/echarts.factory";
 import { ECOption } from "../../../../common/echarts/echarts.registry";
-import { DashboardService } from "../../../../service/dashboard-service";
-import { Hz, TickerService } from "../../../../service/ticker-service";
+import { DashboardService } from "../../../../service/dashboard.service";
+import { Hz, TickerService } from "../../../../service/ticker.service";
 
 @Component({
     selector: "app-actuator-line-chart",
@@ -55,7 +55,10 @@ export class ActuatorLineChart implements AfterViewInit {
             .pipe(
                 switchMap(async () => {
                     const healthLatency = await this.dashboardService.healthLatency();
-                    const healthSample: LineChartSample = { time: healthLatency.startedAt, value: healthLatency.totalMs };
+                    const healthSample: LineChartSample = {
+                        time: healthLatency.startedAt,
+                        value: healthLatency.totalMs,
+                    };
                     const redisLatency = await this.dashboardService.redisLatency();
                     const redisSample: LineChartSample = { time: healthLatency.startedAt, value: redisLatency.totalMs };
                     return [ healthSample, redisSample ];
