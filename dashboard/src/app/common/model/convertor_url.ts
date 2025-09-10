@@ -1,16 +1,25 @@
 import { Policy } from "./policy";
 
 export class ConvertorUrl {
-    public url: URL;
+    public url?: URL;
 
     public constructor(
         public type: ConvertorUrlType,
         public server: string,
         public desc: string,
-        public path: string,
-        public query: string,
+        public path?: string,
+        public query?: string,
     ) {
-        this.url = new URL(`${path}?${query}`, server);
+        if (server.length > 0) {
+            this.url = new URL(server);
+        }
+        const url = this.url;
+        if (url) {
+            if (!!path && path.length > 0 && !!query && query.length > 0) {
+                url.pathname = path;
+                url.search = query;
+            }
+        }
     }
 
     public static deserialize(url: ConvertorUrl) {
@@ -20,6 +29,46 @@ export class ConvertorUrl {
             url.desc,
             url.path,
             url.query,
+        );
+    }
+
+    public static get RawUrl(): ConvertorUrl {
+        return new ConvertorUrl(
+            new ConvertorUrlType("Raw"),
+            "",
+            "Raw URL",
+            "",
+            "",
+        );
+    }
+
+    public static get RawProfileUrl(): ConvertorUrl {
+        return new ConvertorUrl(
+            new ConvertorUrlType("RawProfile"),
+            "",
+            "Raw Profile URL",
+            "",
+            "",
+        );
+    }
+
+    public static get ProfileUrl(): ConvertorUrl {
+        return new ConvertorUrl(
+            new ConvertorUrlType("Profile"),
+            "",
+            "Profile URL",
+            "",
+            "",
+        );
+    }
+
+    public static get SubLogsUrl(): ConvertorUrl {
+        return new ConvertorUrl(
+            new ConvertorUrlType("Logs"),
+            "",
+            "Subscription Logs URL",
+            "",
+            "",
         );
     }
 }

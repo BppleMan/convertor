@@ -5,7 +5,29 @@
 // custom components at https://material.angular.dev/guide/theming
 @use "@angular/material" as mat;
 
+
+$font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+             "Segoe UI", "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+
 :root {
+    @include mat.theme((
+        color: (
+            primary: mat.$blue-palette,
+            tertiary: mat.$azure-palette,
+        ),
+        typography: (
+            plain-family: $font-stack,
+            brand-family: $font-stack,
+            regular-weight: 400,
+            medium-weight: 500,
+            bold-weight: 700,
+        ),
+        density: -2,
+    ));
+    @include mat.theme-overrides((
+        surface: #0c0e12,
+        on-surface: #ffffff,
+    ));
     @include mat.form-field-overrides((
         container-height: 24px,
         container-vertical-padding: 4px,
@@ -36,21 +58,6 @@
     ));
     @include mat.option-overrides((
         label-text-size: 12px,
-    ))
-}
-
-html {
-    @include mat.theme((
-        color: (
-            primary: mat.$blue-palette,
-            tertiary: mat.$azure-palette,
-        ),
-        typography: Roboto,
-        density: -2,
-    ));
-    @include mat.theme-overrides((
-        surface: #0c0e12,
-        on-surface: #ffffff,
     ));
 }
 

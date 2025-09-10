@@ -217,7 +217,7 @@ impl ConvertorQuery {
         self.validate_secret(secret)
     }
 
-    pub fn check_for_subscription(self, secret: impl AsRef<str>) -> Result<Self, QueryError> {
+    pub fn check_for_subscription(self) -> Result<Self, QueryError> {
         self.check_for_profile()
     }
 

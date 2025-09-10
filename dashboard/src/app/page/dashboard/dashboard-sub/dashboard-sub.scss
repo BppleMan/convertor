@@ -2,12 +2,18 @@
 
 :host {
     display:        flex;
+    overflow:       hidden;
     flex:           1 1 auto;
     flex-direction: column;
     width:          100%;
-    /* 允许在父 flex 容器中伸缩并让子元素可滚动 */
-    min-height:     0;
     gap:            8px;
+
+    ::ng-deep {
+        // --scrollbar-thumb-color: var(--mat-sys-secondary);
+        --scrollbar-thumb-color:   #8b8b8e;
+        --scrollbar-border-radius: 8px;
+        // --scrollbar-offset:        8px;
+    }
 
     h2 {
         font-size:   16px;
@@ -61,10 +67,16 @@
 
     }
 
+    ng-scrollbar {
+        ::ng-deep {
+            .ng-scroll-content {
+                box-sizing: border-box;
+            }
+        }
+    }
+
     section {
         display:        flex;
-        overflow-y:     auto;
-        flex:           1 1 auto;
         flex-direction: column;
         gap:            12px;
 

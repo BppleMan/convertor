@@ -1,3 +1,4 @@
+import { AsyncPipe } from "@angular/common";
 import { Component, DestroyRef, inject } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from "@angular/forms";
@@ -7,8 +8,22 @@ import { MatInput } from "@angular/material/input";
 import { MatOption, MatSelect } from "@angular/material/select";
 import { MatSlideToggle } from "@angular/material/slide-toggle";
 import { StorageMap } from "@ngx-pwa/local-storage";
-import { debounceTime, distinctUntilChanged, filter, map, merge, Subject, switchMap } from "rxjs";
+import { NgScrollbar } from "ngx-scrollbar";
+import {
+    BehaviorSubject,
+    debounceTime,
+    distinctUntilChanged,
+    filter,
+    map,
+    merge,
+    Observable,
+    Subject,
+    switchMap,
+    tap,
+} from "rxjs";
+import { ConvertorUrl } from "../../../common/model/convertor_url";
 import { ProxyClient, SubProvider } from "../../../common/model/enums";
+import { UrlResult } from "../../../common/model/url_result";
 import { DashboardService } from "../../../service/dashboard.service";
 import { UrlParams, UrlService } from "../../../service/url.service";
 import { IconButton } from "../../shared/icon-button/icon-button";
@@ -25,6 +40,8 @@ import { IconButton } from "../../shared/icon-button/icon-button";
         IconButton,
         MatSlideToggle,
         ReactiveFormsModule,
+        NgScrollbar,
+        AsyncPipe,
     ],
     templateUrl: "./dashboard-sub.html",
     styleUrl: "./dashboard-sub.scss",
@@ -61,6 +78,17 @@ export class DashboardSub {
         strict: new FormControl<boolean>(true, { nonNullable: true }),
     });
 
+    urlResult = new BehaviorSubject<UrlResult>(UrlResult.empty());
+    urls$: Observable<ConvertorUrl[]> = this.urlResult.pipe(
+        filter((v?: UrlResult): v is UrlResult => !!v),
+        map((result: UrlResult) => [
+            result.raw_url,
+            result.raw_profile_url,
+            result.profile_url,
+            result.sub_logs_url,
+            ...result.rule_providers_url,
+        ]),
+    );
     nextSubmit: Subject<void> = new Subject();
 
     storageSubscription = merge(
@@ -88,43 +116,40 @@ export class DashboardSub {
     });
 
     submitSubscription = merge(
-        this.nextSubmit.asObservable(),
-        this.subscriptionForm.valueChanges.pipe(),
+        this.nextSubmit.pipe(
+            map(() => this.subscriptionForm.getRawValue()),
+        ),
+        this.subscriptionForm.valueChanges.pipe(
+            debounceTime(300),
+            map(() => this.subscriptionForm.getRawValue()),
+            distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
+        ),
     )
     .pipe(
-        debounceTime(300),
-        map(() => this.subscriptionForm.getRawValue()),
-        distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
         filter(() => this.subscriptionForm.valid),
-        switchMap((payload) => {
-            const urlParams: UrlParams = {
-                secret: payload.secret!,
-                url: payload.url!,
-                client: payload.client,
-                provider: payload.provider,
-                interval: payload.interval,
-                strict: payload.strict,
-            };
+        map((payload) => <UrlParams>{
+            secret: payload.secret!,
+            url: payload.url!,
+            client: payload.client,
+            provider: payload.provider,
+            interval: payload.interval,
+            strict: payload.strict,
+        }),
+        tap((urlParams) => {
             this.storage.set("url", urlParams.url).subscribe();
             this.storage.set("secret", urlParams.secret).subscribe();
+        }),
+        switchMap((urlParams) => {
             const query = this.urlService.buildSubscriptionQuery(urlParams);
-            // return of(query);
-            // this.submitting = true;
-            // this.error = null;
-            // return fakeSubmit(payload).pipe(
-            //     tap(() => this.subscriptionForm.markAsPristine()),
-            //     catchError(err => {
-            //         this.error = err?.message ?? "Submit failed";
-            //         return of(null);
-            //     }),
-            //     tap(() => this.submitting = false),
-            // );
             return this.dashboardService.getSubscription(query);
         }),
         takeUntilDestroyed(this.destroyRef),
     )
     .subscribe(value => {
         console.log(value);
+        if (value.status === 0) {
+            this.urlResult.next(value.data!);
+        }
     });
 
     submit() {

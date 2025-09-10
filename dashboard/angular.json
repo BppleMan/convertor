@@ -47,12 +47,16 @@
                                     "maximumError": "8kB"
                                 }
                             ],
-                            "outputHashing": "all"
+                            "outputHashing": "all",
+                            "baseHref": "/ui/",
+                            "outputPath": "dist/dashboard/production"
                         },
                         "development": {
                             "optimization": false,
                             "extractLicenses": false,
-                            "sourceMap": true
+                            "sourceMap": true,
+                            "baseHref": "/ui/",
+                            "outputPath": "dist/dashboard/development"
                         }
                     },
                     "defaultConfiguration": "production"
@@ -66,6 +70,9 @@
                         "development": {
                             "buildTarget": "dashboard:build:development"
                         }
+                    },
+                    "options": {
+                        "proxyConfig": "proxy.conf.json"
                     },
                     "defaultConfiguration": "development"
                 },

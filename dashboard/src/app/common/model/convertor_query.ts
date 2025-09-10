@@ -12,7 +12,7 @@ export default class ConvertorQuery {
     }
 
     public subscriptionPath(): string {
-        return `${ConvertorQuery.API_SUBSCRIPTION}/${this}`;
+        return `/${ConvertorQuery.API_SUBSCRIPTION}/${this}`;
     }
 
     public toString(): string {

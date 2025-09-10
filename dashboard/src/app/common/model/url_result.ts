@@ -10,6 +10,16 @@ export class UrlResult {
     ) {
     }
 
+    public static empty(): UrlResult {
+        return new UrlResult(
+            ConvertorUrl.RawUrl,
+            ConvertorUrl.RawProfileUrl,
+            ConvertorUrl.ProfileUrl,
+            ConvertorUrl.SubLogsUrl,
+            [],
+        );
+    }
+
     public static deserialize(result: UrlResult) {
         return new UrlResult(
             ConvertorUrl.deserialize(result.raw_url),

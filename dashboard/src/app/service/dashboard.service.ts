@@ -11,9 +11,8 @@ import { LatencyResult } from "./latency/latency-types";
     providedIn: "root",
 })
 export class DashboardService {
-    public static readonly BASE_URL = "http://localhost:8080";
-    public static readonly HEALTH_ENDPOINT = `${DashboardService.BASE_URL}/actuator/healthy`;
-    public static readonly REDIS_ENDPOINT = `${DashboardService.BASE_URL}/actuator/redis`;
+    public static readonly HEALTH_ENDPOINT = `/actuator/healthy`;
+    public static readonly REDIS_ENDPOINT = `/actuator/redis`;
 
     public constructor(
         private http: HttpClient,
@@ -44,8 +43,7 @@ export class DashboardService {
     }
 
     public getSubscription(query: ConvertorQuery): Observable<ApiResponse<UrlResult>> {
-        const url = `${DashboardService.BASE_URL}/${query.subscriptionPath()}`;
-        return this.http.get(url).pipe(
+        return this.http.get(query.subscriptionPath()).pipe(
             tap(console.log),
             map(response => ApiResponse.deserialize(response, UrlResult)),
         );

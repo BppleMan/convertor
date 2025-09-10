@@ -15,7 +15,6 @@ use convertor::url::query::ConvertorQuery;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
-use tower_http::cors::CorsLayer;
 use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::{DefaultMakeSpan, DefaultOnRequest, OnResponse, TraceLayer};
 use tracing::{Level, Span, event};
@@ -46,17 +45,12 @@ pub fn router(app_state: AppState) -> Router {
         )
         .route("/api/sub-logs/{provider}", get(api::subscription::sub_logs))
         .with_state(Arc::new(app_state))
-        .layer(CorsLayer::very_permissive())
+        // .layer(CorsLayer::very_permissive())
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(DefaultMakeSpan::new().include_headers(true))
                 .on_request(DefaultOnRequest::new().level(Level::INFO))
-                .on_response(
-                    // DefaultOnResponse::new()
-                    //     .level(tracing::Level::INFO)
-                    //     .latency_unit(LatencyUnit::Millis),
-                    StatusLevelOnResponse,
-                ), // .on_failure(DefaultOnFailure::new().level(tracing::Level::ERROR)),
+                .on_response(StatusLevelOnResponse), // .on_failure(DefaultOnFailure::new().level(tracing::Level::ERROR)),
         )
 }
 

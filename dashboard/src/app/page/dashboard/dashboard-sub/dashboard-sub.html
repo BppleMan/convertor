@@ -37,57 +37,20 @@
     </div>
 </form>
 
-<section>
-    <div class="convertor-url">
-        <div class="convertor-url-label">
-            <h5>Raw Url</h5>
-            <app-icon-button>content_copy</app-icon-button>
-        </div>
-        <div class="convertor-url-link">
-            <code>
-                #!MANAGED-CONFIG
-                https://convertor.bppleman.cn/profile?client=surge&provider=boslife&server=https://convertor.bppleman.cn/&interval=43200&strict=true&uni_sub_url=84WUqxc+3CAcni0G:amsgStTeXINyh5qXNOSfAOjIOxipD8jdsqw7J53vIacYNgQUMTG2ekcmg5lln1zYVNq6PQBOLm+X0ZTvoQw9+38npRlIc7pMEMYwnA==
-                interval=43200 strict=true
-            </code>
-        </div>
-    </div>
-    <div class="convertor-url">
-        <div class="convertor-url-label">
-            <h5>Raw Url</h5>
-            <app-icon-button>content_copy</app-icon-button>
-        </div>
-        <div class="convertor-url-link">
-            <code>
-                #!MANAGED-CONFIG
-                https://convertor.bppleman.cn/profile?client=surge&provider=boslife&server=https://convertor.bppleman.cn/&interval=43200&strict=true&uni_sub_url=84WUqxc+3CAcni0G:amsgStTeXINyh5qXNOSfAOjIOxipD8jdsqw7J53vIacYNgQUMTG2ekcmg5lln1zYVNq6PQBOLm+X0ZTvoQw9+38npRlIc7pMEMYwnA==
-                interval=43200 strict=true
-            </code>
-        </div>
-    </div>
-    <div class="convertor-url">
-        <div class="convertor-url-label">
-            <h5>Raw Url</h5>
-            <app-icon-button>content_copy</app-icon-button>
-        </div>
-        <div class="convertor-url-link">
-            <code>
-                #!MANAGED-CONFIG
-                https://convertor.bppleman.cn/profile?client=surge&provider=boslife&server=https://convertor.bppleman.cn/&interval=43200&strict=true&uni_sub_url=84WUqxc+3CAcni0G:amsgStTeXINyh5qXNOSfAOjIOxipD8jdsqw7J53vIacYNgQUMTG2ekcmg5lln1zYVNq6PQBOLm+X0ZTvoQw9+38npRlIc7pMEMYwnA==
-                interval=43200 strict=true
-            </code>
-        </div>
-    </div>
-    <div class="convertor-url">
-        <div class="convertor-url-label">
-            <h5>Raw Url</h5>
-            <app-icon-button>content_copy</app-icon-button>
-        </div>
-        <div class="convertor-url-link">
-            <code>
-                #!MANAGED-CONFIG
-                https://convertor.bppleman.cn/profile?client=surge&provider=boslife&server=https://convertor.bppleman.cn/&interval=43200&strict=true&uni_sub_url=84WUqxc+3CAcni0G:amsgStTeXINyh5qXNOSfAOjIOxipD8jdsqw7J53vIacYNgQUMTG2ekcmg5lln1zYVNq6PQBOLm+X0ZTvoQw9+38npRlIc7pMEMYwnA==
-                interval=43200 strict=true
-            </code>
-        </div>
-    </div>
-</section>
+<ng-scrollbar visibility="native">
+    <section>
+        @for (url of urls$ | async; track url.desc) {
+            <div class="convertor-url">
+                <div class="convertor-url-label">
+                    <h5>{{ url.desc }}</h5>
+                    <app-icon-button>content_copy</app-icon-button>
+                </div>
+                <div class="convertor-url-link">
+                    <code>
+                        {{ url.url }}
+                    </code>
+                </div>
+            </div>
+        }
+    </section>
+</ng-scrollbar>

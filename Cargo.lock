@@ -701,6 +701,7 @@ dependencies = [
  "convertor",
  "http-body-util",
  "insta",
+ "mime",
  "moka",
  "redis",
  "serde",
