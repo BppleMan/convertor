@@ -4,3 +4,7 @@ export PATH := join(justfile_directory(), "node_modules", "bin") + ":" + env_var
 
 build:
     pnpm build
+
+analyze:
+    ng build --stats-json \
+    && pnpx esbuild-visualizer --metadata dist/dashboard/production/stats.json --open
