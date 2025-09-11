@@ -8,7 +8,6 @@ import { MatInput } from "@angular/material/input";
 import { MatOption, MatSelect } from "@angular/material/select";
 import { MatSlideToggle } from "@angular/material/slide-toggle";
 import { StorageMap } from "@ngx-pwa/local-storage";
-import { NgScrollbar } from "ngx-scrollbar";
 import {
     BehaviorSubject,
     debounceTime,
@@ -40,7 +39,6 @@ import { IconButton } from "../../shared/icon-button/icon-button";
         IconButton,
         MatSlideToggle,
         ReactiveFormsModule,
-        NgScrollbar,
         AsyncPipe,
     ],
     templateUrl: "./dashboard-sub.html",

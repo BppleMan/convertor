@@ -37,20 +37,18 @@
     </div>
 </form>
 
-<ng-scrollbar visibility="native">
-    <section>
-        @for (url of urls$ | async; track url.desc) {
-            <div class="convertor-url">
-                <div class="convertor-url-label">
-                    <h5>{{ url.desc }}</h5>
-                    <app-icon-button>content_copy</app-icon-button>
-                </div>
-                <div class="convertor-url-link">
-                    <code>
-                        {{ url.url }}
-                    </code>
-                </div>
+<section class="scroll-area">
+    @for (url of urls$ | async; track url.desc) {
+        <div class="convertor-url">
+            <div class="convertor-url-label">
+                <h5>{{ url.desc }}</h5>
+                <app-icon-button>content_copy</app-icon-button>
             </div>
-        }
-    </section>
-</ng-scrollbar>
+            <div class="convertor-url-link">
+                <code>
+                    {{ url.url }}
+                </code>
+            </div>
+        </div>
+    }
+</section>

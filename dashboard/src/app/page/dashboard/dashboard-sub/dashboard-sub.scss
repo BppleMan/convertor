@@ -8,13 +8,6 @@
     width:          100%;
     gap:            8px;
 
-    ::ng-deep {
-        // --scrollbar-thumb-color: var(--mat-sys-secondary);
-        --scrollbar-thumb-color:   #8b8b8e;
-        --scrollbar-border-radius: 8px;
-        // --scrollbar-offset:        8px;
-    }
-
     h2 {
         font-size:   16px;
         font-weight: 500;
@@ -32,7 +25,7 @@
         }
 
         .form-suffix {
-            width: 80px;
+            width: 82.5px;
         }
 
         mat-form-field {
@@ -67,16 +60,9 @@
 
     }
 
-    ng-scrollbar {
-        ::ng-deep {
-            .ng-scroll-content {
-                box-sizing: border-box;
-            }
-        }
-    }
-
     section {
         display:        flex;
+        overflow-y:     auto;
         flex-direction: column;
         gap:            12px;
 

@@ -38,9 +38,6 @@ importers:
       '@noble/ciphers':
         specifier: ^2.0.0
         version: 2.0.0
-      ngx-scrollbar:
-        specifier: ^18.0.0
-        version: 18.0.0(@angular/cdk@20.2.0(@angular/common@20.2.1(@angular/core@20.2.1(@angular/compiler@20.2.1)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@20.2.1(@angular/compiler@20.2.1)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/common@20.2.1(@angular/core@20.2.1(@angular/compiler@20.2.1)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@20.2.1(@angular/compiler@20.2.1)(rxjs@7.8.2))(rxjs@7.8.2)
       rxjs:
         specifier: ~7.8.0
         version: 7.8.2
@@ -2240,14 +2237,6 @@ packages:
   negotiator@1.0.0:
     resolution: {integrity: sha512-8Ofs/AUQh8MaEcrlq5xOX0CQ9ypTF5dl78mjlMNfOK08fzpgTHQRQPBxcPlEtIw0yRpws+Zo/3r+5WRby7u3Gg==}
     engines: {node: '>= 0.6'}
-
-  ngx-scrollbar@18.0.0:
-    resolution: {integrity: sha512-+ykmY491x+nzXvnecJvZHvDz0YWuX1r7SYMxNG4RVHXm5Z68P/8kd/3ryLD6DXdNWmJawd4NGvqq2ZkUKb/g3A==}
-    peerDependencies:
-      '@angular/cdk': '>=19.0.0'
-      '@angular/common': '>=19.0.0'
-      '@angular/core': '>=19.0.0'
-      rxjs: '>=7.0.0'
 
   node-addon-api@6.1.0:
     resolution: {integrity: sha512-+eawOlIgy680F0kBzPUNFhMZGtJ1YmqM6l4+Crf4IkImjYrO/mqPwRMh352g23uIaQKFItcQ64I7KMaJxHgAVA==}
@@ -5096,14 +5085,6 @@ snapshots:
   negotiator@0.6.3: {}
 
   negotiator@1.0.0: {}
-
-  ngx-scrollbar@18.0.0(@angular/cdk@20.2.0(@angular/common@20.2.1(@angular/core@20.2.1(@angular/compiler@20.2.1)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@20.2.1(@angular/compiler@20.2.1)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/common@20.2.1(@angular/core@20.2.1(@angular/compiler@20.2.1)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@20.2.1(@angular/compiler@20.2.1)(rxjs@7.8.2))(rxjs@7.8.2):
-    dependencies:
-      '@angular/cdk': 20.2.0(@angular/common@20.2.1(@angular/core@20.2.1(@angular/compiler@20.2.1)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@20.2.1(@angular/compiler@20.2.1)(rxjs@7.8.2))(rxjs@7.8.2)
-      '@angular/common': 20.2.1(@angular/core@20.2.1(@angular/compiler@20.2.1)(rxjs@7.8.2))(rxjs@7.8.2)
-      '@angular/core': 20.2.1(@angular/compiler@20.2.1)(rxjs@7.8.2)
-      rxjs: 7.8.2
-      tslib: 2.8.1
 
   node-addon-api@6.1.0:
     optional: true
