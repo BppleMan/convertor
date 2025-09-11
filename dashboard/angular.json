@@ -48,14 +48,14 @@
                                 }
                             ],
                             "outputHashing": "all",
-                            "baseHref": "/ui/",
+                            "baseHref": "/dashboard/",
                             "outputPath": "dist/dashboard/production"
                         },
                         "development": {
                             "optimization": false,
                             "extractLicenses": false,
                             "sourceMap": true,
-                            "baseHref": "/ui/",
+                            "baseHref": "/dashboard/",
                             "outputPath": "dist/dashboard/development"
                         }
                     },

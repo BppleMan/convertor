@@ -20,6 +20,8 @@ axum = { version = "0.8.4", default-features = false, features = ["query", "json
 axum-extra = { version = "0.10.1", features = ["typed-header", "scheme", "tracing"] }
 tower = { version = "0.5.2", default-features = false, features = [] }
 tower-http = { version = "0.6.6", default-features = false, features = ["trace", "fs"] }
+mime_guess = { version = "2.0.5", default-features = true }
+include_dir = { version = "0.7.4", default-features = true }
 
 # encoding/decoding
 url = { version = "2.5.4", default-features = false, features = ["serde"] }

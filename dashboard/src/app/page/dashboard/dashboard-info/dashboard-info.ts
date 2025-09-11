@@ -1,3 +1,4 @@
+import { CdkCopyToClipboard } from "@angular/cdk/clipboard";
 import { AsyncPipe } from "@angular/common";
 import { Component, inject } from "@angular/core";
 import { EnvService } from "../../../service/env.service";
@@ -8,6 +9,7 @@ import { IconButton } from "../../shared/icon-button/icon-button";
     imports: [
         IconButton,
         AsyncPipe,
+        CdkCopyToClipboard,
     ],
     templateUrl: "./dashboard-info.html",
     styleUrl: "./dashboard-info.scss",

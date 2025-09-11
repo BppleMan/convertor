@@ -1,4 +1,5 @@
 pub mod actuator;
+pub mod angular;
 pub mod api;
 pub mod profile;
 
@@ -8,31 +9,21 @@ use axum::Router;
 use axum::extract::{FromRequestParts, OptionalFromRequestParts};
 use axum::http::request::Parts;
 use axum::response::Redirect;
-use axum::routing::{get, get_service};
+use axum::routing::get;
 use axum_extra::extract::Scheme;
 use color_eyre::eyre::{WrapErr, eyre};
 use convertor::url::query::ConvertorQuery;
-use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
-use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::{DefaultMakeSpan, DefaultOnRequest, OnResponse, TraceLayer};
 use tracing::{Level, Span, event};
 use url::Url;
 
 pub fn router(app_state: AppState) -> Router {
-    // 你的目录: crates/convd/assets
-    let assets = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets");
-
     Router::new()
-        // 1) 根路径返回首页
-        .route_service("/", get_service(ServeFile::new(assets.join("index.html"))))
-        // 可选：/index.html 也给首页，但更推荐重定向到 /
-        .route("/index.html", get(|| async { Redirect::permanent("/") }))
-        // 2) /dashboard 重定向到 /
-        .route("/dashboard", get(|| async { Redirect::permanent("/") }))
-        // 3) 静态资源目录，index.html 内请用绝对路径引用：/static/xxx
-        .nest_service("/static", ServeDir::new(assets.join("static")))
+        .route("/", get(|| async { Redirect::permanent("/dashboard/") }))
+        .route("/dashboard", get(|| async { Redirect::permanent("/dashboard/") }))
+        .route("/index.html", get(|| async { Redirect::permanent("/dashboard/") }))
         .route("/actuator/healthy", get(actuator::healthy))
         .route("/actuator/redis", get(actuator::redis))
         .route("/actuator/version", get(actuator::version))
@@ -44,8 +35,8 @@ pub fn router(app_state: AppState) -> Router {
             get(api::subscription::subscription),
         )
         .route("/api/sub-logs/{provider}", get(api::subscription::sub_logs))
+        .nest("/dashboard/", angular::router())
         .with_state(Arc::new(app_state))
-        // .layer(CorsLayer::very_permissive())
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(DefaultMakeSpan::new().include_headers(true))
