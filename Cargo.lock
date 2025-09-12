@@ -693,6 +693,7 @@ dependencies = [
 name = "convd"
 version = "2.6.0+alpha"
 dependencies = [
+ "anyhow",
  "axum",
  "axum-extra",
  "clap",
