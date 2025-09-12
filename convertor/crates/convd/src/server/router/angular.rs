@@ -9,9 +9,9 @@ use include_dir::{Dir, include_dir};
 use std::sync::Arc;
 
 #[cfg(debug_assertions)]
-static UI_DIST: Dir = include_dir!("$CARGO_MANIFEST_DIR/../../dashboard/dist/dashboard/development/browser");
+static UI_DIST: Dir = include_dir!("$CARGO_MANIFEST_DIR/../../../dashboard/dist/dashboard/development/browser");
 #[cfg(not(debug_assertions))]
-static UI_DIST: Dir = include_dir!("$CARGO_MANIFEST_DIR/../../dashboard/dist/dashboard/production/browser");
+static UI_DIST: Dir = include_dir!("$CARGO_MANIFEST_DIR/../../../dashboard/dist/dashboard/production/browser");
 
 pub fn router() -> Router<Arc<AppState>> {
     Router::new()

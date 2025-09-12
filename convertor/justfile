@@ -29,6 +29,7 @@ all:
     time cargo build --workspace --all-targets
 
 build-convd profile="dev":
+    just dashboard {{ profile }}
     time cargo build --bin convd --profile {{ profile }}
 
 build-confly profile="dev":
@@ -53,17 +54,14 @@ test-confly:
 
 linux:
     time CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=x86_64-linux-gnu-gcc \
-    cargo build --release --bin convertor --target x86_64-unknown-linux-gnu
+    cargo build --release --bin convd --target x86_64-unknown-linux-gnu
 
-musl profile="release":
-    time cargo zigbuild --profile {{ profile }} --bin convertor --target x86_64-unknown-linux-musl
+musl profile="dev":
+    just dashboard {{ profile }}
+    time cargo zigbuild --profile {{ profile }} --bin convd --target x86_64-unknown-linux-musl
 
-cross-linux:
-    time cross build --release --bin convertor --target x86_64-unknown-linux-gnu
-
-zig-linux:
-    time CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=./zig-cc \
-    cargo build --release --bin convertor --target x86_64-unknown-linux-gnu
+cross:
+    time cross build --release --bin convd --target x86_64-unknown-linux-gnu
 
 #╭──────────────────────────────────────────────╮
 #│                    docker                    │
@@ -82,3 +80,10 @@ image PROFILE="release":
       --build-arg BIN_PATH=target/{{ TARGET }}/{{ PROFILE }}/{{ BIN }} \
       --build-arg VERSION=dev-`date +%Y%m%d%H%M%S` \
       -t local/{{ BIN }}:dev .
+
+#╭──────────────────────────────────────────────╮
+#│                  dashboard                   │
+#╰──────────────────────────────────────────────╯
+
+dashboard profile="dev":
+    cd dashboard && pnpm i && ng build --configuration development
