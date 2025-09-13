@@ -10,11 +10,17 @@ prepare:
 #│                   release                    │
 #╰──────────────────────────────────────────────╯
 
-install:
-    cargo install --bin convertor --path .
+prod-all:
+    just all release
 
-release:
-    cargo build --release --bin convertor
+prod-convd:
+    just convd release
+
+prod-confly:
+    just confly release
+
+install bin="convd":
+    cargo install --bin {{ bin }} --path .
 
 publish:
     cargo publish -p convertor
@@ -22,18 +28,30 @@ publish:
     cargo publish -p confly
 
 #╭──────────────────────────────────────────────╮
+#│                     dev                      │
+#╰──────────────────────────────────────────────╯
+
+dev-all:
+    just all dev
+
+dev-convd:
+    just convd dev
+
+dev-confly:
+    just confly dev
+
+#╭──────────────────────────────────────────────╮
 #│                    build                     │
 #╰──────────────────────────────────────────────╯
 
-all:
-    time cargo build --workspace --all-targets
+all profile="dev":
+    time cargo build --workspace --all-targets --profile {{ profile }}
 
-build-convd profile="dev":
-    just dashboard {{ profile }}
+convd profile="dev":
     time cargo build --bin convd --profile {{ profile }}
 
-build-confly profile="dev":
-    time cargo build --bin confly
+confly profile="dev":
+    time cargo build --bin confly --profile {{ profile }}
 
 #╭──────────────────────────────────────────────╮
 #│                     test                     │
@@ -49,19 +67,57 @@ test-confly:
     cargo insta test -p confly
 
 #╭──────────────────────────────────────────────╮
+#│                linux-release                 │
+#╰──────────────────────────────────────────────╯
+
+prod-linux:
+    just linux release
+
+prod-musl:
+    just musl release
+
+prod-cross:
+    just cross release
+
+#╭──────────────────────────────────────────────╮
+#│                 linux-alpine                 │
+#╰──────────────────────────────────────────────╯
+
+alpine-linux:
+    just linux alpine
+
+alpine-musl:
+    just musl alpine
+
+alpine-cross:
+    just cross alpine
+
+#╭──────────────────────────────────────────────╮
+#│                  linux-dev                   │
+#╰──────────────────────────────────────────────╯
+
+dev-linux:
+    just linux dev
+
+dev-musl:
+    just musl dev
+
+dev-cross:
+    just cross dev
+
+#╭──────────────────────────────────────────────╮
 #│                    linux                     │
 #╰──────────────────────────────────────────────╯
 
-linux:
+linux profile="dev":
     time CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=x86_64-linux-gnu-gcc \
-    cargo build --release --bin convd --target x86_64-unknown-linux-gnu
+    cargo build  --profile {{ profile }} --bin convd --target x86_64-unknown-linux-gnu
 
 musl profile="dev":
-    just dashboard {{ profile }}
     time cargo zigbuild --profile {{ profile }} --bin convd --target x86_64-unknown-linux-musl
 
-cross:
-    time cross build --release --bin convd --target x86_64-unknown-linux-gnu
+cross profile="dev":
+    time cross build  --profile {{ profile }} --bin convd --target x86_64-unknown-linux-gnu
 
 #╭──────────────────────────────────────────────╮
 #│                    docker                    │
@@ -72,18 +128,53 @@ BIN := "convertor"
 CONTAINER_NAME := "convertor-dev"
 
 # 1) 打本地镜像（只打包宿主构建产物）
-image PROFILE="release":
-    docker build -f docker-service/Dockerfile \
-      --build-arg TARGET_TRIPLE={{ TARGET }} \
-      --build-arg PROFILE={{ PROFILE }} \
-      --build-arg BIN_NAME={{ BIN }} \
-      --build-arg BIN_PATH=target/{{ TARGET }}/{{ PROFILE }}/{{ BIN }} \
-      --build-arg VERSION=dev-`date +%Y%m%d%H%M%S` \
-      -t local/{{ BIN }}:dev .
+image profile="dev":
+    #!/bin/sh
+    TARGET_TRIPLE="x86_64-unknown-linux-musl"
+    BIN_NAME="convd"
+    PROFILE_PATH="debug"
+    VERSION={{ profile }}
+    BUILD_DATE=$(date +%Y-%m-%dT%H:%M:%S%z)
+    REGISTRY="local"
+    if [ "{{ profile }}" = "dev" ]; then
+        PROFILE_PATH="debug"
+        VERSION=$(docker run --rm -v ./target/$TARGET_TRIPLE/$PROFILE_PATH/$BIN_NAME:/app/$BIN_NAME alpine:3.20 /app/$BIN_NAME -V)
+        VERSION="dev-$VERSION"
+        REGISTRY="local"
+    elif [ "{{ profile }}" = "prod" ]; then
+        PROFILE_PATH="release"
+        VERSION="$(target/$TARGET_TRIPLE/$PROFILE_PATH/$BIN_NAME -V)"
+        REGISTRY="ghcr.io/bppleman/convertor"
+    elif [ "{{ profile }}" = "alpine" ]; then
+        PROFILE_PATH="alpine"
+        VERSION="$(target/$TARGET_TRIPLE/$PROFILE_PATH/$BIN_NAME -V)"
+        REGISTRY="ghcr.io/bppleman/convertor"
+    fi
+    VERSION=${VERSION//[^A-Za-z0-9_.-]/_}
+    echo TARGET_TRIPLE=$TARGET_TRIPLE
+    echo BIN_NAME=$BIN_NAME
+    echo PROFILE_PATH=$PROFILE_PATH
+    echo VERSION=$VERSION
+    echo REGISTRY=$REGISTRY
+    docker build -f Dockerfile \
+        --build-arg TARGET_TRIPLE=$TARGET_TRIPLE \
+        --build-arg BIN_NAME=$BIN_NAME \
+        --build-arg PROFILE_PATH=$PROFILE_PATH \
+        --build-arg VERSION=$VERSION \
+        --build-arg BUILD_DATE=$BUILD_DATE \
+        -t $REGISTRY/$BIN_NAME:$VERSION .
 
-#╭──────────────────────────────────────────────╮
-#│                  dashboard                   │
-#╰──────────────────────────────────────────────╯
-
-dashboard profile="dev":
-    cd dashboard && pnpm i && ng build --configuration development
+run:
+    #!/bin/sh
+    VERSION=$(docker run --rm -v ./target/x86_64-unknown-linux-musl/debug/convd:/app/convd alpine:3.20 /app/convd -V)
+    VERSION="dev-$VERSION"
+    VERSION=${VERSION//[^A-Za-z0-9_.-]/_}
+    echo VERSION=$VERSION
+    docker run --rm -it \
+        -v ~/.convertor/convertor.toml:/app/.convertor/convertor.toml \
+        -e REDIS_ENDPOINT \
+        -e REDIS_CONVERTOR_USERNAME \
+        -e REDIS_CONVERTOR_PASSWORD \
+        -e REDIS_CA_CERT \
+        --name convd-temp \
+        local/convd:$VERSION

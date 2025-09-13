@@ -24,13 +24,13 @@ pub struct Convertor {
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<()> {
+    let args = Convertor::parse();
+
     let base_dir = init_base_dir();
     init_backtrace();
     init_log(Some(&base_dir));
     init_redis()?;
     info!("工作目录: {}", base_dir.display());
-
-    let args = Convertor::parse();
 
     info!("+──────────────────────────────────────────────+");
     info!("│               加载配置文件...                │");
