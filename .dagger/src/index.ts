@@ -1,46 +1,64 @@
-/**
- * A generated module for ConvertorPipeline functions
- *
- * This module has been generated via dagger init and serves as a reference to
- * basic module structure as you get started with Dagger.
- *
- * Two functions have been pre-created. You can modify, delete, or add to them,
- * as needed. They demonstrate usage of arguments and return types using simple
- * echo and grep commands. The functions can be called from the dagger CLI or
- * from one of the SDKs.
- *
- * The first line in this comment block is a short description line and the
- * rest is a long description with more detail on the module's purpose or usage,
- * if appropriate. All modules should have a short description.
- */
-import { dag, Container, Directory, object, func } from "@dagger.io/dagger";
+import { dag, Directory, func, object, File } from "@dagger.io/dagger";
+import { Profile } from "./environment";
 
 @object()
 export class ConvertorPipeline {
-    /**
-     * Returns a container that echoes whatever string argument is provided
-     */
     @func()
-    containerEcho(stringArg: string): Container {
-        return dag.container().from("alpine:latest").withExec([ "echo", stringArg ]);
+    async build(
+        prof: string = "development",
+    ): Promise<File> {
+        const dashboardDist = await this.build_dashboard(prof);
+        return this.build_convd(prof, dashboardDist);
     }
 
-    /**
-     * Returns lines that match a pattern in the files of the provided Directory
-     */
     @func()
-    async grepDir(directoryArg: Directory, pattern: string): Promise<string> {
-        return dag
-        .container()
-        .from("alpine:latest")
-        .withMountedDirectory("/mnt", directoryArg)
-        .withWorkdir("/mnt")
-        .withExec([ "grep", "-R", pattern, "." ])
-        .stdout();
+    test(): Promise<string> {
+        return dag.currentModule().source().directory("../dashboard").name();
     }
+
+    @func()
+    async build_dashboard(
+        prof: string = "development",
+    ): Promise<Directory> {
+        const profile = check_profile(prof);
+        const pnpmStore = dag.cacheVolume("pnpm-store");
+        const ngCache = dag.cacheVolume("angular-cache");
+        const container = dag
+            .container()
+            .from("node:current-alpine3.22")
+            .withMountedDirectory("/dashboard", dag.directory().directory("dashboard").withoutDirectory("node_modules"))
+            .withWorkdir("/dashboard")
+            .withEnvVariable("PNPM_STORE_DIR", "/pnpm-store")
+            .withMountedCache("/pnpm-store", pnpmStore)
+            .withMountedCache("/src/.angular/cache", ngCache)
+            .withExec("npm install -g pnpm".split(" "))
+            .withExec("pnpm install".split(" "))
+            .withExec(`pnpm ng build --configuration ${profile.ng_configuration}`.split(" "));
+        return container.directory("dist");
+    }
+
+    @func()
+    build_convd(
+        prof: string = "development",
+        dashboardDist: Directory,
+    ): File {
+        const profile = check_profile(prof);
+        const container = dag
+            .container()
+            .from("rust:1.89.0-alpine3.20")
+            .withMountedDirectory("/convertor/convertor", dag.directory().directory("convertor").withoutDirectory("target"))
+            .withDirectory("/convertor/dashboard", dashboardDist)
+            .withWorkdir("/convertor/convertor")
+            .withExec(`cargo build --bin convd --profile ${profile.cargo_profile}`.split(" "));
+        return container.file(`target/${profile.cargo_profile}/convd`);
+    }
+
 }
 
-export enum Profile {
-    Dev = "dev",
-    Release = "release",
+function check_profile(prof: string): Profile {
+    const profile = Profile.fromString(prof);
+    if (!profile) {
+        throw new Error(`Unknown profile: ${prof}`);
+    }
+    return profile;
 }
