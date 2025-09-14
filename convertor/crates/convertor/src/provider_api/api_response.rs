@@ -14,22 +14,27 @@ where
 
 #[derive(Debug)]
 pub struct ApiFailed {
-    pub url: Url,
-    pub method: Method,
-    pub status: StatusCode,
-    pub headers: HeaderMap,
-    pub body: String,
+    pub request_url: Url,
+    pub request_method: Method,
+    pub request_headers: HeaderMap,
+    pub response_status: StatusCode,
+    pub response_headers: HeaderMap,
+    pub response_body: String,
 }
 
 impl Display for ApiFailed {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "[{}] {}", self.method, self.url)?;
-        writeln!(f, "Status: {}", self.status)?;
-        writeln!(f, "Headers:")?;
-        for (key, value) in self.headers.iter() {
+        writeln!(f, "[{}] {}", self.request_method, self.request_url)?;
+        writeln!(f, "Request Headers:")?;
+        for (key, value) in self.request_headers.iter() {
             writeln!(f, "\t{key}: {value:?}")?;
         }
-        writeln!(f, "Body:")?;
-        write!(f, "{}", self.body)
+        writeln!(f, "Response Status: {}", self.response_status)?;
+        writeln!(f, "Response Headers:")?;
+        for (key, value) in self.response_headers.iter() {
+            writeln!(f, "\t{key}: {value:?}")?;
+        }
+        writeln!(f, "Response Body:")?;
+        write!(f, "{}", self.response_body)
     }
 }

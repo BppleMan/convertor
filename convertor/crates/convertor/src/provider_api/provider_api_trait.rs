@@ -13,6 +13,7 @@ use reqwest::{Method, Request};
 use std::fmt::Debug;
 use std::str::FromStr;
 use std::sync::Arc;
+use tracing::error;
 use url::Url;
 
 #[async_trait::async_trait]
@@ -26,7 +27,7 @@ pub trait ProviderApiTrait: Clone + Send {
     fn get_raw_profile_request(&self, raw_sub_url: Url, user_agent: UserAgent) -> color_eyre::Result<Request> {
         self.client()
             .request(Method::GET, raw_sub_url)
-            .header("User-Agent", user_agent.as_str())
+            .header("user-agent", user_agent.as_str())
             .build()
             .wrap_err("构建 get_raw_profile 请求失败")
     }
@@ -65,11 +66,14 @@ pub trait ProviderApiTrait: Clone + Send {
                 HeaderName::from_str(key.as_str()),
                 HeaderValue::from_str(value.as_str()),
             ) {
-                request.headers_mut().insert(name, value);
+                if !name.as_str().is_empty() && !value.as_bytes().is_empty() {
+                    request.headers_mut().insert(name, value);
+                }
             }
         });
         let method = request.method().clone();
         let url = request.url().clone();
+        let request_headers = request.headers().clone();
         let response = self.client().execute(request).await?;
         let response_status = response.status();
         let response_headers = response.headers().clone();
@@ -79,12 +83,14 @@ pub trait ProviderApiTrait: Clone + Send {
             Ok(ApiResponse::Success(resp))
         } else {
             let failed = ApiFailed {
-                url,
-                method,
-                status: response_status,
-                headers: response_headers,
-                body: response_text,
+                request_url: url,
+                request_method: method,
+                request_headers,
+                response_status,
+                response_headers,
+                response_body: response_text,
             };
+            error!("{}", failed);
             Ok(ApiResponse::Failed(Box::new(failed)))
         }
     }

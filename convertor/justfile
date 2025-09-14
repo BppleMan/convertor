@@ -163,12 +163,12 @@ image profile="dev":
 run:
     #!/bin/sh
     VERSION=$(docker run --rm -v ./target/x86_64-unknown-linux-musl/debug/convd:/app/convd alpine:3.20 /app/convd -V)
-    VERSION="dev-$VERSION"
     VERSION=${VERSION//[^A-Za-z0-9_.-]/_}
     echo VERSION=$VERSION
     docker run --rm -it \
         -v ~/.convertor/convertor.toml:/app/.convertor/convertor.toml \
         -e REDIS_ENDPOINT \
+        -e REDIS_SCHEME \
         -e REDIS_CONVERTOR_USERNAME \
         -e REDIS_CONVERTOR_PASSWORD \
         -e REDIS_CA_CERT \
