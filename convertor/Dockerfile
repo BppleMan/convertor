@@ -1,4 +1,3 @@
-# 运行时镜像（可调试、体积仍小）
 FROM alpine:3.20
 
 # ====== OCI 元信息（通过 --build-arg 注入）======
@@ -28,9 +27,7 @@ ARG BIN_PATH=target/${TARGET_TRIPLE}/${PROFILE_PATH}/${BIN_NAME}
 
 # ====== 非 root 用户与工作目录 ======
 # 说明：使用固定 UID/GID，方便与宿主机/卷权限配合
-# 1) 非 root 用户（固定 uid/gid 便于卷权限）
 WORKDIR /app
-
 RUN addgroup -S -g 10001 app \
     && adduser  -S -u 10001 -G app app \
     && chown -R app:app /app
