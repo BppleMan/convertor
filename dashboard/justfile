@@ -2,8 +2,12 @@
 
 export PATH := join(justfile_directory(), "node_modules", "bin") + ":" + env_var('PATH')
 
-dev-dashboard:
-    pnpm i && pnpm ng build --configuration development
-
-prod-dashboard:
-    pnpm i && pnpm ng build --configuration production
+# profile: dev | prod
+dashboard profile="dev":
+    #!/bin/sh
+    pnpm install
+    PROFILE="development"
+    if [ "{{ profile }}" = "prod" ]; then
+        PROFILE="production"
+    fi
+    pnpm ng build --configuration ${PROFILE}

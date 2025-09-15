@@ -1,11 +1,11 @@
 #!/usr/bin/env just --justfile
 
-dev-build:
-    cd dashboard && just dev-dashboard
-    cd convertor && just dev-musl
+build-dev:
+    cd dashboard && just dashboard dev
+    cd convertor && just musl dev
     cd convertor && just image dev
 
-prod-build:
-    cd dashboard && just prod-dashboard
-    cd convertor && just alpine-musl
-    cd convertor && just image prod
+build-prod:
+    cd dashboard && just dashboard prod
+    cd convertor && just musl alpine
+    cd convertor && just image alpine
