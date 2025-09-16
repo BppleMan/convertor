@@ -18,6 +18,75 @@ repository = "https://github.com/BppleMan/convertor"
 [workspace.dependencies]
 convertor = { path = "crates/convertor", version = "2.5.2" }
 
+# async runtime
+tokio = { version = "1.47.1", default-features = false }
+tokio-stream = { version = "0.1.17", default-features = false }
+tokio-util = { version = "0.7.16", default-features = false }
+futures-util = "0.3.31"
+async-trait = "0.1.89"
+
+# error/result
+thiserror = { version = "2.0.16", default-features = false }
+color-eyre = { version = "0.6.5", default-features = false }
+
+# tracing
+tracing = { version = "0.1.41", default-features = false }
+tracing-subscriber = { version = "0.3.20" }
+tracing-appender = { version = "0.2.3", default-features = false }
+
+# serialization
+serde = { version = "1.0.224", default-features = false }
+serde_json = { version = "1.0.145", default-features = false }
+serde_yaml = { version = "0.9.33", default-features = false }
+toml = { version = "0.9.6", default-features = false }
+jsonpath_lib = { version = "0.3.0", default-features = false }
+
+# hasher/encoding/decoding
+base64 = { version = "0.22.1", default-features = false }
+percent-encoding = { version = "2.3.2", default-features = false }
+chacha20poly1305 = { version = "0.10.1", default-features = false }
+rand_core = { version = "0.9.3" }
+rand_chacha = { version = "0.9.0" }
+
+# http server
+axum = { version = "0.8.4", default-features = false }
+axum-extra = { version = "0.10.1" }
+tower = { version = "0.5.2", default-features = false }
+tower-http = { version = "0.6.6", default-features = false }
+mime_guess = { version = "2.0.5", default-features = true }
+include_dir = { version = "0.7.4", default-features = true }
+http-body-util = { version = "0.1.3", default-features = false }
+
+# http client
+reqwest = { version = "0.12.23", default-features = false }
+
+# cli
+clap = { version = "4.5.47", default-features = false }
+console = { version = "0.16.0", default-features = false }
+
+# cache
+moka = { version = "0.12.10", default-features = false }
+redis = { version = "0.32.5", default-features = true }
+
+# other
+regex = { version = "1.11.2", default-features = false }
+strum = { version = "0.27.2" }
+headers = { version = "0.4.1", default-features = false }
+url = { version = "2.5.7", default-features = false }
+mime = { version = "0.3.17" }
+
+# metrics
+opentelemetry = { version = "0.30.0", default-features = false }
+opentelemetry_sdk = { version = "0.30.0", default-features = false }
+opentelemetry-otlp = { version = "0.30.0", default-features = false }
+tracing-opentelemetry = { version = "0.31.0", default-features = false }
+
+# testkit
+httpmock = { version = "0.7.0", default-features = false }
+
+# test
+insta = { version = "1.43.2" }
+
 [profile.alpine]
 inherits = "release" # 继承 release 配置
 opt-level = 3        # 极限体积优化（如需极致性能可改成3）

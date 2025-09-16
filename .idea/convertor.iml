@@ -17,6 +17,7 @@
       <excludeFolder url="file://$MODULE_DIR$/test-assets/cache" />
       <excludeFolder url="file://$MODULE_DIR$/test-assets/logs" />
       <excludeFolder url="file://$MODULE_DIR$/convertor/.convertor" />
+      <excludeFolder url="file://$MODULE_DIR$/convertor/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

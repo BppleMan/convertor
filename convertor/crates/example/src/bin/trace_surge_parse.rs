@@ -11,7 +11,6 @@ async fn main() -> color_eyre::Result<()> {
     let base_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join(".convertor.bench");
     init_backtrace();
     // 下面两种方案任选一
-    #[cfg(feature = "bench")]
     tracing_span_tree::span_tree().aggregate(true).enable();
     // #[cfg(feature = "bench")]
     // tracing_profile::init_tracing()?;
