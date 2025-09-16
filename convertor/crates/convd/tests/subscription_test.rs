@@ -13,6 +13,7 @@ use convertor::url::url_builder::HostPort;
 use convertor::url::url_result::UrlResult;
 use http_body_util::BodyExt;
 use tower::ServiceExt;
+use convd::server::router::api::subscription::ApiResponse;
 
 async fn subscription(
     server_context: &ServerContext,
@@ -57,8 +58,7 @@ async fn test_subscription_surge_boslife() -> color_eyre::Result<()> {
     init_test();
     let server_context = start_server().await?;
     let url_result = subscription(&server_context, ProxyClient::Surge, Provider::BosLife).await?;
-    println!("{url_result}");
-    let url_result: UrlResult = serde_json::from_str(&url_result)?;
-    insta::assert_json_snapshot!(url_result);
+    let url_result: ApiResponse<UrlResult> = serde_json::from_str(&url_result)?;
+    insta::assert_json_snapshot!(url_result.data.unwrap());
     Ok(())
 }

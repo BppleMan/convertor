@@ -22,9 +22,6 @@ color-eyre = { workspace = true, default-features = false }
 # tracing
 tracing = { workspace = true, default-features = false, features = ["attributes"] }
 
-# cache
-redis = { workspace = true, default-features = true, features = ["tokio-rustls-comp", "streams", "connection-manager"] }
-
 # encoding/decoding
 url = { workspace = true, default-features = false, features = ["serde"] }
 

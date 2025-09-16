@@ -53,7 +53,7 @@ convertor = { workspace = true, features = ["testkit"] }
 serde_json = { workspace = true, default-features = false }
 tower = { workspace = true, default-features = false }
 http-body-util = { workspace = true, default-features = false }
-insta = { workspace = true, features = ["json"] }
+insta = { workspace = true, features = ["json", "default"] }
 
 [build-dependencies]
 anyhow = "1.0.99"

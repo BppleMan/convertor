@@ -3,7 +3,6 @@ use color_eyre::Result;
 use convd::server::start_server;
 use convertor::common::clap_style::SONOKAI_TC;
 use convertor::common::once::{init_backtrace, init_base_dir, init_log};
-use convertor::common::redis::init_redis;
 use convertor::config::ConvertorConfig;
 use std::net::SocketAddrV4;
 use std::path::PathBuf;
@@ -29,7 +28,6 @@ async fn main() -> Result<()> {
     let base_dir = init_base_dir();
     init_backtrace();
     init_log(Some(&base_dir));
-    init_redis()?;
     info!("工作目录: {}", base_dir.display());
 
     info!("+──────────────────────────────────────────────+");

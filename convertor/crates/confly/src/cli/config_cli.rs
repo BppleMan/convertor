@@ -1,9 +1,7 @@
 use clap::{Args, Subcommand};
-use convertor::common::redis::{REDIS_CONVERTOR_CONFIG_KEY, REDIS_CONVERTOR_CONFIG_PUBLISH_CHANNEL};
 use convertor::config::ConvertorConfig;
-use redis::{AsyncTypedCommands, Client};
 use std::path::PathBuf;
-use tracing::info;
+use color_eyre::eyre::eyre;
 
 #[derive(Default, Debug, Clone, Args)]
 pub struct ConfigCmd {
@@ -14,10 +12,6 @@ pub struct ConfigCmd {
     /// 配置相关的子命令
     #[command(subcommand)]
     option: Option<ConfigCmdOption>,
-
-    /// 是否发布配置到 Redis
-    #[arg(short, long, default_value_t = false)]
-    publish: bool,
 }
 
 #[derive(Default, Debug, Clone, Subcommand)]
@@ -25,10 +19,6 @@ pub enum ConfigCmdOption {
     #[default]
     /// 获取配置模板
     Template,
-
-    /// 从 Redis 获取配置
-    #[command(name = "redis")]
-    Redis,
 
     /// 从文件获取配置
     #[command(name = "file")]
@@ -44,7 +34,7 @@ impl ConfigCli {
         Self { cmd }
     }
 
-    pub async fn execute(self, client: Client) -> color_eyre::Result<()> {
+    pub async fn execute(self) -> color_eyre::Result<ConvertorConfig> {
         let config = match (self.cmd.file, self.cmd.option) {
             (Some(file), _) => {
                 let config = ConvertorConfig::from_file(file)?;
@@ -56,28 +46,13 @@ impl ConfigCli {
                 println!("{config}");
                 config
             }
-            (None, Some(ConfigCmdOption::Redis)) => {
-                let connection = client.get_multiplexed_async_connection().await?;
-                let config = ConvertorConfig::from_redis(connection).await?;
-                println!("{config}");
-                config
-            }
             (None, Some(ConfigCmdOption::File)) => {
                 let config = ConvertorConfig::search(std::env::current_dir()?, None::<&str>)?;
                 println!("{config}");
                 config
             }
-            _ => return Ok(()),
+            _ => return Err(eyre!("必须指定配置文件路径或者子命令")),
         };
-        if self.cmd.publish {
-            info!("更新配置到 Redis");
-            let mut connection = client.get_multiplexed_async_connection().await?;
-            connection.set(REDIS_CONVERTOR_CONFIG_KEY, config.to_string()).await?;
-            info!("发布配置更新到 Redis 频道");
-            connection
-                .publish(REDIS_CONVERTOR_CONFIG_PUBLISH_CHANNEL, REDIS_CONVERTOR_CONFIG_KEY)
-                .await?;
-        }
-        Ok(())
+        Ok(config)
     }
 }

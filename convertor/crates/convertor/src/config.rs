@@ -1,8 +1,7 @@
 use crate::common::encrypt::{decrypt, encrypt};
-use crate::common::redis::REDIS_CONVERTOR_CONFIG_KEY;
 use crate::config::client_config::ClientConfig;
 use crate::config::provider_config::{Provider, ProviderConfig};
-use crate::config::redis_config::RedisConfig;
+use crate::config::redis_config::{RedisConfig, REDIS_CONVERTOR_CONFIG_KEY};
 use crate::url::url_builder::UrlBuilder;
 use client_config::ProxyClient;
 use color_eyre::eyre::{eyre, WrapErr};
@@ -19,7 +18,7 @@ use url::Url;
 
 pub mod client_config;
 pub mod provider_config;
-mod redis_config;
+pub mod redis_config;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConvertorConfig {

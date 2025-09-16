@@ -2,6 +2,9 @@ use redis::{ConnectionAddr, ConnectionInfo, IntoConnectionInfo, ProtocolVersion,
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+pub const REDIS_CONVERTOR_CONFIG_KEY: &str = "convertor:config.toml";
+pub const REDIS_CONVERTOR_CONFIG_PUBLISH_CHANNEL: &str = "convertor:config:publish";
+
 #[derive(Default, Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct RedisConfig {
     pub host: String,

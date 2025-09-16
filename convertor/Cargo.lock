@@ -629,7 +629,6 @@ dependencies = [
  "convertor",
  "headers",
  "insta",
- "redis",
  "tokio",
  "tracing",
  "url",
