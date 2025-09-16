@@ -2,12 +2,13 @@ use crate::common::encrypt::{decrypt, encrypt};
 use crate::common::redis::REDIS_CONVERTOR_CONFIG_KEY;
 use crate::config::client_config::ClientConfig;
 use crate::config::provider_config::{Provider, ProviderConfig};
+use crate::config::redis_config::RedisConfig;
 use crate::url::url_builder::UrlBuilder;
 use client_config::ProxyClient;
+use color_eyre::eyre::{eyre, WrapErr};
 use color_eyre::Report;
-use color_eyre::eyre::{WrapErr, eyre};
-use redis::AsyncTypedCommands;
 use redis::aio::MultiplexedConnection;
+use redis::AsyncTypedCommands;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
@@ -18,11 +19,13 @@ use url::Url;
 
 pub mod client_config;
 pub mod provider_config;
+mod redis_config;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConvertorConfig {
     pub secret: String,
     pub server: Url,
+    pub redis: Option<RedisConfig>,
     pub providers: HashMap<Provider, ProviderConfig>,
     pub clients: HashMap<ProxyClient, ClientConfig>,
 }
@@ -31,6 +34,8 @@ impl ConvertorConfig {
     pub fn template() -> Self {
         let secret = "bppleman".to_string();
         let server = Url::parse("http://127.0.0.1:8080").expect("不合法的服务器地址");
+
+        let redis = Some(RedisConfig::template());
 
         let mut providers = HashMap::new();
         providers.insert(Provider::BosLife, ProviderConfig::boslife_template());
@@ -42,6 +47,7 @@ impl ConvertorConfig {
         ConvertorConfig {
             secret,
             server,
+            redis,
             providers,
             clients,
         }
