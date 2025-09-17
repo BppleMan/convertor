@@ -8,10 +8,9 @@ use tokio::signal;
 use tokio_util::sync::CancellationToken;
 use tracing::{info, warn};
 
-mod actuator_response;
 pub mod app_state;
-pub mod error;
 pub mod query;
+pub mod response;
 pub mod router;
 pub mod service;
 

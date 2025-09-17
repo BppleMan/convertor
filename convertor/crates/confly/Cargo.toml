@@ -8,29 +8,32 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+# 错误 / 诊断
+color-eyre = { workspace = true }
+
+# 本地 / 工作区 包
 convertor = { workspace = true }
 
-# async runtime
-tokio = { workspace = true, default-features = false, features = ["fs", "rt-multi-thread", "signal", "macros"] }
+# CLI / 工具
+clap = { workspace = true, features = ["default", "cargo", "derive"] }
 
-# cli
-clap = { workspace = true, default-features = true, features = ["cargo", "derive"] }
+# HTTP / 头部 处理
+headers = { workspace = true }
 
-# error/result
-color-eyre = { workspace = true, default-features = false }
+# 日志 / 追踪
+tracing = { workspace = true, features = ["attributes"] }
 
-# tracing
-tracing = { workspace = true, default-features = false, features = ["attributes"] }
+# URL / 编码 / 解析
+url = { workspace = true, features = ["serde"] }
 
-# encoding/decoding
-url = { workspace = true, default-features = false, features = ["serde"] }
-
-# other
-headers = { workspace = true, default-features = false }
+# 异步运行时 / Tokio
+tokio = { workspace = true, features = ["fs", "rt-multi-thread", "signal", "macros"] }
 
 [dev-dependencies]
+# 本地测试工具
 convertor = { workspace = true, features = ["testkit"] }
 
+# 断言 / 快照测试
 insta = { workspace = true, features = ["yaml"] }
 
 [features]

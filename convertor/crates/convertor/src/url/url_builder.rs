@@ -192,7 +192,7 @@ impl HostPort for Url {
         match (self.host_str(), self.port()) {
             (Some(host), Some(port)) => Ok(format!("{host}:{port}")),
             (Some(host), None) => Ok(host.to_string()),
-            _ => Err(UrlBuilderError::NoUniSubHost(self.clone())),
+            _ => Err(UrlBuilderError::NoSubHost(self.clone())),
         }
     }
 }

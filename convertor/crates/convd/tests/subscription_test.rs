@@ -1,10 +1,11 @@
 #[path = "./server.rs"]
 mod server;
 
-use crate::server::{ServerContext, start_server};
+use crate::server::{start_server, ServerContext};
 use axum::body::Body;
 use axum::extract::Request;
 use color_eyre::eyre::eyre;
+use convd::server::response::ApiResponse;
 use convertor::common::encrypt::encrypt;
 use convertor::config::client_config::ProxyClient;
 use convertor::config::provider_config::Provider;
@@ -13,7 +14,6 @@ use convertor::url::url_builder::HostPort;
 use convertor::url::url_result::UrlResult;
 use http_body_util::BodyExt;
 use tower::ServiceExt;
-use convd::server::router::api::subscription::ApiResponse;
 
 async fn subscription(
     server_context: &ServerContext,

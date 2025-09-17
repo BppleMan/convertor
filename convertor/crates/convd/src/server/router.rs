@@ -3,20 +3,20 @@ pub mod angular;
 pub mod api;
 pub mod profile;
 
+use crate::server::response::ApiError;
 use crate::server::AppState;
-use crate::server::error::AppError;
-use axum::Router;
 use axum::extract::{FromRequestParts, OptionalFromRequestParts};
 use axum::http::request::Parts;
 use axum::response::Redirect;
 use axum::routing::get;
+use axum::Router;
 use axum_extra::extract::Scheme;
-use color_eyre::eyre::{WrapErr, eyre};
+use color_eyre::eyre::{eyre, WrapErr};
 use convertor::url::query::ConvertorQuery;
 use std::sync::Arc;
 use std::time::Duration;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnRequest, OnResponse, TraceLayer};
-use tracing::{Level, Span, event};
+use tracing::{event, Level, Span};
 use url::Url;
 
 pub fn router(app_state: AppState) -> Router {
@@ -68,7 +68,7 @@ impl<S> OptionalFromRequestParts<S> for OptionalScheme
 where
     S: Send + Sync,
 {
-    type Rejection = AppError;
+    type Rejection = ApiError;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Option<Self>, Self::Rejection> {
         let scheme = Scheme::from_request_parts(parts, state).await;

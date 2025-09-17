@@ -2,7 +2,7 @@ use crate::common::cache::Cache;
 use crate::config::client_config::ProxyClient;
 use crate::config::provider_config::{ApiConfig, ProviderConfig};
 use crate::provider_api::provider_api_trait::ProviderApiTrait;
-use color_eyre::eyre::{Context, eyre};
+use color_eyre::eyre::{eyre, Context};
 use redis::aio::ConnectionManager;
 use reqwest::Client as ReqwestClient;
 use reqwest::{Method, Request, Url};
@@ -124,7 +124,7 @@ pub struct BosLifeLogs(pub Vec<BosLifeLog>);
 impl Display for BosLifeLogs {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let string = serde_json::to_string_pretty(self).expect("JSON serialization failed");
-        write!(f, "{}", string)
+        write!(f, "{string}")
     }
 }
 

@@ -26,6 +26,9 @@ pub enum ParseError {
     #[error("代理组解析失败 (第 {line} 行): {reason}")]
     ProxyGroup { line: usize, reason: String },
 
+    #[error("代理策略解析失败 (第 {line} 行): {reason}")]
+    Policy { line: usize, reason: String },
+
     #[error("缺少必要配置段: {0}")]
     SectionMissing(&'static str),
 

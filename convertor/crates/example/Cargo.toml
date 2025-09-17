@@ -21,9 +21,6 @@ tokio = { workspace = true, default-features = false, features = ["fs", "rt-mult
 # error/result
 color-eyre = { workspace = true, default-features = false }
 
-# cache
-redis = { workspace = true, default-features = true, features = ["tokio-rustls-comp", "streams", "connection-manager"] }
-
 # other
 headers = { workspace = true, default-features = false }
 

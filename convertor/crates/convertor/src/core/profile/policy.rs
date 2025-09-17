@@ -1,5 +1,4 @@
-use color_eyre::Report;
-use color_eyre::eyre::eyre;
+use crate::core::error::ParseError;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::collections::HashMap;
@@ -57,12 +56,15 @@ impl Policy {
 }
 
 impl FromStr for Policy {
-    type Err = Report;
+    type Err = ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let parts = s.splitn(2, ',').map(str::trim).collect::<Vec<_>>();
         if parts.is_empty() {
-            return Err(eyre!("无法解析策略: {}", s));
+            return Err(ParseError::Policy {
+                line: 0,
+                reason: format!("无法理解的策略\"{}\"", s),
+            });
         }
         Ok(Policy {
             name: parts[0].to_string(),
@@ -107,7 +109,7 @@ enum PolicySerialHelper {
 }
 
 impl TryFrom<PolicySerialHelper> for Policy {
-    type Error = Report;
+    type Error = ParseError;
 
     fn try_from(repr: PolicySerialHelper) -> Result<Self, Self::Error> {
         match repr {
@@ -118,7 +120,10 @@ impl TryFrom<PolicySerialHelper> for Policy {
                 is_subscription,
             } => {
                 if name.trim().is_empty() {
-                    return Err(eyre!("name 不能为空"));
+                    return Err(ParseError::Policy {
+                        line: 0,
+                        reason: "策略名称不能为空".to_string(),
+                    });
                 }
                 Ok(Policy {
                     name,

@@ -1,12 +1,12 @@
 #![deny(unused, unused_variables)]
 
 use crate::config::client_config::ProxyClient;
-use crate::core::profile::Profile;
 use crate::core::profile::policy::Policy;
 use crate::core::profile::proxy::Proxy;
 use crate::core::profile::proxy_group::ProxyGroup;
 use crate::core::profile::rule::{ProviderRule, Rule};
 use crate::core::profile::rule_provider::RuleProvider;
+use crate::core::profile::Profile;
 use crate::core::result::RenderResult;
 use std::fmt::Write;
 use tracing::instrument;
@@ -70,7 +70,7 @@ pub trait Renderer {
         let mut output = String::new();
         write!(output, "{}", policy.name)?;
         if let Some(option) = &policy.option {
-            write!(output, ",{}", option)?;
+            write!(output, ",{option}")?;
         }
         Ok(output)
     }

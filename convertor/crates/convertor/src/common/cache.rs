@@ -1,7 +1,7 @@
 use crate::config::client_config::ProxyClient;
 use moka::future::Cache as MokaCache;
-use redis::AsyncTypedCommands;
 use redis::aio::ConnectionManager;
+use redis::AsyncTypedCommands;
 use std::fmt::{Debug, Display, Formatter};
 use std::future::Future;
 use std::hash::Hash;
@@ -99,7 +99,7 @@ where
         use std::fmt::Write;
         let mut key = format!("convertor:{}", self.prefix);
         if let Some(client) = &self.client {
-            write!(&mut key, ":{}", client).expect("Failed to write client to key");
+            write!(&mut key, ":{client}").expect("Failed to write client to key");
         }
         write!(&mut key, ":{}", self.hash).expect("Failed to write hash to key");
         key
@@ -126,7 +126,7 @@ where
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.prefix)?;
         if let Some(client) = &self.client {
-            write!(f, ":{}", client)?;
+            write!(f, ":{client}")?;
         }
         write!(f, ":{}", self.hash)
     }

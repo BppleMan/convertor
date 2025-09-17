@@ -1,5 +1,6 @@
 use crate::common::encrypt::EncryptError;
-use crate::config::client_config::ParseClientError;
+use crate::config::client_config::{ParseClientError, ProxyClient};
+use crate::config::provider_config::Provider;
 use crate::url::convertor_url::ConvertorUrlType;
 use std::str::Utf8Error;
 use thiserror::Error;
@@ -8,7 +9,13 @@ use url::Url;
 #[derive(Debug, Error)]
 pub enum UrlBuilderError {
     #[error("无法获取 sub_host: {0}")]
-    NoUniSubHost(Url),
+    NoSubHost(Url),
+
+    #[error("创建 UrlBuilder 时, 未找到配置供应商: {0}")]
+    ProviderNotFound(Provider),
+
+    #[error("创建 UrlBuilder 时, 未找到代理客户端配置: {0}")]
+    ClientNotFound(ProxyClient),
 
     #[error("从 URL 中解析失败, 没有 query 参数: {0}")]
     ParseFromUrlNoQuery(Url),

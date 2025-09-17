@@ -1,5 +1,4 @@
-use color_eyre::Report;
-use color_eyre::eyre::eyre;
+use crate::core::error::ParseError;
 use serde::Deserialize;
 use std::str::FromStr;
 
@@ -49,14 +48,17 @@ impl ProxyGroupType {
 }
 
 impl FromStr for ProxyGroupType {
-    type Err = Report;
+    type Err = ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "select" => Ok(ProxyGroupType::Select),
             "url-test" | "test-url" => Ok(ProxyGroupType::UrlTest),
             "smart" => Ok(ProxyGroupType::Smart),
-            _ => Err(eyre!("无法识别的策略组类型: {}", s)),
+            _ => Err(ParseError::ProxyGroup {
+                line: 0,
+                reason: format!("无法识别的策略组类型: {}", s),
+            }),
         }
     }
 }

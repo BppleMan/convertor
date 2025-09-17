@@ -8,60 +8,59 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-# error/result
-thiserror = { workspace = true, default-features = false }
-color-eyre = { workspace = true, default-features = false }
+# 序列化 / 解析 / 配置
+toml = { workspace = true, features = ["parse", "display", "serde"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+jsonpath_lib = { workspace = true }
 
-# tracing
-tracing = { workspace = true, default-features = false, features = ["attributes"] }
-tracing-subscriber = { workspace = true, features = ["env-filter", "json", "local-time"] }
-tracing-appender = { workspace = true, default-features = false }
+# HTTP 客户端 / 网络
+reqwest = { workspace = true, features = ["json", "stream", "rustls-tls", "cookies"] }
+headers = { workspace = true }
+httpmock = { workspace = true, features = ["colored"], optional = true }
 
-# serialization
-serde = { workspace = true, default-features = false, features = ["derive"] }
-serde_json = { workspace = true, default-features = false }
-serde_yaml = { workspace = true, default-features = false }
-toml = { workspace = true, default-features = false, features = ["parse", "display", "serde"] }
-jsonpath_lib = { workspace = true, default-features = false }
-
-# hasher/encoding/decoding
-base64 = { workspace = true, default-features = false }
-percent-encoding = { workspace = true, default-features = false }
-chacha20poly1305 = { workspace = true, default-features = false, features = ["getrandom", "alloc"] }
-rand_core = { workspace = true, features = ["os_rng"] }
-rand_chacha = { workspace = true }
-
-# http client
-reqwest = { workspace = true, default-features = false, features = ["json", "stream", "rustls-tls", "cookies"] }
-url = { workspace = true, default-features = false, features = ["serde"] }
-
-# cli
-clap = { workspace = true, default-features = false, features = ["std", "derive"] }
-
-# cache
-moka = { workspace = true, default-features = false, features = ["future"] }
-redis = { workspace = true, default-features = true, features = ["tokio-rustls-comp", "streams", "connection-manager"] }
-
-# other
-regex = { workspace = true, default-features = false }
+# URL / 编码 / 工具
+percent-encoding = { workspace = true }
+url = { workspace = true, features = ["serde"] }
+regex = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
-headers = { workspace = true, default-features = false }
 
-# metrics
-opentelemetry = { workspace = true, default-features = false, features = ["trace"], optional = true }
-opentelemetry_sdk = { workspace = true, default-features = false, features = ["trace", "rt-tokio"], optional = true }
-opentelemetry-otlp = { workspace = true, default-features = false, features = ["trace", "grpc-tonic"], optional = true }
-tracing-opentelemetry = { workspace = true, default-features = false, optional = true }
-
-# testkit
-httpmock = { workspace = true, default-features = false, features = ["colored"], optional = true }
-
+# 异步运行时 / 并发
 futures-util = { workspace = true }
 async-trait = { workspace = true }
 
+# 日志 / 追踪 / 遥测（可选 feature）
+tracing = { workspace = true, features = ["attributes"] }
+tracing-subscriber = { workspace = true, features = ["default", "env-filter", "json", "local-time"] }
+tracing-appender = { workspace = true }
+tracing-opentelemetry = { workspace = true, optional = true }
+opentelemetry = { workspace = true, optional = true, features = ["trace"] }
+opentelemetry_sdk = { workspace = true, optional = true, features = ["trace", "rt-tokio"] }
+opentelemetry-otlp = { workspace = true, optional = true, features = ["trace", "grpc-tonic"] }
+
+# 加密 / 哈希 / 编码
+base64 = { workspace = true }
+chacha20poly1305 = { workspace = true, features = ["getrandom", "alloc"] }
+rand_core = { workspace = true, features = ["std", "os_rng"] }
+rand_chacha = { workspace = true, features = ["default"] }
+
+# 缓存 / 存储 / 数据库
+moka = { workspace = true, features = ["future"] }
+redis = { workspace = true, features = ["tokio-rustls-comp", "streams", "connection-manager"] }
+
+# CLI / 工具 / 键入
+clap = { workspace = true, features = ["std", "derive"] }
+
+# 错误 / 诊断
+#color-eyre = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
 [dev-dependencies]
-serde_json = { workspace = true, default-features = false }
+# 测试工具
 insta = { workspace = true, features = ["filters"] }
+serde_json = { workspace = true }
 
 [features]
 default = []

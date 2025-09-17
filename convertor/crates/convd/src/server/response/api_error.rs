@@ -1,5 +1,5 @@
-use axum::http::StatusCode;
 use axum::http::header::ToStrError;
+use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use convertor::config::client_config::ProxyClient;
 use convertor::url::url_error::{QueryError, UrlBuilderError};
@@ -8,7 +8,7 @@ use std::sync::Arc;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum AppError {
+pub enum ApiError {
     #[error("获取原始非转换配置失败, 遇到错误的客户端: {0}")]
     RawProfileUnsupportedClient(ProxyClient),
 
@@ -25,22 +25,22 @@ pub enum AppError {
     QueryError(#[from] QueryError),
 
     #[error(transparent)]
-    Eyre(#[from] color_eyre::Report),
-
-    #[error(transparent)]
     ToStr(#[from] ToStrError),
 
     #[error(transparent)]
     Utf8Error(#[from] std::str::Utf8Error),
 
     #[error(transparent)]
-    CacheError(#[from] Arc<AppError>),
+    CacheError(#[from] Arc<ApiError>),
 
     #[error("Redis 错误: {0:?}")]
     RedisError(#[from] RedisError),
+
+    #[error(transparent)]
+    Unknown(#[from] color_eyre::Report),
 }
 
-impl IntoResponse for AppError {
+impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
         let message = format!("{self:?}");
         let message = console::strip_ansi_codes(&message).to_string();

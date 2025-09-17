@@ -33,7 +33,7 @@ impl<T: Clone> WatchDebounceExt<T> for watch::Receiver<T> {
 
         loop {
             select! {
-                _ = async { Some(self.changed().await.ok()?) } => {
+                _ = async { self.changed().await.ok() } => {
                     deadline = Instant::now() + duration;
                 }
                 _ = sleep_until(deadline) => {

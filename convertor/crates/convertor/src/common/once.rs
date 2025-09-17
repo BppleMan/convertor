@@ -1,8 +1,8 @@
 use std::path::Path;
 use std::sync::Once;
-use tracing_subscriber::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
+use tracing_subscriber::EnvFilter;
 
 pub fn init_base_dir() -> std::path::PathBuf {
     #[cfg(debug_assertions)]
@@ -30,7 +30,7 @@ pub fn init_log(base_dir: Option<&Path>) {
     INITIALIZED_LOG.call_once(|| {
         let logs_dir = base_dir.map(|b| b.join("logs"));
         #[cfg(debug_assertions)]
-        println!("Initializing log for {:?}", logs_dir);
+        println!("Initializing log for {logs_dir:?}");
 
         // 1. 灵活 EnvFilter（支持 RUST_LOG，否则用默认）
         let filter = EnvFilter::try_from_default_env()

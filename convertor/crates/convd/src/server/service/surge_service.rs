@@ -1,12 +1,12 @@
+use color_eyre::eyre::eyre;
 use color_eyre::Report;
 use color_eyre::Result;
-use color_eyre::eyre::eyre;
 use convertor::config::ConvertorConfig;
-use convertor::core::profile::Profile;
 use convertor::core::profile::policy::Policy;
 use convertor::core::profile::surge_profile::SurgeProfile;
-use convertor::core::renderer::Renderer;
+use convertor::core::profile::Profile;
 use convertor::core::renderer::surge_renderer::SurgeRenderer;
+use convertor::core::renderer::Renderer;
 use convertor::provider_api::{BosLifeLogs, ProviderApi};
 use convertor::url::convertor_url::ConvertorUrlType;
 use convertor::url::url_builder::UrlBuilder;
@@ -39,7 +39,7 @@ impl SurgeService {
         let (_, right) = raw_profile
             .split_once('\n')
             .ok_or(eyre!("错误的原始配置, 未能找出第一行: {raw_profile}"))?;
-        Ok(format!("{}\n{}", surge_header, right))
+        Ok(format!("{surge_header}\n{right}"))
     }
 
     #[instrument(skip_all)]

@@ -1,10 +1,10 @@
 use crate::server::app_state::AppState;
-use crate::server::error::AppError;
-use crate::server::router::{OptionalScheme, parse_query};
+use crate::server::response::ApiError;
+use crate::server::router::{parse_query, OptionalScheme};
 use axum::extract::{Path, RawQuery, State};
-use axum_extra::TypedHeader;
 use axum_extra::extract::Host;
 use axum_extra::headers::UserAgent;
+use axum_extra::TypedHeader;
 use convertor::config::client_config::ProxyClient;
 use convertor::config::provider_config::Provider;
 use convertor::url::url_builder::UrlBuilder;
@@ -18,14 +18,14 @@ pub async fn raw_profile(
     TypedHeader(user_agent): TypedHeader<UserAgent>,
     State(state): State<Arc<AppState>>,
     RawQuery(query_string): RawQuery,
-) -> Result<String, AppError> {
+) -> Result<String, ApiError> {
     let query = parse_query(state.as_ref(), scheme, host.as_str(), query_string)?.check_for_profile()?;
     let url_builder = UrlBuilder::from_convertor_query(query, &state.config.secret, client, provider)?;
-    let api = state.api_map.get(&provider).ok_or_else(|| AppError::NoSubProvider)?;
+    let api = state.api_map.get(&provider).ok_or_else(|| ApiError::NoSubProvider)?;
     let raw_profile = api.get_raw_profile(client, user_agent).await?;
     match client {
         ProxyClient::Surge => Ok(state.surge_service.raw_profile(url_builder, raw_profile).await?),
-        ProxyClient::Clash => Err(AppError::RawProfileUnsupportedClient(client)),
+        ProxyClient::Clash => Err(ApiError::RawProfileUnsupportedClient(client)),
     }
 }
 
@@ -37,10 +37,10 @@ pub async fn profile(
     TypedHeader(user_agent): TypedHeader<UserAgent>,
     State(state): State<Arc<AppState>>,
     RawQuery(query_string): RawQuery,
-) -> Result<String, AppError> {
+) -> Result<String, ApiError> {
     let query = parse_query(state.as_ref(), scheme, host.as_str(), query_string)?.check_for_profile()?;
     let url_builder = UrlBuilder::from_convertor_query(query, &state.config.secret, client, provider)?;
-    let api = state.api_map.get(&provider).ok_or_else(|| AppError::NoSubProvider)?;
+    let api = state.api_map.get(&provider).ok_or_else(|| ApiError::NoSubProvider)?;
     let raw_profile = api.get_raw_profile(client, user_agent).await?;
     let profile = match client {
         ProxyClient::Surge => state.surge_service.profile(url_builder, raw_profile).await,
@@ -57,11 +57,11 @@ pub async fn rule_provider(
     TypedHeader(user_agent): TypedHeader<UserAgent>,
     State(state): State<Arc<AppState>>,
     RawQuery(query_string): RawQuery,
-) -> color_eyre::Result<String, AppError> {
+) -> color_eyre::Result<String, ApiError> {
     let (query, policy) =
         parse_query(state.as_ref(), scheme, host.as_str(), query_string)?.check_for_rule_provider()?;
     let url_builder = UrlBuilder::from_convertor_query(query, &state.config.secret, client, provider)?;
-    let api = state.api_map.get(&provider).ok_or_else(|| AppError::NoSubProvider)?;
+    let api = state.api_map.get(&provider).ok_or_else(|| ApiError::NoSubProvider)?;
     let raw_profile = api.get_raw_profile(client, user_agent).await?;
     let rules = match client {
         ProxyClient::Surge => {
