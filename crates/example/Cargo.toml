@@ -1,0 +1,29 @@
+[package]
+name = "example"
+description.workspace = true
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[[bin]]
+name = "trace_surge_parse"
+path = "src/bin/trace_surge_parse.rs"
+
+[dependencies]
+convertor = { workspace = true }
+
+# async runtime
+tokio = { workspace = true, default-features = false, features = ["fs", "rt-multi-thread", "signal", "macros"] }
+
+# error/result
+color-eyre = { workspace = true, default-features = false }
+
+# other
+headers = { workspace = true, default-features = false }
+
+# benchmarking
+tracing-span-tree = { version = "0.1.1" }
+#tracing-profile = { version = "0.10.10" }

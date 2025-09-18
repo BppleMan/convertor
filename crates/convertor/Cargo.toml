@@ -1,0 +1,82 @@
+[package]
+name = "convertor"
+description.workspace = true
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+# 序列化 / 解析 / 配置
+toml = { workspace = true, features = ["parse", "display", "serde"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+jsonpath_lib = { workspace = true }
+
+# HTTP 客户端 / 网络
+reqwest = { workspace = true, features = ["json", "stream", "rustls-tls", "cookies"] }
+headers = { workspace = true }
+httpmock = { workspace = true, features = ["colored"], optional = true }
+
+# URL / 编码 / 工具
+percent-encoding = { workspace = true }
+url = { workspace = true, features = ["serde"] }
+regex = { workspace = true, features = ["unicode-perl"] }
+strum = { workspace = true, features = ["derive"] }
+
+# 异步运行时 / 并发
+futures-util = { workspace = true }
+async-trait = { workspace = true }
+
+# 日志 / 追踪 / 遥测（可选 feature）
+tracing = { workspace = true, features = ["attributes"] }
+tracing-subscriber = { workspace = true, features = ["default", "env-filter", "json", "local-time"] }
+tracing-appender = { workspace = true }
+tracing-opentelemetry = { workspace = true, optional = true }
+opentelemetry = { workspace = true, optional = true, features = ["trace"] }
+opentelemetry_sdk = { workspace = true, optional = true, features = ["trace", "rt-tokio"] }
+opentelemetry-otlp = { workspace = true, optional = true, features = ["trace", "grpc-tonic"] }
+
+# 加密 / 哈希 / 编码
+base64 = { workspace = true }
+chacha20poly1305 = { workspace = true, features = ["getrandom", "alloc"] }
+rand_core = { workspace = true, features = ["std", "os_rng"] }
+rand_chacha = { workspace = true, features = ["default"] }
+
+# 缓存 / 存储 / 数据库
+moka = { workspace = true, features = ["future"] }
+redis = { workspace = true, features = ["tokio-rustls-comp", "streams", "connection-manager"] }
+
+# CLI / 工具 / 键入
+clap = { workspace = true, features = ["std", "derive"] }
+
+# 错误 / 诊断
+color-eyre = { workspace = true, optional = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+# 测试工具
+insta = { workspace = true, features = ["filters"] }
+serde_json = { workspace = true }
+
+[features]
+default = []
+testkit = ["httpmock", "color-eyre"]
+otel = [
+    "opentelemetry",
+    "opentelemetry_sdk",
+    "opentelemetry-otlp",
+    "tracing-opentelemetry",
+]
+
+[[test]]
+name = "encrypt_test"
+path = "tests/encrypt_test.rs"
+required-features = ["testkit"]
+
+[[test]]
+name = "url_builder_test"
+path = "tests/url_builder_test.rs"
+required-features = ["testkit"]

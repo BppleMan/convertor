@@ -78,9 +78,9 @@ jobs:
 
       # Install Zig
       - name: Setup Zig
-        uses: mlugg/setup-zig@v1
+        uses: mlugg/setup-zig@v2
         with:
-          version: 0.12.0
+          mirror: 'https://pkg.machengine.org/zig'
 
       # Install cargo-zigbuild
       - name: Install cargo-zigbuild

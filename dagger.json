@@ -1,8 +1,0 @@
-{
-  "name": "convertor-pipeline",
-  "engineVersion": "v0.18.17",
-  "sdk": {
-    "source": "typescript"
-  },
-  "source": ".dagger"
-}

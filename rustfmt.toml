@@ -1,0 +1,25 @@
+max_width = 120
+edition = "2024"
+newline_style = "Unix"
+reorder_modules = true
+merge_derives = false
+
+#color = "Always"
+#max_width = 120
+#imports_granularity = "Module"
+#imports_indent = "Block"
+#imports_layout = "Vertical"
+#merge_derives = true
+#reorder_impl_items = true
+#reorder_imports = true
+#reorder_modules = false
+#group_imports = "StdExternalCrate"
+#spaces_around_ranges = true
+#where_single_line = false
+#blank_lines_lower_bound = 1
+#blank_lines_upper_bound = 1
+#edition = "2021"
+#newline_style = "Unix"
+#overflow_delimited_expr = true
+#struct_field_align_threshold = 20
+#trailing_comma = "Vertical"
