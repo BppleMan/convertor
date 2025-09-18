@@ -23,11 +23,11 @@ permissions:
   packages: write
 
 env:
-  DOCKERFILE: ./Dockerfile
-  CONTEXT_DIR: .
+  DOCKERFILE: ./convertor/Dockerfile
+  CONTEXT_DIR: ./convertor
   TARGET_TRIPLE: x86_64-unknown-linux-musl
-  PROFILE: release
-  BIN_NAME: convertor
+  PROFILE: prod
+  BIN_NAME: convd
 
 jobs:
   build-and-push:
