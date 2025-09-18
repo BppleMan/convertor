@@ -65,16 +65,16 @@ export class DashboardSub {
     subscriptionForm = new FormGroup({
         secret: new FormControl<string | null>(null, {
             validators: [ Validators.required ],
-            updateOn: "submit",
+            updateOn: "blur",
         }),
         url: new FormControl<string | null>(null, {
             validators: [ Validators.required ],
-            updateOn: "submit",
+            updateOn: "blur",
         }),
         interval: new FormControl<number>(43200, {
             nonNullable: true,
             validators: [ Validators.required ],
-            updateOn: "submit",
+            updateOn: "blur",
         }),
         client: new FormControl<string>(ProxyClient.Surge.toLowerCase(), { nonNullable: true }),
         provider: new FormControl<string>(SubProvider.BosLife.toLowerCase(), { nonNullable: true }),
@@ -130,15 +130,37 @@ export class DashboardSub {
             this.subscriptionForm.patchValue(value, { emitEvent: false });
         });
 
-    storageSub = this.params$.pipe(
-        switchMap(p =>
-            forkJoin([
-                this.storage.set("url", p.url),
-                this.storage.set("secret", p.secret),
-            ]).pipe(
-                catchError(() => EMPTY),
-            ),
+    storageSub = merge(
+        // 监听表单变化，debounce后保存
+        this.subscriptionForm.valueChanges.pipe(
+            debounceTime(300),
+            map(() => this.subscriptionForm.getRawValue()),
         ),
+        // 手动提交时立即保存
+        this.submit$.pipe(
+            map(() => this.subscriptionForm.getRawValue()),
+        ),
+    ).pipe(
+        switchMap(formValue => {
+            const saveOperations: Observable<any>[] = [];
+
+            // 只保存有值的字段
+            if (formValue.url && formValue.url.trim()) {
+                saveOperations.push(this.storage.set("url", formValue.url.trim()));
+            }
+            if (formValue.secret && formValue.secret.trim()) {
+                saveOperations.push(this.storage.set("secret", formValue.secret.trim()));
+            }
+
+            // 如果没有要保存的字段，返回空的Observable
+            if (saveOperations.length === 0) {
+                return EMPTY;
+            }
+
+            return forkJoin(saveOperations).pipe(
+                catchError(() => EMPTY),
+            );
+        }),
         takeUntilDestroyed(this.destroyRef),
     ).subscribe();
 

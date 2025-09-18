@@ -25,6 +25,7 @@ pub fn router(app_state: AppState) -> Router {
         .route("/dashboard", get(|| async { Redirect::permanent("/dashboard/") }))
         .route("/index.html", get(|| async { Redirect::permanent("/dashboard/") }))
         .route("/actuator/healthy", get(actuator::healthy))
+        .route("/actuator/ready", get(actuator::redis))
         .route("/actuator/redis", get(actuator::redis))
         .route("/actuator/version", get(actuator::version))
         .route("/raw-profile/{client}/{provider}", get(profile::raw_profile))
