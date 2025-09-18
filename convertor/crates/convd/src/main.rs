@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use color_eyre::Result;
 use convd::server::start_server;
 use convertor::common::clap_style::SONOKAI_TC;
@@ -11,7 +11,7 @@ use tracing::info;
 #[derive(Debug, Parser)]
 #[clap(version, author, styles = SONOKAI_TC)]
 /// 启动 Convertor 服务
-pub struct Convertor {
+struct Convd {
     /// 监听地址, 不需要指定协议
     #[arg(default_value = "127.0.0.1:8080")]
     listen: SocketAddrV4,
@@ -19,11 +19,19 @@ pub struct Convertor {
     /// 如果你想特别指定配置文件, 可以使用此参数
     #[arg(short)]
     config: Option<PathBuf>,
+
+    #[command(subcommand)]
+    sub_cmd: SubCmd,
+}
+
+#[derive(Debug, Subcommand)]
+enum SubCmd {
+    Tag,
 }
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<()> {
-    let args = Convertor::parse();
+    let args = Convd::parse();
 
     let base_dir = init_base_dir();
     init_backtrace(|| {
