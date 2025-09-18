@@ -4,7 +4,7 @@ use crate::core::profile::proxy::Proxy;
 use crate::core::profile::proxy_group::{ProxyGroup, ProxyGroupType};
 use crate::core::profile::rule::{ProviderRule, Rule};
 use crate::core::region::Region;
-use crate::core::result::ParseResult;
+use crate::error::ParseError;
 use crate::url::url_builder::{HostPort, UrlBuilder};
 use regex::Regex;
 use std::collections::{HashMap, HashSet};
@@ -18,6 +18,8 @@ pub mod rule;
 pub mod rule_provider;
 pub mod surge_header;
 pub mod surge_profile;
+
+type Result<T> = core::result::Result<T, ParseError>;
 
 pub(super) fn group_by_region(proxies: &[Proxy]) -> (Vec<(&'static Region, Vec<&Proxy>)>, Vec<&Proxy>) {
     let match_number = Regex::new(r"^\d+$").unwrap();
@@ -108,12 +110,12 @@ pub trait Profile {
 
     fn sorted_policy_list_mut(&mut self) -> &mut Vec<Policy>;
 
-    fn parse(content: String) -> ParseResult<Self::PROFILE>;
+    fn parse(content: String) -> Result<Self::PROFILE>;
 
-    fn convert(&mut self, url_builder: &UrlBuilder) -> ParseResult<()>;
+    fn convert(&mut self, url_builder: &UrlBuilder) -> Result<()>;
 
     #[instrument(skip_all)]
-    fn optimize_proxies(&mut self) -> ParseResult<()> {
+    fn optimize_proxies(&mut self) -> Result<()> {
         if self.proxies().is_empty() {
             return Ok(());
         };
@@ -156,8 +158,8 @@ pub trait Profile {
     }
 
     #[instrument(skip_all)]
-    fn optimize_rules(&mut self, url_builder: &UrlBuilder) -> ParseResult<()> {
-        let sub_host = url_builder.sub_url.host_port()?;
+    fn optimize_rules(&mut self, url_builder: &UrlBuilder) -> Result<()> {
+        let sub_host = url_builder.sub_url.host_port().ok_or(ParseError::SubHost)?;
         let inner_span = span!(tracing::Level::INFO, "拆分内置规则和其他规则");
         let _guard = inner_span.entered();
         let (built_in_rules, other_rules): (Vec<Rule>, Vec<Rule>) = self
@@ -219,7 +221,7 @@ pub trait Profile {
         Ok(())
     }
 
-    fn append_rule_provider(&mut self, url_builder: &UrlBuilder, policy: Policy) -> ParseResult<()>;
+    fn append_rule_provider(&mut self, url_builder: &UrlBuilder, policy: Policy) -> Result<()>;
 
     #[instrument(skip_all)]
     fn get_provider_rules_with_policy(&self, policy: &Policy) -> Option<&Vec<ProviderRule>> {

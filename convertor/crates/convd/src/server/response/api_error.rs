@@ -2,8 +2,7 @@ use axum::http::header::ToStrError;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use convertor::config::client_config::ProxyClient;
-use convertor::provider_api::ProviderApiError;
-use convertor::url::url_error::{QueryError, UrlBuilderError};
+use convertor::error::{ProviderApiError, QueryError, UrlBuilderError};
 use redis::RedisError;
 use std::sync::Arc;
 use thiserror::Error;
@@ -17,7 +16,7 @@ pub enum ApiError {
     NoSubProvider,
 
     #[error(transparent)]
-    ConvertorUrl(#[from] UrlBuilderError),
+    UrlBuilderError(#[from] UrlBuilderError),
 
     #[error("Unauthorized: {0}")]
     Unauthorized(String),

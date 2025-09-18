@@ -1,10 +1,10 @@
 use crate::common::encrypt::encrypt;
 use crate::config::client_config::ClientConfig;
-use crate::config::error::ConfigError;
+use crate::config::config_error::ConfigError;
 use crate::config::provider_config::{Provider, ProviderConfig};
 use crate::config::redis_config::{RedisConfig, REDIS_CONVERTOR_CONFIG_KEY};
+use crate::error::UrlBuilderError;
 use crate::url::url_builder::UrlBuilder;
-use crate::url::url_error::UrlBuilderError;
 use client_config::ProxyClient;
 use redis::aio::MultiplexedConnection;
 use redis::AsyncTypedCommands;
@@ -17,7 +17,7 @@ use tracing::{debug, error, warn};
 use url::Url;
 
 pub mod client_config;
-pub mod error;
+pub mod config_error;
 pub mod provider_config;
 pub mod redis_config;
 

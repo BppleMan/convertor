@@ -1,8 +1,6 @@
-use crate::provider_api::api_response::ApiFailed;
+use crate::provider_api::ApiFailed;
 use std::sync::Arc;
 use thiserror::Error;
-
-pub type Result<T> = core::result::Result<T, ProviderApiError>;
 
 #[derive(Debug, Error)]
 pub enum ProviderApiError {

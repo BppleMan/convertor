@@ -5,10 +5,12 @@ use crate::core::profile::proxy::Proxy;
 use crate::core::profile::proxy_group::ProxyGroup;
 use crate::core::profile::rule::{ProviderRule, Rule};
 use crate::core::profile::rule_provider::RuleProvider;
-use crate::core::renderer::{INDENT, Renderer};
-use crate::core::result::RenderResult;
+use crate::core::renderer::{Renderer, INDENT};
+use crate::error::RenderError;
 use std::fmt::Write;
 use tracing::instrument;
+
+type Result<T> = core::result::Result<T, RenderError>;
 
 pub struct ClashRenderer;
 
@@ -20,7 +22,7 @@ impl Renderer for ClashRenderer {
     }
 
     #[instrument(skip_all)]
-    fn render_profile(profile: &Self::PROFILE) -> RenderResult<String> {
+    fn render_profile(profile: &Self::PROFILE) -> Result<String> {
         let mut output = String::new();
         writeln!(output, "{}", Self::render_general(profile)?)?;
 
@@ -44,7 +46,7 @@ impl Renderer for ClashRenderer {
     }
 
     #[instrument(skip_all)]
-    fn render_general(profile: &Self::PROFILE) -> RenderResult<String> {
+    fn render_general(profile: &Self::PROFILE) -> Result<String> {
         let mut output = String::new();
         writeln!(output, "port: {}", profile.port)?;
         writeln!(output, "socks-port: {}", profile.socks_port)?;
@@ -60,7 +62,7 @@ impl Renderer for ClashRenderer {
         Ok(output)
     }
 
-    fn render_proxy(proxy: &Proxy) -> RenderResult<String> {
+    fn render_proxy(proxy: &Proxy) -> Result<String> {
         let mut output = String::new();
         write!(output, "{{ ")?;
         write!(output, r#"name: "{}""#, &proxy.name)?;
@@ -87,7 +89,7 @@ impl Renderer for ClashRenderer {
         Ok(output)
     }
 
-    fn render_proxy_group(proxy_group: &ProxyGroup) -> RenderResult<String> {
+    fn render_proxy_group(proxy_group: &ProxyGroup) -> Result<String> {
         let mut output = String::new();
         write!(output, "{{ ")?;
         write!(output, r#"name: "{}""#, proxy_group.name)?;
@@ -97,7 +99,7 @@ impl Renderer for ClashRenderer {
         Ok(output)
     }
 
-    fn render_rule(rule: &Rule) -> RenderResult<String> {
+    fn render_rule(rule: &Rule) -> Result<String> {
         let mut output = String::new();
         write!(output, "{}", rule.rule_type.as_str())?;
         if let Some(value) = &rule.value {
@@ -107,26 +109,26 @@ impl Renderer for ClashRenderer {
         Ok(output)
     }
 
-    fn render_rule_for_provider(rule: &Rule) -> RenderResult<String> {
+    fn render_rule_for_provider(rule: &Rule) -> Result<String> {
         Self::render_rule(rule)
     }
 
-    fn render_provider_rule(rule: &ProviderRule) -> RenderResult<String> {
+    fn render_provider_rule(rule: &ProviderRule) -> Result<String> {
         Ok(format!("{},{}", rule.rule_type.as_str(), rule.value))
     }
 
     #[instrument(skip_all)]
-    fn render_rule_providers(rule_providers: &[(String, RuleProvider)]) -> RenderResult<String> {
+    fn render_rule_providers(rule_providers: &[(String, RuleProvider)]) -> Result<String> {
         let output = rule_providers
             .iter()
             .map(Self::render_rule_provider)
             .map(|line| line.map(|line| format!("{:indent$}{}", "", line, indent = INDENT)))
-            .collect::<RenderResult<Vec<_>>>()?
+            .collect::<Result<Vec<_>>>()?
             .join("\n");
         Ok(output)
     }
 
-    fn render_rule_provider(rule_provider: &(String, RuleProvider)) -> RenderResult<String> {
+    fn render_rule_provider(rule_provider: &(String, RuleProvider)) -> Result<String> {
         let (name, rule_provider) = rule_provider;
         Ok(format!(
             r#"{}: {{ type: "{}", url: "{}", path: "{}", interval: {}, size-limit: {}, format: "{}", behavior: "{}" }}"#,

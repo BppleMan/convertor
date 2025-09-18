@@ -1,14 +1,15 @@
 use crate::common::cache::Cache;
 use crate::config::client_config::ProxyClient;
 use crate::config::provider_config::{ApiConfig, ProviderConfig};
-use crate::provider_api::provider_api_error::ProviderApiError;
-use crate::provider_api::provider_api_error::Result;
+use crate::error::ProviderApiError;
 use crate::provider_api::provider_api_trait::ProviderApiTrait;
 use redis::aio::ConnectionManager;
 use reqwest::Client as ReqwestClient;
 use reqwest::{Method, Request, Url};
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
+
+type Result<T> = core::result::Result<T, ProviderApiError>;
 
 #[derive(Clone)]
 pub struct BosLifeApi {

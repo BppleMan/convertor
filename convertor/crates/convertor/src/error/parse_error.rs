@@ -1,5 +1,5 @@
 use crate::core::profile::rule::Rule;
-use crate::url::url_error::UrlBuilderError;
+use crate::error::UrlBuilderError;
 use thiserror::Error;
 
 /// 所有解析失败场景的统一错误
@@ -39,9 +39,6 @@ pub enum ParseError {
     ConvertorUrlError(#[from] UrlBuilderError),
 
     #[error(transparent)]
-    RenderError(#[from] RenderError),
-
-    #[error(transparent)]
     IOError(#[from] std::io::Error),
 
     #[error(transparent)]
@@ -49,13 +46,4 @@ pub enum ParseError {
 
     #[error(transparent)]
     YamlError(#[from] serde_yaml::Error),
-}
-
-#[derive(Debug, Error)]
-pub enum RenderError {
-    #[error("渲染失败: {0}")]
-    Render(String),
-
-    #[error(transparent)]
-    FmtError(#[from] std::fmt::Error),
 }

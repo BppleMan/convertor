@@ -7,12 +7,14 @@ use crate::core::profile::proxy_group::ProxyGroup;
 use crate::core::profile::rule::{ProviderRule, Rule};
 use crate::core::profile::rule_provider::RuleProvider;
 use crate::core::profile::Profile;
-use crate::core::result::RenderResult;
+use crate::error::RenderError;
 use std::fmt::Write;
 use tracing::instrument;
 
 pub mod clash_renderer;
 pub mod surge_renderer;
+
+type Result<T> = core::result::Result<T, RenderError>;
 
 pub const INDENT: usize = 4;
 
@@ -21,36 +23,36 @@ pub trait Renderer {
 
     fn client() -> ProxyClient;
 
-    fn render_profile(profile: &Self::PROFILE) -> RenderResult<String>;
+    fn render_profile(profile: &Self::PROFILE) -> Result<String>;
 
-    fn render_general(profile: &Self::PROFILE) -> RenderResult<String>;
+    fn render_general(profile: &Self::PROFILE) -> Result<String>;
 
     #[instrument(skip_all)]
-    fn render_proxies(proxies: &[Proxy]) -> RenderResult<String> {
+    fn render_proxies(proxies: &[Proxy]) -> Result<String> {
         Self::render_lines(proxies, Self::render_proxy)
     }
 
-    fn render_proxy(proxy: &Proxy) -> RenderResult<String>;
+    fn render_proxy(proxy: &Proxy) -> Result<String>;
 
     #[instrument(skip_all)]
-    fn render_proxy_groups(proxy_groups: &[ProxyGroup]) -> RenderResult<String> {
+    fn render_proxy_groups(proxy_groups: &[ProxyGroup]) -> Result<String> {
         Self::render_lines(proxy_groups, Self::render_proxy_group)
     }
 
-    fn render_proxy_group(proxy_group: &ProxyGroup) -> RenderResult<String>;
+    fn render_proxy_group(proxy_group: &ProxyGroup) -> Result<String>;
 
     #[instrument(skip_all)]
-    fn render_rules(rules: &[Rule]) -> RenderResult<String> {
+    fn render_rules(rules: &[Rule]) -> Result<String> {
         Self::render_lines(rules, Self::render_rule)
     }
 
-    fn render_rule(rule: &Rule) -> RenderResult<String>;
+    fn render_rule(rule: &Rule) -> Result<String>;
 
     /// 适用于渲染规则集类型的规则，不包含注释
-    fn render_rule_for_provider(rule: &Rule) -> RenderResult<String>;
+    fn render_rule_for_provider(rule: &Rule) -> Result<String>;
 
     #[instrument(skip_all)]
-    fn render_provider_rules(rules: &[ProviderRule]) -> RenderResult<String> {
+    fn render_provider_rules(rules: &[ProviderRule]) -> Result<String> {
         let mut output = String::new();
         match Self::client() {
             ProxyClient::Surge => {
@@ -64,9 +66,9 @@ pub trait Renderer {
         Ok(output)
     }
 
-    fn render_provider_rule(rule: &ProviderRule) -> RenderResult<String>;
+    fn render_provider_rule(rule: &ProviderRule) -> Result<String>;
 
-    fn render_policy(policy: &Policy) -> RenderResult<String> {
+    fn render_policy(policy: &Policy) -> Result<String> {
         let mut output = String::new();
         write!(output, "{}", policy.name)?;
         if let Some(option) = &policy.option {
@@ -75,15 +77,15 @@ pub trait Renderer {
         Ok(output)
     }
 
-    fn render_rule_providers(rule_providers: &[(String, RuleProvider)]) -> RenderResult<String>;
+    fn render_rule_providers(rule_providers: &[(String, RuleProvider)]) -> Result<String>;
 
-    fn render_rule_provider(rule_provider: &(String, RuleProvider)) -> RenderResult<String>;
+    fn render_rule_provider(rule_provider: &(String, RuleProvider)) -> Result<String>;
 
     fn render_provider_name_for_policy(policy: &Policy) -> String;
 
-    fn render_lines<T, F>(lines: impl IntoIterator<Item = T>, map: F) -> RenderResult<String>
+    fn render_lines<T, F>(lines: impl IntoIterator<Item = T>, map: F) -> Result<String>
     where
-        F: FnMut(T) -> RenderResult<String>,
+        F: FnMut(T) -> Result<String>,
     {
         let output = lines
             .into_iter()
@@ -92,7 +94,7 @@ pub trait Renderer {
                 ProxyClient::Surge => line,
                 ProxyClient::Clash => line.map(Self::indent_line),
             })
-            .collect::<RenderResult<Vec<_>>>()?
+            .collect::<Result<Vec<_>>>()?
             .join("\n");
         Ok(output)
     }

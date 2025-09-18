@@ -4,7 +4,7 @@ mod server;
 use crate::server::{start_server, ServerContext};
 use axum::body::Body;
 use axum::extract::Request;
-use color_eyre::eyre::eyre;
+use color_eyre::eyre::{eyre, OptionExt};
 use convd::server::response::ApiResponse;
 use convertor::common::encrypt::encrypt;
 use convertor::config::client_config::ProxyClient;
@@ -48,7 +48,13 @@ async fn subscription(
         .to_string()
         .replace(&enc_secret, &secret)
         .replace(&enc_sub_url, sub_url.as_str())
-        .replace(sub_url.host_port()?.as_str(), "mock_host_port");
+        .replace(
+            sub_url
+                .host_port()
+                .ok_or_eyre("无法从 sub_url 中提取 host port")?
+                .as_str(),
+            "mock_host_port",
+        );
 
     Ok(actual)
 }

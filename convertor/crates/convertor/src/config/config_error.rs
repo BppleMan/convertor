@@ -1,5 +1,4 @@
-use crate::common::encrypt::EncryptError;
-use crate::url::url_error::UrlBuilderError;
+use crate::error::{EncryptError, UrlBuilderError};
 use thiserror::Error;
 
 #[derive(Debug, Error)]

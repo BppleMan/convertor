@@ -6,9 +6,11 @@ use crate::core::profile::rule::{ProviderRule, Rule};
 use crate::core::profile::rule_provider::RuleProvider;
 use crate::core::profile::surge_profile::SurgeProfile;
 use crate::core::renderer::Renderer;
-use crate::core::result::RenderResult;
+use crate::error::RenderError;
 use std::fmt::Write;
 use tracing::instrument;
+
+type Result<T> = core::result::Result<T, RenderError>;
 
 pub const SURGE_RULE_PROVIDER_COMMENT_START: &str = "# Rule Provider from convertor";
 pub const SURGE_RULE_PROVIDER_COMMENT_END: &str = "# End of Rule Provider";
@@ -22,7 +24,7 @@ impl Renderer for SurgeRenderer {
         ProxyClient::Surge
     }
 
-    fn render_profile(profile: &Self::PROFILE) -> RenderResult<String> {
+    fn render_profile(profile: &Self::PROFILE) -> Result<String> {
         let mut output = String::new();
 
         let header = Self::render_header(profile)?;
@@ -62,11 +64,11 @@ impl Renderer for SurgeRenderer {
         Ok(output)
     }
 
-    fn render_general(profile: &Self::PROFILE) -> RenderResult<String> {
+    fn render_general(profile: &Self::PROFILE) -> Result<String> {
         Self::render_lines(&profile.general, |line| Ok(line.clone()))
     }
 
-    fn render_proxy(proxy: &Proxy) -> RenderResult<String> {
+    fn render_proxy(proxy: &Proxy) -> Result<String> {
         let mut output = String::new();
         if let Some(comment) = &proxy.comment {
             writeln!(output, "{comment}")?;
@@ -94,7 +96,7 @@ impl Renderer for SurgeRenderer {
         Ok(output)
     }
 
-    fn render_proxy_group(proxy_group: &ProxyGroup) -> RenderResult<String> {
+    fn render_proxy_group(proxy_group: &ProxyGroup) -> Result<String> {
         let mut output = String::new();
         if let Some(comment) = &proxy_group.comment {
             writeln!(output, "{comment}")?;
@@ -106,7 +108,7 @@ impl Renderer for SurgeRenderer {
         Ok(output)
     }
 
-    fn render_rule(rule: &Rule) -> RenderResult<String> {
+    fn render_rule(rule: &Rule) -> Result<String> {
         let mut output = String::new();
         if let Some(comment) = &rule.comment {
             writeln!(output, "{comment}")?;
@@ -119,7 +121,7 @@ impl Renderer for SurgeRenderer {
         Ok(output)
     }
 
-    fn render_rule_for_provider(rule: &Rule) -> RenderResult<String> {
+    fn render_rule_for_provider(rule: &Rule) -> Result<String> {
         Ok(format!(
             "{},{},{}",
             rule.rule_type.as_str(),
@@ -128,7 +130,7 @@ impl Renderer for SurgeRenderer {
         ))
     }
 
-    fn render_provider_rule(rule: &ProviderRule) -> RenderResult<String> {
+    fn render_provider_rule(rule: &ProviderRule) -> Result<String> {
         let mut output = String::new();
         if let Some(comment) = &rule.comment {
             writeln!(output, "{comment}")?;
@@ -137,11 +139,11 @@ impl Renderer for SurgeRenderer {
         Ok(output)
     }
 
-    fn render_rule_providers(_: &[(String, RuleProvider)]) -> RenderResult<String> {
+    fn render_rule_providers(_: &[(String, RuleProvider)]) -> Result<String> {
         todo!("SurgeRenderer 不会渲染 [RuleProvider]");
     }
 
-    fn render_rule_provider(_: &(String, RuleProvider)) -> RenderResult<String> {
+    fn render_rule_provider(_: &(String, RuleProvider)) -> Result<String> {
         todo!("SurgeRenderer 不会渲染 RuleProvider");
     }
 
@@ -161,17 +163,17 @@ impl Renderer for SurgeRenderer {
 
 impl SurgeRenderer {
     #[instrument(skip_all)]
-    pub fn render_header(profile: &SurgeProfile) -> RenderResult<String> {
+    pub fn render_header(profile: &SurgeProfile) -> Result<String> {
         Ok(profile.header.to_string())
     }
 
     #[instrument(skip_all)]
-    pub fn render_url_rewrite(url_rewrite: &[String]) -> RenderResult<String> {
+    pub fn render_url_rewrite(url_rewrite: &[String]) -> Result<String> {
         Self::render_lines(url_rewrite, |line| Ok(line.clone()))
     }
 
     #[instrument(skip_all)]
-    pub fn render_misc(misc: &[(String, Vec<String>)]) -> RenderResult<String> {
+    pub fn render_misc(misc: &[(String, Vec<String>)]) -> Result<String> {
         let mut output = String::new();
         for (key, values) in misc {
             writeln!(output, "{key}")?;

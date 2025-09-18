@@ -1,26 +1,27 @@
-use crate::core::error::ParseError;
 use crate::core::profile::clash_profile::ClashProfile;
 use crate::core::profile::rule::Rule;
-use crate::core::result::ParseResult;
+use crate::error::ParseError;
 use serde_yaml::Value;
 use tracing::instrument;
+
+type Result<T> = core::result::Result<T, ParseError>;
 
 pub struct ClashParser;
 
 impl ClashParser {
     #[instrument(skip_all)]
-    pub fn parse(raw_profile: impl AsRef<str>) -> ParseResult<ClashProfile> {
+    pub fn parse(raw_profile: impl AsRef<str>) -> Result<ClashProfile> {
         Ok(serde_yaml::from_str(raw_profile.as_ref())?)
     }
 
     #[instrument(skip_all)]
-    pub fn parse_rules(section: impl AsRef<str>) -> ParseResult<Vec<Rule>> {
+    pub fn parse_rules(section: impl AsRef<str>) -> Result<Vec<Rule>> {
         let value: Value = serde_yaml::from_str(section.as_ref())?;
         let rules = match value {
             Value::Sequence(rules) => rules
                 .into_iter()
                 .map(|r| Ok(serde_yaml::from_value(r)?))
-                .collect::<ParseResult<Vec<Rule>>>(),
+                .collect::<Result<Vec<Rule>>>(),
             Value::Mapping(mut rules) => {
                 if rules.contains_key("rules") {
                     rules

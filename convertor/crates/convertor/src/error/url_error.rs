@@ -1,6 +1,6 @@
-use crate::common::encrypt::EncryptError;
 use crate::config::client_config::{ParseClientError, ProxyClient};
 use crate::config::provider_config::Provider;
+use crate::error::{EncryptError, QueryError};
 use crate::url::convertor_url::ConvertorUrlType;
 use std::str::Utf8Error;
 use thiserror::Error;
@@ -31,22 +31,7 @@ pub enum UrlBuilderError {
 }
 
 #[derive(Debug, Error)]
-pub enum QueryError {
-    #[error("无法加密/解密 raw_sub_url: {0}")]
-    EncryptError(#[from] EncryptError),
-
-    #[error("Unauthorized: {0}")]
-    Unauthorized(String),
-
-    #[error(transparent)]
-    Parse(#[from] ParseError),
-
-    #[error(transparent)]
-    Encode(#[from] EncodeError),
-}
-
-#[derive(Debug, Error)]
-pub enum ParseError {
+pub enum ParseUrlError {
     #[error("无法从 URL 中解析 ConvertorUrl: 缺少查询参数: {0}")]
     NotFoundParam(&'static str),
 
@@ -70,7 +55,7 @@ pub enum ParseError {
 }
 
 #[derive(Debug, Error)]
-pub enum EncodeError {
+pub enum EncodeUrlError {
     #[error("构造 ${0} query 失败: 缺少必要参数 {1}")]
     NotFoundParam(&'static str, &'static str),
 

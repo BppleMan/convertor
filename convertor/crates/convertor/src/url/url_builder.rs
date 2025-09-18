@@ -3,9 +3,9 @@ use crate::config::client_config::ProxyClient;
 use crate::config::provider_config::Provider;
 use crate::core::profile::policy::Policy;
 use crate::core::profile::surge_header::SurgeHeader;
+use crate::error::UrlBuilderError;
 use crate::url::convertor_url::{ConvertorUrl, ConvertorUrlType};
 use crate::url::query::ConvertorQuery;
-use crate::url::url_error::UrlBuilderError;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -184,15 +184,15 @@ impl UrlBuilder {
 }
 
 pub trait HostPort {
-    fn host_port(&self) -> Result<String, UrlBuilderError>;
+    fn host_port(&self) -> Option<String>;
 }
 
 impl HostPort for Url {
-    fn host_port(&self) -> Result<String, UrlBuilderError> {
+    fn host_port(&self) -> Option<String> {
         match (self.host_str(), self.port()) {
-            (Some(host), Some(port)) => Ok(format!("{host}:{port}")),
-            (Some(host), None) => Ok(host.to_string()),
-            _ => Err(UrlBuilderError::NoSubHost(self.clone())),
+            (Some(host), Some(port)) => Some(format!("{host}:{port}")),
+            (Some(host), None) => Some(host.to_string()),
+            _ => None,
         }
     }
 }

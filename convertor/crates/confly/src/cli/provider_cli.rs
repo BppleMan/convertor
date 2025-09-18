@@ -1,19 +1,19 @@
 use clap::Args;
+use color_eyre::eyre::{eyre, OptionExt};
 use color_eyre::Result;
-use color_eyre::eyre::eyre;
-use convertor::config::ConvertorConfig;
 use convertor::config::client_config::ProxyClient;
 use convertor::config::provider_config::Provider;
-use convertor::core::profile::Profile;
+use convertor::config::ConvertorConfig;
 use convertor::core::profile::clash_profile::ClashProfile;
 use convertor::core::profile::extract_policies_for_rule_provider;
 use convertor::core::profile::policy::Policy;
 use convertor::core::profile::surge_profile::SurgeProfile;
+use convertor::core::profile::Profile;
+use convertor::error::UrlBuilderError;
 use convertor::provider_api::ProviderApi;
 use convertor::url::convertor_url::ConvertorUrlType;
 use convertor::url::query::ConvertorQuery;
 use convertor::url::url_builder::{HostPort, UrlBuilder};
-use convertor::url::url_error::UrlBuilderError;
 use convertor::url::url_result::UrlResult;
 use headers::UserAgent;
 use std::collections::HashMap;
@@ -92,7 +92,10 @@ impl ProviderCli {
         let raw_profile_content = api
             .get_raw_profile(client, UserAgent::from_static("Surge Mac/8310"))
             .await?;
-        let sub_host = url_builder.sub_url.host_port()?;
+        let sub_host = url_builder
+            .sub_url
+            .host_port()
+            .ok_or_eyre("无法从 sub_url 中提取 host port")?;
         let (_client_profile, policies) = match client {
             ProxyClient::Surge => {
                 let mut raw_profile = SurgeProfile::parse(raw_profile_content)?;

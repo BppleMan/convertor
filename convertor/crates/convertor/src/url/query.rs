@@ -1,6 +1,6 @@
 use crate::common::encrypt::decrypt;
 use crate::core::profile::policy::Policy;
-use crate::url::url_error::{EncodeError, ParseError, QueryError};
+use crate::error::{EncodeUrlError, ParseUrlError, QueryError};
 use percent_encoding::{percent_decode_str, utf8_percent_encode};
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -39,18 +39,18 @@ impl ConvertorQuery {
         // 解析 sub_url
         let enc_sub_url = query_map
             .get("sub_url")
-            .ok_or(ParseError::NotFoundParam("sub_url"))?
+            .ok_or(ParseUrlError::NotFoundParam("sub_url"))?
             .to_string();
         let sub_url = decrypt(secret.as_bytes(), enc_sub_url.as_ref())?
             .parse::<Url>()
-            .map_err(ParseError::from)?;
+            .map_err(ParseUrlError::from)?;
 
         // 解析 interval
         let interval = query_map
             .get("interval")
             .map(|s| s.parse::<u64>())
             .transpose()
-            .map_err(ParseError::from)?
+            .map_err(ParseUrlError::from)?
             .unwrap_or(86400);
 
         // 解析 strict
@@ -58,7 +58,7 @@ impl ConvertorQuery {
             .get("strict")
             .map(|s| s.parse::<bool>())
             .transpose()
-            .map_err(ParseError::from)?;
+            .map_err(ParseUrlError::from)?;
 
         // 解析 policy
         let policy = Self::parse_policy_from_query_pairs(&query_map)?;
@@ -70,7 +70,7 @@ impl ConvertorQuery {
                 percent_decode_str(s.as_ref())
                     .decode_utf8()
                     .map(|es| es.to_string())
-                    .map_err(ParseError::from)
+                    .map_err(ParseUrlError::from)
             })
             .transpose()?;
         let secret = enc_secret
@@ -92,7 +92,7 @@ impl ConvertorQuery {
 
     fn parse_policy_from_query_pairs(
         query_map: &HashMap<Cow<'_, str>, Cow<'_, str>>,
-    ) -> Result<Option<Policy>, ParseError> {
+    ) -> Result<Option<Policy>, ParseUrlError> {
         let name = query_map.get("policy[name]").map(|s| s.to_string());
         let option = query_map.get("policy[option]").map(|s| s.to_string());
         let is_subscription = query_map
@@ -115,7 +115,7 @@ impl ConvertorQuery {
         let interval_str = self.interval.to_string();
         let strict_str = self
             .strict
-            .ok_or(EncodeError::NotFoundParam("profile", "strict"))?
+            .ok_or(EncodeUrlError::NotFoundParam("profile", "strict"))?
             .to_string();
         let query_pairs = vec![
             ("interval", Cow::Borrowed(interval_str.as_str())),
@@ -130,7 +130,7 @@ impl ConvertorQuery {
         let policy = self
             .policy
             .as_ref()
-            .ok_or(EncodeError::NotFoundParam("rule provider", "policy"))?;
+            .ok_or(EncodeUrlError::NotFoundParam("rule provider", "policy"))?;
         let mut query_pairs = vec![("interval", Cow::Owned(self.interval.to_string()))];
         Self::encode_policy_to_query_pairs(policy, &mut query_pairs);
         query_pairs.push(("sub_url", Cow::Borrowed(&self.enc_sub_url)));
@@ -142,7 +142,7 @@ impl ConvertorQuery {
         let enc_secret = self
             .enc_secret
             .as_ref()
-            .ok_or(EncodeError::NotFoundParam("sub logs", "enc_secret"))?;
+            .ok_or(EncodeUrlError::NotFoundParam("sub logs", "enc_secret"))?;
 
         let query_pairs = vec![("secret", Cow::Owned(enc_secret.clone()))];
 
@@ -166,7 +166,7 @@ impl ConvertorQuery {
 }
 
 impl ConvertorQuery {
-    fn url_decode(query_string: &str) -> Result<HashMap<Cow<'_, str>, Cow<'_, str>>, ParseError> {
+    fn url_decode(query_string: &str) -> Result<HashMap<Cow<'_, str>, Cow<'_, str>>, ParseUrlError> {
         let query_map = query_string
             .split('&')
             .filter_map(|p| p.split_once('='))
@@ -176,7 +176,7 @@ impl ConvertorQuery {
                     .and_then(|k| percent_decode_str(v.trim()).decode_utf8().map(|v| (k, v)))
             })
             .collect::<Result<HashMap<Cow<'_, str>, Cow<'_, str>>, Utf8Error>>()
-            .map_err(ParseError::from)?;
+            .map_err(ParseUrlError::from)?;
         Ok(query_map)
     }
 
@@ -198,14 +198,14 @@ impl ConvertorQuery {
 impl ConvertorQuery {
     pub fn check_for_profile(self) -> Result<Self, QueryError> {
         if self.strict.is_none() {
-            return Err(QueryError::Encode(EncodeError::NotFoundParam("profile", "strict")));
+            return Err(QueryError::Encode(EncodeUrlError::NotFoundParam("profile", "strict")));
         }
         Ok(self)
     }
 
     pub fn check_for_rule_provider(self) -> Result<(Self, Policy), QueryError> {
         let Some(policy) = self.policy.clone() else {
-            return Err(QueryError::Encode(EncodeError::NotFoundParam(
+            return Err(QueryError::Encode(EncodeUrlError::NotFoundParam(
                 "rule provider",
                 "policy",
             )));
@@ -224,13 +224,13 @@ impl ConvertorQuery {
     fn validate_secret(self, secret: impl AsRef<str>) -> Result<Self, QueryError> {
         let secret = secret.as_ref();
         if self.secret.is_none() {
-            return Err(QueryError::Encode(EncodeError::NotFoundParam(
+            return Err(QueryError::Encode(EncodeUrlError::NotFoundParam(
                 "validate secret",
                 "secret",
             )));
         }
         if self.enc_secret.is_none() {
-            return Err(QueryError::Encode(EncodeError::NotFoundParam(
+            return Err(QueryError::Encode(EncodeUrlError::NotFoundParam(
                 "validate secret",
                 "enc_secret",
             )));

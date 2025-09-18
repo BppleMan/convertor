@@ -10,12 +10,12 @@ use url::Url;
 use crate::provider_api::boslife_api::BosLifeApi;
 pub use api_response::*;
 pub use boslife_api::{BosLifeLog, BosLifeLogs};
-pub use provider_api_error::*;
 
 mod api_response;
 mod boslife_api;
-mod provider_api_error;
 mod provider_api_trait;
+
+type Result<T> = core::result::Result<T, crate::error::ProviderApiError>;
 
 #[derive(Clone)]
 pub enum ProviderApi {

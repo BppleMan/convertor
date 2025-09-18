@@ -1,13 +1,12 @@
 use crate::common::cache::{
-    CACHED_AUTH_TOKEN_KEY, CACHED_PROFILE_KEY, CACHED_SUB_LOGS_KEY, CACHED_SUB_URL_KEY, Cache, CacheKey,
+    Cache, CacheKey, CACHED_AUTH_TOKEN_KEY, CACHED_PROFILE_KEY, CACHED_SUB_LOGS_KEY, CACHED_SUB_URL_KEY,
 };
 use crate::common::ext::NonEmptyOptStr;
 use crate::config::client_config::ProxyClient;
 use crate::config::provider_config::ApiConfig;
+use crate::error::ProviderApiError;
 use crate::provider_api::api_response::ApiFailed;
 use crate::provider_api::boslife_api::BosLifeLogs;
-use crate::provider_api::provider_api_error::ProviderApiError;
-use crate::provider_api::provider_api_error::Result;
 use headers::UserAgent;
 use reqwest::header::{HeaderName, HeaderValue};
 use reqwest::{Method, Request};
@@ -15,6 +14,8 @@ use std::fmt::Debug;
 use std::str::FromStr;
 use tracing::error;
 use url::Url;
+
+type Result<T> = core::result::Result<T, ProviderApiError>;
 
 #[async_trait::async_trait]
 pub trait ProviderApiTrait: Clone + Send {

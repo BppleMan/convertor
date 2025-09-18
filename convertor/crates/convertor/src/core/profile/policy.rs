@@ -1,4 +1,4 @@
-use crate::core::error::ParseError;
+use crate::error::ParseError;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::collections::HashMap;

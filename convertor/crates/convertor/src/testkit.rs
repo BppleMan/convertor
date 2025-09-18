@@ -5,6 +5,7 @@ use crate::config::provider_config::ProviderConfig;
 use crate::config::ConvertorConfig;
 use crate::core::profile::policy::Policy;
 use crate::url::url_builder::HostPort;
+use color_eyre::eyre::OptionExt;
 use color_eyre::Report;
 use httpmock::Method::{GET, POST};
 use httpmock::MockServer;
@@ -88,7 +89,7 @@ impl MockServerExt for ProviderConfig {
             .await;
 
         // hook mock server 的 /subscription 路径，返回相应的 mock 数据
-        let sub_host = self.sub_url.host_port()?;
+        let sub_host = self.sub_url.host_port().ok_or_eyre("无法从 sub_url 中提取 host port")?;
         for client in ProxyClient::VARIANTS {
             mock_server
                 .mock_async(|when, then| {
@@ -105,7 +106,7 @@ impl MockServerExt for ProviderConfig {
         }
 
         // hook mock server 的 /subscription 路径，返回相应的 mock 数据
-        let sub_host = self.sub_url.host_port()?;
+        let sub_host = self.sub_url.host_port().ok_or_eyre("无法从 sub_url 中提取 host port")?;
         for client in ProxyClient::VARIANTS {
             mock_server
                 .mock_async(|when, then| {
