@@ -26,7 +26,11 @@ async fn main() -> Result<()> {
     let args = Convertor::parse();
 
     let base_dir = init_base_dir();
-    init_backtrace();
+    init_backtrace(|| {
+        if let Err(e) = color_eyre::install() {
+            eprintln!("Failed to install color_eyre: {e}");
+        }
+    });
     init_log(Some(&base_dir));
     info!("工作目录: {}", base_dir.display());
 

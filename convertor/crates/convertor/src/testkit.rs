@@ -1,8 +1,8 @@
 use crate::common::encrypt::nonce_rng_use_seed;
 use crate::common::once::{init_backtrace, init_log};
-use crate::config::ConvertorConfig;
 use crate::config::client_config::ProxyClient;
 use crate::config::provider_config::ProviderConfig;
+use crate::config::ConvertorConfig;
 use crate::core::profile::policy::Policy;
 use crate::url::url_builder::HostPort;
 use color_eyre::Report;
@@ -14,7 +14,11 @@ use url::Url;
 
 pub fn init_test() -> PathBuf {
     let base_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("test-assets");
-    init_backtrace();
+    init_backtrace(|| {
+        if let Err(e) = color_eyre::install() {
+            eprintln!("Failed to install color_eyre: {e}");
+        }
+    });
     init_log(None);
     nonce_rng_use_seed([0u8; 32]);
     base_dir

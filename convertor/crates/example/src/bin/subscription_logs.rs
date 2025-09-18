@@ -5,7 +5,11 @@ use convertor::provider_api::ProviderApi;
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> color_eyre::Result<()> {
     let base_dir = init_base_dir();
-    init_backtrace();
+    init_backtrace(|| {
+        if let Err(e) = color_eyre::install() {
+            eprintln!("Failed to install color_eyre: {e}");
+        }
+    });
 
     let config = ConvertorConfig::search(&base_dir, Option::<&str>::None)?;
     let api_map = ProviderApi::create_api_no_redis(config.providers);

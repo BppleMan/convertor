@@ -16,12 +16,16 @@ pub fn init_base_dir() -> std::path::PathBuf {
 
 static INITIALIZED_BACKTRACE: Once = Once::new();
 
-pub fn init_backtrace() {
-    INITIALIZED_BACKTRACE.call_once(|| {
-        if let Err(e) = color_eyre::install() {
-            eprintln!("Failed to install color_eyre: {e}");
-        }
-    });
+pub fn init_backtrace<F>(call_once: F)
+where
+    F: FnOnce(),
+{
+    // INITIALIZED_BACKTRACE.call_once(|| {
+    //     if let Err(e) = color_eyre::install() {
+    //         eprintln!("Failed to install color_eyre: {e}");
+    //     }
+    // });
+    INITIALIZED_BACKTRACE.call_once(call_once);
 }
 
 static INITIALIZED_LOG: Once = Once::new();

@@ -8,11 +8,14 @@ use std::collections::HashMap;
 use url::Url;
 
 use crate::provider_api::boslife_api::BosLifeApi;
+pub use api_response::*;
 pub use boslife_api::{BosLifeLog, BosLifeLogs};
+pub use provider_api_error::*;
 
 mod api_response;
 mod boslife_api;
-pub mod provider_api_trait;
+mod provider_api_error;
+mod provider_api_trait;
 
 #[derive(Clone)]
 pub enum ProviderApi {
@@ -56,32 +59,32 @@ impl ProviderApi {
         }
     }
 
-    pub async fn login(&self) -> color_eyre::Result<String> {
+    pub async fn login(&self) -> Result<String> {
         match self {
             ProviderApi::BosLife(api) => api.login().await,
         }
     }
 
     // sub_url 是订阅地址并且应该指定客户端
-    pub async fn get_raw_profile(&self, client: ProxyClient, user_agent: UserAgent) -> color_eyre::Result<String> {
+    pub async fn get_raw_profile(&self, client: ProxyClient, user_agent: UserAgent) -> Result<String> {
         match self {
             ProviderApi::BosLife(api) => api.get_raw_profile(client, user_agent).await,
         }
     }
 
-    pub async fn get_sub_url(&self) -> color_eyre::Result<Url> {
+    pub async fn get_sub_url(&self) -> Result<Url> {
         match self {
             ProviderApi::BosLife(api) => api.get_sub_url().await,
         }
     }
 
-    pub async fn reset_sub_url(&self) -> color_eyre::Result<Url> {
+    pub async fn reset_sub_url(&self) -> Result<Url> {
         match self {
             ProviderApi::BosLife(api) => api.reset_sub_url().await,
         }
     }
 
-    pub async fn get_sub_logs(&self) -> color_eyre::Result<BosLifeLogs> {
+    pub async fn get_sub_logs(&self) -> Result<BosLifeLogs> {
         match self {
             ProviderApi::BosLife(api) => api.get_sub_logs().await,
         }

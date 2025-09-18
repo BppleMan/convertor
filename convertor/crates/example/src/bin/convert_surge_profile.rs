@@ -1,19 +1,23 @@
 use color_eyre::eyre::eyre;
 use convertor::common::once::{init_backtrace, init_base_dir};
-use convertor::config::ConvertorConfig;
 use convertor::config::client_config::ProxyClient;
 use convertor::config::provider_config::Provider;
-use convertor::core::profile::Profile;
+use convertor::config::ConvertorConfig;
 use convertor::core::profile::surge_profile::SurgeProfile;
-use convertor::core::renderer::Renderer;
+use convertor::core::profile::Profile;
 use convertor::core::renderer::surge_renderer::SurgeRenderer;
+use convertor::core::renderer::Renderer;
 use convertor::provider_api::ProviderApi;
 use headers::UserAgent;
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> color_eyre::Result<()> {
     let base_dir = init_base_dir();
-    init_backtrace();
+    init_backtrace(|| {
+        if let Err(e) = color_eyre::install() {
+            eprintln!("Failed to install color_eyre: {e}");
+        }
+    });
 
     // 确定适用的客户端和订阅提供者
     // 这里使用 Surge 客户端和 BosLife 机场

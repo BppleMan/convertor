@@ -1,15 +1,19 @@
 use convertor::common::once::init_backtrace;
-use convertor::config::ConvertorConfig;
 use convertor::config::client_config::ProxyClient;
 use convertor::config::provider_config::Provider;
-use convertor::core::profile::Profile;
+use convertor::config::ConvertorConfig;
 use convertor::core::profile::surge_profile::SurgeProfile;
+use convertor::core::profile::Profile;
 use std::path::Path;
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> color_eyre::Result<()> {
     let base_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join(".convertor.bench");
-    init_backtrace();
+    init_backtrace(|| {
+        if let Err(e) = color_eyre::install() {
+            eprintln!("Failed to install color_eyre: {e}");
+        }
+    });
     // 下面两种方案任选一
     tracing_span_tree::span_tree().aggregate(true).enable();
     // #[cfg(feature = "bench")]

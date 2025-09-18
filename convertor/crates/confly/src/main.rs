@@ -1,8 +1,8 @@
 use clap::Parser;
 use color_eyre::Result;
-use confly::cli::ConvertorCommand;
 use confly::cli::config_cli::ConfigCli;
 use confly::cli::provider_cli::ProviderCli;
+use confly::cli::ConvertorCommand;
 use convertor::common::clap_style::SONOKAI_TC;
 use convertor::common::once::{init_backtrace, init_base_dir, init_log};
 use convertor::config::ConvertorConfig;
@@ -27,7 +27,11 @@ async fn main() -> Result<()> {
     let args = Convertor::parse();
 
     let base_dir = init_base_dir();
-    init_backtrace();
+    init_backtrace(|| {
+        if let Err(e) = color_eyre::install() {
+            eprintln!("Failed to install color_eyre: {e}");
+        }
+    });
     init_log(Some(&base_dir));
 
     match args.command {

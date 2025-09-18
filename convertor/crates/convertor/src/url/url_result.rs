@@ -1,5 +1,4 @@
 use crate::url::convertor_url::ConvertorUrl;
-use color_eyre::owo_colors::OwoColorize;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fmt::Display;
@@ -15,16 +14,16 @@ pub struct UrlResult {
 
 impl Display for UrlResult {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "{}", self.raw_url.desc.blue())?;
+        writeln!(f, "{}", self.raw_url.desc)?;
         writeln!(f, "{}", self.raw_url)?;
-        writeln!(f, "{}", self.profile_url.desc.blue())?;
+        writeln!(f, "{}", self.profile_url.desc)?;
         writeln!(f, "{}", self.profile_url)?;
-        writeln!(f, "{}", self.raw_profile_url.desc.blue())?;
+        writeln!(f, "{}", self.raw_profile_url.desc)?;
         writeln!(f, "{}", self.raw_profile_url)?;
-        writeln!(f, "{}", self.sub_logs_url.desc.blue())?;
+        writeln!(f, "{}", self.sub_logs_url.desc)?;
         writeln!(f, "{}", self.sub_logs_url)?;
         for url in &self.rule_providers_url {
-            writeln!(f, "{}", url.desc.blue())?;
+            writeln!(f, "{}", url.desc)?;
             writeln!(f, "{url}")?;
         }
         Ok(())

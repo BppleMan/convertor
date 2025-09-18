@@ -1,4 +1,4 @@
-use crate::common::encrypt::{decrypt, encrypt};
+use crate::common::encrypt::encrypt;
 use crate::config::client_config::ClientConfig;
 use crate::config::error::ConfigError;
 use crate::config::provider_config::{Provider, ProviderConfig};

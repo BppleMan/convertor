@@ -697,11 +697,11 @@ dependencies = [
 name = "convertor"
 version = "2.6.0+alpha"
 dependencies = [
- "anyhow",
  "async-trait",
  "base64 0.22.1",
  "chacha20poly1305",
  "clap",
+ "color-eyre",
  "futures-util",
  "headers",
  "httpmock",

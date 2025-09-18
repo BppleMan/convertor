@@ -1,7 +1,7 @@
 use crate::config::client_config::ProxyClient;
 use moka::future::Cache as MokaCache;
-use redis::aio::ConnectionManager;
 use redis::AsyncTypedCommands;
+use redis::aio::ConnectionManager;
 use std::fmt::{Debug, Display, Formatter};
 use std::future::Future;
 use std::hash::Hash;

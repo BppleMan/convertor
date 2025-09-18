@@ -1,6 +1,4 @@
 use crate::common::encrypt::EncryptError;
-use crate::config::client_config::ProxyClient;
-use crate::config::provider_config::Provider;
 use crate::url::url_error::UrlBuilderError;
 use thiserror::Error;
 

@@ -1,6 +1,7 @@
 use headers::HeaderMap;
 use reqwest::{Method, StatusCode};
 use std::fmt::{Debug, Display, Formatter};
+use thiserror::Error;
 use url::Url;
 
 #[derive(Debug)]
@@ -12,7 +13,7 @@ where
     Failed(Box<ApiFailed>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub struct ApiFailed {
     pub request_url: Url,
     pub request_method: Method,
