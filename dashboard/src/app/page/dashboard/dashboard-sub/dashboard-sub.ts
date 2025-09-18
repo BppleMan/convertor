@@ -116,19 +116,19 @@ export class DashboardSub {
             map((value?: string) => ({ url: undefined, secret: value })),
         ),
     )
-    .pipe(
-        takeUntilDestroyed(this.destroyRef),
-    )
-    .subscribe((value) => {
-        console.log(value);
-        if (!value.url) {
-            delete value.url;
-        }
-        if (!value.secret) {
-            delete value.secret;
-        }
-        this.subscriptionForm.patchValue(value, { emitEvent: false });
-    });
+        .pipe(
+            takeUntilDestroyed(this.destroyRef),
+        )
+        .subscribe((value) => {
+            console.log(value);
+            if (!value.url) {
+                delete value.url;
+            }
+            if (!value.secret) {
+                delete value.secret;
+            }
+            this.subscriptionForm.patchValue(value, { emitEvent: false });
+        });
 
     storageSub = this.params$.pipe(
         switchMap(p =>
@@ -151,42 +151,42 @@ export class DashboardSub {
             map(payload => this.toUrlParams(payload)),
         ),
     )
-    .pipe(
-        exhaustMap((urlParams) => {
-            return defer(() => {
-                // 请求开始：锁表单 & 开 loading
-                this.subscriptionForm.disable({ emitEvent: false });
-                this.loading.next(true);
+        .pipe(
+            exhaustMap((urlParams) => {
+                return defer(() => {
+                    // 请求开始：锁表单 & 开 loading
+                    this.subscriptionForm.disable({ emitEvent: false });
+                    this.loading.next(true);
 
-                const query = this.urlService.buildSubscriptionQuery(urlParams);
-                return this.dashboardService.getSubscription(query).pipe(
-                    // 主动取消当前请求
-                    takeUntil(this.cancel$),
-                    // 错误只在 HTTP 内部处理，吞掉，不打断主流
-                    catchError(err => {
-                        // this.error$.next(extractHttpError(err));
-                        console.error(err);
-                        return EMPTY;
-                    }),
+                    const query = this.urlService.buildSubscriptionQuery(urlParams);
+                    return this.dashboardService.getSubscription(query).pipe(
+                        // 主动取消当前请求
+                        takeUntil(this.cancel$),
+                        // 错误只在 HTTP 内部处理，吞掉，不打断主流
+                        catchError(err => {
+                            // this.error$.next(extractHttpError(err));
+                            console.error(err);
+                            return EMPTY;
+                        }),
 
-                    // 结束（成功/失败/取消）：解锁 & 关 loading
-                    finalize(() => {
-                        this.subscriptionForm.enable({ emitEvent: false });
-                        this.loading.next(false);
-                    }),
-                );
-            });
-        }),
-        takeUntilDestroyed(this.destroyRef),
-    )
-    .subscribe(value => {
-        console.log(value);
-        if (value.status === 0) {
-            this.urlResult.next(value.data!);
-        } else {
-            // 处理非网络的业务型错误
-        }
-    });
+                        // 结束（成功/失败/取消）：解锁 & 关 loading
+                        finalize(() => {
+                            this.subscriptionForm.enable({ emitEvent: false });
+                            this.loading.next(false);
+                        }),
+                    );
+                });
+            }),
+            takeUntilDestroyed(this.destroyRef),
+        )
+        .subscribe(value => {
+            console.log(value);
+            if (value.status.isOk()) {
+                this.urlResult.next(value.data!);
+            } else {
+                // 处理非网络的业务型错误
+            }
+        });
 
     submit() {
         this.submit$.next();

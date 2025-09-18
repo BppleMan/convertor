@@ -23,7 +23,7 @@ httpmock = { workspace = true, features = ["colored"], optional = true }
 # URL / 编码 / 工具
 percent-encoding = { workspace = true }
 url = { workspace = true, features = ["serde"] }
-regex = { workspace = true }
+regex = { workspace = true, features = ["unicode-perl"] }
 strum = { workspace = true, features = ["derive"] }
 
 # 异步运行时 / 并发

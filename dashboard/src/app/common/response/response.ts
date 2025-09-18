@@ -1,7 +1,8 @@
+import ApiStatus from "./status";
+
 export class ApiResponse<T = void> {
     constructor(
-        public status: number,
-        public message?: string,
+        public status: ApiStatus,
         public data?: T,
     ) {
     }
@@ -10,6 +11,9 @@ export class ApiResponse<T = void> {
         new(...args: any[]): T;
         deserialize(json: T): T;
     }): ApiResponse<T> {
-        return new ApiResponse<T>(json.status, json.message, ctor?.deserialize(json.data) ?? json.data);
+        return new ApiResponse<T>(
+            ApiStatus.deserialize(json.status),
+            ctor?.deserialize(json.data) ?? json.data,
+        );
     }
 }
