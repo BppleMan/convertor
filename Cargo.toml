@@ -10,14 +10,14 @@ members = [
 [workspace.package]
 description = "A profile converter for surge/clash."
 authors = ["BppleMan"]
-version = "2.6.11"
+version = "2.6.12"
 edition = "2024"
 license = "Apache-2.0"
 repository = "https://github.com/BppleMan/convertor"
 
 [workspace.dependencies]
 # 本地/工作区包
-convertor = { path = "crates/convertor", version = "2.6.11" }
+convertor = { path = "crates/convertor", version = "2.6.12" }
 
 # 异步运行时 & 并发相关
 tokio = { version = "1.47.1", default-features = false }
