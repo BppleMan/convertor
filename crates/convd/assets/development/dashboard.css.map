@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/page/dashboard/dashboard.scss"],
+  "sourcesContent": [":host {\n    display:        flex;\n    overflow:       hidden;\n    align-items:    flex-start;\n    flex-direction: column;\n    box-sizing:     border-box;\n    height:         100%;\n\n    padding:        24px 120px;\n    gap:            16px;\n\n    h1 {\n        font-size:   16px;\n        font-weight: 600;\n    }\n\n    .dashboard-content {\n        display:         flex;\n        flex:            1 1 auto;\n        flex-direction:  column;\n        justify-content: space-between;\n\n        .dashboard-row {\n            display:        flex;\n            flex-direction: row;\n            flex-wrap:      wrap;\n        }\n\n        .actuator {\n        }\n    }\n\n    .example-spacer {\n        flex: 1 1 auto;\n    }\n}\n"],
+  "mappings": ";AAAA;AACI,WAAA;AACA,YAAA;AACA,eAAA;AACA,kBAAA;AACA,cAAA;AACA,UAAA;AAEA,WAAA,KAAA;AACA,OAAA;;AAEA,MAAA;AACI,aAAA;AACA,eAAA;;AAGJ,MAAA,CAAA;AACI,WAAA;AACA,QAAA,EAAA,EAAA;AACA,kBAAA;AACA,mBAAA;;AAEA,MAAA,CANJ,kBAMI,CAAA;AACI,WAAA;AACA,kBAAA;AACA,aAAA;;AAOR,MAAA,CAAA;AACI,QAAA,EAAA,EAAA;;",
+  "names": []
+}
