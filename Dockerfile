@@ -6,15 +6,15 @@ ARG VCS_REF=unknown
 ARG BUILD_DATE=1970-01-01T00:00:00Z
 
 LABEL org.opencontainers.image.title="convertor" \
-      org.opencontainers.image.description="A profile converter for Surge/Clash." \
-      org.opencontainers.image.url="https://github.com/BppleMan/convertor" \
-      org.opencontainers.image.source="https://github.com/BppleMan/convertor" \
-      org.opencontainers.image.documentation="https://github.com/BppleMan/convertor#readme" \
-      org.opencontainers.image.vendor="BppleMan" \
-      org.opencontainers.image.licenses="Apache-2.0" \
-      org.opencontainers.image.version="${VERSION}" \
-      org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.created="${BUILD_DATE}"
+    org.opencontainers.image.description="A profile converter for Surge/Clash." \
+    org.opencontainers.image.url="https://github.com/BppleMan/convertor" \
+    org.opencontainers.image.source="https://github.com/BppleMan/convertor" \
+    org.opencontainers.image.documentation="https://github.com/BppleMan/convertor#readme" \
+    org.opencontainers.image.vendor="BppleMan" \
+    org.opencontainers.image.licenses="Apache-2.0" \
+    org.opencontainers.image.version="${VERSION}" \
+    org.opencontainers.image.revision="${VCS_REF}" \
+    org.opencontainers.image.created="${BUILD_DATE}"
 
 # ====== 运行期依赖（HTTPS 出站需要 CA 证书）======
 RUN apk add --no-cache ca-certificates && update-ca-certificates

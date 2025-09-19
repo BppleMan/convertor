@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["src/app/page/shared/icon-button/icon-button.scss"],
-  "sourcesContent": [":host {\n    button[matIconButton] {\n        font-size: 16px;\n        width:     24px;\n        height:    24px;\n        padding:   4px;\n\n        mat-icon {\n            font-size: 16px;\n            width:     16px;\n            height:    16px;\n        }\n    }\n}\n"],
-  "mappings": ";AACI,MAAA,MAAA,CAAA;AACI,aAAA;AACA,SAAA;AACA,UAAA;AACA,WAAA;;AAEA,MAAA,MAAA,CAAA,eAAA;AACI,aAAA;AACA,SAAA;AACA,UAAA;;",
-  "names": []
-}

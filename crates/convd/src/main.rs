@@ -21,7 +21,7 @@ struct Convd {
     config: Option<PathBuf>,
 
     #[command(subcommand)]
-    sub_cmd: SubCmd,
+    sub_cmd: Option<SubCmd>,
 }
 
 #[derive(Debug, Subcommand)]
@@ -32,6 +32,10 @@ enum SubCmd {
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<()> {
     let args = Convd::parse();
+    if let Some(SubCmd::Tag) = args.sub_cmd {
+        println!("{}", env!("CARGO_PKG_VERSION"));
+        return Ok(());
+    }
 
     let base_dir = init_base_dir();
     init_backtrace(|| {

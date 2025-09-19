@@ -182,8 +182,8 @@ image profile="dev":
         REGISTRY="ghcr.io/bppleman/convertor"
     fi
 
-    VERSION=$(docker run --rm -v ./target/$TARGET_TRIPLE/$PROFILE_PATH/$BIN_NAME:/app/$BIN_NAME alpine:3.20 /app/$BIN_NAME -V)
-    VERSION=${VERSION//[^A-Za-z0-9_.-]/_}
+    VERSION=$(docker run --rm -v ./target/$TARGET_TRIPLE/$PROFILE_PATH/$BIN_NAME:/app/$BIN_NAME alpine:3.20 /app/$BIN_NAME tag)
+    # VERSION=${VERSION//[^A-Za-z0-9_.-]/_}
     BUILD_DATE=$(date +%Y-%m-%dT%H:%M:%S%z)
     echo TARGET_TRIPLE=$TARGET_TRIPLE
     echo BIN_NAME=$BIN_NAME
@@ -197,6 +197,7 @@ image profile="dev":
         --build-arg VERSION=$VERSION \
         --build-arg BUILD_DATE=$BUILD_DATE \
         -t $REGISTRY/$BIN_NAME:$VERSION .
+    docker tag $REGISTRY/$BIN_NAME:$VERSION $REGISTRY/$BIN_NAME:latest
 
 # profile: dev | prod | alpine
 run profile="dev":
@@ -211,8 +212,8 @@ run profile="dev":
         REGISTRY="ghcr.io/bppleman/convertor"
     fi
 
-    VERSION=$(docker run --rm -v ./target/x86_64-unknown-linux-musl/$PROFILE_PATH/convd:/app/convd alpine:3.20 /app/convd -V)
-    VERSION=${VERSION//[^A-Za-z0-9_.-]/_}
+    VERSION=$(docker run --rm -v ./target/x86_64-unknown-linux-musl/$PROFILE_PATH/convd:/app/convd alpine:3.20 /app/convd tag)
+    # VERSION=${VERSION//[^A-Za-z0-9_.-]/_}
     echo VERSION=$VERSION
     docker run --rm -it \
         -v ~/.convertor/convertor.toml:/app/.convertor/convertor.toml \
@@ -254,8 +255,8 @@ publish-ghcr profile="dev" dry_run="false":
     # 先构建镜像确保存在
     just image $PROFILE
 
-    VERSION=$(docker run --rm -v ./target/$TARGET_TRIPLE/$PROFILE_PATH/$BIN_NAME:/app/$BIN_NAME alpine:3.20 /app/$BIN_NAME -V)
-    VERSION=${VERSION//[^A-Za-z0-9_.-]/_}
+    VERSION=$(docker run --rm -v ./target/$TARGET_TRIPLE/$PROFILE_PATH/$BIN_NAME:/app/$BIN_NAME alpine:3.20 /app/$BIN_NAME tag)
+    # VERSION=${VERSION//[^A-Za-z0-9_.-]/_}
 
     echo "TARGET_TRIPLE=$TARGET_TRIPLE"
     echo "BIN_NAME=$BIN_NAME"
@@ -344,8 +345,8 @@ publish-ghcr-gh profile="dev" dry_run="false":
     # 先构建镜像确保存在
     just image $PROFILE
 
-    VERSION=$(docker run --rm -v ./target/$TARGET_TRIPLE/$PROFILE_PATH/$BIN_NAME:/app/$BIN_NAME alpine:3.20 /app/$BIN_NAME -V)
-    VERSION=${VERSION//[^A-Za-z0-9_.-]/_}
+    VERSION=$(docker run --rm -v ./target/$TARGET_TRIPLE/$PROFILE_PATH/$BIN_NAME:/app/$BIN_NAME alpine:3.20 /app/$BIN_NAME tag)
+    # VERSION=${VERSION//[^A-Za-z0-9_.-]/_}
 
     echo "TARGET_TRIPLE=$TARGET_TRIPLE"
     echo "BIN_NAME=$BIN_NAME"
