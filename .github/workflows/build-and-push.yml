@@ -82,7 +82,7 @@ jobs:
             -   name: 安装 Zig 编译器
                 uses: mlugg/setup-zig@v2
                 with:
-                    mirror: 'https://pkg.machengine.org/zig'
+                    mirror: 'https://pkg.machengine.org'
 
             -   name: 安装 cargo-zigbuild
                 run: cargo install cargo-zigbuild --locked
