@@ -2,9 +2,12 @@
 
 # Docker 相关脚本
 
-# 导入通用函数和配置
-source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
-source "$(dirname "${BASH_SOURCE[0]}")/config.sh"
+# 导入通用模块
+LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
+source "$LIB_DIR/log.sh"
+source "$LIB_DIR/execute.sh"
+source "$LIB_DIR/fs.sh"
+source "$LIB_DIR/config.sh"
 
 # 构建 Docker 镜像
 build_image() {

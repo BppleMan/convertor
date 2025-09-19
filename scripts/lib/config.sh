@@ -1,9 +1,10 @@
 #!/bin/bash
 
-# 参数转换和配置管理
+# 参数转换和配置管理模块
 
-# 导入通用函数
-source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
+# 导入必要模块
+source "$(dirname "${BASH_SOURCE[0]}")/log.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/fs.sh"
 
 # 将环境参数转换为构建配置
 # 参数: profile (dev|prod|alpine)
