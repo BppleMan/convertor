@@ -84,18 +84,22 @@ jobs:
                 with:
                     mirror: 'https://pkg.machengine.org/zig'
 
-            -   name: 安装 Just 构建工具
-                uses: extractions/setup-just@v3
-
             -   name: 安装 cargo-zigbuild
                 run: cargo install cargo-zigbuild --locked
 
             -   name: 安装 Node.js
                 uses: actions/setup-node@v5
+                with:
+                    node-version: '20'
+
+            -   name: 安装 pnpm
+                run: npm install -g pnpm
 
             -   name: 构建 MUSL 二进制文件
                 shell: bash
-                run: just musl ${{ steps.vars.outputs.profile }}
+                run: |
+                    chmod +x ./scripts/build.sh
+                    source ./scripts/build.sh && build_musl ${{ steps.vars.outputs.profile }}
 
             -   name: 获取版本号
                 id: version

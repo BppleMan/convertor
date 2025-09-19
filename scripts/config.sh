@@ -13,8 +13,8 @@ convert_profile() {
     
     case "$input_profile" in
         "dev"|"development")
-            export PROFILE="dev"
-            export CARGO_PROFILE="dev"
+            export PROFILE="debug"      # cargo 构建目录使用 debug
+            export CARGO_PROFILE="dev"  # cargo 命令使用 dev
             export DASHBOARD="development"
             export REGISTRY="local"
             ;;
@@ -25,8 +25,8 @@ convert_profile() {
             export REGISTRY="ghcr.io/bppleman/convertor"
             ;;
         "alpine")
-            export PROFILE="alpine"
-            export CARGO_PROFILE="alpine"
+            export PROFILE="alpine"     # cargo 构建目录使用 alpine
+            export CARGO_PROFILE="alpine"  # cargo 命令使用 alpine
             export DASHBOARD="production"
             export REGISTRY="ghcr.io/bppleman/convertor"
             ;;
@@ -53,7 +53,7 @@ get_docker_config() {
 get_version() {
     local target_triple="${TARGET_TRIPLE:-x86_64-unknown-linux-musl}"
     local bin_name="${BIN_NAME:-convd}"
-    local profile="${PROFILE:-dev}"
+    local profile="${PROFILE:-debug}"  # 默认使用 debug 而不是 dev
     
     local binary_path="./target/$target_triple/$profile/$bin_name"
     

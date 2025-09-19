@@ -51,7 +51,7 @@ publish_convd() {
     ensure_project_root
     check_command "cargo" || return 1
     
-    # 确保前端资源已构建
+    # 确保前端资源已构建（同时构建开发和生产版本）
     source "$(dirname "${BASH_SOURCE[0]}")/build.sh"
     build_dashboard "development" || return 1
     build_dashboard "production" || return 1
@@ -162,9 +162,8 @@ prepare_dev() {
 build_dev_env() {
     log_info "构建开发环境"
     
-    # 构建前端
+    # 构建 MUSL 二进制（包含前端）
     source "$(dirname "${BASH_SOURCE[0]}")/build.sh"
-    build_dashboard "development" || return 1
     build_musl "dev" || return 1
     
     # 构建 Docker 镜像
@@ -178,9 +177,8 @@ build_dev_env() {
 build_prod_env() {
     log_info "构建生产环境"
     
-    # 构建前端
+    # 构建 MUSL 二进制（包含前端）
     source "$(dirname "${BASH_SOURCE[0]}")/build.sh"
-    build_dashboard "production" || return 1
     build_musl "alpine" || return 1
     
     # 构建 Docker 镜像
@@ -196,15 +194,28 @@ show_status() {
     
     printf "\\033[0;36m构建状态:\\033[0m\\n"
     
-    # 检查二进制文件
-    for target in "debug" "release" "alpine"; do
+    # 检查本机二进制文件
+    for target in "debug" "release"; do
         for bin in "convd" "confly"; do
-            local path="./target/x86_64-unknown-linux-musl/$target/$bin"
+            local path="./target/$target/$bin"
             if [[ -f "$path" ]]; then
                 local size=$(ls -lh "$path" | awk '{print $5}')
                 echo "  ✓ $target/$bin ($size)"
             else
                 echo "  ✗ $target/$bin"
+            fi
+        done
+    done
+    
+    # 检查跨平台二进制文件
+    for target in "debug" "release" "alpine"; do
+        for bin in "convd" "confly"; do
+            local path="./target/x86_64-unknown-linux-musl/$target/$bin"
+            if [[ -f "$path" ]]; then
+                local size=$(ls -lh "$path" | awk '{print $5}')
+                echo "  ✓ musl/$target/$bin ($size)"
+            else
+                echo "  ✗ musl/$target/$bin"
             fi
         done
     done

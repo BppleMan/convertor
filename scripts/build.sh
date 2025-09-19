@@ -18,11 +18,6 @@ build_component() {
     setup_component_env "$component" "$profile" || return 1
     ensure_project_root
     
-    # 为 convd 构建前端（如果需要）
-    if [[ "$component" == "convd" ]]; then
-        build_dashboard "$DASHBOARD" || return 1
-    fi
-    
     # 准备构建命令
     local build_cmd_suffix=""
     local build_args=""
@@ -101,6 +96,20 @@ build_convd() {
     build_component "convd" "$profile" "$target_triple"
 }
 
+# 构建 convd (包含前端)
+build_convd_with_dashboard() {
+    local profile="${1:-dev}"
+    local target_triple="${2:-}"
+    
+    setup_component_env "convd" "$profile" || return 1
+    
+    # 先构建前端
+    build_dashboard "$DASHBOARD" || return 1
+    
+    # 再构建 convd
+    build_component "convd" "$profile" "$target_triple"
+}
+
 # 构建 confly
 build_confly() {
     local profile="${1:-dev}"
@@ -113,7 +122,7 @@ build_confly() {
 build_musl() {
     local profile="${1:-dev}"
     
-    build_component "convd" "$profile" "x86_64-unknown-linux-musl"
+    build_convd_with_dashboard "$profile" "x86_64-unknown-linux-musl"
 }
 
 # 构建前端界面
@@ -169,7 +178,12 @@ check_build_result() {
     # 转换 profile 以获取正确的目录名
     convert_profile "$profile" || return 1
     
-    local binary_path="./target/$target/$CARGO_PROFILE/$bin_name"
+    # 处理 native 目标（本机构建）
+    if [[ "$target" == "native" ]]; then
+        local binary_path="./target/$PROFILE/$bin_name"
+    else
+        local binary_path="./target/$target/$PROFILE/$bin_name"
+    fi
     
     if [[ -f "$binary_path" ]]; then
         local size=$(ls -lh "$binary_path" | awk '{print $5}')

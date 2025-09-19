@@ -50,7 +50,7 @@ convertor profile="dev":
 
 # 构建 convd
 convd profile="dev":
-    source ./scripts/build.sh && build_convd {{ profile }}
+    source ./scripts/build.sh && build_convd_with_dashboard {{ profile }}
 
 # 构建 confly
 confly profile="dev":
