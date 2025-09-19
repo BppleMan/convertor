@@ -147,7 +147,7 @@ jobs:
                     build-args: |
                         VERSION=${{ steps.version.outputs.version }}
                         VCS_REF=${{ github.sha }}
-                        BUILD_DATE=${{ steps.meta.outputs.created }}
+                        BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
                         TARGET_TRIPLE=${{ env.TARGET_TRIPLE }}
                         PROFILE=${{ steps.vars.outputs.cargo_profile }}
                         BIN_NAME=${{ env.BIN_NAME }}
