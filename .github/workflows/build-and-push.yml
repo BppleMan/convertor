@@ -7,7 +7,7 @@ on:
     workflow_dispatch:
         inputs:
             extra_tag:
-                description: "额外的镜像标签（如 canary）"
+                description: "额外的镜像标签（如 latest）"
                 type: string
                 required: false
             profile:
