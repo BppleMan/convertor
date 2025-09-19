@@ -1,21 +1,16 @@
 #!/usr/bin/env just --justfile
 
-# 开发环境构建
+# 快速开发环境构建
 build-dev:
-    cd dashboard && just dashboard dev
-    cd convertor && just musl dev
-    cd convertor && just image dev
+    source ./scripts/tools.sh && build_dev_env
 
-# 生产环境构建
+# 快速生产环境构建
 build-prod:
-    cd dashboard && just dashboard prod
-    cd convertor && just musl alpine
-    cd convertor && just image alpine
+    source ./scripts/tools.sh && build_prod_env
 
 # 准备开发环境
 prepare:
-    cargo install cargo-zigbuild
-    brew install zig
+    source ./scripts/build.sh && prepare_build_env
 
 #╭──────────────────────────────────────────────╮
 #│                   发布                       │
@@ -23,69 +18,47 @@ prepare:
 
 # 安装二进制文件
 install bin="convd":
-    cargo install --bin {{ bin }} --path .
+    source ./scripts/tools.sh && install_binary {{ bin }}
 
 # 发布所有包
 publish:
-    just publish-convertor
-    just publish-convd
-    just publish-confly
+    source ./scripts/tools.sh && publish_all
 
 # 发布 convertor 包
 publish-convertor:
-    cargo publish -p convertor
+    source ./scripts/tools.sh && publish_convertor
 
 # 发布 convd 包
 publish-convd:
-    just dashboard dev
-    just dashboard prod
-    cargo publish -p convd
+    source ./scripts/tools.sh && publish_convd
 
 # 发布 confly 包
 publish-confly:
-    cargo publish -p confly
+    source ./scripts/tools.sh && publish_confly
 
 #╭──────────────────────────────────────────────╮
 #│                   构建                       │
 #╰──────────────────────────────────────────────╯
 
-# 构建所有组件 (dev|prod|alpine)
+# 构建所有组件
 all profile="dev":
-    #!/bin/sh
-    PROFILE="dev"
-    if [ "{{ profile }}" = "prod" ]; then
-        PROFILE="release"
-    fi
+    source ./scripts/build.sh && build_all {{ profile }}
 
-    time cargo build --workspace --all-targets --profile ${PROFILE}
+# 构建 convertor 库
+convertor profile="dev":
+    source ./scripts/build.sh && build_convertor {{ profile }}
 
-# 构建 convd (dev|prod|alpine)
+# 构建 convd
 convd profile="dev":
-    #!/bin/sh
-    PROFILE="dev"
-    DASHBOARD="development"
-    if [ "{{ profile }}" = "prod" ]; then
-        PROFILE="release"
-        DASHBOARD="production"
-    elif [ "{{ profile }}" = "alpine" ]; then
-        PROFILE="alpine"
-        DASHBOARD="production"
-    fi
+    source ./scripts/build.sh && build_convd {{ profile }}
 
-    just dashboard ${DASHBOARD}
-    time cargo build --bin convd --profile ${PROFILE}
-
-# 构建 confly (dev|prod|alpine)
+# 构建 confly
 confly profile="dev":
-    #!/bin/sh
-    PROFILE="dev"
-    if [ "{{ profile }}" = "prod" ]; then
-        PROFILE="release"
-    elif [ "{{ profile }}" = "alpine" ]; then
-        PROFILE="alpine"
-    fi
+    source ./scripts/build.sh && build_confly {{ profile }}
 
-    time cargo build --bin confly --profile ${PROFILE}
+# 构建指定组件和目标
+build component profile="dev" target="native":
+    source ./scripts/build.sh && build_component {{ component }} {{ profile }} {{ target }}
 
 #╭──────────────────────────────────────────────╮
 #│                   测试                       │
@@ -93,286 +66,83 @@ confly profile="dev":
 
 # 测试 convertor
 test-convertor:
-    cargo insta test -p convertor --features=testkit
+    source ./scripts/tools.sh && test_convertor
 
 # 测试 convd
 test-convd:
-    cargo insta test -p convd
+    source ./scripts/tools.sh && test_convd
 
 # 测试 confly
 test-confly:
-    cargo insta test -p confly
+    source ./scripts/tools.sh && test_confly
 
 #╭──────────────────────────────────────────────╮
-#│                 Linux 构建                   │
+#│                 MUSL 构建                    │
 #╰──────────────────────────────────────────────╯
 
-# Linux 构建 (dev|prod|alpine)
-linux profile="dev":
-    #!/bin/sh
-    PROFILE="dev"
-    DASHBOARD="development"
-    if [ "{{ profile }}" = "prod" ]; then
-        PROFILE="release"
-        DASHBOARD="production"
-    elif [ "{{ profile }}" = "alpine" ]; then
-        PROFILE="alpine"
-        DASHBOARD="production"
-    fi
-
-    just dashboard ${DASHBOARD}
-    time CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=x86_64-linux-gnu-gcc \
-    cargo build  --profile ${PROFILE} --bin convd --target x86_64-unknown-linux-gnu
-
-# MUSL 构建 (dev|prod|alpine)
+# MUSL 静态构建
 musl profile="dev":
-    #!/bin/sh
-    PROFILE="dev"
-    DASHBOARD="development"
-    if [ "{{ profile }}" = "prod" ]; then
-        PROFILE="release"
-        DASHBOARD="production"
-    elif [ "{{ profile }}" = "alpine" ]; then
-        PROFILE="alpine"
-        DASHBOARD="production"
-    fi
-
-    just dashboard ${DASHBOARD}
-    time cargo zigbuild --profile ${PROFILE} --bin convd --target x86_64-unknown-linux-musl
-
-# 交叉编译 (dev|prod|alpine)
-cross profile="dev":
-    #!/bin/sh
-    PROFILE="dev"
-    DASHBOARD="development"
-    if [ "{{ profile }}" = "prod" ]; then
-        PROFILE="release"
-        DASHBOARD="production"
-    elif [ "{{ profile }}" = "alpine" ]; then
-        PROFILE="alpine"
-        DASHBOARD="production"
-    fi
-
-    just dashboard ${DASHBOARD}
-    time cross build  --profile ${PROFILE} --bin convd --target x86_64-unknown-linux-gnu
+    source ./scripts/build.sh && build_musl {{ profile }}
 
 #╭──────────────────────────────────────────────╮
 #│                 前端构建                      │
 #╰──────────────────────────────────────────────╯
 
-# 构建前端界面 (dev|prod)
+# 构建前端界面
 dashboard profile="dev":
-    #!/bin/sh
-    cd dashboard
-    pnpm install
-    PROFILE="development"
-    if [ "{{ profile }}" = "prod" ]; then
-        PROFILE="production"
-    fi
-    pnpm ng build --configuration ${PROFILE}
-    cd ..
-    rm -rf ./crates/convd/assets/${PROFILE}
-    cp -rf ./dashboard/dist/dashboard/${PROFILE}/browser ./crates/convd/assets/${PROFILE}
+    source ./scripts/build.sh && build_dashboard {{ profile }}
 
 #╭──────────────────────────────────────────────╮
 #│                 Docker                       │
 #╰──────────────────────────────────────────────╯
 
-# 构建镜像 (dev|prod|alpine)
+# 构建镜像
 image profile="dev":
-    #!/bin/sh
-    TARGET_TRIPLE="x86_64-unknown-linux-musl"
-    BIN_NAME="convd"
-    PROFILE="debug"
-    REGISTRY="local"
-    if [ "{{ profile }}" = "prod" ]; then
-        PROFILE="release"
-        REGISTRY="ghcr.io/bppleman/convertor"
-    elif [ "{{ profile }}" = "alpine" ]; then
-        PROFILE="alpine"
-        REGISTRY="ghcr.io/bppleman/convertor"
-    fi
+    source ./scripts/docker.sh && build_image {{ profile }}
 
-    VERSION=$(docker run --rm -v ./target/$TARGET_TRIPLE/$PROFILE/$BIN_NAME:/app/$BIN_NAME alpine:3.20 /app/$BIN_NAME tag)
-    BUILD_DATE=$(date +%Y-%m-%dT%H:%M:%S%z)
-    echo TARGET_TRIPLE=$TARGET_TRIPLE
-    echo BIN_NAME=$BIN_NAME
-    echo PROFILE=$PROFILE
-    echo VERSION=$VERSION
-    echo REGISTRY=$REGISTRY
-    docker build -f Dockerfile \
-        --build-arg TARGET_TRIPLE=$TARGET_TRIPLE \
-        --build-arg BIN_NAME=$BIN_NAME \
-        --build-arg PROFILE=$PROFILE \
-        --build-arg VERSION=$VERSION \
-        --build-arg BUILD_DATE=$BUILD_DATE \
-        -t $REGISTRY/$BIN_NAME:$VERSION .
-    docker tag $REGISTRY/$BIN_NAME:$VERSION $REGISTRY/$BIN_NAME:latest
-
-# 运行镜像 (dev|prod|alpine)
+# 运行镜像
 run profile="dev":
-    #!/bin/sh
-    PROFILE="debug"
-    REGISTRY="local"
-    if [ "{{ profile }}" = "prod" ]; then
-        PROFILE="release"
-        REGISTRY="ghcr.io/bppleman/convertor"
-    elif [ "{{ profile }}" = "alpine" ]; then
-        PROFILE="alpine"
-        REGISTRY="ghcr.io/bppleman/convertor"
-    fi
+    source ./scripts/docker.sh && run_container {{ profile }}
 
-    VERSION=$(docker run --rm -v ./target/x86_64-unknown-linux-musl/$PROFILE/convd:/app/convd alpine:3.20 /app/convd tag)
-    echo VERSION=$VERSION
-    docker run --rm -it \
-        -v ~/.convertor/convertor.toml:/app/.convertor/convertor.toml \
-        -e REDIS_ENDPOINT \
-        -e REDIS_SCHEME \
-        -e REDIS_CONVERTOR_USERNAME \
-        -e REDIS_CONVERTOR_PASSWORD \
-        -e REDIS_CA_CERT \
-        --name convd-temp \
-        $REGISTRY/convd:$VERSION
-
-# 发布到 GHCR (dev|prod|alpine)
+# 发布到 GHCR (PAT)
 publish-ghcr profile="dev" dry_run="false":
-    #!/bin/sh
-    PROFILE="{{ profile }}"
-    DRY_RUN="{{ dry_run }}"
+    source ./scripts/docker.sh && publish_ghcr {{ profile }} {{ dry_run }}
 
-    TARGET_TRIPLE="x86_64-unknown-linux-musl"
-    BIN_NAME="convd"
-    REGISTRY="local"
-
-    if [ "$PROFILE" = "prod" ]; then
-        PROFILE="release"
-        REGISTRY="ghcr.io/bppleman/convertor"
-    elif [ "$PROFILE" = "alpine" ]; then
-        PROFILE="alpine"
-        REGISTRY="ghcr.io/bppleman/convertor"
-    fi
-
-    if [ "$REGISTRY" = "local" ]; then
-        echo "profile '$PROFILE' uses local registry, skipping GHCR push"
-        exit 0
-    fi
-
-    just image $PROFILE
-
-    VERSION=$(docker run --rm -v ./target/$TARGET_TRIPLE/$PROFILE/$BIN_NAME:/app/$BIN_NAME alpine:3.20 /app/$BIN_NAME tag)
-
-    echo "TARGET_TRIPLE=$TARGET_TRIPLE"
-    echo "BIN_NAME=$BIN_NAME"
-    echo "PROFILE=$PROFILE"
-    echo "VERSION=$VERSION"
-    echo "REGISTRY=$REGISTRY"
-
-    if [ -z "$CR_PAT" ]; then
-        echo "错误: 请设置环境变量 CR_PAT (GitHub Personal Access Token)"
-        exit 1
-    fi
-
-    IMAGE_WITH_VERSION="$REGISTRY/$BIN_NAME:$VERSION"
-    IMAGE_LATEST="$REGISTRY/$BIN_NAME:latest"
-
-    if [ "$DRY_RUN" = "true" ]; then
-        echo "[预览模式] 将执行以下操作:"
-        echo "[预览模式] echo \$CR_PAT | docker login ghcr.io -u TOKEN --password-stdin"
-        echo "[预览模式] docker tag $REGISTRY/$BIN_NAME:$VERSION $IMAGE_WITH_VERSION"
-        echo "[预览模式] docker push $IMAGE_WITH_VERSION"
-        echo "[预览模式] docker tag $IMAGE_WITH_VERSION $IMAGE_LATEST"
-        echo "[预览模式] docker push $IMAGE_LATEST"
-        echo "[预览模式] docker logout ghcr.io"
-        exit 0
-    fi
-
-    echo "$CR_PAT" | docker login ghcr.io -u TOKEN --password-stdin
-
-    docker tag $REGISTRY/$BIN_NAME:$VERSION $IMAGE_WITH_VERSION
-    docker push $IMAGE_WITH_VERSION
-
-    docker tag $IMAGE_WITH_VERSION $IMAGE_LATEST
-    docker push $IMAGE_LATEST
-
-    docker logout ghcr.io
-
-    echo "镜像发布完成:"
-    echo "  $IMAGE_WITH_VERSION"
-    echo "  $IMAGE_LATEST"
-
-# 使用 GitHub CLI 发布到 GHCR (dev|prod|alpine)
+# 发布到 GHCR (GitHub CLI)
 publish-ghcr-gh profile="dev" dry_run="false":
-    #!/bin/sh
-    PROFILE="{{ profile }}"
-    DRY_RUN="{{ dry_run }}"
-    TARGET_TRIPLE="x86_64-unknown-linux-musl"
-    BIN_NAME="convd"
-    REGISTRY="local"
+    source ./scripts/docker.sh && publish_ghcr_gh {{ profile }} {{ dry_run }}
 
-    if [ "$PROFILE" = "prod" ]; then
-        PROFILE="release"
-        REGISTRY="ghcr.io/bppleman/convertor"
-    elif [ "$PROFILE" = "alpine" ]; then
-        PROFILE="alpine"
-        REGISTRY="ghcr.io/bppleman/convertor"
-    fi
+#╭──────────────────────────────────────────────╮
+#│                 实用工具                      │
+#╰──────────────────────────────────────────────╯
 
-    if [ "$REGISTRY" = "local" ]; then
-        echo "profile '$PROFILE' uses local registry, skipping GHCR push"
-        exit 0
-    fi
+# 显示项目状态
+status:
+    source ./scripts/tools.sh && show_status
 
-    if ! command -v gh >/dev/null 2>&1; then
-        echo "错误: 请安装 GitHub CLI (gh)"
-        echo "macOS: brew install gh"
-        echo "或访问: https://cli.github.com/"
-        exit 1
-    fi
+# 清理 Docker 镜像
+clean-docker:
+    source ./scripts/docker.sh && clean_images
 
-    if ! gh auth status >/dev/null 2>&1; then
-        echo "错误: 请先使用 GitHub CLI 登录"
-        echo "运行: gh auth login"
-        exit 1
-    fi
+# 检查构建结果
+check target="x86_64-unknown-linux-musl" profile="dev" bin="convd":
+    source ./scripts/build.sh && check_build_result {{ target }} {{ profile }} {{ bin }}
 
-    just image $PROFILE
+# 运行所有测试
+test-all:
+    source ./scripts/tools.sh && test_all
 
-    VERSION=$(docker run --rm -v ./target/$TARGET_TRIPLE/$PROFILE/$BIN_NAME:/app/$BIN_NAME alpine:3.20 /app/$BIN_NAME tag)
-
-    echo "TARGET_TRIPLE=$TARGET_TRIPLE"
-    echo "BIN_NAME=$BIN_NAME"
-    echo "PROFILE=$PROFILE"
-    echo "VERSION=$VERSION"
-    echo "REGISTRY=$REGISTRY"
-
-    IMAGE_WITH_VERSION="$REGISTRY/$BIN_NAME:$VERSION"
-    IMAGE_LATEST="$REGISTRY/$BIN_NAME:latest"
-
-    if [ "$DRY_RUN" = "true" ]; then
-        echo "[预览模式] 将执行以下操作:"
-        echo "[预览模式] gh auth token | docker login ghcr.io -u \$(gh api user --jq .login) --password-stdin"
-        echo "[预览模式] docker tag $REGISTRY/$BIN_NAME:$VERSION $IMAGE_WITH_VERSION"
-        echo "[预览模式] docker push $IMAGE_WITH_VERSION"
-        echo "[预览模式] docker tag $IMAGE_WITH_VERSION $IMAGE_LATEST"
-        echo "[预览模式] docker push $IMAGE_LATEST"
-        echo "[预览模式] docker logout ghcr.io"
-        exit 0
-    fi
-
-    GH_USERNAME=$(gh api user --jq .login)
-    echo "使用 GitHub 用户: $GH_USERNAME"
-
-    gh auth token | docker login ghcr.io -u "$GH_USERNAME" --password-stdin
-
-    docker tag $REGISTRY/$BIN_NAME:$VERSION $IMAGE_WITH_VERSION
-    docker push $IMAGE_WITH_VERSION
-
-    docker tag $IMAGE_WITH_VERSION $IMAGE_LATEST
-    docker push $IMAGE_LATEST
-
-    docker logout ghcr.io
-
-    echo "镜像发布完成 (via GitHub CLI):"
-    echo "  $IMAGE_WITH_VERSION"
-    echo "  $IMAGE_LATEST"
+# 显示帮助信息
+help:
+    @echo "Convertor 项目构建系统"
+    @echo ""
+    @echo "快速命令:"
+    @echo "  just build-dev           - 构建开发环境"
+    @echo "  just build-prod          - 构建生产环境"
+    @echo "  just status              - 显示项目状态"
+    @echo "  just test-all            - 运行所有测试"
+    @echo ""
+    @echo "详细使用方法:"
+    @echo "  just --list              - 显示所有可用命令"
+    @echo "  ./scripts/<script>.sh help - 查看脚本帮助"
 
