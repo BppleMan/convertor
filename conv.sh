@@ -20,13 +20,19 @@ source "$LIB_DIR/config.sh"
 # 快速开发环境构建
 build-dev() {
     log_info "快速开发环境构建"
-    "$SCRIPT_DIR/scripts/build.sh" build-dev
+    # 先构建前端
+    "$SCRIPT_DIR/scripts/build.sh" build_dashboard development
+    # 构建 convd 二进制 (MUSL)
+    "$SCRIPT_DIR/scripts/build.sh" build_component convd x86_64-unknown-linux-musl dev
 }
 
 # 快速生产环境构建
 build-prod() {
     log_info "快速生产环境构建"
-    "$SCRIPT_DIR/scripts/build.sh" build-prod
+    # 先构建前端
+    "$SCRIPT_DIR/scripts/build.sh" build_dashboard production
+    # 构建 convd 二进制 (MUSL)
+    "$SCRIPT_DIR/scripts/build.sh" build_component convd x86_64-unknown-linux-musl alpine
 }
 
 # 准备开发环境
@@ -42,57 +48,43 @@ prepare() {
 # 构建所有组件
 all() {
     local profile="${1:-dev}"
-    "$SCRIPT_DIR/scripts/build.sh" all "$profile"
+    "$SCRIPT_DIR/scripts/build.sh" build_component all "" "$profile"
 }
 
 # 构建 convertor 库
 convertor() {
     local profile="${1:-dev}"
-    "$SCRIPT_DIR/scripts/build.sh" convertor "$profile"
+    "$SCRIPT_DIR/scripts/build.sh" build_component convertor "" "$profile"
 }
 
 # 构建 convd
 convd() {
     local profile="${1:-dev}"
-    "$SCRIPT_DIR/scripts/build.sh" convd "$profile"
+    "$SCRIPT_DIR/scripts/build.sh" build_component convd "" "$profile"
 }
 
 # 构建 confly
 confly() {
     local profile="${1:-dev}"
-    "$SCRIPT_DIR/scripts/build.sh" confly "$profile"
+    "$SCRIPT_DIR/scripts/build.sh" build_component confly "" "$profile"
 }
 
 # 构建指定组件和目标
 build() {
     local component="${1:-convd}"
     local profile="${2:-dev}"
-    local target="${3:-native}"
-    "$SCRIPT_DIR/scripts/build.sh" "$component" "$profile" "$target"
+    local target="${3:-}"
+    "$SCRIPT_DIR/scripts/build.sh" build_component "$component" "$target" "$profile"
 }
 
 # ╭──────────────────────────────────────────────╮
 # │                   测试功能                   │
 # ╰──────────────────────────────────────────────╯
 
-# 测试 convertor
-test-convertor() {
-    "$SCRIPT_DIR/scripts/build.sh" test-convertor
-}
-
-# 测试 convd
-test-convd() {
-    "$SCRIPT_DIR/scripts/build.sh" test-convd
-}
-
-# 测试 confly
-test-confly() {
-    "$SCRIPT_DIR/scripts/build.sh" test-confly
-}
-
-# 运行所有测试
-test-all() {
-    "$SCRIPT_DIR/scripts/build.sh" test-all
+# 运行测试
+test() {
+    local package="${1:-all}"
+    "$SCRIPT_DIR/scripts/build.sh" test "$package"
 }
 
 # ╭──────────────────────────────────────────────╮
@@ -102,7 +94,7 @@ test-all() {
 # MUSL 静态构建
 musl() {
     local profile="${1:-dev}"
-    "$SCRIPT_DIR/scripts/build.sh" musl "$profile"
+    "$SCRIPT_DIR/scripts/build.sh" build_component convd x86_64-unknown-linux-musl "$profile"
 }
 
 # ╭──────────────────────────────────────────────╮
@@ -111,8 +103,8 @@ musl() {
 
 # 构建前端界面
 dashboard() {
-    local profile="${1:-dev}"
-    "$SCRIPT_DIR/scripts/build.sh" dashboard "$profile"
+    local profile="${1:-development}"
+    "$SCRIPT_DIR/scripts/build.sh" build_dashboard "$profile"
 }
 
 # ╭──────────────────────────────────────────────╮
@@ -125,24 +117,15 @@ install() {
     "$SCRIPT_DIR/scripts/build.sh" install "$bin"
 }
 
-# 发布所有包
+# 发布包
 publish() {
-    "$SCRIPT_DIR/scripts/build.sh" publish-all
-}
-
-# 发布 convertor 包
-publish-convertor() {
-    "$SCRIPT_DIR/scripts/build.sh" publish-convertor
-}
-
-# 发布 convd 包
-publish-convd() {
-    "$SCRIPT_DIR/scripts/build.sh" publish-convd
-}
-
-# 发布 confly 包
-publish-confly() {
-    "$SCRIPT_DIR/scripts/build.sh" publish-confly
+    local package="${1:-}"
+    local dry_run="${2:-false}"
+    if [[ -z "$package" ]]; then
+        log_error "请指定要发布的包: convertor, convd, confly"
+        return 1
+    fi
+    "$SCRIPT_DIR/scripts/build.sh" publish "$package" "$dry_run"
 }
 
 # ╭──────────────────────────────────────────────╮
@@ -210,7 +193,6 @@ help() {
     echo "  build-prod           - 构建生产环境"
     echo "  prepare              - 准备开发环境"
     echo "  status               - 显示项目状态"
-    echo "  test-all             - 运行所有测试"
     echo ""
     printf "\033[1;33m构建命令:\033[0m\n"
     echo "  all [profile]        - 构建所有组件"
@@ -222,17 +204,11 @@ help() {
     echo "  build <component> <profile> <target> - 构建指定组件"
     echo ""
     printf "\033[1;33m测试命令:\033[0m\n"
-    echo "  test-all             - 运行所有测试"
-    echo "  test-convertor       - 测试 convertor 包"
-    echo "  test-convd           - 测试 convd 包"
-    echo "  test-confly          - 测试 confly 包"
+    echo "  test [package]       - 运行测试 (默认: all)"
     echo ""
     printf "\033[1;33m发布命令:\033[0m\n"
     echo "  install [bin]        - 安装二进制文件"
-    echo "  publish              - 发布所有包"
-    echo "  publish-convertor    - 发布 convertor 包"
-    echo "  publish-convd        - 发布 convd 包"
-    echo "  publish-confly       - 发布 confly 包"
+    echo "  publish <package> [dry_run] - 发布包"
     echo ""
     printf "\033[1;33mDocker 命令:\033[0m\n"
     echo "  image [profile]      - 构建 Docker 镜像"
@@ -254,9 +230,9 @@ help() {
     echo "  ./conv.sh build-dev         # 快速开发环境构建"
     echo "  ./conv.sh build-prod        # 快速生产环境构建"
     echo "  ./conv.sh convd prod        # 构建生产版本 convd"
+    echo "  ./conv.sh test convertor    # 测试 convertor 包"
+    echo "  ./conv.sh publish convd     # 发布 convd 包"
     echo "  ./conv.sh image alpine      # 构建 Alpine Docker 镜像"
-    echo "  ./conv.sh test-all          # 运行所有测试"
-    echo "  ./conv.sh publish-ghcr prod # 发布生产镜像到 GHCR"
 }
 
 # ╭──────────────────────────────────────────────╮
@@ -305,17 +281,8 @@ main() {
             ;;
         
         # 测试命令
-        "test-all")
-            test-all
-            ;;
-        "test-convertor")
-            test-convertor
-            ;;
-        "test-convd")
-            test-convd
-            ;;
-        "test-confly")
-            test-confly
+        "test")
+            test "$@"
             ;;
         
         # 发布命令
@@ -323,16 +290,7 @@ main() {
             install "$@"
             ;;
         "publish")
-            publish
-            ;;
-        "publish-convertor")
-            publish-convertor
-            ;;
-        "publish-convd")
-            publish-convd
-            ;;
-        "publish-confly")
-            publish-confly
+            publish "$@"
             ;;
         
         # Docker 命令

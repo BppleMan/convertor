@@ -6,29 +6,32 @@
 source "$(dirname "${BASH_SOURCE[0]}")/log.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/fs.sh"
 
-# 将环境参数转换为构建配置
-# 参数: profile (dev|prod|alpine)
-# 输出: 设置 PROFILE, DASHBOARD, REGISTRY 等环境变量
-convert_profile() {
+# 环境参数映射函数 - 将统一的PROFILE映射到各个组件的具体参数
+# 参数: PROFILE (dev|prod|alpine)
+# 输出: 设置 CARGO_PROFILE, CARGO_PATH, DASHBOARD, REGISTRY 等环境变量
+map_profile_to_configs() {
     local input_profile="${1:-dev}"
+    
+    # 设置全局PROFILE
+    export PROFILE="$input_profile"
     
     case "$input_profile" in
         "dev"|"development")
-            export PROFILE="debug"      # cargo 构建目录使用 debug
-            export CARGO_PROFILE="dev"  # cargo 命令使用 dev
-            export DASHBOARD="development"
+            export CARGO_PROFILE="dev"          # cargo 命令使用的 profile
+            export CARGO_PATH="debug"           # cargo 构建产出物路径
+            export DASHBOARD="development"      # angular configuration
             export REGISTRY="local"
             ;;
         "prod"|"production"|"release")
-            export PROFILE="release"
-            export CARGO_PROFILE="release"
-            export DASHBOARD="production"
+            export CARGO_PROFILE="release"      # cargo 命令使用的 profile
+            export CARGO_PATH="release"         # cargo 构建产出物路径
+            export DASHBOARD="production"       # angular configuration
             export REGISTRY="ghcr.io/bppleman/convertor"
             ;;
         "alpine")
-            export PROFILE="alpine"     # cargo 构建目录使用 alpine
-            export CARGO_PROFILE="alpine"  # cargo 命令使用 alpine
-            export DASHBOARD="production"
+            export CARGO_PROFILE="alpine"       # cargo 命令使用的 profile
+            export CARGO_PATH="alpine"          # cargo 构建产出物路径
+            export DASHBOARD="production"       # alpine 环境使用 production dashboard
             export REGISTRY="ghcr.io/bppleman/convertor"
             ;;
         *)
@@ -38,7 +41,7 @@ convert_profile() {
             ;;
     esac
     
-    log_debug "环境转换: $input_profile -> PROFILE=$PROFILE, DASHBOARD=$DASHBOARD, REGISTRY=$REGISTRY"
+    log_debug "环境映射: $input_profile -> CARGO_PROFILE=$CARGO_PROFILE, CARGO_PATH=$CARGO_PATH, DASHBOARD=$DASHBOARD"
     return 0
 }
 
@@ -54,7 +57,7 @@ get_docker_config() {
 get_version() {
     local target_triple="${TARGET_TRIPLE:-x86_64-unknown-linux-musl}"
     local bin_name="${BIN_NAME:-convd}"
-    local profile="${PROFILE:-debug}"  # 默认使用 debug 而不是 dev
+    local profile="${CARGO_PATH:-debug}"  # 使用 CARGO_PATH 而不是 PROFILE
     
     local binary_path="./target/$target_triple/$profile/$bin_name"
     
@@ -80,7 +83,7 @@ validate_environment() {
         return 1
     fi
     
-    convert_profile "$profile" || return 1
+    map_profile_to_configs "$profile" || return 1
     
     # 检查必要的目录
     if [[ ! -d "dashboard" ]]; then
@@ -101,7 +104,7 @@ setup_component_env() {
     local component="$1"
     local profile="$2"
     
-    convert_profile "$profile" || return 1
+    map_profile_to_configs "$profile" || return 1
     
     case "$component" in
         "convd")
@@ -113,7 +116,7 @@ setup_component_env() {
             export BUILD_DATE="$(get_build_date)"
             ;;
         *)
-            # 通用配置已在 convert_profile 中设置
+            # 通用配置已在 map_profile_to_configs 中设置
             ;;
     esac
     
@@ -125,6 +128,7 @@ show_environment() {
     log_info "当前环境配置:"
     echo "  PROFILE: ${PROFILE:-未设置}"
     echo "  CARGO_PROFILE: ${CARGO_PROFILE:-未设置}"
+    echo "  CARGO_PATH: ${CARGO_PATH:-未设置}"
     echo "  DASHBOARD: ${DASHBOARD:-未设置}"
     echo "  REGISTRY: ${REGISTRY:-未设置}"
     echo "  TARGET_TRIPLE: ${TARGET_TRIPLE:-未设置}"

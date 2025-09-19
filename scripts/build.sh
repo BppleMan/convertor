@@ -10,19 +10,19 @@ source "$LIB_DIR/fs.sh"
 source "$LIB_DIR/config.sh"
 
 # ╭──────────────────────────────────────────────╮
-# │                   构建功能                   │
+# │                   核心功能                   │
 # ╰──────────────────────────────────────────────╯
 
 # 统一构建函数
-# 参数: component, profile, target_triple
+# 参数: package, target_triple, profile
 build_component() {
-    local component="${1:-convd}"
-    local profile="${2:-dev}"
-    local target_triple="${3:-}"
+    local package="${1:-convd}"
+    local target_triple="${2:-}"
+    local profile="${3:-dev}"
     
-    log_info "开始构建 $component (环境: $profile, 目标: ${target_triple:-native})"
+    log_info "开始构建 $package (环境: $profile, 目标: ${target_triple:-native})"
     
-    setup_component_env "$component" "$profile" || return 1
+    setup_component_env "$package" "$profile" || return 1
     ensure_project_root
     
     # 准备构建命令
@@ -52,7 +52,7 @@ build_component() {
     fi
     
     # 根据组件类型设置构建参数
-    case "$component" in
+    case "$package" in
         "all")
             build_args="$build_args --workspace --all-targets"
             ;;
@@ -66,7 +66,7 @@ build_component() {
             build_args="$build_args --bin confly"
             ;;
         *)
-            log_error "未知组件: $component"
+            log_error "未知组件: $package"
             return 1
             ;;
     esac
@@ -75,68 +75,97 @@ build_component() {
     build_args="$build_args --profile $CARGO_PROFILE"
     
     # 执行构建
-    execute_with_log "构建 $component" \
+    execute_with_log "构建 $package" \
         "time cargo $build_cmd_suffix $build_args"
 }
 
-# 构建所有组件
-build_all() {
-    local profile="${1:-dev}"
-    local target_triple="${2:-}"
+# 统一测试函数
+# 参数: package
+test() {
+    local package="${1:-all}"
     
-    build_component "all" "$profile" "$target_triple"
+    log_info "测试 $package 包"
+    
+    ensure_project_root
+    check_command "cargo" || return 1
+    
+    case "$package" in
+        "all")
+            execute_with_log "测试 convertor" \
+                "cargo insta test -p convertor --features=testkit"
+            execute_with_log "测试 convd" \
+                "cargo insta test -p convd"
+            execute_with_log "测试 confly" \
+                "cargo insta test -p confly"
+            ;;
+        "convertor")
+            execute_with_log "测试 convertor" \
+                "cargo insta test -p convertor --features=testkit"
+            ;;
+        "convd")
+            execute_with_log "测试 convd" \
+                "cargo insta test -p convd"
+            ;;
+        "confly")
+            execute_with_log "测试 confly" \
+                "cargo insta test -p confly"
+            ;;
+        *)
+            log_error "未知包: $package"
+            return 1
+            ;;
+    esac
 }
 
-# 构建 convertor 库
-build_convertor() {
-    local profile="${1:-dev}"
-    local target_triple="${2:-}"
+# 统一发布函数
+# 参数: package, dry_run
+publish() {
+    local package="${1:-}"
+    local dry_run="${2:-false}"
     
-    build_component "convertor" "$profile" "$target_triple"
-}
-
-# 构建 convd
-build_convd() {
-    local profile="${1:-dev}"
-    local target_triple="${2:-}"
+    if [[ -z "$package" ]]; then
+        log_error "请指定要发布的包: convertor, convd, confly"
+        return 1
+    fi
     
-    build_component "convd" "$profile" "$target_triple"
-}
-
-# 构建 convd (包含前端)
-build_convd_with_dashboard() {
-    local profile="${1:-dev}"
-    local target_triple="${2:-}"
+    log_info "发布 $package 包 (dry_run: $dry_run)"
     
-    setup_component_env "convd" "$profile" || return 1
+    ensure_project_root
+    check_command "cargo" || return 1
     
-    # 先构建前端
-    build_dashboard "$DASHBOARD" || return 1
+    local publish_args=""
+    if [[ "$dry_run" == "true" ]]; then
+        publish_args="--dry-run"
+    fi
     
-    # 再构建 convd
-    build_component "convd" "$profile" "$target_triple"
-}
-
-# 构建 confly
-build_confly() {
-    local profile="${1:-dev}"
-    local target_triple="${2:-}"
-    
-    build_component "confly" "$profile" "$target_triple"
-}
-
-# Linux MUSL 静态构建
-build_musl() {
-    local profile="${1:-dev}"
-    
-    build_convd_with_dashboard "$profile" "x86_64-unknown-linux-musl"
+    case "$package" in
+        "convertor")
+            execute_with_log "发布 convertor" \
+                "cargo publish -p convertor $publish_args"
+            ;;
+        "convd")
+            # 确保前端资源已构建（构建开发和生产版本）
+            build_dashboard "development" || return 1
+            build_dashboard "production" || return 1
+            execute_with_log "发布 convd" \
+                "cargo publish -p convd $publish_args"
+            ;;
+        "confly")
+            execute_with_log "发布 confly" \
+                "cargo publish -p confly $publish_args"
+            ;;
+        *)
+            log_error "未知包: $package"
+            return 1
+            ;;
+    esac
 }
 
 # 构建前端界面
 build_dashboard() {
-    local profile="${1:-development}"
+    local dashboard_config="${1:-development}"
     
-    log_info "开始构建前端界面 (环境: $profile)"
+    log_info "开始构建前端界面 (配置: $dashboard_config)"
     
     ensure_project_root
     
@@ -149,33 +178,50 @@ build_dashboard() {
     
     # 构建前端
     execute_with_log "构建前端应用" \
-        "(cd dashboard && pnpm ng build --configuration $profile)"
+        "(cd dashboard && pnpm ng build --configuration $dashboard_config)"
     
     # 复制构建结果
-    local target_dir="./crates/convd/assets/$profile"
+    local target_dir="./crates/convd/assets/$dashboard_config"
     execute_with_log "清理旧的前端资源" \
         "rm -rf $target_dir"
     
     execute_with_log "复制前端资源" \
-        "cp -rf ./dashboard/dist/dashboard/$profile/browser $target_dir"
+        "cp -rf ./dashboard/dist/dashboard/$dashboard_config/browser $target_dir"
     
     log_success "前端构建完成: $target_dir"
 }
 
+# ╭──────────────────────────────────────────────╮
+# │                   工具功能                   │
+# ╰──────────────────────────────────────────────╯
+
+# 安装二进制文件
+install() {
+    local bin_name="${1:-convd}"
+    
+    log_info "安装二进制文件: $bin_name"
+    
+    ensure_project_root
+    check_command "cargo" || return 1
+    
+    execute_with_log "安装 $bin_name" \
+        "cargo install --bin $bin_name --path ."
+}
+
 # 检查构建结果
-check_build_result() {
+check() {
     local target="${1:-x86_64-unknown-linux-musl}"
     local profile="${2:-dev}"
     local bin_name="${3:-convd}"
     
     # 转换 profile 以获取正确的目录名
-    convert_profile "$profile" || return 1
+    map_profile_to_configs "$profile" || return 1
     
     # 处理 native 目标（本机构建）
     if [[ "$target" == "native" ]]; then
-        local binary_path="./target/$PROFILE/$bin_name"
+        local binary_path="./target/$CARGO_PATH/$bin_name"
     else
-        local binary_path="./target/$target/$PROFILE/$bin_name"
+        local binary_path="./target/$target/$CARGO_PATH/$bin_name"
     fi
     
     if [[ -f "$binary_path" ]]; then
@@ -194,7 +240,7 @@ check_build_result() {
 }
 
 # 环境准备
-prepare_build_env() {
+prepare() {
     log_info "准备构建环境"
     
     # 检查和安装 cargo-zigbuild
@@ -234,174 +280,34 @@ prepare_build_env() {
     log_success "构建环境准备完成"
 }
 
-# ╭──────────────────────────────────────────────╮
-# │                   测试功能                   │
-# ╰──────────────────────────────────────────────╯
-
-# 测试 convertor
-test_convertor() {
-    log_info "测试 convertor 包"
-    
-    ensure_project_root
-    check_command "cargo" || return 1
-    
-    execute_with_log "测试 convertor" \
-        "cargo insta test -p convertor --features=testkit"
-}
-
-# 测试 convd
-test_convd() {
-    log_info "测试 convd 包"
-    
-    ensure_project_root
-    check_command "cargo" || return 1
-    
-    execute_with_log "测试 convd" \
-        "cargo insta test -p convd"
-}
-
-# 测试 confly
-test_confly() {
-    log_info "测试 confly 包"
-    
-    ensure_project_root
-    check_command "cargo" || return 1
-    
-    execute_with_log "测试 confly" \
-        "cargo insta test -p confly"
-}
-
-# 运行所有测试
-test_all() {
-    log_info "运行所有测试"
-    
-    test_convertor || return 1
-    test_convd || return 1
-    test_confly || return 1
-    
-    log_success "所有测试完成"
-}
-
-# ╭──────────────────────────────────────────────╮
-# │                   发布功能                   │
-# ╰──────────────────────────────────────────────╯
-
-# 安装二进制文件
-install_binary() {
-    local bin_name="${1:-convd}"
-    
-    log_info "安装二进制文件: $bin_name"
-    
-    ensure_project_root
-    check_command "cargo" || return 1
-    
-    execute_with_log "安装 $bin_name" \
-        "cargo install --bin $bin_name --path ."
-}
-
-# 发布所有包
-publish_all() {
-    log_info "开始发布所有包"
-    
-    ensure_project_root
-    
-    # 按顺序发布，convertor 是基础库
-    publish_convertor || return 1
-    publish_convd || return 1
-    publish_confly || return 1
-    
-    log_success "所有包发布完成"
-}
-
-# 发布 convertor 包
-publish_convertor() {
-    log_info "发布 convertor 包"
-    
-    ensure_project_root
-    check_command "cargo" || return 1
-    
-    execute_with_log "发布 convertor" \
-        "cargo publish -p convertor"
-}
-
-# 发布 convd 包
-publish_convd() {
-    log_info "发布 convd 包"
-    
-    ensure_project_root
-    check_command "cargo" || return 1
-    
-    # 确保前端资源已构建（同时构建开发和生产版本）
-    build_dashboard "development" || return 1
-    build_dashboard "production" || return 1
-    
-    execute_with_log "发布 convd" \
-        "cargo publish -p convd"
-}
-
-# 发布 confly 包
-publish_confly() {
-    log_info "发布 confly 包"
-    
-    ensure_project_root
-    check_command "cargo" || return 1
-    
-    execute_with_log "发布 confly" \
-        "cargo publish -p confly"
-}
-
-# ╭──────────────────────────────────────────────╮
-# │                   快速命令                   │
-# ╰──────────────────────────────────────────────╯
-
-# 开发环境快速构建
-build_dev_env() {
-    log_info "构建开发环境"
-    
-    # 构建 MUSL 二进制（包含前端）
-    build_musl "dev" || return 1
-    
-    log_success "开发环境构建完成"
-}
-
-# 生产环境完整构建
-build_prod_env() {
-    log_info "构建生产环境"
-    
-    # 构建 MUSL 二进制（包含前端）
-    build_musl "alpine" || return 1
-    
-    log_success "生产环境构建完成"
-}
-
 # 显示项目状态
-show_status() {
+status() {
     log_info "项目状态概览"
     
     printf "\\033[0;36m构建状态:\\033[0m\\n"
     
     # 检查本机二进制文件
-    for target in "debug" "release"; do
+    for cargo_path in "debug" "release"; do
         for bin in "convd" "confly"; do
-            local path="./target/$target/$bin"
+            local path="./target/$cargo_path/$bin"
             if [[ -f "$path" ]]; then
                 local size=$(ls -lh "$path" | awk '{print $5}')
-                echo "  ✓ $target/$bin ($size)"
+                echo "  ✓ $cargo_path/$bin ($size)"
             else
-                echo "  ✗ $target/$bin"
+                echo "  ✗ $cargo_path/$bin"
             fi
         done
     done
     
     # 检查跨平台二进制文件
-    for target in "debug" "release" "alpine"; do
+    for cargo_path in "debug" "release" "alpine"; do
         for bin in "convd" "confly"; do
-            local path="./target/x86_64-unknown-linux-musl/$target/$bin"
+            local path="./target/x86_64-unknown-linux-musl/$cargo_path/$bin"
             if [[ -f "$path" ]]; then
                 local size=$(ls -lh "$path" | awk '{print $5}')
-                echo "  ✓ musl/$target/$bin ($size)"
+                echo "  ✓ musl/$cargo_path/$bin ($size)"
             else
-                echo "  ✗ musl/$target/$bin"
+                echo "  ✗ musl/$cargo_path/$bin"
             fi
         done
     done
@@ -422,53 +328,32 @@ show_status() {
 # │                   帮助信息                   │
 # ╰──────────────────────────────────────────────╯
 
-show_build_help() {
+help() {
     show_help "build.sh" "构建、测试和发布脚本" "build.sh <command> [args...]"
     
-    printf "\033[1;33m构建命令:\033[0m\n"
-    echo "  all [profile] [target]       - 构建所有组件"
-    echo "  convertor [profile] [target] - 构建 convertor 库"
-    echo "  convd [profile] [target]     - 构建 convd"
-    echo "  confly [profile] [target]    - 构建 confly"
-    echo "  dashboard [profile]          - 构建前端界面"
-    echo "  musl [profile]               - MUSL 静态构建"
-    echo "  prepare                      - 准备构建环境"
-    echo "  check <target> <profile> [bin] - 检查构建结果"
+    printf "\033[1;33m核心功能:\033[0m\n"
+    echo "  build_component <package> [target] [profile] - 构建组件"
+    echo "  test [package]                              - 运行测试 (默认: all)"
+    echo "  publish <package> [dry_run]                 - 发布包"
+    echo "  build_dashboard [profile]                   - 构建前端"
     echo ""
-    printf "\033[1;33m测试命令:\033[0m\n"
-    echo "  test-all            - 运行所有测试"
-    echo "  test-convertor      - 测试 convertor 包"
-    echo "  test-convd          - 测试 convd 包"
-    echo "  test-confly         - 测试 confly 包"
+    printf "\033[1;33m工具功能:\033[0m\n"
+    echo "  install [bin_name]       - 安装二进制文件"
+    echo "  check [target] [profile] [bin] - 检查构建结果"
+    echo "  prepare                  - 准备构建环境"
+    echo "  status                   - 显示项目状态"
     echo ""
-    printf "\033[1;33m发布命令:\033[0m\n"
-    echo "  install [bin_name]    - 安装二进制文件 (默认: convd)"
-    echo "  publish-all          - 发布所有包"
-    echo "  publish-convertor    - 发布 convertor 包"
-    echo "  publish-convd        - 发布 convd 包"
-    echo "  publish-confly       - 发布 confly 包"
-    echo ""
-    printf "\033[1;33m快速命令:\033[0m\n"
-    echo "  build-dev           - 构建开发环境"
-    echo "  build-prod          - 构建生产环境"
-    echo "  status              - 显示项目状态"
-    echo ""
-    printf "\033[1;33m环境参数:\033[0m\n"
-    echo "  dev, development             - 开发环境"
-    echo "  prod, production             - 生产环境"
-    echo "  alpine                       - Alpine Linux 环境"
-    echo ""
-    printf "\033[1;33m目标平台:\033[0m\n"
-    echo "  x86_64-unknown-linux-musl    - Linux MUSL (静态链接)"
-    echo "  x86_64-unknown-linux-gnu     - Linux GNU (动态链接)"
-    echo "  native 或留空                - 本机平台"
+    printf "\033[1;33m参数说明:\033[0m\n"
+    echo "  package: all, convertor, convd, confly"
+    echo "  target:  x86_64-unknown-linux-musl, native (default)"
+    echo "  profile: dev, prod, alpine"
+    echo "  dry_run: true, false (default)"
     echo ""
     printf "\033[1;33m示例:\033[0m\n"
-    echo "  build.sh convertor dev"
-    echo "  build.sh convd prod x86_64-unknown-linux-musl"
-    echo "  build.sh musl alpine"
-    echo "  build.sh test-all"
-    echo "  build.sh publish-convd"
+    echo "  build.sh build_component convd x86_64-unknown-linux-musl prod"
+    echo "  build.sh test convertor"
+    echo "  build.sh publish convd true"
+    echo "  build.sh build_dashboard production"
 }
 
 # ╭──────────────────────────────────────────────╮
@@ -482,77 +367,39 @@ main() {
     shift || true
     
     case "$command" in
-        # 构建命令
-        "all")
-            build_all "$@"
+        # 核心功能
+        "build_component")
+            build_component "$@"
             ;;
-        "convertor")
-            build_convertor "$@"
+        "test")
+            test "$@"
             ;;
-        "convd")
-            build_convd "$@"
+        "publish")
+            publish "$@"
             ;;
-        "confly")
-            build_confly "$@"
-            ;;
-        "dashboard")
+        "build_dashboard")
             build_dashboard "$@"
             ;;
-        "musl")
-            build_musl "$@"
-            ;;
-        "prepare")
-            prepare_build_env
+        # 工具功能
+        "install")
+            install "$@"
             ;;
         "check")
-            check_build_result "$@"
+            check "$@"
             ;;
-        # 测试命令
-        "test-all")
-            test_all
-            ;;
-        "test-convertor")
-            test_convertor
-            ;;
-        "test-convd")
-            test_convd
-            ;;
-        "test-confly")
-            test_confly
-            ;;
-        # 发布命令
-        "install")
-            install_binary "$@"
-            ;;
-        "publish-all")
-            publish_all
-            ;;
-        "publish-convertor")
-            publish_convertor
-            ;;
-        "publish-convd")
-            publish_convd
-            ;;
-        "publish-confly")
-            publish_confly
-            ;;
-        # 快速命令
-        "build-dev")
-            build_dev_env
-            ;;
-        "build-prod")
-            build_prod_env
+        "prepare")
+            prepare
             ;;
         "status")
-            show_status
+            status
             ;;
         # 帮助
         "help"|"-h"|"--help"|"")
-            show_build_help
+            help
             ;;
         *)
             log_error "未知命令: $command"
-            show_build_help
+            help
             exit 1
             ;;
     esac
