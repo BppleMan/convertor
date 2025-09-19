@@ -1,11 +1,11 @@
-use crate::common::config::provider_config::Provider;
-use crate::common::config::proxy_client_config::ProxyClient;
 use crate::common::encrypt::encrypt;
+use crate::config::client_config::ProxyClient;
+use crate::config::provider_config::Provider;
 use crate::core::profile::policy::Policy;
 use crate::core::profile::surge_header::SurgeHeader;
+use crate::error::UrlBuilderError;
 use crate::url::convertor_url::{ConvertorUrl, ConvertorUrlType};
 use crate::url::query::ConvertorQuery;
-use crate::url::url_error::UrlBuilderError;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -57,11 +57,14 @@ impl UrlBuilder {
         Ok(builder)
     }
 
-    pub fn from_convertor_query(query: ConvertorQuery, secret: impl AsRef<str>) -> Result<Self, UrlBuilderError> {
+    pub fn from_convertor_query(
+        query: ConvertorQuery,
+        secret: impl AsRef<str>,
+        client: ProxyClient,
+        provider: Provider,
+    ) -> Result<Self, UrlBuilderError> {
         let ConvertorQuery {
             server,
-            client,
-            provider,
             sub_url,
             enc_sub_url,
             interval,
@@ -85,58 +88,58 @@ impl UrlBuilder {
         )
     }
 
-    // 构造直通 raw 订阅链接
     pub fn build_raw_url(&self) -> ConvertorUrl {
         let mut url = self.sub_url.clone();
         url.query_pairs_mut().append_pair("flag", self.client.as_ref());
-        ConvertorUrl::new(ConvertorUrlType::Raw, url)
+        ConvertorUrl::raw(url)
     }
 
-    // 构造转发 raw 订阅链接
     pub fn build_raw_profile_url(&self) -> Result<ConvertorUrl, UrlBuilderError> {
         let query = self.as_profile_query().encode_to_profile_query()?;
-        let url = ConvertorUrl::new(ConvertorUrlType::RawProfile, self.server.clone())
-            .with_path(format!(
+        let url = ConvertorUrl::raw_profile(
+            self.server.clone(),
+            format!(
                 "/raw-profile/{}/{}",
                 self.client.as_ref().to_ascii_lowercase(),
                 self.provider.as_ref().to_ascii_lowercase()
-            ))
-            .with_query(query);
+            ),
+            query,
+        );
         Ok(url)
     }
 
-    // 构造转发的 profile 链接
     pub fn build_profile_url(&self) -> Result<ConvertorUrl, UrlBuilderError> {
         let query = self.as_profile_query().encode_to_profile_query()?;
-        let url = ConvertorUrl::new(ConvertorUrlType::Profile, self.server.clone())
-            .with_path(format!(
+        let url = ConvertorUrl::profile(
+            self.server.clone(),
+            format!(
                 "/profile/{}/{}",
                 self.client.as_ref().to_ascii_lowercase(),
                 self.provider.as_ref().to_ascii_lowercase()
-            ))
-            .with_query(query);
+            ),
+            query,
+        );
         Ok(url)
     }
 
-    // 构造转发的 规则集 链接
     pub fn build_rule_provider_url(&self, policy: &Policy) -> Result<ConvertorUrl, UrlBuilderError> {
         let query = self.as_rule_provider_query(policy).encode_to_rule_provider_query()?;
-        let url = ConvertorUrl::new(ConvertorUrlType::RuleProvider, self.server.clone())
-            .with_path(format!(
+        let url = ConvertorUrl::rule_provider(
+            policy.clone(),
+            self.server.clone(),
+            format!(
                 "/rule-provider/{}/{}",
                 self.client.as_ref().to_ascii_lowercase(),
                 self.provider.as_ref().to_ascii_lowercase()
-            ))
-            .with_query(query);
+            ),
+            query,
+        );
         Ok(url)
     }
 
-    // 构造转发的 订阅日志 链接
     pub fn build_sub_logs_url(&self) -> Result<ConvertorUrl, UrlBuilderError> {
         let query = self.as_sub_logs_query().encode_to_sub_logs_query()?;
-        let url = ConvertorUrl::new(ConvertorUrlType::SubLogs, self.server.clone())
-            .with_path("/sub-logs")
-            .with_query(query);
+        let url = ConvertorUrl::sub_logs(self.server.clone(), "/api/sub-logs", query);
         Ok(url)
     }
 
@@ -156,8 +159,6 @@ impl UrlBuilder {
     pub fn as_profile_query(&self) -> ConvertorQuery {
         ConvertorQuery {
             server: self.server.clone(),
-            client: self.client,
-            provider: self.provider,
             sub_url: self.sub_url.clone(),
             enc_sub_url: self.enc_sub_url.clone(),
             interval: self.interval,
@@ -183,15 +184,15 @@ impl UrlBuilder {
 }
 
 pub trait HostPort {
-    fn host_port(&self) -> Result<String, UrlBuilderError>;
+    fn host_port(&self) -> Option<String>;
 }
 
 impl HostPort for Url {
-    fn host_port(&self) -> Result<String, UrlBuilderError> {
+    fn host_port(&self) -> Option<String> {
         match (self.host_str(), self.port()) {
-            (Some(host), Some(port)) => Ok(format!("{host}:{port}")),
-            (Some(host), None) => Ok(host.to_string()),
-            _ => Err(UrlBuilderError::NoUniSubHost(self.clone())),
+            (Some(host), Some(port)) => Some(format!("{host}:{port}")),
+            (Some(host), None) => Some(host.to_string()),
+            _ => None,
         }
     }
 }

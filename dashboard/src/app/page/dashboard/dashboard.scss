@@ -1,0 +1,36 @@
+:host {
+    display:        flex;
+    overflow:       hidden;
+    align-items:    flex-start;
+    flex-direction: column;
+    box-sizing:     border-box;
+    height:         100%;
+
+    padding:        24px 120px;
+    gap:            16px;
+
+    h1 {
+        font-size:   16px;
+        font-weight: 600;
+    }
+
+    .dashboard-content {
+        display:         flex;
+        flex:            1 1 auto;
+        flex-direction:  column;
+        justify-content: space-between;
+
+        .dashboard-row {
+            display:        flex;
+            flex-direction: row;
+            flex-wrap:      wrap;
+        }
+
+        .actuator {
+        }
+    }
+
+    .example-spacer {
+        flex: 1 1 auto;
+    }
+}

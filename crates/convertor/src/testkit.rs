@@ -1,11 +1,12 @@
-use crate::common::config::ConvertorConfig;
-use crate::common::config::provider_config::ProviderConfig;
-use crate::common::config::proxy_client_config::ProxyClient;
 use crate::common::encrypt::nonce_rng_use_seed;
 use crate::common::once::{init_backtrace, init_log};
+use crate::config::ConvertorConfig;
+use crate::config::client_config::ProxyClient;
+use crate::config::provider_config::ProviderConfig;
 use crate::core::profile::policy::Policy;
 use crate::url::url_builder::HostPort;
 use color_eyre::Report;
+use color_eyre::eyre::OptionExt;
 use httpmock::Method::{GET, POST};
 use httpmock::MockServer;
 use std::path::{Path, PathBuf};
@@ -14,7 +15,11 @@ use url::Url;
 
 pub fn init_test() -> PathBuf {
     let base_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("test-assets");
-    init_backtrace();
+    init_backtrace(|| {
+        if let Err(e) = color_eyre::install() {
+            eprintln!("Failed to install color_eyre: {e}");
+        }
+    });
     init_log(None);
     nonce_rng_use_seed([0u8; 32]);
     base_dir
@@ -84,7 +89,7 @@ impl MockServerExt for ProviderConfig {
             .await;
 
         // hook mock server 的 /subscription 路径，返回相应的 mock 数据
-        let sub_host = self.sub_url.host_port()?;
+        let sub_host = self.sub_url.host_port().ok_or_eyre("无法从 sub_url 中提取 host port")?;
         for client in ProxyClient::VARIANTS {
             mock_server
                 .mock_async(|when, then| {
@@ -101,7 +106,7 @@ impl MockServerExt for ProviderConfig {
         }
 
         // hook mock server 的 /subscription 路径，返回相应的 mock 数据
-        let sub_host = self.sub_url.host_port()?;
+        let sub_host = self.sub_url.host_port().ok_or_eyre("无法从 sub_url 中提取 host port")?;
         for client in ProxyClient::VARIANTS {
             mock_server
                 .mock_async(|when, then| {

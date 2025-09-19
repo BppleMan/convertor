@@ -1,10 +1,12 @@
+use crate::error::EncryptError;
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD as B64URL;
 use chacha20poly1305::aead::{Aead, KeyInit};
 use chacha20poly1305::{Key, XChaCha20Poly1305, XNonce};
 use rand_core::OsRng;
 use std::cell::RefCell;
-use thiserror::Error;
+
+type Result<T> = core::result::Result<T, EncryptError>;
 
 // ===== 线程局部：给“当前线程”注入可复现的 RNG =====
 // 每个测试线程可在第一行设置自己的种子，互不影响，支持并行。
@@ -24,7 +26,7 @@ pub fn nonce_rng_use_system() {
 }
 
 /// 统一生成 24B nonce：优先线程局部 RNG，缺省回退 OS RNG
-fn gen_nonce24() -> Result<[u8; 24], EncryptError> {
+fn gen_nonce24() -> Result<[u8; 24]> {
     // 1) 先试线程局部的“固定种子” RNG（可复现、并行互不影响）
     if let Some(n) = TL_SEEDED_RNG.with(|cell| {
         let mut opt = cell.borrow_mut();
@@ -60,7 +62,7 @@ fn normalize_key(key: &[u8]) -> [u8; 32] {
     normalized
 }
 
-pub fn encrypt(secret: &[u8], plaintext: &str) -> Result<String, EncryptError> {
+pub fn encrypt(secret: &[u8], plaintext: &str) -> Result<String> {
     let norm_key = normalize_key(secret);
     let key = Key::from_slice(&norm_key);
     let cipher = XChaCha20Poly1305::new(key);
@@ -70,7 +72,7 @@ pub fn encrypt(secret: &[u8], plaintext: &str) -> Result<String, EncryptError> {
     let nonce = XNonce::from_slice(&nonce_bytes);
 
     let ciphertext = cipher
-        .encrypt(&nonce, plaintext.as_bytes())
+        .encrypt(nonce, plaintext.as_bytes())
         .map_err(|_| EncryptError::Encrypt)?;
 
     // URL-safe, no padding；不加任何分隔符
@@ -80,7 +82,7 @@ pub fn encrypt(secret: &[u8], plaintext: &str) -> Result<String, EncryptError> {
     Ok(out)
 }
 
-pub fn decrypt(secret: &[u8], token: &str) -> Result<String, EncryptError> {
+pub fn decrypt(secret: &[u8], token: &str) -> Result<String> {
     if token.len() < NONCE_B64URL_LEN {
         return Err(EncryptError::NonceLength);
     }
@@ -105,28 +107,4 @@ pub fn decrypt(secret: &[u8], token: &str) -> Result<String, EncryptError> {
         .map_err(|_| EncryptError::Decrypt)?;
 
     Ok(String::from_utf8(plaintext)?)
-}
-
-#[derive(Debug, Error)]
-pub enum EncryptError {
-    #[error("无法分离 nonce 与密文")]
-    SplitError,
-
-    #[error("nonce 长度不合法")]
-    NonceLength,
-
-    #[error(transparent)]
-    Utf8Error(#[from] std::string::FromUtf8Error),
-
-    #[error(transparent)]
-    OsError(#[from] rand_core::OsError),
-
-    #[error("加密失败")]
-    Encrypt,
-
-    #[error("解密失败")]
-    Decrypt,
-
-    #[error("解码 base64 字符串失败")]
-    DecodeError(#[source] base64::DecodeError),
 }

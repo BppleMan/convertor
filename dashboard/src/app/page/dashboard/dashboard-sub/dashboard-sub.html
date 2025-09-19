@@ -1,0 +1,54 @@
+<h2>订阅链接</h2>
+
+<form (submit)="submit()" [formGroup]="subscriptionForm">
+    <div class="form-row">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Secret</mat-label>
+            <input formControlName="secret" matInput>
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Client</mat-label>
+            <mat-select formControlName="client" panelClass="my-mat-option">
+                @for (c of clients; track c) {
+                    <mat-option value="{{ c.toLowerCase() }}">{{ c }}</mat-option>
+                }
+            </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Provider</mat-label>
+            <mat-select formControlName="provider" panelClass="my-mat-option">
+                @for (p of providers; track p) {
+                    <mat-option value="{{ p.toLowerCase() }}">{{ p }}</mat-option>
+                }
+            </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Interval</mat-label>
+            <input formControlName="interval" matInput type="number">
+        </mat-form-field>
+        <mat-slide-toggle class="form-suffix" formControlName="strict" labelPosition="before">Strict</mat-slide-toggle>
+    </div>
+    <div class="form-row">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Raw Subscription URL</mat-label>
+            <input formControlName="url" matInput>
+        </mat-form-field>
+        <button class="form-suffix" matButton="filled">Gen</button>
+    </div>
+</form>
+
+<section class="scroll-area">
+    @for (url of urls$ | async; track url.desc) {
+        <div class="convertor-url">
+            <div class="convertor-url-label">
+                <h5>{{ url.desc }}</h5>
+                <app-icon-button cdkCopyToClipboard="{{ url.url }}">content_copy</app-icon-button>
+            </div>
+            <div class="convertor-url-link">
+                <code>
+                    {{ url.url }}
+                </code>
+            </div>
+        </div>
+    }
+</section>

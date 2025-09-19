@@ -1,169 +1,158 @@
-name: Build and Push (GHCR)
+name: 构建并推送到 GHCR
 
 on:
-  push:
-    tags:
-      - "v*"
-      - "release-*"
-  workflow_dispatch:
-    inputs:
-      extra_tag:
-        description: "Extra image tag (e.g. canary)"
-        type: string
-        required: false
-      profile:
-        description: "Cargo build profile"
-        type: choice
-        options: [ release, debug ]
-        required: false
-        default: release
+    push:
+        tags:
+            - "v*"
+    workflow_dispatch:
+        inputs:
+            extra_tag:
+                description: "额外的镜像标签（如 canary）"
+                type: string
+                required: false
+            profile:
+                description: "构建配置"
+                type: choice
+                options: [ prod, dev ]
+                required: false
+                default: prod
 
 permissions:
-  contents: read
-  packages: write
+    contents: read
+    packages: write
 
 env:
-  DOCKERFILE: ./Dockerfile
-  CONTEXT_DIR: .
-  TARGET_TRIPLE: x86_64-unknown-linux-musl
-  PROFILE: release
-  BIN_NAME: convertor
+    DOCKERFILE: ./Dockerfile
+    CONTEXT_DIR: .
+    TARGET_TRIPLE: x86_64-unknown-linux-musl
+    PROFILE: prod
+    BIN_NAME: convd
 
 jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
+    build-and-push:
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+        steps:
+            -   name: 检出代码
+                uses: actions/checkout@v4
 
-      # Compute lowercase image name: ghcr.io/<owner>/<repo>
-      - name: Resolve image name (lowercase)
-        id: img
-        shell: bash
-        run: |
-          NAME="ghcr.io/${{ github.repository }}"
-          echo "image=${NAME,,}" >> "$GITHUB_OUTPUT"
+            -   name: 解析镜像名称（小写）
+                id: img
+                shell: bash
+                run: |
+                    NAME="ghcr.io/${{ github.repository }}/convd"
+                    echo "image=${NAME,,}" >> "$GITHUB_OUTPUT"
 
-      # Resolve manual inputs with fallback
-      - name: Resolve inputs (profile/extra_tag)
-        id: vars
-        shell: bash
-        run: |
-          p="${{ github.event.inputs.profile }}"
-          if [ -z "$p" ]; then p="${{ env.PROFILE }}"; fi
-          echo "profile=$p" >> "$GITHUB_OUTPUT"
-          e="${{ github.event.inputs.extra_tag }}"
-          echo "extra=$e" >> "$GITHUB_OUTPUT"
+            -   name: 处理输入参数
+                id: vars
+                shell: bash
+                run: |
+                    # 统一使用 dev/prod 作为环境控制参数
+                    p="${{ github.event.inputs.profile }}"
+                    if [ -z "$p" ]; then p="${{ env.PROFILE }}"; fi
+                    echo "profile=$p" >> "$GITHUB_OUTPUT"
+                    
+                    # 映射到 cargo 的编译配置
+                    if [ "$p" = "prod" ]; then
+                        echo "cargo_profile=release" >> "$GITHUB_OUTPUT"
+                    else
+                        echo "cargo_profile=debug" >> "$GITHUB_OUTPUT"
+                    fi
+                    
+                    e="${{ github.event.inputs.extra_tag }}"
+                    echo "extra=$e" >> "$GITHUB_OUTPUT"
 
-      # Rust toolchain
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+            -   name: 安装 Rust 工具链
+                uses: dtolnay/rust-toolchain@stable
 
-      # Add MUSL target (required by zigbuild for std components)
-      - name: Add MUSL target
-        run: rustup target add x86_64-unknown-linux-musl
+            -   name: 添加 MUSL 目标平台
+                run: rustup target add x86_64-unknown-linux-musl
 
-      # Cache cargo artifacts
-      - name: Cache cargo
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
+            -   name: 缓存 Cargo 构建产物
+                uses: actions/cache@v4
+                with:
+                    path: |
+                        ~/.cargo/registry
+                        ~/.cargo/git
+                        target
+                    key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+                    restore-keys: |
+                        ${{ runner.os }}-cargo-
 
-      # Install Zig
-      - name: Setup Zig
-        uses: mlugg/setup-zig@v1
-        with:
-          version: 0.12.0
+            -   name: 安装 Zig 编译器
+                uses: mlugg/setup-zig@v2
+                with:
+                    mirror: 'https://pkg.machengine.org/zig'
 
-      # Install cargo-zigbuild
-      - name: Install cargo-zigbuild
-        run: cargo install cargo-zigbuild --locked
+            -   name: 安装 cargo-zigbuild
+                run: cargo install cargo-zigbuild --locked
 
-      # Build MUSL binary (release uses --release)
-      - name: Build (zig + MUSL)
-        shell: bash
-        run: |
-          # env RUSTFLAGS can be enabled if needed:
-          # export RUSTFLAGS="-C target-feature=+crt-static"
-          if [ "${{ steps.vars.outputs.profile }}" = "release" ]; then
-            cargo zigbuild --target $TARGET_TRIPLE --release
-          else
-            cargo zigbuild --target $TARGET_TRIPLE
-          fi
+            -   name: 安装 Node.js
+                uses: actions/setup-node@v5
+                with:
+                    node-version: 'lts/*'
 
-      # GHCR login using GITHUB_TOKEN
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+            -   name: 安装 pnpm
+                run: npm install -g pnpm
 
-      # Generate tags/labels (v1.2.3 -> 1.2.3 / 1.2 / 1; plus latest/dev/sha and optional extra tag)
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ steps.img.outputs.image }}
-          tags: |
-            # 所有场景都打短 SHA
-            type=sha,format=short
+            -   name: 构建 MUSL 二进制文件
+                shell: bash
+                run: |
+                    chmod +x ./scripts/build.sh
+                    source ./scripts/build.sh && build_musl ${{ steps.vars.outputs.profile }}
 
-            # ─── 推送 tag 的场景 ───
-            # latest：仅在 tag 推送时
-            type=raw,value=latest,enable=${{ github.ref_type == 'tag' }}
-            # semver：仅在 v* 的语义化版本 tag 上
-            type=semver,pattern={{version}},enable=${{ github.ref_type == 'tag' && startsWith(github.ref_name, 'v') }}
-            type=semver,pattern={{major}}.{{minor}},enable=${{ github.ref_type == 'tag' && startsWith(github.ref_name, 'v') }}
-            type=semver,pattern={{major}},enable=${{ github.ref_type == 'tag' && startsWith(github.ref_name, 'v') }}
+            -   name: 获取版本号
+                id: version
+                shell: bash
+                run: |
+                    if [[ "${{ github.ref_type }}" == "tag" ]]; then
+                        VERSION="${{ github.ref_name }}"
+                        VERSION="${VERSION#v}"
+                        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+                        echo "source=git-tag" >> "$GITHUB_OUTPUT"
+                    else
+                        VERSION=$(./target/${{ env.TARGET_TRIPLE }}/${{ steps.vars.outputs.cargo_profile }}/${{ env.BIN_NAME }} tag 2>/dev/null || echo "0.0.0-dev")
+                        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+                        echo "source=convd-command" >> "$GITHUB_OUTPUT"
+                    fi
+                    echo "📋 版本号: $VERSION (来源: $(echo ${{ github.ref_type == 'tag' && 'git标签' || 'convd命令' }})"
 
-            # ─── 手动触发的场景 ───
-            # 分支名 tag（会自动把非法字符安全化）
-            type=ref,event=branch,enable=${{ github.event_name == 'workflow_dispatch' }}
+            -   name: 登录到 GHCR
+                uses: docker/login-action@v3
+                with:
+                    registry: ghcr.io
+                    username: ${{ github.actor }}
+                    password: ${{ secrets.GITHUB_TOKEN }}
 
-            # 可选：手动触发时额外 tag（如 canary）
-            type=raw,value=${{ steps.vars.outputs.extra }},enable=${{ github.event_name == 'workflow_dispatch' && steps.vars.outputs.extra != '' }}
-          labels: |
-            org.opencontainers.image.title=convertor
-            org.opencontainers.image.description=A profile converter for Surge/Clash.
-            org.opencontainers.image.url=https://github.com/${{ github.repository }}
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.documentation=https://github.com/${{ github.repository }}#readme
-            org.opencontainers.image.vendor=${{ github.repository_owner }}
-            org.opencontainers.image.licenses=Apache-2.0
+            -   name: 生成 Docker 标签
+                id: meta
+                uses: docker/metadata-action@v5
+                with:
+                    images: ${{ steps.img.outputs.image }}
+                    tags: |
+                        type=raw,value=${{ steps.version.outputs.version }}
+                        type=raw,value=latest,enable=${{ github.ref_type == 'tag' || (github.event_name == 'workflow_dispatch' && github.event.inputs.extra_tag == 'latest') }}
+                        type=sha,format=short,prefix={{branch}}-
+                        type=raw,value=${{ steps.vars.outputs.extra }},enable=${{ github.event_name == 'workflow_dispatch' && steps.vars.outputs.extra != '' && steps.vars.outputs.extra != 'latest' }}
 
-      # Buildx (same-arch build; QEMU not required)
-      - name: Set up Buildx
-        uses: docker/setup-buildx-action@v3
+            -   name: 设置 Docker Buildx
+                uses: docker/setup-buildx-action@v3
 
-      # Build and push image; provide version metadata; use lowercase image name for cache refs
-      - name: Build and Push to GHCR
-        uses: docker/build-push-action@v6
-        with:
-          context: ${{ env.CONTEXT_DIR }}
-          file: ${{ env.DOCKERFILE }}
-          push: true
-          platforms: linux/amd64
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: |
-            ${{ steps.meta.outputs.labels }}
-            org.opencontainers.image.version=${{ steps.meta.outputs.version }}
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.created=${{ steps.meta.outputs.created || github.run_started_at }}
-          build-args: |
-            VERSION=${{ steps.meta.outputs.version }}
-            VCS_REF=${{ github.sha }}
-            BUILD_DATE=${{ steps.meta.outputs.created || github.run_started_at }}
-            TARGET_TRIPLE=${{ env.TARGET_TRIPLE }}
-            PROFILE=${{ steps.vars.outputs.profile }}
-            BIN_NAME=${{ env.BIN_NAME }}
-            BIN_PATH=target/${{ env.TARGET_TRIPLE }}/${{ steps.vars.outputs.profile }}/${{ env.BIN_NAME }}
-          cache-from: type=registry,ref=${{ steps.img.outputs.image }}:buildcache
-          cache-to: type=registry,ref=${{ steps.img.outputs.image }}:buildcache,mode=max
+            -   name: 构建并推送到 GHCR
+                uses: docker/build-push-action@v6
+                with:
+                    context: ${{ env.CONTEXT_DIR }}
+                    file: ${{ env.DOCKERFILE }}
+                    push: true
+                    platforms: linux/amd64
+                    tags: ${{ steps.meta.outputs.tags }}
+                    build-args: |
+                        VERSION=${{ steps.version.outputs.version }}
+                        VCS_REF=${{ github.sha }}
+                        BUILD_DATE=${{ steps.meta.outputs.created }}
+                        TARGET_TRIPLE=${{ env.TARGET_TRIPLE }}
+                        PROFILE=${{ steps.vars.outputs.cargo_profile }}
+                        BIN_NAME=${{ env.BIN_NAME }}
+                        BIN_PATH=target/${{ env.TARGET_TRIPLE }}/${{ steps.vars.outputs.cargo_profile }}/${{ env.BIN_NAME }}
+                    cache-from: type=registry,ref=${{ steps.img.outputs.image }}:buildcache
+                    cache-to: type=registry,ref=${{ steps.img.outputs.image }}:buildcache,mode=max

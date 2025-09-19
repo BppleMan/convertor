@@ -1,5 +1,5 @@
-use crate::core::error::ParseError;
 use crate::core::profile::policy::Policy;
+use crate::error::ParseError;
 use serde::{Deserialize, Deserializer};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
@@ -45,11 +45,11 @@ impl Rule {
 impl Display for Rule {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         if let Some(comment) = &self.comment {
-            writeln!(f, "{}", comment)?;
+            writeln!(f, "{comment}")?;
         }
         write!(f, "{},{}", self.rule_type, self.policy.name)?;
         if let Some(value) = &self.value {
-            write!(f, ",{}", value)?;
+            write!(f, ",{value}")?;
         }
         Ok(())
     }
@@ -143,7 +143,7 @@ impl FromStr for RuleType {
             "MATCH" => Ok(RuleType::Match),
             _ => Err(ParseError::RuleType {
                 line: 0,
-                reason: format!("未知的规则类型: {}", s),
+                reason: format!("未知的规则类型: {s}"),
             }),
         }
     }

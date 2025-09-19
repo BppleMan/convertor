@@ -3,8 +3,9 @@ mod server;
 
 use axum::body::Body;
 use axum::extract::Request;
-use convertor::common::config::provider_config::Provider;
-use convertor::common::config::proxy_client_config::ProxyClient;
+use color_eyre::eyre::OptionExt;
+use convertor::config::client_config::ProxyClient;
+use convertor::config::provider_config::Provider;
 use convertor::core::profile::policy::Policy;
 use convertor::core::renderer::Renderer;
 use convertor::core::renderer::clash_renderer::ClashRenderer;
@@ -34,7 +35,13 @@ async fn rule_provider(
 
     let actual = String::from_utf8_lossy(&response.into_body().collect().await?.to_bytes())
         .to_string()
-        .replace(&url_builder.sub_url.host_port()?, "localhost");
+        .replace(
+            &url_builder
+                .sub_url
+                .host_port()
+                .ok_or_eyre("无法从 sub_url 中提取 host port")?,
+            "localhost",
+        );
 
     Ok(actual)
 }
@@ -47,7 +54,7 @@ async fn test_rule_provider_surge_boslife() -> color_eyre::Result<()> {
     for policy in policies {
         let ctx = format!(
             "test_rule_provider_surge_boslife_{}",
-            ClashRenderer::render_provider_name_for_policy(&policy)?
+            ClashRenderer::render_provider_name_for_policy(&policy)
         );
         let actual = rule_provider(&server_context, ProxyClient::Surge, Provider::BosLife, policy).await?;
         insta::assert_snapshot!(ctx, actual);
@@ -63,7 +70,7 @@ async fn test_rule_provider_clash_boslife() -> color_eyre::Result<()> {
     for policy in policies {
         let ctx = format!(
             "test_rule_provider_clash_boslife_{}",
-            ClashRenderer::render_provider_name_for_policy(&policy)?
+            ClashRenderer::render_provider_name_for_policy(&policy)
         );
         let actual = rule_provider(&server_context, ProxyClient::Clash, Provider::BosLife, policy).await?;
         insta::assert_snapshot!(ctx, actual);

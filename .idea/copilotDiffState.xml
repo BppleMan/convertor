@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CopilotDiffPersistence">
+    <option name="pendingDiffs">
+      <map>
+        <entry key="$PROJECT_DIR$/assets/root.html">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/assets/root.html" />
+              <option name="updatedContent" value="&lt;!DOCTYPE html&gt;&#10;&lt;html lang=&quot;zh-CN&quot;&gt;&#10;&lt;head&gt;&#10;    &lt;meta charset=&quot;UTF-8&quot;&gt;&#10;    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;&#10;    &lt;title&gt;Convertor 后端服务&lt;/title&gt;&#10;    &lt;style&gt;&#10;        body { font-family: 'Segoe UI', 'PingFang SC', Arial, sans-serif; background: #f7f7fa; margin: 0; }&#10;        .container { max-width: 600px; margin: 80px auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 24px #0001; padding: 40px 32px; text-align: center; }&#10;        h1 { color: #2d8cf0; margin-bottom: 12px; }&#10;        p { color: #555; margin-bottom: 32px; }&#10;        .links a { display: inline-block; margin: 0 12px; color: #2d8cf0; text-decoration: none; font-weight: 500; transition: color .2s; }&#10;        .links a:hover { color: #1a5fb4; }&#10;        .footer { margin-top: 40px; color: #aaa; font-size: 13px; }&#10;    &lt;/style&gt;&#10;&lt;/head&gt;&#10;&lt;body&gt;&#10;    &lt;div class=&quot;container&quot;&gt;&#10;        &lt;h1&gt;Convertor 后端服务&lt;/h1&gt;&#10;        &lt;p&gt;欢迎使用！本服务用于订阅转换、规则提供等 API 能力。&lt;/p&gt;&#10;        &lt;div class=&quot;links&quot;&gt;&#10;            &lt;a href=&quot;/profile&quot;&gt;Profile API&lt;/a&gt;&#10;            &lt;a href=&quot;/rule-provider&quot;&gt;Rule Provider API&lt;/a&gt;&#10;            &lt;a href=&quot;/sub-logs&quot;&gt;订阅日志&lt;/a&gt;&#10;        &lt;/div&gt;&#10;        &lt;div class=&quot;footer&quot;&gt;&amp;copy; 2025 Convertor Project&lt;/div&gt;&#10;    &lt;/div&gt;&#10;&lt;/body&gt;&#10;&lt;/html&gt;&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

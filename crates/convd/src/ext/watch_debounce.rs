@@ -3,6 +3,7 @@ use tokio::sync::watch;
 use tokio::time::{Duration, Instant, sleep_until};
 
 /// 给 watch::Receiver 增加“去抖接收”的能力
+#[allow(unused)]
 pub trait WatchDebounceExt<T> {
     /// 等到有变化后，静默 `duration`，期间若继续变化就重置计时；
     /// 静默期结束返回“最后一个值”。发送端全关返回 None。
@@ -32,7 +33,7 @@ impl<T: Clone> WatchDebounceExt<T> for watch::Receiver<T> {
 
         loop {
             select! {
-                _ = async { Some(self.changed().await.ok()?) } => {
+                _ = async { self.changed().await.ok() } => {
                     deadline = Instant::now() + duration;
                 }
                 _ = sleep_until(deadline) => {

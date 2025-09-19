@@ -1,6 +1,5 @@
-use color_eyre::Report;
-use color_eyre::eyre::eyre;
-use serde::{Deserialize, Deserializer};
+use crate::error::ParseError;
+use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -14,7 +13,8 @@ static OPTION_RANK: LazyLock<HashMap<Option<&str>, usize>> = LazyLock::new(|| {
         .collect()
 });
 
-#[derive(Default, Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Default, Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[serde(try_from = "PolicySerialHelper")]
 pub struct Policy {
     pub name: String,
     pub option: Option<String>,
@@ -56,12 +56,15 @@ impl Policy {
 }
 
 impl FromStr for Policy {
-    type Err = Report;
+    type Err = ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let parts = s.splitn(2, ',').map(str::trim).collect::<Vec<_>>();
         if parts.is_empty() {
-            return Err(eyre!("无法解析策略: {}", s));
+            return Err(ParseError::Policy {
+                line: 0,
+                reason: format!("无法理解的策略\"{}\"", s),
+            });
         }
         Ok(Policy {
             name: parts[0].to_string(),
@@ -93,28 +96,79 @@ impl Ord for Policy {
     }
 }
 
-impl<'de> Deserialize<'de> for Policy {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        struct PolicyVisitor;
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum PolicySerialHelper {
+    Str(String),
+    Obj {
+        name: String,
+        option: Option<String>,
+        #[serde(default)]
+        is_subscription: bool,
+    },
+}
 
-        impl<'de> serde::de::Visitor<'de> for PolicyVisitor {
-            type Value = Policy;
+impl TryFrom<PolicySerialHelper> for Policy {
+    type Error = ParseError;
 
-            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-                write!(formatter, "策略语法应该形如: 策略名称[,选项]")
-            }
-
-            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-            where
-                E: serde::de::Error,
-            {
-                Policy::from_str(v).map_err(E::custom)
+    fn try_from(repr: PolicySerialHelper) -> Result<Self, Self::Error> {
+        match repr {
+            PolicySerialHelper::Str(s) => Policy::from_str(&s),
+            PolicySerialHelper::Obj {
+                name,
+                option,
+                is_subscription,
+            } => {
+                if name.trim().is_empty() {
+                    return Err(ParseError::Policy {
+                        line: 0,
+                        reason: "策略名称不能为空".to_string(),
+                    });
+                }
+                Ok(Policy {
+                    name,
+                    option,
+                    is_subscription,
+                })
             }
         }
-
-        deserializer.deserialize_str(PolicyVisitor)
     }
 }
+
+// impl<'de> Deserialize<'de> for Policy {
+//     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+//     where
+//         D: Deserializer<'de>,
+//     {
+//         struct PolicyVisitor;
+//
+//         impl<'de> serde::de::Visitor<'de> for PolicyVisitor {
+//             type Value = Policy;
+//
+//             fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+//                 write!(formatter, "策略语法应该形如: 策略名称[,选项]")
+//             }
+//
+//             fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+//             where
+//                 E: serde::de::Error,
+//             {
+//                 Policy::from_str(v).map_err(E::custom)
+//             }
+//         }
+//
+//         #[derive(Deserialize)]
+//         pub struct SerializePolicy {
+//             pub name: String,
+//             pub option: Option<String>,
+//             pub is_subscription: bool,
+//         }
+//
+//         match deserializer.deserialize_str(PolicyVisitor) {
+//             Ok(policy) => Ok(policy),
+//             Err(err) => {
+//                 let sp = SerializePolicy::deserialize(deserializer)?;
+//             }
+//         }
+//     }
+// }

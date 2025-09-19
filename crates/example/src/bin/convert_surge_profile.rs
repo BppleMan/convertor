@@ -1,9 +1,8 @@
 use color_eyre::eyre::eyre;
-use convertor::common::config::ConvertorConfig;
-use convertor::common::config::provider_config::Provider;
-use convertor::common::config::proxy_client_config::ProxyClient;
 use convertor::common::once::{init_backtrace, init_base_dir};
-use convertor::common::redis::{redis_client, redis_url};
+use convertor::config::ConvertorConfig;
+use convertor::config::client_config::ProxyClient;
+use convertor::config::provider_config::Provider;
 use convertor::core::profile::Profile;
 use convertor::core::profile::surge_profile::SurgeProfile;
 use convertor::core::renderer::Renderer;
@@ -14,7 +13,11 @@ use headers::UserAgent;
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> color_eyre::Result<()> {
     let base_dir = init_base_dir();
-    init_backtrace();
+    init_backtrace(|| {
+        if let Err(e) = color_eyre::install() {
+            eprintln!("Failed to install color_eyre: {e}");
+        }
+    });
 
     // 确定适用的客户端和订阅提供者
     // 这里使用 Surge 客户端和 BosLife 机场
@@ -23,11 +26,8 @@ async fn main() -> color_eyre::Result<()> {
 
     // 搜索可用配置文件
     let config = ConvertorConfig::search(&base_dir, Option::<&str>::None)?;
-    // redis 客户端连接
-    let redis = redis_client(redis_url())?;
-    let connection_manager = redis::aio::ConnectionManager::new(redis).await?;
     // 创建订阅供应商实例
-    let api_map = ProviderApi::create_api(config.providers.clone(), connection_manager);
+    let api_map = ProviderApi::create_api_no_redis(config.providers.clone());
     // 获取 BosLife 的 API 实例
     let api = api_map
         .get(&provider)

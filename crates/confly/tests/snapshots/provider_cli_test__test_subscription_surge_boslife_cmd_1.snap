@@ -2,19 +2,25 @@
 source: crates/confly/tests/provider_cli_test.rs
 expression: result
 ---
-[34mRaw[39m
+提供商原始订阅
 http://127.0.0.1:<PORT>/subscription?token=bppleman&flag=Surge
-[34mProfile[39m
+转换器订阅
 <SERVER>profile/surge/boslife?interval=43200&strict=true&sub_url=<ENC_SUB_URL>
-[34mRawProfile[39m
+转发原始订阅
 <SERVER>raw-profile/surge/boslife?interval=43200&strict=true&sub_url=<ENC_SUB_URL>
-[34mSubLogs[39m
-<SERVER>sub-logs?secret=akO49BUYoRzDh7Zpsu5lhp8H575VUTh6Mh74Xh0JSf5jblvyCnUxdxwp2ClcBhAf
-[34mRuleProvider[39m
+订阅日志记录
+<SERVER>api/sub-logs?secret=akO49BUYoRzDh7Zpsu5lhp8H575VUTh6Mh74Xh0JSf5jblvyCnUxdxwp2ClcBhAf
+规则集: [Subscription]
 <SERVER>rule-provider/surge/boslife?interval=43200&policy[name]=DIRECT&policy[is_subscription]=true&sub_url=<ENC_SUB_URL>
+规则集: [BosLife]
 <SERVER>rule-provider/surge/boslife?interval=43200&policy[name]=BosLife&policy[is_subscription]=false&sub_url=<ENC_SUB_URL>
+规则集: [BosLife: no-resolve]
 <SERVER>rule-provider/surge/boslife?interval=43200&policy[name]=BosLife&policy[option]=no-resolve&policy[is_subscription]=false&sub_url=<ENC_SUB_URL>
+规则集: [BosLife: force-remote-dns]
 <SERVER>rule-provider/surge/boslife?interval=43200&policy[name]=BosLife&policy[option]=force-remote-dns&policy[is_subscription]=false&sub_url=<ENC_SUB_URL>
+规则集: [DIRECT]
 <SERVER>rule-provider/surge/boslife?interval=43200&policy[name]=DIRECT&policy[is_subscription]=false&sub_url=<ENC_SUB_URL>
+规则集: [DIRECT: no-resolve]
 <SERVER>rule-provider/surge/boslife?interval=43200&policy[name]=DIRECT&policy[option]=no-resolve&policy[is_subscription]=false&sub_url=<ENC_SUB_URL>
+规则集: [DIRECT: force-remote-dns]
 <SERVER>rule-provider/surge/boslife?interval=43200&policy[name]=DIRECT&policy[option]=force-remote-dns&policy[is_subscription]=false&sub_url=<ENC_SUB_URL>

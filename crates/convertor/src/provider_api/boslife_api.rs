@@ -1,13 +1,15 @@
 use crate::common::cache::Cache;
-use crate::common::config::provider_config::{ApiConfig, ProviderConfig};
-use crate::common::config::proxy_client_config::ProxyClient;
+use crate::config::client_config::ProxyClient;
+use crate::config::provider_config::{ApiConfig, ProviderConfig};
+use crate::error::ProviderApiError;
 use crate::provider_api::provider_api_trait::ProviderApiTrait;
-use color_eyre::eyre::{Context, eyre};
 use redis::aio::ConnectionManager;
 use reqwest::Client as ReqwestClient;
 use reqwest::{Method, Request, Url};
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
+
+type Result<T> = core::result::Result<T, ProviderApiError>;
 
 #[derive(Clone)]
 pub struct BosLifeApi {
@@ -57,37 +59,52 @@ impl ProviderApiTrait for BosLifeApi {
         &self.client
     }
 
-    fn login_request(&self) -> color_eyre::Result<Request> {
+    fn login_request(&self) -> Result<Request> {
         let builder = self.client.request(Method::POST, self.api_config().login_url()).form(&[
             ("email", self.api_config().credential.username.clone()),
             ("password", self.api_config().credential.password.clone()),
         ]);
-        builder.build().wrap_err(eyre!("构建登录请求失败"))
+        builder.build().map_err(|e| ProviderApiError::BuildRequestError {
+            name: "[BosLife 登录请求]".to_string(),
+            source: e,
+        })
     }
 
-    fn get_sub_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request> {
+    fn get_sub_request(&self, auth_token: impl AsRef<str>) -> Result<Request> {
         let builder = self
             .client
             .request(Method::GET, self.api_config().get_sub_url())
             .header("Authorization", auth_token.as_ref());
-        Ok(builder.build()?)
+        builder.build().map_err(|e| ProviderApiError::BuildRequestError {
+            name: "[BosLife 获取订阅请求]".to_string(),
+            source: e,
+        })
     }
 
-    fn reset_sub_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request> {
+    fn reset_sub_request(&self, auth_token: impl AsRef<str>) -> Result<Request> {
         let builder = self
             .client
             .request(Method::POST, self.api_config().reset_sub_url())
             .header("Authorization", auth_token.as_ref());
-        Ok(builder.build()?)
+        builder.build().map_err(|e| ProviderApiError::BuildRequestError {
+            name: "[BosLife 重置订阅请求]".to_string(),
+            source: e,
+        })
     }
 
-    fn get_sub_logs_request(&self, auth_token: impl AsRef<str>) -> color_eyre::Result<Request> {
-        let url = self.api_config().sub_logs_url().ok_or(eyre!("订阅日志接口未配置"))?;
+    fn get_sub_logs_request(&self, auth_token: impl AsRef<str>) -> Result<Request> {
+        let url = self
+            .api_config()
+            .sub_logs_url()
+            .ok_or(ProviderApiError::Other("订阅日志接口未配置".to_string()))?;
         let builder = self
             .client
             .request(Method::GET, url)
             .header("Authorization", auth_token.as_ref());
-        Ok(builder.build()?)
+        builder.build().map_err(|e| ProviderApiError::BuildRequestError {
+            name: "[BosLife 获取订阅日志请求]".to_string(),
+            source: e,
+        })
     }
 
     fn cached_profile(&self) -> &Cache<String, String> {
@@ -124,7 +141,7 @@ pub struct BosLifeLogs(pub Vec<BosLifeLog>);
 impl Display for BosLifeLogs {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let string = serde_json::to_string_pretty(self).expect("JSON serialization failed");
-        write!(f, "{}", string)
+        write!(f, "{string}")
     }
 }
 

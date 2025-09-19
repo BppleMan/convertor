@@ -1,0 +1,34 @@
+:host {
+    display:  block;
+    overflow: hidden;
+    width:    100%;
+    height:   100%;
+
+    .aurora-container {
+        position:         relative;
+        width:            100%;
+        min-height:       100vh;
+        background-color: #020617; /* 更新为深色背景 */
+
+        &__bg {
+            position:            absolute;
+            z-index:             0;
+            background:          #000000;
+            background-image:    radial-gradient(circle at 1px 1px, rgba(139, 92, 246, 0.2) 1px, transparent 0),
+                                 radial-gradient(circle at 1px 1px, rgba(59, 130, 246, 0.18) 1px, transparent 0),
+                                 radial-gradient(circle at 1px 1px, rgba(236, 72, 153, 0.15) 1px, transparent 0);
+            background-position: 0 0, 10px 10px, 15px 5px;
+            background-size:     20px 20px, 30px 30px, 25px 25px;
+            inset:               0;
+
+        }
+
+        &__content {
+            position:   relative;
+            z-index:    1;
+            height:     100%;
+            background: red;
+            /* 放置你的内容（例如 router-outlet / 子组件） */
+        }
+    }
+}
