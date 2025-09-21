@@ -8,11 +8,14 @@ use redis::AsyncTypedCommands;
 use serde_json::json;
 use std::sync::Arc;
 use strum::VariantArray;
+use tracing::instrument;
 
+#[instrument(skip_all)]
 pub async fn healthy() -> ApiResponse<()> {
     ApiResponse::ok(())
 }
 
+#[instrument(skip_all)]
 pub async fn redis(State(state): State<Arc<AppState>>) -> Result<ApiResponse<String>, ApiError> {
     let pong = state
         .redis_connection
@@ -23,6 +26,7 @@ pub async fn redis(State(state): State<Arc<AppState>>) -> Result<ApiResponse<Str
     Ok(ApiResponse::ok(pong))
 }
 
+#[instrument(skip_all)]
 pub async fn version() -> Result<ApiResponse<serde_json::Value>, ApiError> {
     Ok(ApiResponse::ok(json!({
         "clients": ProxyClient::VARIANTS,

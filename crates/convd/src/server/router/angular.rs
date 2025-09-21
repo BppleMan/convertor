@@ -7,6 +7,7 @@ use axum::routing::get;
 use axum_extra::headers::{HeaderMap, HeaderValue};
 use include_dir::{Dir, include_dir};
 use std::sync::Arc;
+use tracing::instrument;
 
 #[cfg(debug_assertions)]
 static UI_DIST: Dir = include_dir!("$CARGO_MANIFEST_DIR/assets/development");
@@ -21,11 +22,13 @@ pub fn router() -> Router<Arc<AppState>> {
 }
 
 /// /dashboard/ 入口：直接回 index.html（非 3xx），交给 Angular 前端路由
+#[instrument(skip_all)]
 async fn index() -> Response {
     serve_index()
 }
 
 /// /dashboard/{*path}：先尝试当成静态文件命中；没命中则回 index.html（SPA fallback）
+#[instrument(skip_all)]
 async fn serve(Path(raw): Path<String>) -> Response {
     // 规范化与安全处理
     let path = raw.trim_start_matches('/');

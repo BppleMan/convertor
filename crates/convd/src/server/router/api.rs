@@ -12,8 +12,9 @@ pub mod subscription {
     use convertor::url::url_builder::UrlBuilder;
     use convertor::url::url_result::UrlResult;
     use std::sync::Arc;
+    use tracing::instrument;
 
-    #[allow(unused)]
+    #[instrument(skip_all)]
     pub async fn subscription(
         Path((client, provider)): Path<(ProxyClient, Provider)>,
         Host(host): Host,
@@ -60,6 +61,7 @@ pub mod subscription {
         Ok(ApiResponse::ok(url_result))
     }
 
+    #[instrument(skip_all)]
     pub async fn sub_logs(
         Path(provider): Path<Provider>,
         Host(host): Host,

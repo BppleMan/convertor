@@ -20,7 +20,7 @@ pub fn init_test() -> PathBuf {
             eprintln!("Failed to install color_eyre: {e}");
         }
     });
-    init_log(None);
+    init_log();
     nonce_rng_use_seed([0u8; 32]);
     base_dir
 }

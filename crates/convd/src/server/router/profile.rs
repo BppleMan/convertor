@@ -11,6 +11,7 @@ use convertor::url::url_builder::UrlBuilder;
 use std::sync::Arc;
 use tracing::instrument;
 
+#[instrument(skip_all)]
 pub async fn raw_profile(
     Path((client, provider)): Path<(ProxyClient, Provider)>,
     Host(host): Host,

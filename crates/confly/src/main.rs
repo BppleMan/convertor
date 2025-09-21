@@ -32,7 +32,7 @@ async fn main() -> Result<()> {
             eprintln!("Failed to install color_eyre: {e}");
         }
     });
-    init_log(Some(&base_dir));
+    init_log();
 
     match args.command {
         ConvertorCommand::Config(config_cmd) => {

@@ -43,7 +43,7 @@ async fn main() -> Result<()> {
             eprintln!("Failed to install color_eyre: {e}");
         }
     });
-    init_log(Some(&base_dir));
+    init_log();
     info!("工作目录: {}", base_dir.display());
 
     info!("+──────────────────────────────────────────────+");
