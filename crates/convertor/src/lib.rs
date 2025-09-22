@@ -1,9 +1,9 @@
 pub mod common;
 pub mod config;
 pub mod core;
-mod env;
+pub mod env;
 pub mod error;
-pub mod provider_api;
+pub mod provider;
 pub mod result;
 #[cfg(any(test, feature = "testkit"))]
 pub mod testkit;

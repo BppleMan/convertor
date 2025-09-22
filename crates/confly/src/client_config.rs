@@ -10,16 +10,6 @@ use thiserror::Error;
 static ENV_VAR_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"\$\{([A-Za-z0-9_]+)}"#).expect("Failed to compile environment variable regex"));
 
-#[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Hash)]
-#[derive(ValueEnum, Serialize, Deserialize)]
-#[derive(Display, IntoStaticStr, AsRefStr, VariantArray, EnumString)]
-#[serde(rename_all = "lowercase")]
-pub enum ProxyClient {
-    #[default]
-    Surge,
-    Clash,
-}
-
 #[derive(Default, Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ClientConfig {
     client: ProxyClient,

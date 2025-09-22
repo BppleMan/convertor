@@ -5,7 +5,7 @@ use confly::cli::config_cli::ConfigCli;
 use confly::cli::provider_cli::ProviderCli;
 use convertor::common::clap_style::SONOKAI_TC;
 use convertor::common::once::{init_backtrace, init_base_dir, init_log};
-use convertor::config::ConvertorConfig;
+use convertor::config::Config;
 use convertor::provider_api::ProviderApi;
 use std::path::PathBuf;
 
@@ -39,7 +39,7 @@ async fn main() -> Result<()> {
             ConfigCli::new(config_cmd).execute().await?;
         }
         other => {
-            let config = ConvertorConfig::search(&base_dir, args.config)?;
+            let config = Config::search(&base_dir, args.config)?;
             let api_map = ProviderApi::create_api_no_redis(config.providers.clone());
 
             match other {

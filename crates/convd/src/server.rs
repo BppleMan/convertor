@@ -1,7 +1,7 @@
 use crate::server::app_state::AppState;
 use axum::Router;
 use color_eyre::Result;
-use convertor::config::ConvertorConfig;
+use convertor::config::Config;
 use std::net::{SocketAddr, SocketAddrV4};
 use tokio::net::{TcpListener, TcpSocket};
 use tokio::signal;
@@ -15,7 +15,7 @@ pub mod response;
 pub mod router;
 pub mod service;
 
-pub async fn start_server(listen_addr: SocketAddrV4, config: ConvertorConfig) -> Result<()> {
+pub async fn start_server(listen_addr: SocketAddrV4, config: Config) -> Result<()> {
     let (redis_client, connection_manager) = match config.redis.as_ref() {
         Some(redis_config) => {
             info!("+──────────────────────────────────────────────+");

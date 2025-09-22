@@ -1,7 +1,7 @@
 use clap::Args;
 use color_eyre::Result;
 use color_eyre::eyre::{OptionExt, eyre};
-use convertor::config::ConvertorConfig;
+use convertor::config::Config;
 use convertor::config::client_config::ProxyClient;
 use convertor::config::provider_config::Provider;
 use convertor::core::profile::Profile;
@@ -62,7 +62,7 @@ pub struct ProviderCmd {
 }
 
 pub struct ProviderCli {
-    pub config: ConvertorConfig,
+    pub config: Config,
     pub api_map: HashMap<Provider, ProviderApi>,
 }
 
@@ -76,7 +76,7 @@ enum ClientProfile {
 }
 
 impl ProviderCli {
-    pub fn new(config: ConvertorConfig, api_map: HashMap<Provider, ProviderApi>) -> Self {
+    pub fn new(config: Config, api_map: HashMap<Provider, ProviderApi>) -> Self {
         Self { config, api_map }
     }
 

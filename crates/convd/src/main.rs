@@ -3,7 +3,7 @@ use color_eyre::Result;
 use convd::server::start_server;
 use convertor::common::clap_style::SONOKAI_TC;
 use convertor::common::once::{init_backtrace, init_base_dir, init_log};
-use convertor::config::ConvertorConfig;
+use convertor::config::Config;
 use std::net::SocketAddrV4;
 use std::path::PathBuf;
 use tracing::info;
@@ -49,7 +49,7 @@ async fn main() -> Result<()> {
     info!("+──────────────────────────────────────────────+");
     info!("│               加载配置文件...                │");
     info!("+──────────────────────────────────────────────+");
-    let config = ConvertorConfig::search(&base_dir, args.config)?;
+    let config = Config::search(&base_dir, args.config)?;
     info!("配置文件加载完成");
 
     start_server(args.listen, config).await?;

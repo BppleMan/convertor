@@ -1,4 +1,4 @@
-use convertor::config::ConvertorConfig;
+use convertor::config::Config;
 use convertor::config::client_config::ProxyClient;
 use convertor::provider_api::ProviderApi;
 
@@ -41,7 +41,7 @@ async fn test_subscription_surge_boslife() -> color_eyre::Result<()> {
     let client = ProxyClient::Surge;
     let provider = Provider::BosLife;
     init_test();
-    let mut config = ConvertorConfig::template();
+    let mut config = Config::template();
     config.providers.values_mut().for_each(|provider| {
         provider.api_config.headers.remove("Authorization");
     });
@@ -74,7 +74,7 @@ async fn test_subscription_clash_boslife() -> color_eyre::Result<()> {
     init_test();
     let client = ProxyClient::Clash;
     let provider = Provider::BosLife;
-    let mut config = ConvertorConfig::template();
+    let mut config = Config::template();
     config.providers.values_mut().for_each(|provider| {
         provider.api_config.headers.remove("Authorization");
     });

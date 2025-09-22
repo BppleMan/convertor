@@ -1,5 +1,5 @@
 use convertor::common::once::{init_backtrace, init_base_dir};
-use convertor::config::ConvertorConfig;
+use convertor::config::Config;
 use convertor::provider_api::ProviderApi;
 
 #[tokio::main(flavor = "multi_thread")]
@@ -11,7 +11,7 @@ async fn main() -> color_eyre::Result<()> {
         }
     });
 
-    let config = ConvertorConfig::search(&base_dir, Option::<&str>::None)?;
+    let config = Config::search(&base_dir, Option::<&str>::None)?;
     let api_map = ProviderApi::create_api_no_redis(config.providers);
     let api = api_map
         .get(&convertor::config::provider_config::Provider::BosLife)

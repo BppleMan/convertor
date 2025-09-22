@@ -698,7 +698,6 @@ dependencies = [
 name = "convertor"
 version = "2.6.12"
 dependencies = [
- "async-trait",
  "base64 0.22.1",
  "chacha20poly1305",
  "clap",
@@ -707,7 +706,6 @@ dependencies = [
  "headers",
  "httpmock",
  "insta",
- "jsonpath_lib",
  "moka",
  "opentelemetry",
  "opentelemetry-otlp",
@@ -721,9 +719,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_yaml",
- "strum",
  "thiserror 2.0.16",
- "tokio",
  "toml",
  "tracing",
  "tracing-appender",
@@ -2707,21 +2703,6 @@ name = "strum"
 version = "0.27.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "af23d6f6c1a224baef9d3f61e287d2761385a5b88fdab4eb4c6f11aeb54c4bcf"
-dependencies = [
- "strum_macros",
-]
-
-[[package]]
-name = "strum_macros"
-version = "0.27.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7695ce3845ea4b33927c055a39dc438a45b059f7c1b3d91d38d10355fb8cbca7"
-dependencies = [
- "heck",
- "proc-macro2",
- "quote",
- "syn 2.0.91",
-]
 
 [[package]]
 name = "subtle"

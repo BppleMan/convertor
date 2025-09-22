@@ -5,15 +5,14 @@ use axum::extract::{Path, RawQuery, State};
 use axum_extra::TypedHeader;
 use axum_extra::extract::Host;
 use axum_extra::headers::UserAgent;
-use convertor::config::client_config::ProxyClient;
-use convertor::config::provider_config::Provider;
+use convertor::config::proxy_client::ProxyClient;
 use convertor::url::url_builder::UrlBuilder;
 use std::sync::Arc;
 use tracing::instrument;
 
 #[instrument(skip_all)]
 pub async fn raw_profile(
-    Path((client, provider)): Path<(ProxyClient, Provider)>,
+    Path(client): Path<ProxyClient>,
     Host(host): Host,
     scheme: Option<OptionalScheme>,
     TypedHeader(user_agent): TypedHeader<UserAgent>,
@@ -21,8 +20,7 @@ pub async fn raw_profile(
     RawQuery(query_string): RawQuery,
 ) -> Result<String, ApiError> {
     let query = parse_query(state.as_ref(), scheme, host.as_str(), query_string)?.check_for_profile()?;
-    let url_builder = UrlBuilder::from_convertor_query(query, &state.config.secret, client, provider)?;
-    let api = state.api_map.get(&provider).ok_or_else(|| ApiError::NoSubProvider)?;
+    let url_builder = UrlBuilder::from_convertor_query(query, &state.config.secret, client)?;
     let raw_profile = api.get_raw_profile(client, user_agent).await?;
     match client {
         ProxyClient::Surge => Ok(state.surge_service.raw_profile(url_builder, raw_profile).await?),
@@ -32,7 +30,7 @@ pub async fn raw_profile(
 
 #[instrument(skip_all)]
 pub async fn profile(
-    Path((client, provider)): Path<(ProxyClient, Provider)>,
+    Path(client): Path<ProxyClient>,
     Host(host): Host,
     scheme: Option<OptionalScheme>,
     TypedHeader(user_agent): TypedHeader<UserAgent>,
@@ -52,7 +50,7 @@ pub async fn profile(
 
 #[instrument(skip_all)]
 pub async fn rule_provider(
-    Path((client, provider)): Path<(ProxyClient, Provider)>,
+    Path(client): Path<ProxyClient>,
     Host(host): Host,
     scheme: Option<OptionalScheme>,
     TypedHeader(user_agent): TypedHeader<UserAgent>,

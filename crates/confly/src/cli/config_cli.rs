@@ -1,6 +1,6 @@
 use clap::{Args, Subcommand};
 use color_eyre::eyre::eyre;
-use convertor::config::ConvertorConfig;
+use convertor::config::Config;
 use std::path::PathBuf;
 
 #[derive(Default, Debug, Clone, Args)]
@@ -34,20 +34,20 @@ impl ConfigCli {
         Self { cmd }
     }
 
-    pub async fn execute(self) -> color_eyre::Result<ConvertorConfig> {
+    pub async fn execute(self) -> color_eyre::Result<Config> {
         let config = match (self.cmd.file, self.cmd.option) {
             (Some(file), _) => {
-                let config = ConvertorConfig::from_file(file)?;
+                let config = Config::from_file(file)?;
                 println!("{config}");
                 config
             }
             (None, Some(ConfigCmdOption::Template)) => {
-                let config = ConvertorConfig::template();
+                let config = Config::template();
                 println!("{config}");
                 config
             }
             (None, Some(ConfigCmdOption::File)) => {
-                let config = ConvertorConfig::search(std::env::current_dir()?, None::<&str>)?;
+                let config = Config::search(std::env::current_dir()?, None::<&str>)?;
                 println!("{config}");
                 config
             }
