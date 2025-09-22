@@ -1,20 +1,16 @@
 use std::path::PathBuf;
 
-use clap::ValueEnum;
+use convertor::config::proxy_client::ProxyClient;
 use regex::{Captures, Regex};
 use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
-use strum::{AsRefStr, Display, EnumString, IntoStaticStr, VariantArray};
-use thiserror::Error;
 
 static ENV_VAR_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"\$\{([A-Za-z0-9_]+)}"#).expect("Failed to compile environment variable regex"));
 
-#[derive(Default, Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Serialize, Deserialize)]
 pub struct ClientConfig {
-    client: ProxyClient,
-    interval: u64,
-    strict: bool,
     config_dir: String,
     main_profile_name: String,
     raw_profile_name: Option<String>,
@@ -26,9 +22,6 @@ pub struct ClientConfig {
 impl ClientConfig {
     pub fn surge_template() -> Self {
         Self {
-            client: ProxyClient::Surge,
-            interval: 43200,
-            strict: true,
             config_dir: "${ICLOUD}/../iCloud~com~nssurge~inc/Documents/surge".to_string(),
             main_profile_name: "surge.conf".to_string(),
             raw_profile_name: Some("raw.conf".to_string()),
@@ -40,10 +33,7 @@ impl ClientConfig {
 
     pub fn clash_template() -> Self {
         Self {
-            client: ProxyClient::Clash,
             config_dir: "${HOME}/.config/mihomo".to_string(),
-            interval: 43200,
-            strict: true,
             main_profile_name: "config.yaml".to_string(),
             ..Default::default()
         }
@@ -51,14 +41,6 @@ impl ClientConfig {
 }
 
 impl ClientConfig {
-    pub fn interval(&self) -> u64 {
-        self.interval
-    }
-
-    pub fn strict(&self) -> bool {
-        self.strict
-    }
-
     pub fn set_surge_dir(&mut self, surge_dir: String) {
         self.config_dir = surge_dir;
     }
@@ -108,7 +90,3 @@ fn expand_env_vars(value: impl AsRef<str>) -> String {
         })
         .to_string()
 }
-
-#[derive(Debug, Error)]
-#[error("无法解析客户端: {0}")]
-pub struct ParseClientError(String);

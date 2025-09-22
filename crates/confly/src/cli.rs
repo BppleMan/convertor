@@ -1,11 +1,10 @@
 use crate::cli::config_cli::ConfigCmd;
-use crate::cli::provider_cli::ProviderCmd;
+use crate::cli::subscription_cli::SubscriptionCmd;
 use clap::Subcommand;
 
 pub mod config_cli;
-pub mod provider_cli;
-#[cfg(feature = "update")]
-pub(self) mod update;
+pub mod subscription_cli;
+pub mod update;
 
 #[derive(Debug, Clone, Subcommand)]
 #[allow(clippy::large_enum_variant)]
@@ -17,5 +16,5 @@ pub enum ConvertorCommand {
 
     /// 获取订阅提供商的订阅链接
     #[command(name = "sub")]
-    SubProvider(ProviderCmd),
+    Subscription(SubscriptionCmd),
 }

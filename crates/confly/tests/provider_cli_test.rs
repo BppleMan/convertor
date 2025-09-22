@@ -2,32 +2,32 @@ use convertor::config::Config;
 use convertor::config::client_config::ProxyClient;
 use convertor::provider_api::ProviderApi;
 
-use confly::cli::provider_cli::{ProviderCli, ProviderCmd};
+use confly::cli::subscription_cli::{ProviderCli, SubscriptionCmd};
 use convertor::config::provider_config::Provider;
 use convertor::testkit::{init_test, start_mock_provider_server};
 use url::Url;
 
-pub fn cmds(client: ProxyClient, provider: Provider) -> [ProviderCmd; 4] {
+pub fn cmds(client: ProxyClient, provider: Provider) -> [SubscriptionCmd; 4] {
     [
-        ProviderCmd {
+        SubscriptionCmd {
             client,
             provider,
             ..Default::default()
         },
-        ProviderCmd {
+        SubscriptionCmd {
             client,
             provider,
             server: Some(Url::parse("http://localhost:8080").expect("不合法的服务器地址")),
             ..Default::default()
         },
-        ProviderCmd {
+        SubscriptionCmd {
             client,
             provider,
             interval: Some(86400),
             strict: Some(false),
             ..Default::default()
         },
-        ProviderCmd {
+        SubscriptionCmd {
             client,
             provider,
             reset: true,

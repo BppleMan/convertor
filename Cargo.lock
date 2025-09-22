@@ -629,6 +629,8 @@ dependencies = [
  "convertor",
  "headers",
  "insta",
+ "regex",
+ "serde",
  "tokio",
  "tracing",
  "url",

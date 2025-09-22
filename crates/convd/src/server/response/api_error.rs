@@ -1,8 +1,8 @@
 use axum::http::StatusCode;
 use axum::http::header::ToStrError;
 use axum::response::{IntoResponse, Response};
-use convertor::config::client_config::ProxyClient;
-use convertor::error::{ProviderApiError, QueryError, UrlBuilderError};
+use convertor::config::proxy_client::ProxyClient;
+use convertor::error::{ProviderError, QueryError, UrlBuilderError};
 use redis::RedisError;
 use std::sync::Arc;
 use thiserror::Error;
@@ -25,7 +25,7 @@ pub enum ApiError {
     QueryError(#[from] QueryError),
 
     #[error(transparent)]
-    ProviderApiError(#[from] ProviderApiError),
+    ProviderError(#[from] ProviderError),
 
     #[error(transparent)]
     ToStr(#[from] ToStrError),

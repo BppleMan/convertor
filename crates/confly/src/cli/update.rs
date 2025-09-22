@@ -1,52 +1,50 @@
-use crate::config::ConvertorConfig;
-use crate::config::proxy_client_config::{ClashConfig, ProxyClient, ProxyClientConfig, SurgeConfig};
-use crate::core::convertor_url::{ConvertorUrl, ConvertorUrlType};
-use crate::core::profile::Profile;
-use crate::core::profile::clash_profile::ClashProfile;
-use crate::core::profile::policy::Policy;
-use crate::core::profile::rule::Rule;
-use crate::core::profile::surge_header::SurgeHeader;
-use crate::core::renderer::Renderer;
-use crate::core::renderer::clash_renderer::ClashRenderer;
-use crate::core::renderer::surge_renderer::{
+use crate::config::{ClientConfig, ConflyConfig};
+use color_eyre::owo_colors::OwoColorize;
+use convertor::config::proxy_client::ProxyClient;
+use convertor::core::profile::Profile;
+use convertor::core::profile::clash_profile::ClashProfile;
+use convertor::core::profile::policy::Policy;
+use convertor::core::profile::rule::Rule;
+use convertor::core::profile::surge_header::SurgeHeader;
+use convertor::core::renderer::Renderer;
+use convertor::core::renderer::clash_renderer::ClashRenderer;
+use convertor::core::renderer::surge_renderer::{
     SURGE_RULE_PROVIDER_COMMENT_END, SURGE_RULE_PROVIDER_COMMENT_START, SurgeRenderer,
 };
-use crate::core::result::ParseResult;
-use crate::core::url_builder::UrlBuilder;
-use color_eyre::owo_colors::OwoColorize;
+use convertor::url::convertor_url::{ConvertorUrl, ConvertorUrlType};
+use convertor::url::url_builder::UrlBuilder;
 use std::borrow::Cow;
 use std::path::Path;
+// pub async fn update_surge_config(
+//     config: &ConflyConfig,
+//     url_builder: &UrlBuilder,
+//     policies: impl IntoIterator<Item = &Policy>,
+// ) -> color_eyre::Result<()> {
+//     if let Some(client_config) = config.clients.get(&ProxyClient::Surge) {
+//         surge_config.update_surge_config(url_builder, policies).await?;
+//     } else {
+//         eprintln!("{}", "Surge 配置未找到，请检查配置文件是否正确设置".red().bold());
+//     }
+//     Ok(())
+// }
+//
+// pub async fn update_clash_config(
+//     config: &ConvertorConfig,
+//     url_builder: &UrlBuilder,
+//     raw_profile: ClashProfile,
+// ) -> color_eyre::Result<()> {
+//     if let Some(ProxyClientConfig::Clash(clash_config)) = config.clients.get(&ProxyClient::Clash) {
+//         clash_config
+//             .update_clash_config(url_builder, raw_profile, &config.secret)
+//             .await?;
+//     } else {
+//         eprintln!("{}", "Clash 配置未找到，请检查配置文件是否正确设置".red().bold());
+//     }
+//     Ok(())
+// }
 
-pub async fn update_surge_config(
-    config: &ConvertorConfig,
-    url_builder: &UrlBuilder,
-    policies: impl IntoIterator<Item = &Policy>,
-) -> color_eyre::Result<()> {
-    if let Some(ProxyClientConfig::Surge(surge_config)) = config.clients.get(&ProxyClient::Surge) {
-        surge_config.update_surge_config(url_builder, policies).await?;
-    } else {
-        eprintln!("{}", "Surge 配置未找到，请检查配置文件是否正确设置".red().bold());
-    }
-    Ok(())
-}
-
-pub async fn update_clash_config(
-    config: &ConvertorConfig,
-    url_builder: &UrlBuilder,
-    raw_profile: ClashProfile,
-) -> color_eyre::Result<()> {
-    if let Some(ProxyClientConfig::Clash(clash_config)) = config.clients.get(&ProxyClient::Clash) {
-        clash_config
-            .update_clash_config(url_builder, raw_profile, &config.secret)
-            .await?;
-    } else {
-        eprintln!("{}", "Clash 配置未找到，请检查配置文件是否正确设置".red().bold());
-    }
-    Ok(())
-}
-
-impl SurgeConfig {
-    async fn update_surge_config(
+impl ClientConfig {
+    pub async fn update_surge_config(
         &self,
         url_builder: &UrlBuilder,
         policies: impl IntoIterator<Item = &Policy>,
@@ -78,11 +76,6 @@ impl SurgeConfig {
                 .await?;
         }
 
-        // 更新 subscription_logs.js 中的请求订阅日志的 URL
-        if let Some(sub_logs_path) = self.sub_logs_path() {
-            self.update_surge_sub_logs_url(sub_logs_path, url_builder.build_sub_logs_url()?)
-                .await?;
-        }
         Ok(())
     }
 
@@ -109,11 +102,11 @@ impl SurgeConfig {
         let provider_rules = policies
             .into_iter()
             .map(|policy| {
-                let name = SurgeRenderer::render_provider_name_for_policy(policy)?;
+                let name = SurgeRenderer::render_provider_name_for_policy(policy);
                 let url = url_builder.build_rule_provider_url(policy)?;
                 Ok(Rule::surge_rule_provider(policy, name, url))
             })
-            .collect::<ParseResult<Vec<_>>>()?;
+            .collect::<color_eyre::Result<Vec<_>>>()?;
         let mut output = provider_rules
             .iter()
             .map(SurgeRenderer::render_rule)
@@ -127,19 +120,6 @@ impl SurgeConfig {
         Ok(())
     }
 
-    async fn update_surge_sub_logs_url(
-        &self,
-        sub_logs_path: impl AsRef<Path>,
-        sub_logs_url: ConvertorUrl,
-    ) -> color_eyre::Result<()> {
-        let content = tokio::fs::read_to_string(&sub_logs_path).await?;
-        let mut lines = content.lines().map(Cow::Borrowed).collect::<Vec<_>>();
-        lines[0] = Cow::Owned(format!(r#"const sub_logs_link = "{}""#, sub_logs_url));
-        let content = lines.join("\n");
-        tokio::fs::write(sub_logs_path, &content).await?;
-        Ok(())
-    }
-
     async fn update_conf(config_path: impl AsRef<Path>, header: SurgeHeader) -> color_eyre::Result<()> {
         let mut content = tokio::fs::read_to_string(&config_path).await?;
         let mut lines = content.lines().map(Cow::Borrowed).collect::<Vec<_>>();
@@ -148,10 +128,8 @@ impl SurgeConfig {
         tokio::fs::write(&config_path, &content).await?;
         Ok(())
     }
-}
 
-impl ClashConfig {
-    async fn update_clash_config(
+    pub async fn update_clash_config(
         &self,
         url_builder: &UrlBuilder,
         raw_profile: ClashProfile,
@@ -162,7 +140,7 @@ impl ClashConfig {
         template.convert(url_builder)?;
         template.secret = Some(secret.as_ref().to_string());
         let clash_config = ClashRenderer::render_profile(&template)?;
-        let main_sub_path = self.main_sub_path();
+        let main_sub_path = self.main_profile_path();
         if !main_sub_path.is_file() {
             if let Some(parent) = main_sub_path.parent() {
                 tokio::fs::create_dir_all(parent).await?;

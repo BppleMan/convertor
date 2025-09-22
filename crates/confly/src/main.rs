@@ -2,7 +2,7 @@ use clap::Parser;
 use color_eyre::Result;
 use confly::cli::ConvertorCommand;
 use confly::cli::config_cli::ConfigCli;
-use confly::cli::provider_cli::ProviderCli;
+use confly::cli::subscription_cli::ProviderCli;
 use convertor::common::clap_style::SONOKAI_TC;
 use convertor::common::once::{init_backtrace, init_base_dir, init_log};
 use convertor::config::Config;
@@ -43,7 +43,7 @@ async fn main() -> Result<()> {
             let api_map = ProviderApi::create_api_no_redis(config.providers.clone());
 
             match other {
-                ConvertorCommand::SubProvider(args) => {
+                ConvertorCommand::Subscription(args) => {
                     let mut executor = ProviderCli::new(config, api_map);
                     let (url_builder, result) = executor.execute(args).await?;
                     executor.post_execute(url_builder, result);
