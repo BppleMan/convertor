@@ -3,6 +3,7 @@ use opentelemetry::trace::TracerProvider;
 use opentelemetry_otlp::WithExportConfig;
 use std::io::IsTerminal;
 use std::sync::Once;
+use tracing_loki::BackgroundTask;
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -32,6 +33,7 @@ where
 }
 
 static INITIALIZED_LOG: Once = Once::new();
+// pub static LOKI_TASK: OnceLock<Arc<Pin<BackgroundTask>>> = OnceLock::new();
 
 macro_rules! layer {
     (env_filter) => {
@@ -50,7 +52,7 @@ macro_rules! layer {
             .with_file(true)
             .with_line_number(true)
             .with_thread_names(true)
-            .with_ansi(std::io::stderr().is_terminal())
+            .with_ansi(std::io::stdout().is_terminal())
             .with_timer(tracing_subscriber::fmt::time::LocalTime::rfc_3339())
             .pretty()
     };
@@ -90,7 +92,8 @@ macro_rules! layer {
     };
 }
 
-pub fn init_log() {
+pub fn init_log(loki_url: Option<&str>, otlp_grpc: Option<&str>) -> Option<BackgroundTask> {
+    let mut loki_task_guard = None;
     INITIALIZED_LOG.call_once(|| {
         // 1. 灵活 EnvFilter（支持 RUST_LOG，否则用默认）
         let filter = layer!(env_filter);
@@ -99,20 +102,16 @@ pub fn init_log() {
         let fmt_layer = layer!(fmt_layer);
 
         // 3. loki 日志（可选）
-        let loki_url = std::env::var("LOKI_URL");
         let service = "convd";
         let loki_layer = loki_url.map(|loki_url| {
             let (loki_layer, loki_task) = layer!(loki_layer, loki_url, service);
-            // 启动 loki 后台任务
-            tokio::spawn(loki_task);
+            loki_task_guard.replace(loki_task);
             loki_layer
         });
 
         // 4. otel 日志（可选）
-        let otlp_grpc = std::env::var("OTLP_GRPC");
-
         match (loki_layer, otlp_grpc) {
-            (Ok(loki_layer), Ok(otlp_grpc)) => {
+            (Some(loki_layer), Some(otlp_grpc)) => {
                 let otlp_layer = layer!(otlp_layer, otlp_grpc, service);
                 tracing_subscriber::registry()
                     .with(filter)
@@ -121,16 +120,16 @@ pub fn init_log() {
                     .with(otlp_layer)
                     .init();
             }
-            (Ok(loki_layer), Err(e)) => {
-                eprintln!("无法读取 OTLP_GRPC 环境变量: {e}, 不启用 otlp 日志");
+            (Some(loki_layer), None) => {
+                eprintln!("无法读取 OTLP_GRPC, 不启用 otlp 日志");
                 tracing_subscriber::registry()
                     .with(filter)
                     .with(fmt_layer)
                     .with(loki_layer)
                     .init();
             }
-            (Err(e), Ok(otlp_grpc)) => {
-                eprintln!("无法读取 LOKI_URL 环境变量: {e}, 不启用 loki 日志");
+            (None, Some(otlp_grpc)) => {
+                eprintln!("无法读取 LOKI_URL, 不启用 loki 日志");
                 let otlp_layer = layer!(otlp_layer, otlp_grpc, service);
                 tracing_subscriber::registry()
                     .with(filter)
@@ -138,9 +137,9 @@ pub fn init_log() {
                     .with(otlp_layer)
                     .init();
             }
-            (Err(e1), Err(e2)) => {
-                eprintln!("无法读取 LOKI_URL 环境变量: {e1}, 不启用 loki 日志");
-                eprintln!("无法读取 OTLP_GRPC 环境变量: {e2}, 不启用 otlp 日志");
+            (None, None) => {
+                eprintln!("无法读取 LOKI_URL, 不启用 loki 日志");
+                eprintln!("无法读取 OTLP_GRPC, 不启用 otlp 日志");
                 tracing_subscriber::registry()
                     .with(layer!(env_filter))
                     .with(layer!(fmt_layer))
@@ -148,4 +147,5 @@ pub fn init_log() {
             }
         }
     });
+    loki_task_guard
 }

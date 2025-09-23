@@ -1,9 +1,9 @@
 use convertor::common::encrypt::{decrypt, encrypt};
-use convertor::testkit::init_test;
+use convertor::init_test;
 
 #[test]
 fn test_encrypt_and_decrypt() -> color_eyre::Result<()> {
-    init_test();
+    init_test!();
 
     let secret = b"abcdefg"; // 密钥必须是32字节
     let message = "This is a secret message.";
@@ -21,7 +21,7 @@ fn test_encrypt_and_decrypt() -> color_eyre::Result<()> {
 
 #[test]
 fn test_decrypt() -> color_eyre::Result<()> {
-    init_test();
+    init_test!();
 
     let secret = "bppleman";
 

@@ -1,0 +1,20 @@
+---
+source: crates/confly/tests/subscription_test.rs
+expression: "file_provider.read(&rules_path)?\n.replace(&url_builder.server.to_string(),\n\"<SERVER>\").replace(&url_builder.enc_sub_url, \"<ENC_SUB_URL>\")"
+---
+# Rule Provider from convertor
+// [Subscription]
+RULE-SET,<SERVER>rule-provider/surge?interval=86400&policy[name]=DIRECT&policy[is_subscription]=true&sub_url=<ENC_SUB_URL>,DIRECT
+// [BosLife]
+RULE-SET,<SERVER>rule-provider/surge?interval=86400&policy[name]=BosLife&policy[is_subscription]=false&sub_url=<ENC_SUB_URL>,BosLife
+// [BosLife: no-resolve]
+RULE-SET,<SERVER>rule-provider/surge?interval=86400&policy[name]=BosLife&policy[option]=no-resolve&policy[is_subscription]=false&sub_url=<ENC_SUB_URL>,BosLife,no-resolve
+// [BosLife: force-remote-dns]
+RULE-SET,<SERVER>rule-provider/surge?interval=86400&policy[name]=BosLife&policy[option]=force-remote-dns&policy[is_subscription]=false&sub_url=<ENC_SUB_URL>,BosLife,force-remote-dns
+// [DIRECT]
+RULE-SET,<SERVER>rule-provider/surge?interval=86400&policy[name]=DIRECT&policy[is_subscription]=false&sub_url=<ENC_SUB_URL>,DIRECT
+// [DIRECT: no-resolve]
+RULE-SET,<SERVER>rule-provider/surge?interval=86400&policy[name]=DIRECT&policy[option]=no-resolve&policy[is_subscription]=false&sub_url=<ENC_SUB_URL>,DIRECT,no-resolve
+// [DIRECT: force-remote-dns]
+RULE-SET,<SERVER>rule-provider/surge?interval=86400&policy[name]=DIRECT&policy[option]=force-remote-dns&policy[is_subscription]=false&sub_url=<ENC_SUB_URL>,DIRECT,force-remote-dns
+# End of Rule Provider

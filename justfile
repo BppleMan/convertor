@@ -1,5 +1,4 @@
 #!/usr/bin/env just --justfile
-
 # Convertor 项目构建系统 (conv.sh 代理模式)
 # 注意: 这个文件只是为了兼容 just 用户的代理层
 # 真正的实现在 conv.sh 中，这里只是调用转发
@@ -70,15 +69,15 @@ build component profile="dev" target="native":
 
 # 测试 convertor
 test-convertor:
-    ./conv.sh test-convertor
+    ./conv.sh test convertor
 
 # 测试 convd
 test-convd:
-    ./conv.sh test-convd
+    ./conv.sh test convd
 
 # 测试 confly
 test-confly:
-    ./conv.sh test-confly
+    ./conv.sh test confly
 
 #╭──────────────────────────────────────────────╮
 #│                 MUSL 构建                    │
@@ -152,4 +151,3 @@ help:
     @echo "详细使用方法:"
     @echo "  just --list              - 显示所有可用命令"
     @echo "  ./conv.sh help           - 查看完整帮助信息"
-

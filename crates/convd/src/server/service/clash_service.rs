@@ -1,7 +1,7 @@
 use color_eyre::Report;
 use color_eyre::Result;
 use color_eyre::eyre::eyre;
-use convertor::config::ConvertorConfig;
+use convertor::config::Config;
 use convertor::core::profile::Profile;
 use convertor::core::profile::clash_profile::ClashProfile;
 use convertor::core::profile::policy::Policy;
@@ -14,12 +14,12 @@ use tracing::instrument;
 
 #[derive(Clone)]
 pub struct ClashService {
-    pub config: Arc<ConvertorConfig>,
+    pub config: Arc<Config>,
     pub profile_cache: Cache<UrlBuilder, ClashProfile>,
 }
 
 impl ClashService {
-    pub fn new(config: Arc<ConvertorConfig>) -> Self {
+    pub fn new(config: Arc<Config>) -> Self {
         let duration = std::time::Duration::from_secs(60 * 60);
         let profile_cache = Cache::builder().max_capacity(100).time_to_live(duration).build();
         Self { config, profile_cache }
