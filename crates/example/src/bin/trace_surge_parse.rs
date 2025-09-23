@@ -1,7 +1,6 @@
 use convertor::common::once::init_backtrace;
-use convertor::config::ConvertorConfig;
-use convertor::config::client_config::ProxyClient;
-use convertor::config::provider_config::Provider;
+use convertor::config::Config;
+use convertor::config::proxy_client::ProxyClient;
 use convertor::core::profile::Profile;
 use convertor::core::profile::surge_profile::SurgeProfile;
 use std::path::Path;
@@ -19,8 +18,8 @@ async fn main() -> color_eyre::Result<()> {
     // #[cfg(feature = "bench")]
     // tracing_profile::init_tracing()?;
 
-    let config = ConvertorConfig::template();
-    let url_builder = config.create_url_builder(ProxyClient::Surge, Provider::BosLife)?;
+    let config = Config::template();
+    let url_builder = config.create_url_builder(ProxyClient::Surge)?;
 
     let file = std::fs::read_to_string(base_dir.join("mock.conf"))?;
     let mut profile = SurgeProfile::parse(file)?;

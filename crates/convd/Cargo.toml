@@ -21,12 +21,13 @@ tracing = { workspace = true, features = ["attributes"] }
 url = { workspace = true, features = ["serde"] }
 mime = { workspace = true }
 regex = { workspace = true }
+uuid = { version = "1.10.0", features = ["v4", "serde"] }
 
 # HTTP 服务 / 中间件
 axum = { workspace = true, features = ["query", "json", "tokio", "http2", "macros"] }
 axum-extra = { workspace = true, features = ["typed-header", "scheme", "tracing"] }
 tower = { workspace = true, features = [] }
-tower-http = { workspace = true, features = ["trace", "fs"] }
+tower-http = { workspace = true, features = ["trace", "fs", "request-id"] }
 
 # 并发 / 异步 运行时
 tokio = { workspace = true, features = ["fs", "rt-multi-thread", "signal", "macros"] }

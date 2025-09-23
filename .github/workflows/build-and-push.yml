@@ -7,7 +7,7 @@ on:
     workflow_dispatch:
         inputs:
             extra_tag:
-                description: "额外的镜像标签（如 canary）"
+                description: "额外的镜像标签（如 latest）"
                 type: string
                 required: false
             profile:
@@ -81,8 +81,6 @@ jobs:
 
             -   name: 安装 Zig 编译器
                 uses: mlugg/setup-zig@v2
-                with:
-                    mirror: 'https://pkg.machengine.org/zig'
 
             -   name: 安装 cargo-zigbuild
                 run: cargo install cargo-zigbuild --locked
@@ -149,7 +147,7 @@ jobs:
                     build-args: |
                         VERSION=${{ steps.version.outputs.version }}
                         VCS_REF=${{ github.sha }}
-                        BUILD_DATE=${{ steps.meta.outputs.created }}
+                        BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
                         TARGET_TRIPLE=${{ env.TARGET_TRIPLE }}
                         PROFILE=${{ steps.vars.outputs.cargo_profile }}
                         BIN_NAME=${{ env.BIN_NAME }}

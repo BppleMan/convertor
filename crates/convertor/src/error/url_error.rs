@@ -1,5 +1,3 @@
-use crate::config::client_config::{ParseClientError, ProxyClient};
-use crate::config::provider_config::Provider;
 use crate::error::{EncryptError, QueryError};
 use crate::url::convertor_url::ConvertorUrlType;
 use std::str::Utf8Error;
@@ -10,12 +8,6 @@ use url::Url;
 pub enum UrlBuilderError {
     #[error("无法获取 sub_host: {0}")]
     NoSubHost(Url),
-
-    #[error("创建 UrlBuilder 时, 未找到配置供应商: {0}")]
-    ProviderNotFound(Provider),
-
-    #[error("创建 UrlBuilder 时, 未找到代理客户端配置: {0}")]
-    ClientNotFound(ProxyClient),
 
     #[error("从 URL 中解析失败, 没有 query 参数: {0}")]
     ParseFromUrlNoQuery(Url),
@@ -38,9 +30,8 @@ pub enum ParseUrlError {
     #[error("无法从 URL 中解析 ConvertorUrl: 没有查询字符串")]
     UrlNoQuery(String),
 
-    #[error(transparent)]
-    ParseClientError(#[from] ParseClientError),
-
+    // #[error(transparent)]
+    // ParseClientError(#[from] ParseClientError),
     #[error(transparent)]
     ParseServerError(#[from] url::ParseError),
 

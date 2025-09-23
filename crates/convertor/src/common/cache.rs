@@ -1,4 +1,4 @@
-use crate::config::client_config::ProxyClient;
+use crate::config::proxy_client::ProxyClient;
 use moka::future::Cache as MokaCache;
 use redis::AsyncTypedCommands;
 use redis::aio::ConnectionManager;
@@ -22,7 +22,7 @@ where
 {
     memory: MokaCache<CacheKey<K>, V>,
     redis: Option<ConnectionManager>,
-    time_to_live: Duration,
+    redis_tty: Duration,
 }
 
 impl<K, V> Cache<K, V>
@@ -30,15 +30,15 @@ where
     K: Hash + Eq + Clone + Debug + Display + Send + Sync + 'static,
     V: Clone + From<String> + ToString + Send + Sync + 'static,
 {
-    pub fn new(redis: Option<ConnectionManager>, capacity: u64, time_to_live: Duration) -> Self {
+    pub fn new(redis: Option<ConnectionManager>, capacity: u64, mem_tty: Duration, redis_tty: Duration) -> Self {
         let memory = moka::future::Cache::builder()
             .max_capacity(capacity)
-            .time_to_live(time_to_live)
+            .time_to_live(mem_tty)
             .build();
         Self {
             memory,
             redis,
-            time_to_live,
+            redis_tty,
         }
     }
 
@@ -72,7 +72,7 @@ where
         let raw = value.to_string();
 
         // 将结果存入 Redis
-        if let Err(e) = redis.set_ex(redis_key, raw, self.time_to_live.as_secs()).await {
+        if let Err(e) = redis.set_ex(redis_key, raw, self.redis_tty.as_secs()).await {
             error!("无法将缓存写入 Redis: {}", e);
         }
 

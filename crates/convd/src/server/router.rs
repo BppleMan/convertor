@@ -4,6 +4,7 @@ pub mod api;
 pub mod profile;
 
 use crate::server::AppState;
+use crate::server::layer::trace::convd_trace_layer;
 use crate::server::response::ApiError;
 use axum::Router;
 use axum::extract::{FromRequestParts, OptionalFromRequestParts};
@@ -14,9 +15,6 @@ use axum_extra::extract::Scheme;
 use color_eyre::eyre::{WrapErr, eyre};
 use convertor::url::query::ConvertorQuery;
 use std::sync::Arc;
-use std::time::Duration;
-use tower_http::trace::{DefaultMakeSpan, DefaultOnRequest, OnResponse, TraceLayer};
-use tracing::{Level, Span, event};
 use url::Url;
 
 pub fn router(app_state: AppState) -> Router {
@@ -27,23 +25,13 @@ pub fn router(app_state: AppState) -> Router {
         .route("/actuator/healthy", get(actuator::healthy))
         .route("/actuator/ready", get(actuator::redis))
         .route("/actuator/redis", get(actuator::redis))
-        .route("/actuator/version", get(actuator::version))
-        .route("/raw-profile/{client}/{provider}", get(profile::raw_profile))
-        .route("/profile/{client}/{provider}", get(profile::profile))
-        .route("/rule-provider/{client}/{provider}", get(profile::rule_provider))
-        .route(
-            "/api/subscription/{client}/{provider}",
-            get(api::subscription::subscription),
-        )
-        .route("/api/sub-logs/{provider}", get(api::subscription::sub_logs))
+        .route("/raw/{client}", get(profile::raw_profile))
+        .route("/profile/{client}", get(profile::profile))
+        .route("/rule-provider/{client}", get(profile::rule_provider))
+        .route("/api/subscription/{client}", get(api::subscription::subscription))
         .nest("/dashboard/", angular::router())
         .with_state(Arc::new(app_state))
-        .layer(
-            TraceLayer::new_for_http()
-                .make_span_with(DefaultMakeSpan::new().include_headers(true))
-                .on_request(DefaultOnRequest::new().level(Level::INFO))
-                .on_response(StatusLevelOnResponse), // .on_failure(DefaultOnFailure::new().level(tracing::Level::ERROR)),
-        )
+        .layer(convd_trace_layer())
 }
 
 pub fn parse_query(
@@ -77,49 +65,5 @@ where
             Ok(scheme) => Ok(Some(OptionalScheme(scheme.0))),
             Err(_) => Ok(None),
         }
-    }
-}
-
-#[derive(Clone)]
-struct StatusLevelOnResponse;
-
-impl<B> OnResponse<B> for StatusLevelOnResponse {
-    fn on_response(self, res: &axum::http::Response<B>, latency: Duration, span: &Span) {
-        let status = res.status();
-
-        // 你想要的策略：404 => ERROR；5xx => ERROR；其它按需
-        if status == axum::http::StatusCode::NOT_FOUND {
-            event!(
-                parent: span,
-                Level::ERROR,
-                %status,
-                latency_ms = latency.as_millis(),
-                "finished processing request"
-            );
-        } else if status.is_server_error() {
-            event!(
-                parent: span,
-                Level::ERROR,
-                %status,
-                latency_ms = latency.as_millis(),
-                "finished processing request"
-            );
-        } else if status.is_client_error() {
-            event!(
-                parent: span,
-                Level::WARN,
-                %status,
-                latency_ms = latency.as_millis(),
-                "finished processing request"
-            );
-        } else {
-            event!(
-                parent: span,
-                Level::INFO,
-                %status,
-                latency_ms = latency.as_millis(),
-                "finished processing request"
-            );
-        };
     }
 }

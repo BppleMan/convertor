@@ -1,16 +1,19 @@
 #!/usr/bin/env just --justfile
+# Convertor 项目构建系统 (conv.sh 代理模式)
+# 注意: 这个文件只是为了兼容 just 用户的代理层
+# 真正的实现在 conv.sh 中，这里只是调用转发
 
 # 快速开发环境构建
 build-dev:
-    source ./scripts/tools.sh && build_dev_env
+    ./conv.sh build-dev
 
 # 快速生产环境构建
 build-prod:
-    source ./scripts/tools.sh && build_prod_env
+    ./conv.sh build-prod
 
 # 准备开发环境
 prepare:
-    source ./scripts/build.sh && prepare_build_env
+    ./conv.sh prepare
 
 #╭──────────────────────────────────────────────╮
 #│                   发布                       │
@@ -18,23 +21,23 @@ prepare:
 
 # 安装二进制文件
 install bin="convd":
-    source ./scripts/tools.sh && install_binary {{ bin }}
+    ./conv.sh install {{ bin }}
 
 # 发布所有包
 publish:
-    source ./scripts/tools.sh && publish_all
+    ./conv.sh publish
 
 # 发布 convertor 包
 publish-convertor:
-    source ./scripts/tools.sh && publish_convertor
+    ./conv.sh publish-convertor
 
 # 发布 convd 包
 publish-convd:
-    source ./scripts/tools.sh && publish_convd
+    ./conv.sh publish-convd
 
 # 发布 confly 包
 publish-confly:
-    source ./scripts/tools.sh && publish_confly
+    ./conv.sh publish-confly
 
 #╭──────────────────────────────────────────────╮
 #│                   构建                       │
@@ -42,23 +45,23 @@ publish-confly:
 
 # 构建所有组件
 all profile="dev":
-    source ./scripts/build.sh && build_all {{ profile }}
+    ./conv.sh all {{ profile }}
 
 # 构建 convertor 库
 convertor profile="dev":
-    source ./scripts/build.sh && build_convertor {{ profile }}
+    ./conv.sh convertor {{ profile }}
 
 # 构建 convd
 convd profile="dev":
-    source ./scripts/build.sh && build_convd_with_dashboard {{ profile }}
+    ./conv.sh convd {{ profile }}
 
 # 构建 confly
 confly profile="dev":
-    source ./scripts/build.sh && build_confly {{ profile }}
+    ./conv.sh confly {{ profile }}
 
 # 构建指定组件和目标
 build component profile="dev" target="native":
-    source ./scripts/build.sh && build_component {{ component }} {{ profile }} {{ target }}
+    ./conv.sh build {{ component }} {{ profile }} {{ target }}
 
 #╭──────────────────────────────────────────────╮
 #│                   测试                       │
@@ -66,15 +69,15 @@ build component profile="dev" target="native":
 
 # 测试 convertor
 test-convertor:
-    source ./scripts/tools.sh && test_convertor
+    ./conv.sh test convertor
 
 # 测试 convd
 test-convd:
-    source ./scripts/tools.sh && test_convd
+    ./conv.sh test convd
 
 # 测试 confly
 test-confly:
-    source ./scripts/tools.sh && test_confly
+    ./conv.sh test confly
 
 #╭──────────────────────────────────────────────╮
 #│                 MUSL 构建                    │
@@ -82,7 +85,7 @@ test-confly:
 
 # MUSL 静态构建
 musl profile="dev":
-    source ./scripts/build.sh && build_musl {{ profile }}
+    ./conv.sh musl {{ profile }}
 
 #╭──────────────────────────────────────────────╮
 #│                 前端构建                      │
@@ -90,7 +93,7 @@ musl profile="dev":
 
 # 构建前端界面
 dashboard profile="dev":
-    source ./scripts/build.sh && build_dashboard {{ profile }}
+    ./conv.sh dashboard {{ profile }}
 
 #╭──────────────────────────────────────────────╮
 #│                 Docker                       │
@@ -98,19 +101,19 @@ dashboard profile="dev":
 
 # 构建镜像
 image profile="dev":
-    source ./scripts/docker.sh && build_image {{ profile }}
+    ./conv.sh image {{ profile }}
 
 # 运行镜像
 run profile="dev":
-    source ./scripts/docker.sh && run_container {{ profile }}
+    ./conv.sh run {{ profile }}
 
 # 发布到 GHCR (PAT)
 publish-ghcr profile="dev" dry_run="false":
-    source ./scripts/docker.sh && publish_ghcr {{ profile }} {{ dry_run }}
+    ./conv.sh publish-ghcr {{ profile }} {{ dry_run }}
 
 # 发布到 GHCR (GitHub CLI)
 publish-ghcr-gh profile="dev" dry_run="false":
-    source ./scripts/docker.sh && publish_ghcr_gh {{ profile }} {{ dry_run }}
+    ./conv.sh publish-ghcr-gh {{ profile }} {{ dry_run }}
 
 #╭──────────────────────────────────────────────╮
 #│                 实用工具                      │
@@ -118,23 +121,26 @@ publish-ghcr-gh profile="dev" dry_run="false":
 
 # 显示项目状态
 status:
-    source ./scripts/tools.sh && show_status
+    ./conv.sh status
 
 # 清理 Docker 镜像
 clean-docker:
-    source ./scripts/docker.sh && clean_images
+    ./conv.sh clean-docker
 
 # 检查构建结果
 check target="x86_64-unknown-linux-musl" profile="dev" bin="convd":
-    source ./scripts/build.sh && check_build_result {{ target }} {{ profile }} {{ bin }}
+    ./conv.sh check {{ target }} {{ profile }} {{ bin }}
 
 # 运行所有测试
 test-all:
-    source ./scripts/tools.sh && test_all
+    ./conv.sh test-all
 
 # 显示帮助信息
 help:
-    @echo "Convertor 项目构建系统"
+    @echo "Convertor 项目构建系统 (Just 代理模式)"
+    @echo ""
+    @echo "注意: 这是 conv.sh 的代理层，实际功能请参考："
+    @echo "  ./conv.sh help"
     @echo ""
     @echo "快速命令:"
     @echo "  just build-dev           - 构建开发环境"
@@ -144,5 +150,4 @@ help:
     @echo ""
     @echo "详细使用方法:"
     @echo "  just --list              - 显示所有可用命令"
-    @echo "  ./scripts/<script>.sh help - 查看脚本帮助"
-
+    @echo "  ./conv.sh help           - 查看完整帮助信息"

@@ -1,0 +1,22 @@
+secret = "bppleman"
+server = "http://127.0.0.1:8080/"
+
+[subscription]
+sub_url = "http://127.0.0.1:8080/subscription"
+interval = 86400
+strict = true
+
+[subscription.headers]
+User-Agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML), like Gecko) Chrome/"
+sec-ch-ua = '"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"'
+
+[surge]
+config_dir = "surge"
+main_profile = "surge.conf"
+raw = "raw.conf"
+raw_profile = "raw_profile.conf"
+rules = "rules.dconf"
+
+[clash]
+config_dir = "clash"
+main_profile = "config.yaml"

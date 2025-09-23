@@ -3,7 +3,6 @@ use crate::core::renderer::Renderer;
 use crate::core::renderer::surge_renderer::SurgeRenderer;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
-use strum::{AsRefStr, Display, EnumString, IntoStaticStr};
 use url::Url;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -96,6 +95,12 @@ impl From<&ConvertorUrl> for Url {
     }
 }
 
+impl From<ConvertorUrl> for Url {
+    fn from(value: ConvertorUrl) -> Self {
+        Url::from(&value)
+    }
+}
+
 impl Display for ConvertorUrl {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", Url::from(self))
@@ -104,7 +109,6 @@ impl Display for ConvertorUrl {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[derive(Serialize, Deserialize)]
-#[derive(Display, IntoStaticStr, AsRefStr, EnumString)]
 pub enum ConvertorUrlType {
     Raw,
     RawProfile,
@@ -123,6 +127,29 @@ impl ConvertorUrlType {
             ConvertorUrlType::RuleProvider(policy) => {
                 format!("规则集: {}", SurgeRenderer::render_provider_name_for_policy(policy))
             }
+        }
+    }
+}
+
+impl ConvertorUrlType {
+    pub fn variants() -> &'static [Self] {
+        &[
+            ConvertorUrlType::Raw,
+            ConvertorUrlType::RawProfile,
+            ConvertorUrlType::Profile,
+            ConvertorUrlType::SubLogs,
+        ]
+    }
+}
+
+impl Display for ConvertorUrlType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ConvertorUrlType::Raw => write!(f, "raw"),
+            ConvertorUrlType::RawProfile => write!(f, "raw_profile"),
+            ConvertorUrlType::Profile => write!(f, "profile"),
+            ConvertorUrlType::SubLogs => write!(f, "sub_logs"),
+            ConvertorUrlType::RuleProvider(_) => write!(f, "rule_provider"),
         }
     }
 }

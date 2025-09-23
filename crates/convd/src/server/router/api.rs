@@ -5,27 +5,30 @@ pub mod subscription {
     use axum::extract::{Path, RawQuery, State};
     use axum_extra::TypedHeader;
     use axum_extra::extract::Host;
+    use axum_extra::headers::HeaderMap;
     use axum_extra::headers::UserAgent;
-    use convertor::config::client_config::ProxyClient;
-    use convertor::config::provider_config::Provider;
-    use convertor::provider_api::BosLifeLogs;
+    use convertor::config::proxy_client::ProxyClient;
+    use convertor::config::subscription_config::Headers;
     use convertor::url::url_builder::UrlBuilder;
     use convertor::url::url_result::UrlResult;
     use std::sync::Arc;
+    use tracing::instrument;
 
-    #[allow(unused)]
+    #[instrument(skip_all)]
     pub async fn subscription(
-        Path((client, provider)): Path<(ProxyClient, Provider)>,
+        Path(client): Path<ProxyClient>,
         Host(host): Host,
-        scheme: Option<OptionalScheme>,
         TypedHeader(user_agent): TypedHeader<UserAgent>,
+        scheme: Option<OptionalScheme>,
+        header_map: HeaderMap,
         State(state): State<Arc<AppState>>,
         RawQuery(query_string): RawQuery,
     ) -> Result<ApiResponse<UrlResult>, ApiError> {
         let query = parse_query(state.as_ref(), scheme, host.as_str(), query_string)?.check_for_subscription()?;
-        let url_builder = UrlBuilder::from_convertor_query(query, &state.config.secret, client, provider)?;
-        let api = state.api_map.get(&provider).ok_or_else(|| ApiError::NoSubProvider)?;
-        let raw_profile = api.get_raw_profile(client, user_agent).await?;
+        let url_builder = UrlBuilder::from_convertor_query(query, &state.config.secret, client)?;
+        let sub_url = url_builder.build_raw_url();
+        let headers = Headers::from_header_map(header_map).patch(&state.config.subscription.headers, user_agent);
+        let raw_profile = state.provider.get_raw_profile(sub_url.into(), headers).await?;
         let policies = match client {
             ProxyClient::Surge => {
                 let mut profile = state
@@ -45,7 +48,6 @@ pub mod subscription {
         let raw_url = url_builder.build_raw_url();
         let raw_profile_url = url_builder.build_raw_profile_url()?;
         let profile_url = url_builder.build_profile_url()?;
-        let sub_logs_url = url_builder.build_sub_logs_url()?;
         let rule_providers_url = policies
             .iter()
             .map(|policy| url_builder.build_rule_provider_url(policy))
@@ -54,24 +56,8 @@ pub mod subscription {
             raw_url,
             raw_profile_url,
             profile_url,
-            sub_logs_url,
             rule_providers_url,
         };
         Ok(ApiResponse::ok(url_result))
-    }
-
-    pub async fn sub_logs(
-        Path(provider): Path<Provider>,
-        Host(host): Host,
-        scheme: Option<OptionalScheme>,
-        State(state): State<Arc<AppState>>,
-        RawQuery(query_string): RawQuery,
-    ) -> Result<ApiResponse<BosLifeLogs>, ApiError> {
-        parse_query(state.as_ref(), scheme, host.as_str(), query_string)?.check_for_sub_logs(&state.config.secret)?;
-        let api = state.api_map.get(&provider).ok_or_else(|| ApiError::NoSubProvider)?;
-        match api.get_sub_logs().await {
-            Ok(sub_logs) => Ok(ApiResponse::ok(sub_logs)),
-            Err(err) => Ok(ApiResponse::error_with_message(format!("{err:?}"))),
-        }
     }
 }

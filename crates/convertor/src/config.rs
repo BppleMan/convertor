@@ -1,75 +1,57 @@
 use crate::common::encrypt::encrypt;
-use crate::config::client_config::ClientConfig;
 use crate::config::config_error::ConfigError;
-use crate::config::provider_config::{Provider, ProviderConfig};
-use crate::config::redis_config::{REDIS_CONVERTOR_CONFIG_KEY, RedisConfig};
-use crate::error::UrlBuilderError;
+use crate::config::proxy_client::ProxyClient;
+use crate::config::redis_config::RedisConfig;
+use crate::config::subscription_config::SubscriptionConfig;
 use crate::url::url_builder::UrlBuilder;
-use client_config::ProxyClient;
-use redis::AsyncTypedCommands;
-use redis::aio::MultiplexedConnection;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 use std::path::Path;
 use std::str::FromStr;
-use tracing::{debug, error, warn};
+use tracing::debug;
 use url::Url;
 
-pub mod client_config;
 pub mod config_error;
-pub mod provider_config;
+pub mod proxy_client;
 pub mod redis_config;
+pub mod subscription_config;
 
 type Result<T> = core::result::Result<T, ConfigError>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ConvertorConfig {
+pub struct Config {
     pub secret: String,
     pub server: Url,
+    pub subscription: SubscriptionConfig,
     pub redis: Option<RedisConfig>,
-    pub providers: HashMap<Provider, ProviderConfig>,
-    pub clients: HashMap<ProxyClient, ClientConfig>,
 }
 
-impl ConvertorConfig {
+impl Config {
+    // pub fn default_config(secret: impl AsRef<str>) -> Self {
+    //     Self {
+    //         secret: secret.as_ref().to_string(),
+    //         server: Url::parse("http://127.0.0.1:8080").expect("不合法的服务器地址"),
+    //         subscription: SubscriptionConfig::default(),
+    //         redis: None,
+    //     }
+    // }
+
     pub fn template() -> Self {
         let secret = "bppleman".to_string();
         let server = Url::parse("http://127.0.0.1:8080").expect("不合法的服务器地址");
-
+        let subscription = SubscriptionConfig::template();
         let redis = Some(RedisConfig::template());
 
-        let mut providers = HashMap::new();
-        providers.insert(Provider::BosLife, ProviderConfig::boslife_template());
-
-        let mut clients = HashMap::new();
-        clients.insert(ProxyClient::Surge, ClientConfig::surge_template());
-        clients.insert(ProxyClient::Clash, ClientConfig::clash_template());
-
-        ConvertorConfig {
+        Config {
             secret,
             server,
+            subscription,
             redis,
-            providers,
-            clients,
         }
     }
+}
 
-    pub async fn search_or_redis(
-        cwd: impl AsRef<Path>,
-        config_path: Option<impl AsRef<Path>>,
-        connection: MultiplexedConnection,
-    ) -> Result<Self> {
-        match Self::search(cwd, config_path) {
-            Ok(config) => Ok(config),
-            Err(e) => {
-                error!("{:?}", e);
-                warn!("尝试从 Redis 获取配置");
-                Self::from_redis(connection).await
-            }
-        }
-    }
-
+impl Config {
     pub fn search(cwd: impl AsRef<Path>, config_path: Option<impl AsRef<Path>>) -> Result<Self> {
         if let Some(path) = config_path {
             return Self::from_file(path);
@@ -91,19 +73,13 @@ impl ConvertorConfig {
         }
     }
 
-    pub async fn from_redis(mut connection: MultiplexedConnection) -> Result<Self> {
-        let config: Option<String> = connection.get(REDIS_CONVERTOR_CONFIG_KEY).await?;
-        let config = config.ok_or_else(|| ConfigError::RedisNotFound(REDIS_CONVERTOR_CONFIG_KEY.to_string()))?;
-        Self::from_str(&config)
-    }
-
     pub fn from_file(path: impl AsRef<Path>) -> Result<Self> {
         let path = path.as_ref();
         if !path.is_file() {
             return Err(ConfigError::NotFile(path.to_path_buf()));
         }
         let content = std::fs::read_to_string(path).map_err(|e| ConfigError::ReadError(e))?;
-        let config: ConvertorConfig = toml::from_str(&content)?;
+        let config: Config = toml::from_str(&content)?;
         Ok(config)
     }
 
@@ -111,15 +87,10 @@ impl ConvertorConfig {
         Ok(encrypt(self.secret.as_bytes(), &self.secret)?)
     }
 
-    pub fn create_url_builder(&self, client: ProxyClient, provider: Provider) -> Result<UrlBuilder> {
-        let sub_url = match self.providers.get(&provider) {
-            Some(provider_config) => provider_config.sub_url.clone(),
-            None => return Err(UrlBuilderError::ProviderNotFound(provider))?,
-        };
-        let (interval, strict) = match self.clients.get(&client) {
-            Some(client_config) => (client_config.interval(), client_config.strict()),
-            None => return Err(UrlBuilderError::ClientNotFound(client))?,
-        };
+    pub fn create_url_builder(&self, client: ProxyClient) -> Result<UrlBuilder> {
+        let sub_url = self.subscription.sub_url.clone();
+        let interval = self.subscription.interval;
+        let strict = self.subscription.strict;
         let server = self.server.clone();
         let secret = self.secret.clone();
         let enc_secret = encrypt(secret.as_bytes(), &secret)?;
@@ -127,7 +98,6 @@ impl ConvertorConfig {
             secret,
             Some(enc_secret),
             client,
-            provider,
             server,
             sub_url,
             None,
@@ -138,7 +108,7 @@ impl ConvertorConfig {
     }
 }
 
-impl FromStr for ConvertorConfig {
+impl FromStr for Config {
     type Err = ConfigError;
 
     fn from_str(s: &str) -> Result<Self> {
@@ -146,7 +116,7 @@ impl FromStr for ConvertorConfig {
     }
 }
 
-impl Display for ConvertorConfig {
+impl Display for Config {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", toml::to_string(self).map_err(|_| std::fmt::Error)?)
     }

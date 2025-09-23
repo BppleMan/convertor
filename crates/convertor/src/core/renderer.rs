@@ -1,6 +1,6 @@
 #![deny(unused, unused_variables)]
 
-use crate::config::client_config::ProxyClient;
+use crate::config::proxy_client::ProxyClient;
 use crate::core::profile::Profile;
 use crate::core::profile::policy::Policy;
 use crate::core::profile::proxy::Proxy;

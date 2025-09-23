@@ -46,6 +46,7 @@ jsonpath_lib = { version = "0.3.0", default-features = false }
 tracing = { version = "0.1.41", default-features = false }
 tracing-subscriber = { version = "0.3.20", default-features = false }
 tracing-appender = { version = "0.2.3", default-features = false }
+tracing-loki = { version = "0.2.6", default-features = false }
 tracing-opentelemetry = { version = "0.31.0", default-features = false }
 opentelemetry = { version = "0.30.0", default-features = false }
 opentelemetry_sdk = { version = "0.30.0", default-features = false }

@@ -1,6 +1,5 @@
 use crate::common::encrypt::encrypt;
-use crate::config::client_config::ProxyClient;
-use crate::config::provider_config::Provider;
+use crate::config::proxy_client::ProxyClient;
 use crate::core::profile::policy::Policy;
 use crate::core::profile::surge_header::SurgeHeader;
 use crate::error::UrlBuilderError;
@@ -14,7 +13,6 @@ pub struct UrlBuilder {
     pub secret: String,
     pub enc_secret: String,
     pub client: ProxyClient,
-    pub provider: Provider,
     pub server: Url,
     pub sub_url: Url,
     pub enc_sub_url: String,
@@ -28,7 +26,6 @@ impl UrlBuilder {
         secret: impl AsRef<str>,
         enc_secret: Option<String>,
         client: ProxyClient,
-        provider: Provider,
         server: Url,
         sub_url: Url,
         enc_sub_url: Option<String>,
@@ -47,7 +44,6 @@ impl UrlBuilder {
             secret,
             enc_secret,
             client,
-            provider,
             server,
             sub_url,
             enc_sub_url,
@@ -61,7 +57,6 @@ impl UrlBuilder {
         query: ConvertorQuery,
         secret: impl AsRef<str>,
         client: ProxyClient,
-        provider: Provider,
     ) -> Result<Self, UrlBuilderError> {
         let ConvertorQuery {
             server,
@@ -79,7 +74,6 @@ impl UrlBuilder {
             secret,
             enc_secret,
             client,
-            provider,
             server,
             sub_url,
             Some(enc_sub_url),
@@ -90,7 +84,7 @@ impl UrlBuilder {
 
     pub fn build_raw_url(&self) -> ConvertorUrl {
         let mut url = self.sub_url.clone();
-        url.query_pairs_mut().append_pair("flag", self.client.as_ref());
+        url.query_pairs_mut().append_pair("flag", self.client.as_str());
         ConvertorUrl::raw(url)
     }
 
@@ -98,11 +92,7 @@ impl UrlBuilder {
         let query = self.as_profile_query().encode_to_profile_query()?;
         let url = ConvertorUrl::raw_profile(
             self.server.clone(),
-            format!(
-                "/raw-profile/{}/{}",
-                self.client.as_ref().to_ascii_lowercase(),
-                self.provider.as_ref().to_ascii_lowercase()
-            ),
+            format!("/raw-profile/{}", self.client.as_str()),
             query,
         );
         Ok(url)
@@ -110,15 +100,7 @@ impl UrlBuilder {
 
     pub fn build_profile_url(&self) -> Result<ConvertorUrl, UrlBuilderError> {
         let query = self.as_profile_query().encode_to_profile_query()?;
-        let url = ConvertorUrl::profile(
-            self.server.clone(),
-            format!(
-                "/profile/{}/{}",
-                self.client.as_ref().to_ascii_lowercase(),
-                self.provider.as_ref().to_ascii_lowercase()
-            ),
-            query,
-        );
+        let url = ConvertorUrl::profile(self.server.clone(), format!("/profile/{}", self.client.as_str()), query);
         Ok(url)
     }
 
@@ -127,19 +109,9 @@ impl UrlBuilder {
         let url = ConvertorUrl::rule_provider(
             policy.clone(),
             self.server.clone(),
-            format!(
-                "/rule-provider/{}/{}",
-                self.client.as_ref().to_ascii_lowercase(),
-                self.provider.as_ref().to_ascii_lowercase()
-            ),
+            format!("/rule-provider/{}", self.client.as_str()),
             query,
         );
-        Ok(url)
-    }
-
-    pub fn build_sub_logs_url(&self) -> Result<ConvertorUrl, UrlBuilderError> {
-        let query = self.as_sub_logs_query().encode_to_sub_logs_query()?;
-        let url = ConvertorUrl::sub_logs(self.server.clone(), "/api/sub-logs", query);
         Ok(url)
     }
 

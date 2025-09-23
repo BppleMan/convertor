@@ -4,28 +4,19 @@ mod server;
 use crate::server::{ServerContext, start_server};
 use axum::body::Body;
 use axum::extract::Request;
-use color_eyre::eyre::{OptionExt, eyre};
+use color_eyre::eyre::OptionExt;
 use convd::server::response::ApiResponse;
 use convertor::common::encrypt::encrypt;
-use convertor::config::client_config::ProxyClient;
-use convertor::config::provider_config::Provider;
-use convertor::testkit::init_test;
+use convertor::config::proxy_client::ProxyClient;
+use convertor::init_test;
 use convertor::url::url_builder::HostPort;
 use convertor::url::url_result::UrlResult;
 use http_body_util::BodyExt;
 use tower::ServiceExt;
 
-async fn subscription(
-    server_context: &ServerContext,
-    client: ProxyClient,
-    provider: Provider,
-) -> color_eyre::Result<String> {
+async fn subscription(server_context: &ServerContext, client: ProxyClient) -> color_eyre::Result<String> {
     let ServerContext { app, app_state, .. } = server_context;
-    let sub_url = match app_state.config.providers.get(&provider) {
-        Some(provider_config) => provider_config.sub_url.clone(),
-        None => return Err(eyre!("未找到提供商配置: [providers.{}]", provider)),
-    };
-
+    let sub_url = app_state.config.subscription.sub_url.clone();
     let secret = app_state.config.secret.clone();
     let enc_secret = encrypt(secret.as_bytes(), secret.as_str())?;
     let enc_sub_url = encrypt(secret.as_bytes(), sub_url.as_str())?;
@@ -34,9 +25,7 @@ async fn subscription(
 
     let request = Request::builder()
         .uri(format!(
-            "/api/subscription/{}/{}?secret={enc_secret}&interval={interval}&strict={strict}&sub_url={enc_sub_url}",
-            client.as_ref().to_lowercase(),
-            provider.as_ref().to_lowercase()
+            "/api/subscription/{client}?secret={enc_secret}&interval={interval}&strict={strict}&sub_url={enc_sub_url}",
         ))
         .method("GET")
         .header("host", "127.0.0.1")
@@ -61,9 +50,9 @@ async fn subscription(
 
 #[tokio::test]
 async fn test_subscription_surge_boslife() -> color_eyre::Result<()> {
-    init_test();
+    init_test!();
     let server_context = start_server().await?;
-    let url_result = subscription(&server_context, ProxyClient::Surge, Provider::BosLife).await?;
+    let url_result = subscription(&server_context, ProxyClient::Surge).await?;
     let url_result: ApiResponse<UrlResult> = serde_json::from_str(&url_result)?;
     insta::assert_json_snapshot!(url_result.data.unwrap());
     Ok(())
