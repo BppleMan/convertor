@@ -25,13 +25,10 @@ pub fn router(app_state: AppState) -> Router {
         .route("/actuator/healthy", get(actuator::healthy))
         .route("/actuator/ready", get(actuator::redis))
         .route("/actuator/redis", get(actuator::redis))
-        .route("/raw-profile/{client}/{provider}", get(profile::raw_profile))
-        .route("/profile/{client}/{provider}", get(profile::profile))
-        .route("/rule-provider/{client}/{provider}", get(profile::rule_provider))
-        .route(
-            "/api/subscription/{client}/{provider}",
-            get(api::subscription::subscription),
-        )
+        .route("/raw/{client}", get(profile::raw_profile))
+        .route("/profile/{client}", get(profile::profile))
+        .route("/rule-provider/{client}", get(profile::rule_provider))
+        .route("/api/subscription/{client}", get(api::subscription::subscription))
         .nest("/dashboard/", angular::router())
         .with_state(Arc::new(app_state))
         .layer(convd_trace_layer())

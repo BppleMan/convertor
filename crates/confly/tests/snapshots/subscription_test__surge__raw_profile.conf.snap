@@ -1,0 +1,5 @@
+---
+source: crates/confly/tests/subscription_test.rs
+expression: "file_provider.read(&raw_profile_path)?\n.replace(&url_builder.server.to_string(),\n\"<SERVER>\").replace(&url_builder.enc_sub_url, \"<ENC_SUB_URL>\")"
+---
+#!MANAGED-CONFIG <SERVER>raw-profile/surge?interval=86400&strict=true&sub_url=<ENC_SUB_URL> interval=86400 strict=true

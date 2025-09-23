@@ -628,7 +628,6 @@ dependencies = [
  "color-eyre",
  "convertor",
  "insta",
- "regex",
  "serde",
  "tokio",
  "toml",

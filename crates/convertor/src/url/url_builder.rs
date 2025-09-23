@@ -21,7 +21,7 @@ pub struct UrlBuilder {
 }
 
 impl UrlBuilder {
-    // #[allow(clippy::too_many_arguments)]
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         secret: impl AsRef<str>,
         enc_secret: Option<String>,

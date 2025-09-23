@@ -1,0 +1,5 @@
+---
+source: crates/confly/tests/subscription_test.rs
+expression: "file_provider.read(&raw_path)?\n.replace(&url_builder.server.to_string(),\n\"<SERVER>\").replace(url_builder.sub_url.as_str(),\n\"<SUB_URL>\").replace(&url_builder.enc_sub_url, \"<ENC_SUB_URL>\")"
+---
+#!MANAGED-CONFIG <SUB_URL>&flag=surge interval=86400 strict=true

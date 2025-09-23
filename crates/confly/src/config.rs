@@ -3,12 +3,10 @@ use color_eyre::eyre::eyre;
 use convertor::config::Config;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::Path;
+use std::fmt::{Display, Formatter};
+use std::path::{Path, PathBuf};
 use tracing::debug;
 
-mod client_config;
-
-pub use client_config::*;
 use convertor::config::proxy_client::ProxyClient;
 
 #[derive(Debug, Clone)]
@@ -51,5 +49,75 @@ impl ConflyConfig {
         let content = std::fs::read_to_string(path)?;
         let config: Self = toml::from_str(&content)?;
         Ok(config)
+    }
+}
+
+impl ConflyConfig {
+    pub fn template() -> Self {
+        let common = Config::template();
+        let mut clients = HashMap::new();
+        clients.insert(ProxyClient::Surge, ClientConfig::surge_template());
+        clients.insert(ProxyClient::Clash, ClientConfig::clash_template());
+        Self { common, clients }
+    }
+}
+
+impl Display for ConflyConfig {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", toml::to_string(self).map_err(|_| std::fmt::Error)?)
+    }
+}
+
+#[derive(Default, Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Serialize, Deserialize)]
+pub struct ClientConfig {
+    config_dir: PathBuf,
+    main_profile: String,
+    raw: Option<String>,
+    raw_profile: Option<String>,
+    rules: Option<String>,
+}
+
+impl ClientConfig {
+    pub fn surge_template() -> Self {
+        Self {
+            config_dir: PathBuf::from("/path/to/surge"),
+            main_profile: "surge.conf".to_string(),
+            ..Default::default()
+        }
+    }
+
+    pub fn clash_template() -> Self {
+        Self {
+            config_dir: PathBuf::from("/path/to/mihomo"),
+            main_profile: "config.yaml".to_string(),
+            ..Default::default()
+        }
+    }
+}
+
+impl ClientConfig {
+    pub fn set_config_dir(&mut self, config_dir: impl AsRef<Path>) {
+        self.config_dir = config_dir.as_ref().to_path_buf();
+    }
+
+    pub fn config_dir(&self) -> &Path {
+        &self.config_dir
+    }
+
+    pub fn main_profile_path(&self) -> PathBuf {
+        self.config_dir().join(&self.main_profile)
+    }
+
+    pub fn raw_path(&self) -> Option<PathBuf> {
+        self.raw.as_ref().map(|name| self.config_dir().join(name))
+    }
+
+    pub fn raw_profile_path(&self) -> Option<PathBuf> {
+        self.raw_profile.as_ref().map(|name| self.config_dir().join(name))
+    }
+
+    pub fn rules_path(&self) -> Option<PathBuf> {
+        self.rules.as_ref().map(|name| self.config_dir().join(name))
     }
 }

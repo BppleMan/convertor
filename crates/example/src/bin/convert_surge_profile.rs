@@ -5,7 +5,7 @@ use convertor::core::profile::Profile;
 use convertor::core::profile::surge_profile::SurgeProfile;
 use convertor::core::renderer::Renderer;
 use convertor::core::renderer::surge_renderer::SurgeRenderer;
-use convertor::provider::SubscriptionProvider;
+use convertor::provider::SubsProvider;
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> color_eyre::Result<()> {
@@ -19,7 +19,7 @@ async fn main() -> color_eyre::Result<()> {
     // 搜索可用配置文件
     let config = Config::search(&base_dir, Option::<&str>::None)?;
     // 创建订阅供应商实例
-    let provider = SubscriptionProvider::new(None);
+    let provider = SubsProvider::new(None);
 
     // 获取原始订阅配置文件内容: 来源于 BosLife 机场;适用于 Surge
     let sub_url = config.subscription.sub_url.clone();

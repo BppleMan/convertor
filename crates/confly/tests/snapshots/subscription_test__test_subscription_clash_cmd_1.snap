@@ -1,0 +1,24 @@
+---
+source: crates/confly/tests/subscription_test.rs
+expression: result
+---
+提供商原始订阅
+http://127.0.0.1:<PORT>/subscription?token=bppleman&flag=clash
+转换器订阅
+<SERVER>profile/clash?interval=86400&strict=true&sub_url=<ENC_SUB_URL>
+转发原始订阅
+<SERVER>raw-profile/clash?interval=86400&strict=true&sub_url=<ENC_SUB_URL>
+规则集: [Subscription]
+<SERVER>rule-provider/clash?interval=86400&policy[name]=DIRECT&policy[is_subscription]=true&sub_url=<ENC_SUB_URL>
+规则集: [BosLife]
+<SERVER>rule-provider/clash?interval=86400&policy[name]=BosLife&policy[is_subscription]=false&sub_url=<ENC_SUB_URL>
+规则集: [BosLife: no-resolve]
+<SERVER>rule-provider/clash?interval=86400&policy[name]=BosLife&policy[option]=no-resolve&policy[is_subscription]=false&sub_url=<ENC_SUB_URL>
+规则集: [BosLife: force-remote-dns]
+<SERVER>rule-provider/clash?interval=86400&policy[name]=BosLife&policy[option]=force-remote-dns&policy[is_subscription]=false&sub_url=<ENC_SUB_URL>
+规则集: [DIRECT]
+<SERVER>rule-provider/clash?interval=86400&policy[name]=DIRECT&policy[is_subscription]=false&sub_url=<ENC_SUB_URL>
+规则集: [DIRECT: no-resolve]
+<SERVER>rule-provider/clash?interval=86400&policy[name]=DIRECT&policy[option]=no-resolve&policy[is_subscription]=false&sub_url=<ENC_SUB_URL>
+规则集: [DIRECT: force-remote-dns]
+<SERVER>rule-provider/clash?interval=86400&policy[name]=DIRECT&policy[option]=force-remote-dns&policy[is_subscription]=false&sub_url=<ENC_SUB_URL>

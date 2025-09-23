@@ -1,5 +1,3 @@
-use crate::common::encrypt::nonce_rng_use_seed;
-use crate::common::once::{init_backtrace, init_log};
 use crate::config::Config;
 use crate::config::proxy_client::ProxyClient;
 use crate::config::subscription_config::SubscriptionConfig;
@@ -9,19 +7,21 @@ use color_eyre::Report;
 use color_eyre::eyre::OptionExt;
 use httpmock::Method::GET;
 use httpmock::MockServer;
-use std::path::{Path, PathBuf};
 use url::Url;
 
-pub fn init_test() -> PathBuf {
-    let base_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("test-assets");
-    init_backtrace(|| {
-        if let Err(e) = color_eyre::install() {
-            eprintln!("Failed to install color_eyre: {e}");
-        }
-    });
-    init_log(None, None);
-    nonce_rng_use_seed([0u8; 32]);
-    base_dir
+#[macro_export]
+macro_rules! init_test {
+    () => {{
+        let base_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("test-assets");
+        $crate::common::once::init_backtrace(|| {
+            if let Err(e) = color_eyre::install() {
+                eprintln!("Failed to install color_eyre: {e}");
+            }
+        });
+        $crate::common::once::init_log(None, None);
+        $crate::common::encrypt::nonce_rng_use_seed([0u8; 32]);
+        base_dir
+    }};
 }
 
 pub async fn start_mock_provider_server(config: &mut Config) -> Result<(), Report> {

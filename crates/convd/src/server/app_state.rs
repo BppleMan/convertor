@@ -1,6 +1,6 @@
 use crate::server::service::{ClashService, SurgeService};
 use convertor::config::Config;
-use convertor::provider::SubscriptionProvider;
+use convertor::provider::SubsProvider;
 use redis::aio::ConnectionManager;
 use std::sync::Arc;
 
@@ -9,7 +9,7 @@ pub struct AppState {
     pub config: Arc<Config>,
     pub redis: Option<redis::Client>,
     pub redis_connection: Option<ConnectionManager>,
-    pub provider: SubscriptionProvider,
+    pub provider: SubsProvider,
     pub surge_service: SurgeService,
     pub clash_service: ClashService,
 }
@@ -19,7 +19,7 @@ impl AppState {
         let config = Arc::new(config);
         let surge_service = SurgeService::new(config.clone());
         let clash_service = ClashService::new(config.clone());
-        let provider = SubscriptionProvider::new(redis_connection.clone());
+        let provider = SubsProvider::new(redis_connection.clone());
         Self {
             config,
             redis,

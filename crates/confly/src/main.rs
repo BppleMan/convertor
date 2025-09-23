@@ -1,11 +1,11 @@
 use clap::Parser;
 use color_eyre::Result;
-use confly::cli::ConvertorCommand;
-use confly::cli::config_cli::ConfigCli;
-use confly::cli::subscription_cli::ProviderCli;
+use confly::command::ConflyCommand;
 use confly::config::ConflyConfig;
+use confly::file_provider::FileProvider;
 use convertor::common::clap_style::SONOKAI_TC;
 use convertor::common::once::{init_backtrace, init_base_dir, init_log};
+use convertor::provider::SubsProvider;
 use std::path::PathBuf;
 
 #[derive(Debug, Parser)]
@@ -14,7 +14,7 @@ use std::path::PathBuf;
 pub struct Convertor {
     /// 对于启动 Convertor 服务, 子命令不是必须的, 子命令仅作为一次性执行指令
     #[command(subcommand)]
-    command: ConvertorCommand,
+    command: ConflyCommand,
 
     /// 如果你想特别指定配置文件, 可以使用此参数
     #[arg(short)]
@@ -34,20 +34,16 @@ async fn main() -> Result<()> {
     init_log(None, None);
 
     match args.command {
-        ConvertorCommand::Config(config_cmd) => {
-            ConfigCli::new(config_cmd).execute().await?;
+        ConflyCommand::Config(config_cmd) => {
+            config_cmd.execute(base_dir, args.config).await?;
         }
-        other => {
+        ConflyCommand::Subscription(sub_cmd) => {
             let config = ConflyConfig::search(&base_dir, args.config)?;
-
-            match other {
-                ConvertorCommand::Subscription(args) => {
-                    let mut executor = ProviderCli::new(config);
-                    let (url_builder, result) = executor.execute(args).await?;
-                    executor.post_execute(url_builder, result);
-                }
-                _ => unreachable!(),
-            }
+            let subs_provider = SubsProvider::new(None);
+            let (_url_builder, url_result) = sub_cmd
+                .execute(&config, &subs_provider, &FileProvider::FileSystem)
+                .await?;
+            println!("{url_result}");
         }
     }
 

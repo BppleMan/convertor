@@ -21,7 +21,7 @@ pub struct SubscriptionConfig {
 impl SubscriptionConfig {
     pub fn template() -> Self {
         Self {
-            sub_url: "https://example.com/sub".parse().expect("不合法的订阅地址"),
+            sub_url: "http://127.0.0.1:8080/subscription".parse().expect("不合法的订阅地址"),
             interval: 86400,
             strict: true,
             headers: Headers::default(),

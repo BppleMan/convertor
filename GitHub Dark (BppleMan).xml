@@ -1,0 +1,27 @@
+<mtTheme>
+  <shouldSyncColors>false</shouldSyncColors>
+  <fileId>custom</fileId>
+  <themeId>GitHub Dark (BppleMan)</themeId>
+  <name>GitHub Dark (BppleMan)</name>
+  <editorColorsScheme>Material Oceanic</editorColorsScheme>
+  <dark>true</dark>
+  <colors>
+    <color id="background" value="263238ff"/>
+    <color id="foreground" value="b0bec5ff"/>
+    <color id="text" value="607d8bff"/>
+    <color id="highlight" value="425b67ff"/>
+    <color id="selectionBackground" value="546e7aff"/>
+    <color id="selectionForeground" value="ffffffff"/>
+    <color id="button" value="2e3c43ff"/>
+    <color id="secondaryBackground" value="32424aff"/>
+    <color id="disabled" value="415967ff"/>
+    <color id="contrast" value="1e272cff"/>
+    <color id="tableSelected" value="314549ff"/>
+    <color id="secondBorder" value="2a373eff"/>
+    <color id="treeSelection" value="546e7a50"/>
+    <color id="notifications" value="323232ff"/>
+    <color id="accent" value="009688ff"/>
+    <color id="secondAccent" value="ffcb6bff"/>
+    <color id="excluded" value="2e3c43ff"/>
+  </colors>
+</mtTheme>

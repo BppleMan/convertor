@@ -17,13 +17,10 @@ pub async fn start_server() -> color_eyre::Result<ServerContext> {
 
     let app_state = Arc::new(AppState::new(config, None, None));
     let app: Router = Router::new()
-        .route("/raw-profile/{client}/{provider}", get(profile::raw_profile))
-        .route("/profile/{client}/{provider}", get(profile::profile))
-        .route("/rule-provider/{client}/{provider}", get(profile::rule_provider))
-        .route(
-            "/api/subscription/{client}/{provider}",
-            get(api::subscription::subscription),
-        )
+        .route("/raw-profile/{client}", get(profile::raw_profile))
+        .route("/profile/{client}", get(profile::profile))
+        .route("/rule-provider/{client}", get(profile::rule_provider))
+        .route("/api/subscription/{client}", get(api::subscription::subscription))
         .with_state(app_state.clone());
 
     Ok(ServerContext { app, app_state })

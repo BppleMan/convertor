@@ -1,7 +1,6 @@
 # Cargo
 /target
 **/logs
-**/convertor.toml
 config.toml
 
 ### macOS template

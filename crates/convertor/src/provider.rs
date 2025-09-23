@@ -8,12 +8,12 @@ use std::time::Duration;
 use url::Url;
 
 #[derive(Clone)]
-pub struct SubscriptionProvider {
+pub struct SubsProvider {
     pub client: reqwest::Client,
     pub cache: Cache<String, String>,
 }
 
-impl SubscriptionProvider {
+impl SubsProvider {
     pub fn new(redis: Option<ConnectionManager>) -> Self {
         let client = reqwest::Client::new();
         let cache = Cache::new(

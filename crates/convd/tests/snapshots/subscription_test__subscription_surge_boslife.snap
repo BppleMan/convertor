@@ -1,11 +1,11 @@
 ---
 source: crates/convd/tests/subscription_test.rs
-expression: url_result
+expression: url_result.data.unwrap()
 ---
 {
   "raw_url": {
     "type": "Raw",
-    "server": "http://mock_host_port/subscription?token=bppleman&flag=Surge",
+    "server": "http://mock_host_port/subscription?token=bppleman&flag=surge",
     "desc": "提供商原始订阅",
     "path": null,
     "query": null
@@ -14,22 +14,15 @@ expression: url_result
     "type": "RawProfile",
     "server": "http://127.0.0.1/",
     "desc": "转发原始订阅",
-    "path": "/raw-profile/surge/boslife",
+    "path": "/raw-profile/surge",
     "query": "interval=43200&strict=true&sub_url=http://mock_host_port/subscription?token=bppleman"
   },
   "profile_url": {
     "type": "Profile",
     "server": "http://127.0.0.1/",
     "desc": "转换器订阅",
-    "path": "/profile/surge/boslife",
+    "path": "/profile/surge",
     "query": "interval=43200&strict=true&sub_url=http://mock_host_port/subscription?token=bppleman"
-  },
-  "sub_logs_url": {
-    "type": "SubLogs",
-    "server": "http://127.0.0.1/",
-    "desc": "订阅日志记录",
-    "path": "/api/sub-logs",
-    "query": "secret=bppleman"
   },
   "rule_providers_url": [
     {
@@ -42,7 +35,7 @@ expression: url_result
       },
       "server": "http://127.0.0.1/",
       "desc": "规则集: [Subscription]",
-      "path": "/rule-provider/surge/boslife",
+      "path": "/rule-provider/surge",
       "query": "interval=43200&policy[name]=DIRECT&policy[is_subscription]=true&sub_url=http://mock_host_port/subscription?token=bppleman"
     },
     {
@@ -55,7 +48,7 @@ expression: url_result
       },
       "server": "http://127.0.0.1/",
       "desc": "规则集: [BosLife]",
-      "path": "/rule-provider/surge/boslife",
+      "path": "/rule-provider/surge",
       "query": "interval=43200&policy[name]=BosLife&policy[is_subscription]=false&sub_url=http://mock_host_port/subscription?token=bppleman"
     },
     {
@@ -68,7 +61,7 @@ expression: url_result
       },
       "server": "http://127.0.0.1/",
       "desc": "规则集: [BosLife: no-resolve]",
-      "path": "/rule-provider/surge/boslife",
+      "path": "/rule-provider/surge",
       "query": "interval=43200&policy[name]=BosLife&policy[option]=no-resolve&policy[is_subscription]=false&sub_url=http://mock_host_port/subscription?token=bppleman"
     },
     {
@@ -81,7 +74,7 @@ expression: url_result
       },
       "server": "http://127.0.0.1/",
       "desc": "规则集: [BosLife: force-remote-dns]",
-      "path": "/rule-provider/surge/boslife",
+      "path": "/rule-provider/surge",
       "query": "interval=43200&policy[name]=BosLife&policy[option]=force-remote-dns&policy[is_subscription]=false&sub_url=http://mock_host_port/subscription?token=bppleman"
     },
     {
@@ -94,7 +87,7 @@ expression: url_result
       },
       "server": "http://127.0.0.1/",
       "desc": "规则集: [DIRECT]",
-      "path": "/rule-provider/surge/boslife",
+      "path": "/rule-provider/surge",
       "query": "interval=43200&policy[name]=DIRECT&policy[is_subscription]=false&sub_url=http://mock_host_port/subscription?token=bppleman"
     },
     {
@@ -107,7 +100,7 @@ expression: url_result
       },
       "server": "http://127.0.0.1/",
       "desc": "规则集: [DIRECT: no-resolve]",
-      "path": "/rule-provider/surge/boslife",
+      "path": "/rule-provider/surge",
       "query": "interval=43200&policy[name]=DIRECT&policy[option]=no-resolve&policy[is_subscription]=false&sub_url=http://mock_host_port/subscription?token=bppleman"
     },
     {
@@ -120,7 +113,7 @@ expression: url_result
       },
       "server": "http://127.0.0.1/",
       "desc": "规则集: [DIRECT: force-remote-dns]",
-      "path": "/rule-provider/surge/boslife",
+      "path": "/rule-provider/surge",
       "query": "interval=43200&policy[name]=DIRECT&policy[option]=force-remote-dns&policy[is_subscription]=false&sub_url=http://mock_host_port/subscription?token=bppleman"
     }
   ]

@@ -8,14 +8,15 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-# 错误 / 诊断
-color-eyre = { workspace = true }
-
 # 本地 / 工作区 包
 convertor = { workspace = true }
 
+# 错误 / 诊断
+color-eyre = { workspace = true }
+
 # CLI / 工具
 clap = { workspace = true, features = ["default", "cargo", "derive"] }
+#include_dir = "0.7.4"
 
 # HTTP / 头部 处理
 #headers = { workspace = true }
@@ -27,7 +28,7 @@ tracing = { workspace = true, features = ["attributes"] }
 url = { workspace = true, features = ["serde"] }
 serde = { workspace = true, features = ["derive"] }
 toml = { workspace = true, default-features = false }
-regex = { workspace = true, default-features = false, features = ["unicode-perl"] }
+#regex = { workspace = true, default-features = false, features = ["unicode-perl"] }
 
 # 异步运行时 / Tokio
 tokio = { workspace = true, features = ["fs", "rt-multi-thread", "signal", "macros"] }

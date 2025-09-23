@@ -1,7 +1,8 @@
 use convertor::config::proxy_client::ProxyClient;
 use convertor::core::renderer::Renderer;
 use convertor::core::renderer::clash_renderer::ClashRenderer;
-use convertor::testkit::{init_test, policies};
+use convertor::init_test;
+use convertor::testkit::policies;
 use convertor::url::url_builder::UrlBuilder;
 use url::Url;
 
@@ -15,7 +16,7 @@ fn url_builder(client: ProxyClient) -> color_eyre::Result<UrlBuilder> {
 
 #[test]
 fn test_url_builder_surge() -> color_eyre::Result<()> {
-    init_test();
+    init_test!();
     let url_builder = url_builder(ProxyClient::Surge)?;
     let raw_url = url_builder.build_raw_url();
     insta::assert_snapshot!(raw_url.to_string(), @"https://localhost/subscription?token=bppleman&flag=surge");
@@ -40,7 +41,7 @@ fn test_url_builder_surge() -> color_eyre::Result<()> {
 
 #[test]
 fn test_url_builder_clash_boslife() -> color_eyre::Result<()> {
-    init_test();
+    init_test!();
     let url_builder = url_builder(ProxyClient::Clash)?;
     let raw_url = url_builder.build_raw_url();
     insta::assert_snapshot!(raw_url.to_string(), @"https://localhost/subscription?token=bppleman&flag=clash");
