@@ -1,14 +1,11 @@
-use color_eyre::eyre::eyre;
 use convertor::common::once::{init_backtrace, init_base_dir};
 use convertor::config::Config;
-use convertor::config::client_config::ProxyClient;
-use convertor::config::provider_config::Provider;
+use convertor::config::proxy_client::ProxyClient;
 use convertor::core::profile::Profile;
 use convertor::core::profile::surge_profile::SurgeProfile;
 use convertor::core::renderer::Renderer;
 use convertor::core::renderer::surge_renderer::SurgeRenderer;
-use convertor::provider_api::ProviderApi;
-use headers::UserAgent;
+use convertor::provider::SubscriptionProvider;
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> color_eyre::Result<()> {
@@ -19,28 +16,20 @@ async fn main() -> color_eyre::Result<()> {
         }
     });
 
-    // 确定适用的客户端和订阅提供者
-    // 这里使用 Surge 客户端和 BosLife 机场
-    let client = ProxyClient::Surge;
-    let provider = Provider::BosLife;
-
     // 搜索可用配置文件
     let config = Config::search(&base_dir, Option::<&str>::None)?;
     // 创建订阅供应商实例
-    let api_map = ProviderApi::create_api_no_redis(config.providers.clone());
-    // 获取 BosLife 的 API 实例
-    let api = api_map
-        .get(&provider)
-        .ok_or_else(|| eyre!("未找到 BosLife 订阅提供者"))?;
+    let provider = SubscriptionProvider::new(None);
 
     // 获取原始订阅配置文件内容: 来源于 BosLife 机场;适用于 Surge
-    let raw_sub_content = api
-        .get_raw_profile(client, UserAgent::from_static("Surge Mac/8310"))
+    let sub_url = config.subscription.sub_url.clone();
+    let raw_sub_content = provider
+        .get_raw_profile(sub_url, [("User-Agent", "Surge Mac/8310")].into())
         .await?;
     // 解析原始配置文件内容为 SurgeProfile 对象
     let mut profile = SurgeProfile::parse(raw_sub_content)?;
     // 创建 UrlBuilder 对象, 该 UrlBuilder 可用于创建适用于 Surge 的且使用 BosLife 订阅的 URL
-    let url_builder = config.create_url_builder(ProxyClient::Surge, Provider::BosLife)?;
+    let url_builder = config.create_url_builder(ProxyClient::Surge)?;
     // 转换 SurgeProfile 对象
     // 传入 UrlBuilder 对象有两个作用
     // - 用于生成 Surge 配置的托管链接

@@ -58,14 +58,14 @@ impl SubscriptionProvider {
         if response_status.is_success() {
             Ok(response_body)
         } else {
-            Err(ProviderError::ApiFailed(ApiFailed {
+            Err(ProviderError::ApiFailed(Box::new(ApiFailed {
                 request_url: sub_url,
                 request_method: Method::GET,
                 request_headers: headers,
                 response_status,
                 response_headers,
                 response_body,
-            }))
+            })))
         }
     }
 }

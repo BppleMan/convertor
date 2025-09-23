@@ -22,7 +22,6 @@ where
 {
     memory: MokaCache<CacheKey<K>, V>,
     redis: Option<ConnectionManager>,
-    mem_tty: Duration,
     redis_tty: Duration,
 }
 
@@ -39,7 +38,6 @@ where
         Self {
             memory,
             redis,
-            mem_tty,
             redis_tty,
         }
     }

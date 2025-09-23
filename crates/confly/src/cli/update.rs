@@ -1,6 +1,4 @@
-use crate::config::{ClientConfig, ConflyConfig};
-use color_eyre::owo_colors::OwoColorize;
-use convertor::config::proxy_client::ProxyClient;
+use crate::config::ClientConfig;
 use convertor::core::profile::Profile;
 use convertor::core::profile::clash_profile::ClashProfile;
 use convertor::core::profile::policy::Policy;
@@ -11,37 +9,10 @@ use convertor::core::renderer::clash_renderer::ClashRenderer;
 use convertor::core::renderer::surge_renderer::{
     SURGE_RULE_PROVIDER_COMMENT_END, SURGE_RULE_PROVIDER_COMMENT_START, SurgeRenderer,
 };
-use convertor::url::convertor_url::{ConvertorUrl, ConvertorUrlType};
+use convertor::url::convertor_url::ConvertorUrlType;
 use convertor::url::url_builder::UrlBuilder;
 use std::borrow::Cow;
 use std::path::Path;
-// pub async fn update_surge_config(
-//     config: &ConflyConfig,
-//     url_builder: &UrlBuilder,
-//     policies: impl IntoIterator<Item = &Policy>,
-// ) -> color_eyre::Result<()> {
-//     if let Some(client_config) = config.clients.get(&ProxyClient::Surge) {
-//         surge_config.update_surge_config(url_builder, policies).await?;
-//     } else {
-//         eprintln!("{}", "Surge 配置未找到，请检查配置文件是否正确设置".red().bold());
-//     }
-//     Ok(())
-// }
-//
-// pub async fn update_clash_config(
-//     config: &ConvertorConfig,
-//     url_builder: &UrlBuilder,
-//     raw_profile: ClashProfile,
-// ) -> color_eyre::Result<()> {
-//     if let Some(ProxyClientConfig::Clash(clash_config)) = config.clients.get(&ProxyClient::Clash) {
-//         clash_config
-//             .update_clash_config(url_builder, raw_profile, &config.secret)
-//             .await?;
-//     } else {
-//         eprintln!("{}", "Clash 配置未找到，请检查配置文件是否正确设置".red().bold());
-//     }
-//     Ok(())
-// }
 
 impl ClientConfig {
     pub async fn update_surge_config(

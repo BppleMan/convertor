@@ -627,11 +627,11 @@ dependencies = [
  "clap",
  "color-eyre",
  "convertor",
- "headers",
  "insta",
  "regex",
  "serde",
  "tokio",
+ "toml",
  "tracing",
  "url",
 ]

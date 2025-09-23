@@ -18,20 +18,19 @@ convertor = { workspace = true }
 clap = { workspace = true, features = ["default", "cargo", "derive"] }
 
 # HTTP / 头部 处理
-headers = { workspace = true }
+#headers = { workspace = true }
 
 # 日志 / 追踪
 tracing = { workspace = true, features = ["attributes"] }
 
 # URL / 编码 / 解析
 url = { workspace = true, features = ["serde"] }
+serde = { workspace = true, features = ["derive"] }
+toml = { workspace = true, default-features = false }
+regex = { workspace = true, default-features = false, features = ["unicode-perl"] }
 
 # 异步运行时 / Tokio
 tokio = { workspace = true, features = ["fs", "rt-multi-thread", "signal", "macros"] }
-serde = { version = "1.0.225", features = ["derive"] }
-
-# 编码 / 工具
-regex = { workspace = true, features = ["unicode-perl"] }
 
 [dev-dependencies]
 # 本地测试工具

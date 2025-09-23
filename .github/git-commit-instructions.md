@@ -74,9 +74,9 @@
 ```
 完善Redis部署和访问配置
 
-<feat>: 添加Redis外部访问功能
-<update>: 修改Redis服务类型为NodePort
-<docs>: 添加Redis连接指南和网络分析文档
+<feat> 添加Redis外部访问功能
+<update> 修改Redis服务类型为NodePort
+<docs> 添加Redis连接指南和网络分析文档
 ```
 
 **不好的提交信息：**

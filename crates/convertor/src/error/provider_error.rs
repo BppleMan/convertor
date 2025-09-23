@@ -1,5 +1,4 @@
 use crate::config::subscription_config::Headers;
-use headers::HeaderMap;
 use reqwest::{Method, StatusCode};
 use std::fmt::{Debug, Display, Formatter};
 use thiserror::Error;
@@ -31,7 +30,7 @@ pub enum ProviderError {
     // #[error("未找到 {name}[{path}]")]
     // JsonPathNotFound { name: String, path: String },
     #[error(transparent)]
-    ApiFailed(#[from] ApiFailed),
+    ApiFailed(#[from] Box<ApiFailed>),
 
     #[error(transparent)]
     UrlError(#[from] url::ParseError),

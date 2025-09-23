@@ -53,7 +53,7 @@ impl ProviderCli {
         let raw_url = url_builder.build_raw_url();
         let raw_profile_content = self
             .provider
-            .get_raw_profile(raw_url.into(), ([("User-Agent", "Surge Mac/8310")].into()))
+            .get_raw_profile(raw_url.into(), [("User-Agent", "Surge Mac/8310")].into())
             .await?;
         let sub_host = url_builder
             .sub_url

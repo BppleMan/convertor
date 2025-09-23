@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 
-use convertor::config::proxy_client::ProxyClient;
 use regex::{Captures, Regex};
 use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;

@@ -3,10 +3,9 @@ use color_eyre::Result;
 use confly::cli::ConvertorCommand;
 use confly::cli::config_cli::ConfigCli;
 use confly::cli::subscription_cli::ProviderCli;
+use confly::config::ConflyConfig;
 use convertor::common::clap_style::SONOKAI_TC;
 use convertor::common::once::{init_backtrace, init_base_dir, init_log};
-use convertor::config::Config;
-use convertor::provider_api::ProviderApi;
 use std::path::PathBuf;
 
 #[derive(Debug, Parser)]
@@ -32,19 +31,18 @@ async fn main() -> Result<()> {
             eprintln!("Failed to install color_eyre: {e}");
         }
     });
-    init_log();
+    init_log(None, None);
 
     match args.command {
         ConvertorCommand::Config(config_cmd) => {
             ConfigCli::new(config_cmd).execute().await?;
         }
         other => {
-            let config = Config::search(&base_dir, args.config)?;
-            let api_map = ProviderApi::create_api_no_redis(config.providers.clone());
+            let config = ConflyConfig::search(&base_dir, args.config)?;
 
             match other {
                 ConvertorCommand::Subscription(args) => {
-                    let mut executor = ProviderCli::new(config, api_map);
+                    let mut executor = ProviderCli::new(config);
                     let (url_builder, result) = executor.execute(args).await?;
                     executor.post_execute(url_builder, result);
                 }
