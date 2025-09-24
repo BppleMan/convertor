@@ -8,7 +8,7 @@ use crate::core::profile::rule::{ProviderRule, Rule};
 use crate::core::renderer::Renderer;
 use crate::core::renderer::surge_renderer::SurgeRenderer;
 use crate::error::ParseError;
-use crate::url::convertor_url::ConvertorUrlType;
+use crate::url::convertor_url::UrlType;
 use crate::url::url_builder::UrlBuilder;
 use std::collections::HashMap;
 use tracing::instrument;
@@ -102,7 +102,7 @@ impl Profile for SurgeProfile {
 impl SurgeProfile {
     #[instrument(skip_all)]
     fn replace_header(&mut self, url_builder: &UrlBuilder) -> Result<()> {
-        self.header = url_builder.build_surge_header(ConvertorUrlType::Profile)?.to_string();
+        self.header = url_builder.build_surge_header(UrlType::Profile)?.to_string();
         Ok(())
     }
 }

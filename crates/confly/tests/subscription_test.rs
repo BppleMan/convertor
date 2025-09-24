@@ -51,7 +51,7 @@ async fn test_subscription(client: ProxyClient) -> color_eyre::Result<()> {
         .ok_or_eyre(format!("没有找到 {client} 客户端配置"))?;
     start_mock_provider_server(&mut config.common).await?;
 
-    let subs_provider = SubsProvider::new(None);
+    let subs_provider = SubsProvider::new(None, config.common.redis.as_ref().map(|r| r.prefix.as_str()));
     let cmds = cmds(client);
     for (i, cmd) in cmds.into_iter().enumerate() {
         let ctx = format!("test_subscription_{client}_cmd_{i}");

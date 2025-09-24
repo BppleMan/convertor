@@ -2,9 +2,6 @@ use redis::{ConnectionAddr, ConnectionInfo, IntoConnectionInfo, ProtocolVersion,
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-pub const REDIS_CONVERTOR_CONFIG_KEY: &str = "convertor:config.toml";
-pub const REDIS_CONVERTOR_CONFIG_PUBLISH_CHANNEL: &str = "convertor:config:publish";
-
 #[derive(Default, Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct RedisConfig {
     pub host: String,
@@ -13,10 +10,10 @@ pub struct RedisConfig {
     pub username: String,
     #[serde(default)]
     pub password: String,
+    #[serde(default = "default_prefix")]
+    pub prefix: String,
     #[serde(default)]
     pub db: Option<u32>,
-    #[serde(default)]
-    pub prefix: Option<String>,
     #[serde(default)]
     pub tls: Option<TlsConfig>,
 }
@@ -100,8 +97,8 @@ impl RedisConfig {
             port: 6379,
             username: "".to_string(),
             password: "yourpassword".to_string(),
+            prefix: "convertor:".to_string(),
             db: Some(0),
-            prefix: Some("convertor:".to_string()),
             tls: Some(TlsConfig::template()),
         }
     }
@@ -207,4 +204,8 @@ pub enum RedisConfigError {
     HasClientKeyButNoCert,
     #[error(transparent)]
     RedisError(#[from] redis::RedisError),
+}
+
+pub fn default_prefix() -> String {
+    "convertor:".to_string()
 }

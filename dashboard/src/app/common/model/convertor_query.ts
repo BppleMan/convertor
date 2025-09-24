@@ -4,7 +4,6 @@ export default class ConvertorQuery {
 
     public constructor(
         public client: string,
-        public provider: string,
         public interval: number,
         public strict: boolean,
         public sub_url: string,
@@ -20,6 +19,6 @@ export default class ConvertorQuery {
         params.set("interval", this.interval.toString());
         params.set("strict", this.strict ? "true" : "false");
         params.set("sub_url", this.sub_url);
-        return `${this.client}/${this.provider}?${params.toString()}`;
+        return `${this.client}?${params.toString()}`;
     }
 }

@@ -1,5 +1,5 @@
 use crate::error::{EncryptError, QueryError};
-use crate::url::convertor_url::ConvertorUrlType;
+use crate::url::convertor_url::UrlType;
 use std::str::Utf8Error;
 use thiserror::Error;
 use url::Url;
@@ -13,7 +13,7 @@ pub enum UrlBuilderError {
     ParseFromUrlNoQuery(Url),
 
     #[error("不支持将 {0} 构造为 SurgeHeader")]
-    UnsupportedUrlType(ConvertorUrlType),
+    UnsupportedUrlType(UrlType),
 
     #[error("无法加密/解密 raw_sub_url: {0}")]
     EncryptError(#[from] EncryptError),

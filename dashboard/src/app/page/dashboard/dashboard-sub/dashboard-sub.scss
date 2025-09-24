@@ -52,6 +52,12 @@
             ));
         }
 
+        button.error {
+            @include mat.button-overrides((
+                filled-container-color: var(--mat-sys-error),
+            ))
+        }
+
         ::ng-deep {
             .mat-mdc-option {
                 min-height: 28px;
@@ -63,6 +69,7 @@
     section {
         display:        flex;
         overflow-y:     auto;
+        flex:           1;
         flex-direction: column;
         gap:            12px;
 

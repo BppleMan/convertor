@@ -3,7 +3,7 @@ use crate::config::proxy_client::ProxyClient;
 use crate::core::profile::policy::Policy;
 use crate::core::profile::surge_header::SurgeHeader;
 use crate::error::UrlBuilderError;
-use crate::url::convertor_url::{ConvertorUrl, ConvertorUrlType};
+use crate::url::convertor_url::{ConvertorUrl, UrlType};
 use crate::url::query::ConvertorQuery;
 use serde::{Deserialize, Serialize};
 use url::Url;
@@ -116,11 +116,11 @@ impl UrlBuilder {
     }
 
     // 构造专属 Surge 的订阅头
-    pub fn build_surge_header(&self, r#type: ConvertorUrlType) -> Result<SurgeHeader, UrlBuilderError> {
+    pub fn build_surge_header(&self, r#type: UrlType) -> Result<SurgeHeader, UrlBuilderError> {
         let url = match r#type {
-            ConvertorUrlType::Raw => self.build_raw_url(),
-            ConvertorUrlType::RawProfile => self.build_raw_profile_url()?,
-            ConvertorUrlType::Profile => self.build_profile_url()?,
+            UrlType::Raw => self.build_raw_url(),
+            UrlType::RawProfile => self.build_raw_profile_url()?,
+            UrlType::Profile => self.build_profile_url()?,
             _ => return Err(UrlBuilderError::UnsupportedUrlType(r#type)),
         };
         Ok(SurgeHeader::new(url, self.interval, self.strict))

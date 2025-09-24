@@ -7,7 +7,7 @@ use url::Url;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConvertorUrl {
-    pub r#type: ConvertorUrlType,
+    pub r#type: UrlType,
     pub server: Url,
     pub desc: String,
     pub path: Option<String>,
@@ -16,7 +16,7 @@ pub struct ConvertorUrl {
 
 impl ConvertorUrl {
     pub fn new(
-        r#type: ConvertorUrlType,
+        r#type: UrlType,
         server: Url,
         path: impl Into<String>,
         query: impl Into<String>,
@@ -37,48 +37,26 @@ impl ConvertorUrl {
 
     pub fn raw(url: Url) -> Self {
         Self {
-            r#type: ConvertorUrlType::Raw,
+            r#type: UrlType::Raw,
             server: url,
             path: None,
             query: None,
-            desc: ConvertorUrlType::Raw.label(),
+            desc: UrlType::Raw.label(),
         }
     }
 
     pub fn raw_profile(url: Url, path: impl Into<String>, query: impl Into<String>) -> Self {
-        Self::new(
-            ConvertorUrlType::RawProfile,
-            url,
-            path,
-            query,
-            ConvertorUrlType::RawProfile.label(),
-        )
+        Self::new(UrlType::RawProfile, url, path, query, UrlType::RawProfile.label())
     }
 
     pub fn profile(url: Url, path: impl Into<String>, query: impl Into<String>) -> Self {
-        Self::new(
-            ConvertorUrlType::Profile,
-            url,
-            path,
-            query,
-            ConvertorUrlType::Profile.label(),
-        )
+        Self::new(UrlType::Profile, url, path, query, UrlType::Profile.label())
     }
 
     pub fn rule_provider(policy: Policy, url: Url, path: impl Into<String>, query: impl Into<String>) -> Self {
-        let r#type = ConvertorUrlType::RuleProvider(policy);
+        let r#type = UrlType::RuleProvider(policy);
         let desc = r#type.label();
         Self::new(r#type, url, path, query, desc)
-    }
-
-    pub fn sub_logs(url: Url, path: impl Into<String>, query: impl Into<String>) -> Self {
-        Self::new(
-            ConvertorUrlType::SubLogs,
-            url,
-            path,
-            query,
-            ConvertorUrlType::SubLogs.label(),
-        )
     }
 }
 
@@ -109,47 +87,39 @@ impl Display for ConvertorUrl {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[derive(Serialize, Deserialize)]
-pub enum ConvertorUrlType {
+pub enum UrlType {
     Raw,
     RawProfile,
     Profile,
-    SubLogs,
     RuleProvider(Policy),
 }
 
-impl ConvertorUrlType {
+impl UrlType {
     pub fn label(&self) -> String {
         match self {
-            ConvertorUrlType::Raw => "提供商原始订阅".to_string(),
-            ConvertorUrlType::RawProfile => "转发原始订阅".to_string(),
-            ConvertorUrlType::Profile => "转换器订阅".to_string(),
-            ConvertorUrlType::SubLogs => "订阅日志记录".to_string(),
-            ConvertorUrlType::RuleProvider(policy) => {
+            UrlType::Raw => "订阅商原始订阅配置".to_string(),
+            UrlType::RawProfile => "转换前订阅配置".to_string(),
+            UrlType::Profile => "转换后订阅配置".to_string(),
+            UrlType::RuleProvider(policy) => {
                 format!("规则集: {}", SurgeRenderer::render_provider_name_for_policy(policy))
             }
         }
     }
 }
 
-impl ConvertorUrlType {
+impl UrlType {
     pub fn variants() -> &'static [Self] {
-        &[
-            ConvertorUrlType::Raw,
-            ConvertorUrlType::RawProfile,
-            ConvertorUrlType::Profile,
-            ConvertorUrlType::SubLogs,
-        ]
+        &[UrlType::Raw, UrlType::RawProfile, UrlType::Profile]
     }
 }
 
-impl Display for ConvertorUrlType {
+impl Display for UrlType {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            ConvertorUrlType::Raw => write!(f, "raw"),
-            ConvertorUrlType::RawProfile => write!(f, "raw_profile"),
-            ConvertorUrlType::Profile => write!(f, "profile"),
-            ConvertorUrlType::SubLogs => write!(f, "sub_logs"),
-            ConvertorUrlType::RuleProvider(_) => write!(f, "rule_provider"),
+            UrlType::Raw => write!(f, "raw"),
+            UrlType::RawProfile => write!(f, "raw_profile"),
+            UrlType::Profile => write!(f, "profile"),
+            UrlType::RuleProvider(_) => write!(f, "rule_provider"),
         }
     }
 }

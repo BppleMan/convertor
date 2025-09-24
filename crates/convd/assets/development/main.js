@@ -58631,22 +58631,10 @@ var ConvertorUrl = class _ConvertorUrl {
     };
   }
   static deserialize(url) {
-    return new _ConvertorUrl(ConvertorUrlType.deserialize(url.type), url.server, url.desc, url.path, url.query);
-  }
-  static get RawUrl() {
-    return new _ConvertorUrl(new ConvertorUrlType("Raw"), "", "Raw URL", "", "");
-  }
-  static get RawProfileUrl() {
-    return new _ConvertorUrl(new ConvertorUrlType("RawProfile"), "", "Raw Profile URL", "", "");
-  }
-  static get ProfileUrl() {
-    return new _ConvertorUrl(new ConvertorUrlType("Profile"), "", "Profile URL", "", "");
-  }
-  static get SubLogsUrl() {
-    return new _ConvertorUrl(new ConvertorUrlType("Logs"), "", "Subscription Logs URL", "", "");
+    return new _ConvertorUrl(UrlType.deserialize(url.type), url.server, url.desc, url.path, url.query);
   }
 };
-var ConvertorUrlType = class _ConvertorUrlType {
+var UrlType = class _UrlType {
   name;
   policy;
   constructor(name, policy3) {
@@ -58654,7 +58642,7 @@ var ConvertorUrlType = class _ConvertorUrlType {
     this.policy = policy3;
   }
   clone() {
-    return new _ConvertorUrlType(this.name, this.policy?.clone());
+    return new _UrlType(this.name, this.policy?.clone());
   }
   equals(other) {
     if (!other)
@@ -58669,11 +58657,11 @@ var ConvertorUrlType = class _ConvertorUrlType {
   }
   static deserialize(type) {
     if (typeof type === "string") {
-      return new _ConvertorUrlType(type);
+      return new _UrlType(type);
     } else {
       const name = Object.keys(type)[0];
       const policy3 = !!type[name] ? Policy.deserialize(type[name]) : void 0;
-      return new _ConvertorUrlType(name, policy3);
+      return new _UrlType(name, policy3);
     }
   }
 };
@@ -58683,35 +58671,29 @@ var UrlResult = class _UrlResult {
   raw_url;
   raw_profile_url;
   profile_url;
-  sub_logs_url;
   rule_providers_url;
-  constructor(raw_url, raw_profile_url, profile_url, sub_logs_url, rule_providers_url) {
+  constructor(raw_url, raw_profile_url, profile_url, rule_providers_url) {
     this.raw_url = raw_url;
     this.raw_profile_url = raw_profile_url;
     this.profile_url = profile_url;
-    this.sub_logs_url = sub_logs_url;
     this.rule_providers_url = rule_providers_url;
   }
-  static empty() {
-    return new _UrlResult(ConvertorUrl.RawUrl, ConvertorUrl.RawProfileUrl, ConvertorUrl.ProfileUrl, ConvertorUrl.SubLogsUrl, []);
-  }
   static deserialize(result) {
-    return new _UrlResult(ConvertorUrl.deserialize(result.raw_url), ConvertorUrl.deserialize(result.raw_profile_url), ConvertorUrl.deserialize(result.profile_url), ConvertorUrl.deserialize(result.sub_logs_url), result.rule_providers_url.map(ConvertorUrl.deserialize));
+    return new _UrlResult(ConvertorUrl.deserialize(result.raw_url), ConvertorUrl.deserialize(result.raw_profile_url), ConvertorUrl.deserialize(result.profile_url), result.rule_providers_url.map(ConvertorUrl.deserialize));
   }
   clone() {
-    return new _UrlResult(this.raw_url.clone(), this.raw_profile_url.clone(), this.profile_url.clone(), this.sub_logs_url.clone(), this.rule_providers_url.map((rp) => rp.clone()));
+    return new _UrlResult(this.raw_url.clone(), this.raw_profile_url.clone(), this.profile_url.clone(), this.rule_providers_url.map((rp) => rp.clone()));
   }
   equals(other) {
     if (!other)
       return false;
-    return this.raw_url.equals(other.raw_url) && this.raw_profile_url.equals(other.raw_profile_url) && this.profile_url.equals(other.profile_url) && this.sub_logs_url.equals(other.sub_logs_url) && this.rule_providers_url.length === other.rule_providers_url.length && this.rule_providers_url.every((rp, index) => rp.equals(other.rule_providers_url[index]));
+    return this.raw_url.equals(other.raw_url) && this.raw_profile_url.equals(other.raw_profile_url) && this.profile_url.equals(other.profile_url) && this.rule_providers_url.length === other.rule_providers_url.length && this.rule_providers_url.every((rp, index) => rp.equals(other.rule_providers_url[index]));
   }
   serialize() {
     return {
       raw_url: this.raw_url.serialize(),
       raw_profile_url: this.raw_profile_url.serialize(),
       profile_url: this.profile_url.serialize(),
-      sub_logs_url: this.sub_logs_url.serialize(),
       rule_providers_url: this.rule_providers_url.map((rp) => rp.serialize())
     };
   }
@@ -59042,14 +59024,12 @@ var DashboardService = class _DashboardService {
 // src/app/common/model/convertor_query.ts
 var ConvertorQuery = class _ConvertorQuery {
   client;
-  provider;
   interval;
   strict;
   sub_url;
   static API_SUBSCRIPTION = "api/subscription";
-  constructor(client, provider, interval, strict, sub_url) {
+  constructor(client, interval, strict, sub_url) {
     this.client = client;
-    this.provider = provider;
     this.interval = interval;
     this.strict = strict;
     this.sub_url = sub_url;
@@ -59062,7 +59042,7 @@ var ConvertorQuery = class _ConvertorQuery {
     params.set("interval", this.interval.toString());
     params.set("strict", this.strict ? "true" : "false");
     params.set("sub_url", this.sub_url);
-    return `${this.client}/${this.provider}?${params.toString()}`;
+    return `${this.client}?${params.toString()}`;
   }
 };
 
@@ -59878,9 +59858,9 @@ var UrlService = class _UrlService {
     this.crypto = crypto2;
   }
   buildSubscriptionQuery(params) {
-    const { secret, url, client, provider, interval, strict } = params;
+    const { secret, url, client, interval, strict } = params;
     const sub_url = this.crypto.encrypt(secret, url);
-    return new ConvertorQuery(client, provider, interval, strict, sub_url);
+    return new ConvertorQuery(client, interval, strict, sub_url);
   }
   static \u0275fac = function UrlService_Factory(__ngFactoryType__) {
     return new (__ngFactoryType__ || _UrlService)(\u0275\u0275inject(Crypto_xchachaService));
@@ -59971,12 +59951,11 @@ var DashboardSub = class _DashboardSub {
     provider: new FormControl(SubProvider.BosLife.toLowerCase(), { nonNullable: true }),
     strict: new FormControl(true, { nonNullable: true })
   });
-  urlResult = new BehaviorSubject(UrlResult.empty());
+  urlResult = new BehaviorSubject(void 0);
   urls$ = this.urlResult.pipe(filter((v) => !!v), map((result) => [
     result.raw_url,
     result.raw_profile_url,
     result.profile_url,
-    result.sub_logs_url,
     ...result.rule_providers_url
   ]));
   loading = new BehaviorSubject(false);

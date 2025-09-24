@@ -38,13 +38,13 @@ async fn main() -> Result<()> {
     }
 
     let base_dir = init_base_dir();
-    let loki_url = std::env::var("LOKI_URL").ok();
-    let otlp_grpc = std::env::var("OTLP_GRPC").ok();
     init_backtrace(|| {
         if let Err(e) = color_eyre::install() {
             eprintln!("Failed to install color_eyre: {e}");
         }
     });
+    let loki_url = std::env::var("LOKI_URL").ok();
+    let otlp_grpc = std::env::var("OTLP_GRPC").ok();
     init_log(loki_url.as_deref(), otlp_grpc.as_deref());
     info!("工作目录: {}", base_dir.display());
 

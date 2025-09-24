@@ -3,10 +3,8 @@ pub mod subscription {
     use crate::server::response::{ApiError, ApiResponse};
     use crate::server::router::{OptionalScheme, parse_query};
     use axum::extract::{Path, RawQuery, State};
-    use axum_extra::TypedHeader;
     use axum_extra::extract::Host;
     use axum_extra::headers::HeaderMap;
-    use axum_extra::headers::UserAgent;
     use convertor::config::proxy_client::ProxyClient;
     use convertor::config::subscription_config::Headers;
     use convertor::url::url_builder::UrlBuilder;
@@ -18,7 +16,6 @@ pub mod subscription {
     pub async fn subscription(
         Path(client): Path<ProxyClient>,
         Host(host): Host,
-        TypedHeader(user_agent): TypedHeader<UserAgent>,
         scheme: Option<OptionalScheme>,
         header_map: HeaderMap,
         State(state): State<Arc<AppState>>,
@@ -27,7 +24,7 @@ pub mod subscription {
         let query = parse_query(state.as_ref(), scheme, host.as_str(), query_string)?.check_for_subscription()?;
         let url_builder = UrlBuilder::from_convertor_query(query, &state.config.secret, client)?;
         let sub_url = url_builder.build_raw_url();
-        let headers = Headers::from_header_map(header_map).patch(&state.config.subscription.headers, user_agent);
+        let headers = Headers::from_header_map(header_map).patch(&state.config.subscription.headers);
         let raw_profile = state.provider.get_raw_profile(sub_url.into(), headers).await?;
         let policies = match client {
             ProxyClient::Surge => {

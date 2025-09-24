@@ -7,7 +7,7 @@ export class ConvertorUrl implements Cloneable<ConvertorUrl>, Equatable<Converto
     public url?: URL;
 
     public constructor(
-        public type: ConvertorUrlType,
+        public type: UrlType,
         public server: string,
         public desc: string,
         public path?: string,
@@ -55,67 +55,27 @@ export class ConvertorUrl implements Cloneable<ConvertorUrl>, Equatable<Converto
 
     public static deserialize(url: ConvertorUrl) {
         return new ConvertorUrl(
-            ConvertorUrlType.deserialize(url.type),
+            UrlType.deserialize(url.type),
             url.server,
             url.desc,
             url.path,
             url.query,
         );
     }
-
-    public static get RawUrl(): ConvertorUrl {
-        return new ConvertorUrl(
-            new ConvertorUrlType("Raw"),
-            "",
-            "Raw URL",
-            "",
-            "",
-        );
-    }
-
-    public static get RawProfileUrl(): ConvertorUrl {
-        return new ConvertorUrl(
-            new ConvertorUrlType("RawProfile"),
-            "",
-            "Raw Profile URL",
-            "",
-            "",
-        );
-    }
-
-    public static get ProfileUrl(): ConvertorUrl {
-        return new ConvertorUrl(
-            new ConvertorUrlType("Profile"),
-            "",
-            "Profile URL",
-            "",
-            "",
-        );
-    }
-
-    public static get SubLogsUrl(): ConvertorUrl {
-        return new ConvertorUrl(
-            new ConvertorUrlType("Logs"),
-            "",
-            "Subscription Logs URL",
-            "",
-            "",
-        );
-    }
 }
 
-export class ConvertorUrlType implements Cloneable<ConvertorUrlType>, Equatable<ConvertorUrlType>, Serializable {
+export class UrlType implements Cloneable<UrlType>, Equatable<UrlType>, Serializable {
     public constructor(
         public name: string,
         public policy?: Policy,
     ) {
     }
 
-    public clone(): ConvertorUrlType {
-        return new ConvertorUrlType(this.name, this.policy?.clone());
+    public clone(): UrlType {
+        return new UrlType(this.name, this.policy?.clone());
     }
 
-    public equals(other?: ConvertorUrlType): boolean {
+    public equals(other?: UrlType): boolean {
         if (!other) return false;
         return this.name === other?.name
             && (this.policy?.equals(other?.policy) ?? false);
@@ -130,11 +90,11 @@ export class ConvertorUrlType implements Cloneable<ConvertorUrlType>, Equatable<
 
     public static deserialize(type: any) {
         if (typeof type === "string") {
-            return new ConvertorUrlType(type);
+            return new UrlType(type);
         } else {
             const name = Object.keys(type)[0];
             const policy = !!type[name] ? Policy.deserialize(type[name]) : undefined;
-            return new ConvertorUrlType(name, policy);
+            return new UrlType(name, policy);
         }
     }
 }

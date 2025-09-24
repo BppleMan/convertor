@@ -13,11 +13,10 @@ export class UrlService {
     }
 
     public buildSubscriptionQuery(params: UrlParams): ConvertorQuery {
-        const { secret, url, client, provider, interval, strict } = params;
+        const { secret, url, client, interval, strict } = params;
         const sub_url = this.crypto.encrypt(secret, url);
         return new ConvertorQuery(
             client,
-            provider,
             interval,
             strict,
             sub_url,
@@ -31,8 +30,6 @@ export interface UrlParams {
     url: string;
 
     client: string;
-
-    provider: string;
 
     interval: number;
 

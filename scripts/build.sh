@@ -19,16 +19,16 @@ build_component() {
     local package="${1:-convd}"
     local target_triple="${2:-}"
     local profile="${3:-dev}"
-    
+
     log_info "开始构建 $package (环境: $profile, 目标: ${target_triple:-native})"
-    
+
     setup_component_env "$package" "$profile" || return 1
     ensure_project_root
-    
+
     # 准备构建命令
     local build_cmd_suffix=""
     local build_args=""
-    
+
     # 根据目标平台选择构建工具
     if [[ -n "$target_triple" && "$target_triple" != "native" ]]; then
         # 交叉编译使用 zigbuild
@@ -38,19 +38,19 @@ build_component() {
             log_info "或访问: https://ziglang.org/"
             return 1
         }
-        
+
         if ! cargo zigbuild --help >/dev/null 2>&1; then
             log_error "未找到 cargo-zigbuild，请先安装"
             log_info "运行: cargo install cargo-zigbuild"
             return 1
         fi
-        
+
         build_cmd_suffix="zigbuild"
         build_args="--target $target_triple"
     else
         build_cmd_suffix="build"
     fi
-    
+
     # 根据组件类型设置构建参数
     case "$package" in
         "all")
@@ -70,10 +70,10 @@ build_component() {
             return 1
             ;;
     esac
-    
+
     # 添加 profile 参数
     build_args="$build_args --profile $CARGO_PROFILE"
-    
+
     # 执行构建
     execute_with_log "构建 $package" \
         "time cargo $build_cmd_suffix $build_args"
@@ -83,12 +83,12 @@ build_component() {
 # 参数: package
 test() {
     local package="${1:-all}"
-    
+
     log_info "测试 $package 包"
-    
+
     ensure_project_root
     check_command "cargo" || return 1
-    
+
     case "$package" in
         "all")
             execute_with_log "测试 convertor" \
@@ -122,22 +122,22 @@ test() {
 publish() {
     local package="${1:-}"
     local dry_run="${2:-false}"
-    
+
     if [[ -z "$package" ]]; then
         log_error "请指定要发布的包: convertor, convd, confly"
         return 1
     fi
-    
+
     log_info "发布 $package 包 (dry_run: $dry_run)"
-    
+
     ensure_project_root
     check_command "cargo" || return 1
-    
+
     local publish_args=""
     if [[ "$dry_run" == "true" ]]; then
         publish_args="--dry-run"
     fi
-    
+
     case "$package" in
         "convertor")
             execute_with_log "发布 convertor" \
@@ -164,30 +164,30 @@ publish() {
 # 构建前端界面
 build_dashboard() {
     local dashboard_config="${1:-development}"
-    
+
     log_info "开始构建前端界面 (配置: $dashboard_config)"
-    
+
     ensure_project_root
-    
+
     # 检查 pnpm 是否可用
     check_command "pnpm" || return 1
-    
+
     # 进入前端目录并安装依赖
     execute_with_log "安装前端依赖" \
         "(cd dashboard && pnpm install)"
-    
+
     # 构建前端
     execute_with_log "构建前端应用" \
         "(cd dashboard && pnpm ng build --configuration $dashboard_config)"
-    
+
     # 复制构建结果
     local target_dir="./crates/convd/assets/$dashboard_config"
     execute_with_log "清理旧的前端资源" \
         "rm -rf $target_dir"
-    
+
     execute_with_log "复制前端资源" \
         "cp -rf ./dashboard/dist/dashboard/$dashboard_config/browser $target_dir"
-    
+
     log_success "前端构建完成: $target_dir"
 }
 
@@ -198,12 +198,12 @@ build_dashboard() {
 # 安装二进制文件
 install() {
     local bin_name="${1:-convd}"
-    
+
     log_info "安装二进制文件: $bin_name"
-    
+
     ensure_project_root
     check_command "cargo" || return 1
-    
+
     execute_with_log "安装 $bin_name" \
         "cargo install --bin $bin_name --path ."
 }
@@ -213,25 +213,25 @@ check() {
     local target="${1:-x86_64-unknown-linux-musl}"
     local profile="${2:-dev}"
     local bin_name="${3:-convd}"
-    
+
     # 转换 profile 以获取正确的目录名
     map_profile_to_configs "$profile" || return 1
-    
+
     # 处理 native 目标（本机构建）
     if [[ "$target" == "native" ]]; then
         local binary_path="./target/$CARGO_PATH/$bin_name"
     else
         local binary_path="./target/$target/$CARGO_PATH/$bin_name"
     fi
-    
+
     if [[ -f "$binary_path" ]]; then
         local size=$(ls -lh "$binary_path" | awk '{print $5}')
         log_success "构建成功: $binary_path (大小: $size)"
-        
+
         # 显示文件信息
         log_info "文件信息:"
         file "$binary_path" | sed 's/^/  /'
-        
+
         return 0
     else
         log_error "构建失败: 未找到二进制文件 $binary_path"
@@ -242,7 +242,7 @@ check() {
 # 环境准备
 prepare() {
     log_info "准备构建环境"
-    
+
     # 检查和安装 cargo-zigbuild
     if ! cargo zigbuild --help >/dev/null 2>&1; then
         execute_with_log "安装 cargo-zigbuild" \
@@ -250,7 +250,7 @@ prepare() {
     else
         log_info "cargo-zigbuild 已安装"
     fi
-    
+
     # 检查 zig (macOS)
     if [[ "$(uname)" == "Darwin" ]]; then
         if ! command -v zig >/dev/null 2>&1; then
@@ -263,7 +263,7 @@ prepare() {
             log_info "zig 已安装"
         fi
     fi
-    
+
     # 检查前端依赖
     if [[ -d "dashboard" ]]; then
         if ! command -v pnpm >/dev/null 2>&1; then
@@ -276,16 +276,16 @@ prepare() {
             log_info "pnpm 已安装"
         fi
     fi
-    
+
     log_success "构建环境准备完成"
 }
 
 # 显示项目状态
 status() {
     log_info "项目状态概览"
-    
+
     printf "\\033[0;36m构建状态:\\033[0m\\n"
-    
+
     # 检查本机二进制文件
     for cargo_path in "debug" "release"; do
         for bin in "convd" "confly"; do
@@ -298,7 +298,7 @@ status() {
             fi
         done
     done
-    
+
     # 检查跨平台二进制文件
     for cargo_path in "debug" "release" "alpine"; do
         for bin in "convd" "confly"; do
@@ -311,7 +311,7 @@ status() {
             fi
         done
     done
-    
+
     echo ""
     printf "\\033[0;36m前端资源:\\033[0m\\n"
     for env in "development" "production"; do
@@ -330,7 +330,7 @@ status() {
 
 help() {
     show_help "build.sh" "构建、测试和发布脚本" "build.sh <command> [args...]"
-    
+
     printf "\033[1;33m核心功能:\033[0m\n"
     echo "  build_component <package> [target] [profile] - 构建组件"
     echo "  test [package]                              - 运行测试 (默认: all)"
@@ -362,10 +362,10 @@ help() {
 
 main() {
     set_error_handling
-    
+
     local command="${1:-}"
     shift || true
-    
+
     case "$command" in
         # 核心功能
         "build_component")

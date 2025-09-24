@@ -1,5 +1,6 @@
 import { CdkCopyToClipboard } from "@angular/cdk/clipboard";
 import { AsyncPipe } from "@angular/common";
+import { HttpErrorResponse } from "@angular/common/http";
 import { Component, DestroyRef, inject } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from "@angular/forms";
@@ -33,6 +34,7 @@ import { ProxyClient, SubProvider } from "../../../common/model/enums";
 import { UrlResult } from "../../../common/model/url_result";
 import { DashboardService } from "../../../service/dashboard.service";
 import { UrlParams, UrlService } from "../../../service/url.service";
+import { ErrorView } from "../../shared/error-view/error-view";
 import { IconButton } from "../../shared/icon-button/icon-button";
 
 @Component({
@@ -49,6 +51,7 @@ import { IconButton } from "../../shared/icon-button/icon-button";
         ReactiveFormsModule,
         AsyncPipe,
         CdkCopyToClipboard,
+        ErrorView,
     ],
     templateUrl: "./dashboard-sub.html",
     styleUrl: "./dashboard-sub.scss",
@@ -77,26 +80,29 @@ export class DashboardSub {
             updateOn: "blur",
         }),
         client: new FormControl<string>(ProxyClient.Surge.toLowerCase(), { nonNullable: true }),
-        provider: new FormControl<string>(SubProvider.BosLife.toLowerCase(), { nonNullable: true }),
         strict: new FormControl<boolean>(true, { nonNullable: true }),
     });
 
-    urlResult = new BehaviorSubject<UrlResult>(UrlResult.empty());
+    urlResult = new BehaviorSubject<UrlResult | undefined>(undefined);
     urls$: Observable<ConvertorUrl[]> = this.urlResult.pipe(
-        filter((v?: UrlResult): v is UrlResult => !!v),
-        map((result: UrlResult) => [
-            result.raw_url,
-            result.raw_profile_url,
-            result.profile_url,
-            result.sub_logs_url,
-            ...result.rule_providers_url,
-        ]),
+        // filter((v?: UrlResult): v is UrlResult => !!v),
+        map((result?: UrlResult) => {
+            if (!result) {
+                return [];
+            }
+            return [
+                result.raw_url,
+                result.raw_profile_url,
+                result.profile_url,
+                ...result.rule_providers_url,
+            ];
+        }),
     );
 
     loading: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
     submit$: Subject<void> = new Subject<void>();
     cancel$ = new Subject<void>();
-    error$ = new Subject<string>();
+    error$ = new Subject<HttpErrorResponse | undefined>();
     params$ = this.subscriptionForm.valueChanges.pipe(
         debounceTime(300),
         map(() => this.subscriptionForm.getRawValue()),
@@ -185,9 +191,10 @@ export class DashboardSub {
                         // 主动取消当前请求
                         takeUntil(this.cancel$),
                         // 错误只在 HTTP 内部处理，吞掉，不打断主流
-                        catchError(err => {
-                            // this.error$.next(extractHttpError(err));
-                            console.error(err);
+                        catchError((err: HttpErrorResponse) => {
+                            console.error(err.message, err);
+                            // this.error$.next(this.extractHttpError(err));
+                            this.error$.next(err);
                             return EMPTY;
                         }),
 
@@ -203,6 +210,8 @@ export class DashboardSub {
         )
         .subscribe(value => {
             console.log(value);
+            // 请求成功时清除错误信息
+            this.error$.next(undefined);
             if (value.status.isOk()) {
                 this.urlResult.next(value.data!);
             } else {
@@ -222,7 +231,6 @@ export class DashboardSub {
         secret: string | null,
         url: string | null,
         client: string,
-        provider: string,
         interval: number,
         strict: boolean,
     }): UrlParams {
@@ -230,7 +238,6 @@ export class DashboardSub {
             secret: payload.secret!,
             url: payload.url!,
             client: payload.client,
-            provider: payload.provider,
             interval: payload.interval,
             strict: payload.strict,
         };
@@ -239,4 +246,8 @@ export class DashboardSub {
     deepEqual<T>(a: T, b: T): boolean {
         return JSON.stringify(a) === JSON.stringify(b);
     }
+
+    // extractHttpError(err: HttpErrorResponse): string {
+    //
+    // }
 }

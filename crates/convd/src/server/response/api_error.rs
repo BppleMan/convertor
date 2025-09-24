@@ -45,8 +45,7 @@ pub enum ApiError {
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
-        let message = format!("{self:?}");
-        let message = console::strip_ansi_codes(&message).to_string();
+        let message = format!("{self}");
         (StatusCode::INTERNAL_SERVER_ERROR, message).into_response()
     }
 }

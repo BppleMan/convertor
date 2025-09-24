@@ -44,6 +44,8 @@ macro_rules! layer {
             .add_directive("confly=trace".parse().unwrap())
             .add_directive("tower_http=trace".parse().unwrap())
             .add_directive("moka=trace".parse().unwrap())
+            .add_directive("reqwest=trace".parse().unwrap())
+            .add_directive("httpv=trace".parse().unwrap())
     };
     (fmt_layer) => {
         tracing_subscriber::fmt::layer()
