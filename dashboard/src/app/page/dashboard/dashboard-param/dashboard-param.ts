@@ -1,12 +1,12 @@
-import { CdkCopyToClipboard } from "@angular/cdk/clipboard";
 import { AsyncPipe } from "@angular/common";
 import { HttpErrorResponse } from "@angular/common/http";
 import { Component, DestroyRef, inject } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from "@angular/forms";
 import { MatButton } from "@angular/material/button";
-import { MatFormField, MatLabel } from "@angular/material/form-field";
-import { MatInput } from "@angular/material/input";
+import { MatDivider } from "@angular/material/divider";
+import { MatFormField } from "@angular/material/form-field";
+import { MatInput, MatLabel } from "@angular/material/input";
 import { MatOption, MatSelect } from "@angular/material/select";
 import { MatSlideToggle } from "@angular/material/slide-toggle";
 import { StorageMap } from "@ngx-pwa/local-storage";
@@ -30,40 +30,35 @@ import {
     takeUntil,
 } from "rxjs";
 import { ConvertorUrl } from "../../../common/model/convertor_url";
-import { ProxyClient, SubProvider } from "../../../common/model/enums";
+import { ProxyClient } from "../../../common/model/enums";
 import { UrlResult } from "../../../common/model/url_result";
 import { DashboardService } from "../../../service/dashboard.service";
 import { UrlParams, UrlService } from "../../../service/url.service";
-import { ErrorView } from "../../shared/error-view/error-view";
-import { IconButton } from "../../shared/icon-button/icon-button";
 
 @Component({
-    selector: "app-dashboard-sub",
+    selector: "app-dashboard-param",
     imports: [
-        MatFormField,
-        MatLabel,
-        MatInput,
-        MatSelect,
-        MatOption,
+        AsyncPipe,
         MatButton,
-        IconButton,
+        MatDivider,
+        MatFormField,
+        MatInput,
+        MatLabel,
+        MatOption,
+        MatSelect,
         MatSlideToggle,
         ReactiveFormsModule,
-        AsyncPipe,
-        CdkCopyToClipboard,
-        ErrorView,
     ],
-    templateUrl: "./dashboard-sub.html",
-    styleUrl: "./dashboard-sub.scss",
+    templateUrl: "./dashboard-param.html",
+    styleUrl: "./dashboard-param.scss",
 })
-export class DashboardSub {
-    providers: SubProvider[] = Object.values(SubProvider);
+export class DashboardParam {
     clients: ProxyClient[] = Object.values(ProxyClient);
 
     destroyRef: DestroyRef = inject(DestroyRef);
     urlService: UrlService = inject(UrlService);
-    dashboardService = inject(DashboardService);
-    storage = inject(StorageMap);
+    dashboardService: DashboardService = inject(DashboardService);
+    storage: StorageMap = inject(StorageMap);
 
     subscriptionForm = new FormGroup({
         secret: new FormControl<string | null>(null, {
@@ -85,7 +80,6 @@ export class DashboardSub {
 
     urlResult = new BehaviorSubject<UrlResult | undefined>(undefined);
     urls$: Observable<ConvertorUrl[]> = this.urlResult.pipe(
-        // filter((v?: UrlResult): v is UrlResult => !!v),
         map((result?: UrlResult) => {
             if (!result) {
                 return [];
@@ -99,10 +93,12 @@ export class DashboardSub {
         }),
     );
 
+    submit: Subject<void> = new Subject<void>();
+    cancel: Subject<void> = new Subject<void>();
+
     loading: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
-    submit$: Subject<void> = new Subject<void>();
-    cancel$ = new Subject<void>();
-    error$ = new Subject<HttpErrorResponse | undefined>();
+    error: BehaviorSubject<HttpErrorResponse | undefined> = new BehaviorSubject<HttpErrorResponse | undefined>(undefined);
+
     params$ = this.subscriptionForm.valueChanges.pipe(
         debounceTime(300),
         map(() => this.subscriptionForm.getRawValue()),
@@ -112,7 +108,7 @@ export class DashboardSub {
         shareReplay({ bufferSize: 1, refCount: true }),
     );
 
-    formRestoreSub = merge(
+    paramRestoreSub = merge(
         this.storage.get("url").pipe(
             map(value => typeof value === "string" ? value : undefined),
             map((value?: string) => ({ url: value, secret: undefined })),
@@ -121,29 +117,26 @@ export class DashboardSub {
             map(value => typeof value === "string" ? value : undefined),
             map((value?: string) => ({ url: undefined, secret: value })),
         ),
-    )
-        .pipe(
-            takeUntilDestroyed(this.destroyRef),
-        )
-        .subscribe((value) => {
-            console.log(value);
-            if (!value.url) {
-                delete value.url;
-            }
-            if (!value.secret) {
-                delete value.secret;
-            }
-            this.subscriptionForm.patchValue(value, { emitEvent: false });
-        });
+    ).pipe(
+        takeUntilDestroyed(this.destroyRef),
+    ).subscribe((value) => {
+        if (!value.url) {
+            delete value.url;
+        }
+        if (!value.secret) {
+            delete value.secret;
+        }
+        this.subscriptionForm.patchValue(value, { emitEvent: false });
+    });
 
-    storageSub = merge(
+    paramStoreSub = merge(
         // 监听表单变化，debounce后保存
         this.subscriptionForm.valueChanges.pipe(
             debounceTime(300),
             map(() => this.subscriptionForm.getRawValue()),
         ),
         // 手动提交时立即保存
-        this.submit$.pipe(
+        this.submit.pipe(
             map(() => this.subscriptionForm.getRawValue()),
         ),
     ).pipe(
@@ -173,7 +166,7 @@ export class DashboardSub {
     requestSub = merge(
         this.params$,
         // 手动：点击提交时直接抓取当前 rawValue（不依赖 params$ 是否已发过值）
-        this.submit$.pipe(
+        this.submit.pipe(
             map(() => this.subscriptionForm.getRawValue()),
             filter(() => this.subscriptionForm.valid),
             map(payload => this.toUrlParams(payload)),
@@ -189,12 +182,12 @@ export class DashboardSub {
                     const query = this.urlService.buildSubscriptionQuery(urlParams);
                     return this.dashboardService.getSubscription(query).pipe(
                         // 主动取消当前请求
-                        takeUntil(this.cancel$),
+                        takeUntil(this.cancel),
                         // 错误只在 HTTP 内部处理，吞掉，不打断主流
                         catchError((err: HttpErrorResponse) => {
                             console.error(err.message, err);
                             // this.error$.next(this.extractHttpError(err));
-                            this.error$.next(err);
+                            this.error.next(err);
                             return EMPTY;
                         }),
 
@@ -211,7 +204,7 @@ export class DashboardSub {
         .subscribe(value => {
             console.log(value);
             // 请求成功时清除错误信息
-            this.error$.next(undefined);
+            this.error.next(undefined);
             if (value.status.isOk()) {
                 this.urlResult.next(value.data!);
             } else {
@@ -219,12 +212,12 @@ export class DashboardSub {
             }
         });
 
-    submit() {
-        this.submit$.next();
+    onSubmit() {
+        this.submit.next();
     }
 
-    cancel() {
-        this.cancel$.next();
+    onCancel() {
+        this.cancel.next();
     }
 
     toUrlParams(payload: {
@@ -246,8 +239,4 @@ export class DashboardSub {
     deepEqual<T>(a: T, b: T): boolean {
         return JSON.stringify(a) === JSON.stringify(b);
     }
-
-    // extractHttpError(err: HttpErrorResponse): string {
-    //
-    // }
 }

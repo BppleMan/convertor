@@ -1,8 +1,15 @@
+@use "@angular/material" as mat;
+
 :host {
     display:        flex;
     flex-direction: column;
     width:          100%;
     gap:            8px;
+
+    h2 {
+        font-size:   16px;
+        font-weight: 500;
+    }
 
     .info {
         display:        flex;
@@ -10,24 +17,26 @@
         flex-direction: row;
         gap:            12px;
 
-        span {
-            font-size:        12px;
-            overflow:         hidden;
-            flex-shrink:      0;
-            width:            66px;
-            padding:          2px 6px;
+        mat-chip {
+            overflow:    hidden;
+            flex-shrink: 0;
+            width:       90px;
 
-            text-align:       center;
-            white-space:      nowrap;
-            text-overflow:    ellipsis;
-            border-radius:    4px;
-            background-color: #1a1c20;
+            @include mat.chips-overrides((
+                container-shape-radius: 4px,
+                container-height: 24px,
+                label-text-size: 12px,
+                label-text-weight: 400,
+                label-text-line-height: 24px,
+                outline-color: rgba(255, 255, 255, 0.3),
+            ))
         }
 
         code {
-            font-size: 12px;
-            flex:      9 1 auto;
-            padding:   2px 6px;
+            font-size:   12px;
+            line-height: 24px;
+            flex:        9 1 auto;
+            padding:     0 6px;
         }
     }
 }

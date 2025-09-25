@@ -5,7 +5,7 @@ pub mod profile;
 
 use crate::server::AppState;
 use crate::server::layer::trace::convd_trace_layer;
-use crate::server::response::ApiError;
+use crate::server::response::{ApiError, AppError};
 use axum::Router;
 use axum::extract::{FromRequestParts, OptionalFromRequestParts};
 use axum::http::request::Parts;
@@ -13,6 +13,7 @@ use axum::response::Redirect;
 use axum::routing::get;
 use axum_extra::extract::Scheme;
 use color_eyre::eyre::{WrapErr, eyre};
+use convertor::error::QueryError;
 use convertor::url::query::ConvertorQuery;
 use std::sync::Arc;
 use url::Url;
@@ -39,14 +40,14 @@ pub fn parse_query(
     scheme: Option<OptionalScheme>,
     host: impl AsRef<str>,
     query_string: Option<impl AsRef<str>>,
-) -> color_eyre::Result<ConvertorQuery> {
+) -> Result<ConvertorQuery, QueryError> {
     let scheme = scheme.map(|s| s.0).unwrap_or("http".to_string());
     let host = host.as_ref();
-    let server = Url::parse(format!("{scheme}://{host}").as_str()).wrap_err("解析请求 URL 失败")?;
+    let server = Url::parse(format!("{scheme}://{host}").as_str())?;
     let query = query_string
         .map(|query_string| ConvertorQuery::parse_from_query_string(query_string, &app_state.config.secret, server))
-        .ok_or_else(|| eyre!("查询参数不能为空"))?
-        .wrap_err("解析查询字符串失败")?;
+        .transpose()?
+        .ok_or(QueryError::EmptyQuery)?;
     Ok(query)
 }
 

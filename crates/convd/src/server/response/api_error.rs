@@ -1,51 +1,46 @@
-use axum::http::StatusCode;
-use axum::http::header::ToStrError;
+use crate::server::response::{ApiResponse, AppError};
 use axum::response::{IntoResponse, Response};
-use convertor::config::proxy_client::ProxyClient;
-use convertor::error::{ProviderError, QueryError, UrlBuilderError};
-use redis::RedisError;
-use std::sync::Arc;
-use thiserror::Error;
+use tokio_util::bytes::{BufMut, Bytes, BytesMut};
 
-#[derive(Debug, Error)]
-pub enum ApiError {
-    #[error("获取原始非转换配置失败, 遇到错误的客户端: {0}")]
-    RawProfileUnsupportedClient(ProxyClient),
+#[derive(Debug)]
+pub struct ApiError {
+    pub status: axum::http::StatusCode,
+    pub error: AppError,
+}
 
-    #[error("没有找到对应的订阅提供者")]
-    NoSubProvider,
+impl ApiError {
+    pub fn bad_request(error: impl Into<AppError>) -> Self {
+        Self {
+            status: axum::http::StatusCode::BAD_REQUEST,
+            error: error.into(),
+        }
+    }
 
-    #[error(transparent)]
-    UrlBuilderError(#[from] UrlBuilderError),
-
-    #[error("Unauthorized: {0}")]
-    Unauthorized(String),
-
-    #[error(transparent)]
-    QueryError(#[from] QueryError),
-
-    #[error(transparent)]
-    ProviderError(#[from] ProviderError),
-
-    #[error(transparent)]
-    ToStr(#[from] ToStrError),
-
-    #[error(transparent)]
-    Utf8Error(#[from] std::str::Utf8Error),
-
-    #[error(transparent)]
-    CacheError(#[from] Arc<ApiError>),
-
-    #[error("Redis 错误: {0:?}")]
-    RedisError(#[from] RedisError),
-
-    #[error(transparent)]
-    Unknown(#[from] color_eyre::Report),
+    pub fn internal_server_error(error: impl Into<AppError>) -> Self {
+        Self {
+            status: axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            error: error.into(),
+        }
+    }
 }
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
-        let message = format!("{self}");
-        (StatusCode::INTERNAL_SERVER_ERROR, message).into_response()
+        let mut buf = BytesMut::with_capacity(256).writer();
+        let api_response: ApiResponse<()> = self.error.into();
+        match serde_json::to_writer(&mut buf, &api_response) {
+            Ok(()) => (
+                self.status,
+                [(axum::http::header::CONTENT_TYPE, "application/problem+json")],
+                buf.into_inner().freeze(),
+            )
+                .into_response(),
+            Err(err) => (
+                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                [(axum::http::header::CONTENT_TYPE, mime::TEXT_PLAIN_UTF_8.as_ref())],
+                Bytes::from(format!("Failed to serialize error response: {}", err)),
+            )
+                .into_response(),
+        }
     }
 }

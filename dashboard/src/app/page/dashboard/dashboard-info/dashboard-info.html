@@ -1,10 +1,14 @@
+<h2>Convertor · Dashboard</h2>
+
+<mat-divider></mat-divider>
+
 <div class="info">
-    <span>Host</span>
+    <mat-chip>Host</mat-chip>
     <code>{{ host$ | async }}</code>
     <app-icon-button cdkCopyToClipboard="{{host$ | async}}">content_copy</app-icon-button>
 </div>
 <div class="info">
-    <span>User-Agent</span>
+    <mat-chip>User-Agent</mat-chip>
     <code>{{ userAgent$ | async }}</code>
     <app-icon-button cdkCopyToClipboard="{{host$ | async}}">content_copy</app-icon-button>
 </div>

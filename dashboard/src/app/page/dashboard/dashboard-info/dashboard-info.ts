@@ -1,6 +1,8 @@
 import { CdkCopyToClipboard } from "@angular/cdk/clipboard";
 import { AsyncPipe } from "@angular/common";
 import { Component, inject } from "@angular/core";
+import { MatChip } from "@angular/material/chips";
+import { MatDivider } from "@angular/material/divider";
 import { EnvService } from "../../../service/env.service";
 import { IconButton } from "../../shared/icon-button/icon-button";
 
@@ -10,6 +12,8 @@ import { IconButton } from "../../shared/icon-button/icon-button";
         IconButton,
         AsyncPipe,
         CdkCopyToClipboard,
+        MatDivider,
+        MatChip,
     ],
     templateUrl: "./dashboard-info.html",
     styleUrl: "./dashboard-info.scss",

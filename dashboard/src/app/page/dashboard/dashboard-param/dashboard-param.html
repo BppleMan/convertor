@@ -1,6 +1,8 @@
-<h2>订阅链接</h2>
+<h2>订阅参数</h2>
 
-<form (submit)="submit()" [formGroup]="subscriptionForm">
+<mat-divider></mat-divider>
+
+<form (submit)="onSubmit()" [formGroup]="subscriptionForm">
     <div class="form-row">
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Secret</mat-label>
@@ -26,31 +28,9 @@
             <input formControlName="url" matInput>
         </mat-form-field>
         @if (loading | async) {
-            <button class="form-suffix error" matButton="filled" type="button" (click)="cancel()">Cancel</button>
+            <button class="form-suffix error" matButton="filled" type="button" (click)="onCancel()">Cancel</button>
         } @else {
             <button class="form-suffix" matButton="filled">Gen</button>
         }
     </div>
 </form>
-
-<section>
-    @if (error$ | async; as errorMessage) {
-        <app-error-view [error]="errorMessage"></app-error-view>
-    } @else if ((urls$ | async)?.length === 0) {
-        <h1>No Content</h1>
-    } @else {
-        @for (url of urls$ | async; track url.desc) {
-            <div class="convertor-url">
-                <div class="convertor-url-label">
-                    <h5>{{ url.desc }}</h5>
-                    <app-icon-button cdkCopyToClipboard="{{ url.url }}">content_copy</app-icon-button>
-                </div>
-                <div class="convertor-url-link">
-                    <code>
-                        {{ url.url }}
-                    </code>
-                </div>
-            </div>
-        }
-    }
-</section>

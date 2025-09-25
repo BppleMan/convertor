@@ -6,6 +6,9 @@ use confly::file_provider::FileProvider;
 use convertor::common::clap_style::SONOKAI_TC;
 use convertor::common::once::{init_backtrace, init_base_dir, init_log};
 use convertor::provider::SubsProvider;
+use flate2::read::DeflateDecoder;
+use std::fs::File;
+use std::io::BufReader;
 use std::path::PathBuf;
 
 #[derive(Debug, Parser)]
@@ -23,6 +26,7 @@ pub struct Convertor {
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<()> {
+    let reader = BufReader::new(DeflateDecoder::new(File::open("test.zip")?));
     let args = Convertor::parse();
 
     let base_dir = init_base_dir();
