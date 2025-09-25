@@ -1,5 +1,5 @@
 use crate::server::app_state::AppState;
-use crate::server::response::{ApiError, AppError};
+use crate::server::response::{ApiError, AppError, RequestError};
 use crate::server::router::{OptionalScheme, parse_query};
 use axum::extract::{Path, RawQuery, State};
 use axum::http::HeaderMap;
@@ -41,7 +41,9 @@ pub async fn raw_profile(
                 .map_err(ApiError::internal_server_error)?;
             Ok(raw_profile)
         }
-        ProxyClient::Clash => Err(ApiError::bad_request(AppError::RawProfileUnsupportedClient(client))),
+        ProxyClient::Clash => Err(ApiError::bad_request(AppError::RequestError(
+            RequestError::UnsupportedClient(client),
+        ))),
     }
 }
 

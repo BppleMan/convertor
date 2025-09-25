@@ -23,14 +23,14 @@ where
 {
     pub fn ok(data: T) -> Self {
         Self {
-            status: ApiStatus::OK,
+            status: ApiStatus::ok(),
             data: Some(data),
         }
     }
 
     pub fn ok_with_message(data: Option<T>, message: impl Display) -> Self {
         Self {
-            status: ApiStatus::OK.with_message(message),
+            status: ApiStatus::ok().with_message(message),
             data,
         }
     }
@@ -40,13 +40,6 @@ impl<T> ApiResponse<T>
 where
     T: serde::Serialize,
 {
-    pub fn error() -> Self {
-        Self {
-            status: ApiStatus::ERROR,
-            data: None,
-        }
-    }
-
     pub fn error_with_status(status: ApiStatus) -> Self {
         Self { status, data: None }
     }

@@ -3,23 +3,23 @@
 <mat-divider></mat-divider>
 
 <section>
-    @if (error$ | async; as errorMessage) {
-        <app-error-view [error]="errorMessage"></app-error-view>
-    } @else if ((urls$ | async)?.length === 0) {
-        <h1>No Content</h1>
-    } @else {
-        @for (url of urls$ | async; track url.desc) {
-            <div class="convertor-url">
-                <div class="convertor-url-label">
-                    <h5>{{ url.desc }}</h5>
-                    <app-icon-button cdkCopyToClipboard="{{ url.url }}">content_copy</app-icon-button>
-                </div>
-                <div class="convertor-url-link">
-                    <code>
-                        {{ url.url }}
-                    </code>
-                </div>
-            </div>
-        }
-    }
+    <!--    @if (error$ | async; as errorMessage) {-->
+    <!--        <app-error-view [error]="errorMessage"></app-error-view>-->
+    <!--    } @else if ((urls$ | async)?.length === 0) {-->
+    <!--        <h1>No Content</h1>-->
+    <!--    } @else {-->
+    <!--        @for (url of urls$ | async; track url.desc) {-->
+    <!--            <div class="convertor-url">-->
+    <!--                <div class="convertor-url-label">-->
+    <!--                    <h5>{{ url.desc }}</h5>-->
+    <!--                    <app-icon-button cdkCopyToClipboard="{{ url.url }}">content_copy</app-icon-button>-->
+    <!--                </div>-->
+    <!--                <div class="convertor-url-link">-->
+    <!--                    <code>-->
+    <!--                        {{ url.url }}-->
+    <!--                    </code>-->
+    <!--                </div>-->
+    <!--            </div>-->
+    <!--        }-->
+    <!--    }-->
 </section>

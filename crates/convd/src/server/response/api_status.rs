@@ -1,35 +1,38 @@
-use crate::server::response::ApiResponse;
-use axum::http::{HeaderValue, StatusCode, header};
-use axum::response::{IntoResponse, Response};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::fmt::Display;
-use tokio_util::bytes::{BufMut, BytesMut};
 
 #[derive(Default, Clone, Serialize, Deserialize)]
 pub struct ApiStatus {
     pub code: i64,
-    pub message: Cow<'static, str>,
+    pub message: Vec<Cow<'static, str>>,
 }
 
 impl ApiStatus {
-    pub const OK: Self = ApiStatus {
-        code: 0,
-        message: Cow::Borrowed("ok"),
-    };
-
-    pub const ERROR: Self = ApiStatus {
-        code: 1,
-        message: Cow::Borrowed("unknown error"),
-    };
+    pub fn ok() -> Self {
+        ApiStatus {
+            code: 0,
+            message: vec![Cow::Borrowed("ok")],
+        }
+    }
 }
 
 impl ApiStatus {
     pub fn new(code: i64, message: impl Display) -> Self {
         Self {
             code,
-            message: Cow::Owned(message.to_string()),
+            message: vec![Cow::Owned(message.to_string())],
         }
+    }
+
+    pub fn from_error(code: i64, error: impl core::error::Error) -> Self {
+        let mut message = vec![Cow::Owned(error.to_string())];
+        let mut source = error.source();
+        while let Some(src) = source {
+            message.push(Cow::Owned(src.to_string()));
+            source = src.source();
+        }
+        Self { code, message }
     }
 
     pub fn with_code(mut self, code: i64) -> Self {
@@ -38,7 +41,7 @@ impl ApiStatus {
     }
 
     pub fn with_message(mut self, message: impl Display) -> Self {
-        self.message = Cow::Owned(message.to_string());
+        self.message = vec![Cow::Owned(message.to_string())];
         self
     }
 }

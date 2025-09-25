@@ -1,5 +1,6 @@
 use crate::server::response::{ApiResponse, ApiStatus};
 use axum::http::header::ToStrError;
+use color_eyre::eyre::eyre;
 use convertor::config::proxy_client::ProxyClient;
 use convertor::error::{ParseError, ProviderError, QueryError, RenderError, UrlBuilderError};
 use redis::RedisError;
@@ -36,10 +37,10 @@ macro_rules! define_error {
             }
         }
 
-        impl From<AppError> for ApiStatus {
-            fn from(value: AppError) -> Self {
+        impl From<$name> for ApiStatus {
+            fn from(value: $name) -> Self {
                 match value {
-                    $($name::$var(e) => Self::new($vi, e),)*
+                    $($name::$var(e) => Self::from_error($vi, e),)*
                 }
             }
         }
@@ -52,41 +53,38 @@ define_error! {
     #[allow(clippy::large_enum_variant)]
     #[derive(Debug, Error)]
     pub enum AppError {
-        #[error("获取订阅商原始配置失败, 遇到错误的客户端: {0}")]
-        RawProfileUnsupportedClient(ProxyClient) ; 1001,
-
-        #[error("Unauthorized: {0}")]
-        Unauthorized(String) ; 1002,
+        #[error(transparent)]
+        RequestError(#[from] RequestError) ; 1001,
 
         #[error(transparent)]
-        UrlBuilderError(#[from] UrlBuilderError) ; 1003,
+        UrlBuilderError(#[from] UrlBuilderError) ; 1002,
 
         #[error(transparent)]
-        QueryError(#[from] QueryError) ; 1004,
+        QueryError(#[from] QueryError) ; 1003,
 
         #[error(transparent)]
-        ProviderError(#[from] ProviderError) ; 1005,
+        ProviderError(#[from] ProviderError) ; 1004,
 
         #[error(transparent)]
-        ParseError(#[from] ParseError) ; 1006,
+        ParseError(#[from] ParseError) ; 1005,
 
         #[error(transparent)]
-        RenderError(#[from] RenderError) ; 1007,
+        RenderError(#[from] RenderError) ; 1006,
 
         #[error(transparent)]
-        ToStr(#[from] ToStrError) ; 1008,
+        ToStr(#[from] ToStrError) ; 1007,
 
         #[error(transparent)]
-        Utf8Error(#[from] std::str::Utf8Error) ; 1009,
+        Utf8Error(#[from] std::str::Utf8Error) ; 1008,
 
         #[error(transparent)]
-        CacheError(#[from] Arc<AppError>) ; 1010,
+        CacheError(#[from] Arc<AppError>) ; 1009,
 
         #[error("Redis 错误: {0:?}")]
-        RedisError(#[from] RedisError) ; 1011,
+        RedisError(#[from] RedisError) ; 1010,
 
         #[error(transparent)]
-        JsonError(#[from] serde_json::Error) ; 1012,
+        JsonError(#[from] serde_json::Error) ; 1011,
     }
 }
 
@@ -154,3 +152,12 @@ pub enum SnapshotError {
 //         }
 //     }
 // }
+
+#[derive(Debug, Error)]
+pub enum RequestError {
+    #[error("获取订阅商原始配置失败, 遇到错误的客户端: {0}")]
+    UnsupportedClient(ProxyClient),
+
+    #[error("请求失败, 未找到有效的 secret 令牌: {0}")]
+    Unauthorized(String),
+}

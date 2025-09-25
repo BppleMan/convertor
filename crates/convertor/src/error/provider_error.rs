@@ -8,7 +8,7 @@ use url::Url;
 
 #[derive(Debug, Error)]
 pub enum ProviderError {
-    #[error("{reason}: {source:?}\n{request_info}")]
+    #[error("{reason}: {source}\n{request_info}")]
     RequestError {
         reason: String,
         #[source]
@@ -16,7 +16,7 @@ pub enum ProviderError {
         request_info: RequestInfo,
     },
 
-    #[error("{reason}: {source:?}\n{response_info}")]
+    #[error("{reason}: {source}\n{response_info}")]
     ResponseError {
         reason: String,
         #[source]
