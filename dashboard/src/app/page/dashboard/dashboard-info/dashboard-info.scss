@@ -25,10 +25,10 @@
             @include mat.chips-overrides((
                 container-shape-radius: 4px,
                 container-height: 24px,
+                label-text-color: var(--mat-sys-on-surface),
                 label-text-size: 12px,
                 label-text-weight: 400,
                 label-text-line-height: 24px,
-                outline-color: rgba(255, 255, 255, 0.3),
             ))
         }
 

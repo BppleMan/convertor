@@ -52,6 +52,7 @@
 
         button.error {
             @include mat.button-overrides((
+                filled-label-text-color: var(--mat-sys-on-error),
                 filled-container-color: var(--mat-sys-error),
             ))
         }
