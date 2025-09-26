@@ -117,15 +117,15 @@ impl Display for RequestInfo {
             writeln!(f, "Headers:")?;
             for (i, (key, value)) in headers.iter().enumerate() {
                 if i == 0 {
-                    write!(f, "\t{key}: {value:?}")?;
+                    write!(f, "    {key}: {value}")?;
                 } else {
-                    write!(f, "\n\t{key}: {value:?}")?;
+                    write!(f, "\n    {key}: {value}")?;
                 }
             }
         }
         if let Some(body) = &self.body {
             writeln!(f, "\nBody:")?;
-            write!(f, "{}", body)?;
+            write!(f, "{body}")?;
         }
         Ok(())
     }

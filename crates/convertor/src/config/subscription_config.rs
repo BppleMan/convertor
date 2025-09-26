@@ -73,9 +73,9 @@ impl Display for Headers {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         for (i, (k, v)) in self.iter().enumerate() {
             if i == 0 {
-                write!(f, "{}: {}", k, v)?;
+                write!(f, "{k}: {v}")?;
             } else {
-                write!(f, "\n{}: {}", k, v)?;
+                write!(f, "\n{k}: {v}")?;
             }
         }
         Ok(())

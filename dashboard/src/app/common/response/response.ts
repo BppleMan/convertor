@@ -1,8 +1,10 @@
-import ApiStatus from "./status";
+import { RequestSnapshot } from "./request";
 
 export class ApiResponse<T = void> {
     constructor(
-        public status: ApiStatus,
+        public status: string,
+        public messages: string[],
+        public request: RequestSnapshot | null,
         public data?: T,
     ) {
     }
@@ -12,8 +14,14 @@ export class ApiResponse<T = void> {
         deserialize(json: T): T;
     }): ApiResponse<T> {
         return new ApiResponse<T>(
-            ApiStatus.deserialize(json.status),
+            json.status,
+            json.messages,
+            RequestSnapshot.deserialize(json.request),
             ctor?.deserialize(json.data) ?? json.data,
         );
+    }
+
+    public isOk(): boolean {
+        return this.status === "ok";
     }
 }

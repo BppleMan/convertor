@@ -1,4 +1,4 @@
-use crate::server::response::{ApiResponse, AppError};
+use crate::server::response::{ApiResponse, AppError, RequestSnapshot};
 use axum::response::{IntoResponse, Response};
 use tokio_util::bytes::{BufMut, Bytes, BytesMut};
 
@@ -6,6 +6,7 @@ use tokio_util::bytes::{BufMut, Bytes, BytesMut};
 pub struct ApiError {
     pub status: axum::http::StatusCode,
     pub error: AppError,
+    pub request: Option<RequestSnapshot>,
 }
 
 impl ApiError {
@@ -13,6 +14,7 @@ impl ApiError {
         Self {
             status: axum::http::StatusCode::BAD_REQUEST,
             error: error.into(),
+            request: None,
         }
     }
 
@@ -20,14 +22,24 @@ impl ApiError {
         Self {
             status: axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             error: error.into(),
+            request: None,
         }
+    }
+
+    pub fn with_request(mut self, request: RequestSnapshot) -> Self {
+        self.request = Some(request);
+        self
     }
 }
 
 impl IntoResponse for ApiError {
-    fn into_response(self) -> Response {
+    fn into_response(mut self) -> Response {
         let mut buf = BytesMut::with_capacity(256).writer();
-        let api_response: ApiResponse<()> = self.error.into();
+        let request = self.request.take();
+        let mut api_response: ApiResponse<()> = self.error.into();
+        if let Some(request) = request {
+            api_response = api_response.with_request(request);
+        }
         match serde_json::to_writer(&mut buf, &api_response) {
             Ok(()) => (
                 self.status,

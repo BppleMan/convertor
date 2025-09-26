@@ -1,4 +1,4 @@
-<h2>HTTP 错误详情</h2>
+<app-title>HTTP 错误详情</app-title>
 
 <mat-divider></mat-divider>
 
@@ -9,18 +9,7 @@
             <mat-card-title>请求信息</mat-card-title>
         </mat-card-header>
         <mat-card-content>
-            <div class="info-grid">
-                <div class="status-chips">
-                    <mat-chip-set>
-                        <mat-chip color="warn">{{ statusCode() }}</mat-chip>
-                        <mat-chip>{{ statusText() }}</mat-chip>
-                    </mat-chip-set>
-                </div>
-                <div class="info-item">
-                    <strong>请求地址:</strong>
-                    <span class="url">{{ requestUrl() }}</span>
-                </div>
-            </div>
+            <pre><code>{{ apiResponse().messages.join("\n") }}</code></pre>
         </mat-card-content>
     </mat-card>
 
@@ -30,16 +19,16 @@
             <mat-card-title>响应状态</mat-card-title>
         </mat-card-header>
         <mat-card-content>
-            <div class="info-grid">
-                <div class="info-item">
-                    <strong>状态码:</strong>
-                    <mat-chip>{{ statusCode() }}</mat-chip>
-                </div>
-                <div class="info-item">
-                    <strong>状态描述:</strong>
-                    <span>{{ statusText() }}</span>
-                </div>
-            </div>
+            <!--            <div class="info-grid">-->
+            <!--                <div class="info-item">-->
+            <!--                    <strong>状态码:</strong>-->
+            <!--                    <mat-chip>{{ statusCode() }}</mat-chip>-->
+            <!--                </div>-->
+            <!--                <div class="info-item">-->
+            <!--                    <strong>状态描述:</strong>-->
+            <!--                    <span>{{ statusText() }}</span>-->
+            <!--                </div>-->
+            <!--            </div>-->
         </mat-card-content>
     </mat-card>
 

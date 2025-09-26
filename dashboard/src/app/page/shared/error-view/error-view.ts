@@ -1,14 +1,16 @@
 import { JsonPipe, KeyValuePipe } from "@angular/common";
 import { HttpErrorResponse } from "@angular/common/http";
-import { ChangeDetectionStrategy, Component, computed, input } from "@angular/core";
+import { ChangeDetectionStrategy, Component, computed, input, Signal } from "@angular/core";
 import { MatCardModule } from "@angular/material/card";
 import { MatChipsModule } from "@angular/material/chips";
 import { MatDividerModule } from "@angular/material/divider";
 import { MatExpansionModule } from "@angular/material/expansion";
+import { ApiResponse } from "../../../common/response/response";
+import { Title } from "../title/title";
 
 @Component({
     selector: "app-error-view",
-    imports: [ JsonPipe, KeyValuePipe, MatCardModule, MatExpansionModule, MatDividerModule, MatChipsModule ],
+    imports: [ JsonPipe, KeyValuePipe, MatCardModule, MatExpansionModule, MatDividerModule, MatChipsModule, Title ],
     templateUrl: "./error-view.html",
     styleUrl: "./error-view.scss",
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -16,15 +18,9 @@ import { MatExpansionModule } from "@angular/material/expansion";
 export class ErrorView {
     error = input.required<HttpErrorResponse>();
 
-    // Computed properties for better template readability
-    requestMethod = computed(() => {
-        // HttpErrorResponse doesn't directly contain method, but we can try to extract it
-        // from the error context or default to 'Unknown'
-        return "Unknown"; // Method is not available in HttpErrorResponse by default
+    apiResponse: Signal<ApiResponse> = computed(() => {
+        return ApiResponse.deserialize(this.error().error);
     });
-    requestUrl = computed(() => this.error().url || "Unknown");
-    statusCode = computed(() => this.error().status);
-    statusText = computed(() => this.error().statusText);
 
     // Parse response body
     responseBody = computed(() => {

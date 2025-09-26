@@ -1,4 +1,4 @@
-<h2>订阅参数</h2>
+<app-title>订阅参数</app-title>
 
 <mat-divider></mat-divider>
 
@@ -27,7 +27,7 @@
             <mat-label>Subscription URL</mat-label>
             <input formControlName="url" matInput>
         </mat-form-field>
-        @if (loading | async) {
+        @if (dashboardService.loading$ | async) {
             <button class="form-suffix error" matButton="filled" type="button" (click)="onCancel()">Cancel</button>
         } @else {
             <button class="form-suffix" matButton="filled">Gen</button>

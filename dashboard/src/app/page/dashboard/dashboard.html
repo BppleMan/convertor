@@ -1,3 +1,9 @@
 <app-dashboard-info></app-dashboard-info>
 <app-dashboard-param></app-dashboard-param>
-<app-dashboard-subs></app-dashboard-subs>
+@if ((error$ | async); as error) {
+    <app-error-view [error]="error"></app-error-view>
+} @else if (!(data$ | async)) {
+    <app-no-content></app-no-content>
+} @else {
+    <app-dashboard-subs></app-dashboard-subs>
+}

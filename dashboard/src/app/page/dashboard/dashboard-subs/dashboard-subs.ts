@@ -1,20 +1,14 @@
-import { CdkCopyToClipboard } from "@angular/cdk/clipboard";
-import { AsyncPipe } from "@angular/common";
 import { Component } from "@angular/core";
 import { ReactiveFormsModule } from "@angular/forms";
 import { MatDivider } from "@angular/material/divider";
-import { ErrorView } from "../../shared/error-view/error-view";
-import { IconButton } from "../../shared/icon-button/icon-button";
+import { Title } from "../../shared/title/title";
 
 @Component({
     selector: "app-dashboard-subs",
     imports: [
-        IconButton,
         ReactiveFormsModule,
-        AsyncPipe,
-        CdkCopyToClipboard,
-        ErrorView,
         MatDivider,
+        Title,
     ],
     templateUrl: "./dashboard-subs.html",
     styleUrl: "./dashboard-subs.scss",

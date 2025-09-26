@@ -1,5 +1,4 @@
 import { AsyncPipe } from "@angular/common";
-import { HttpErrorResponse } from "@angular/common/http";
 import { Component, DestroyRef, inject } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from "@angular/forms";
@@ -11,7 +10,6 @@ import { MatOption, MatSelect } from "@angular/material/select";
 import { MatSlideToggle } from "@angular/material/slide-toggle";
 import { StorageMap } from "@ngx-pwa/local-storage";
 import {
-    BehaviorSubject,
     catchError,
     debounceTime,
     defer,
@@ -29,11 +27,10 @@ import {
     switchMap,
     takeUntil,
 } from "rxjs";
-import { ConvertorUrl } from "../../../common/model/convertor_url";
 import { ProxyClient } from "../../../common/model/enums";
-import { UrlResult } from "../../../common/model/url_result";
 import { DashboardService } from "../../../service/dashboard.service";
 import { UrlParams, UrlService } from "../../../service/url.service";
+import { Title } from "../../shared/title/title";
 
 @Component({
     selector: "app-dashboard-param",
@@ -48,6 +45,7 @@ import { UrlParams, UrlService } from "../../../service/url.service";
         MatSelect,
         MatSlideToggle,
         ReactiveFormsModule,
+        Title,
     ],
     templateUrl: "./dashboard-param.html",
     styleUrl: "./dashboard-param.scss",
@@ -78,26 +76,23 @@ export class DashboardParam {
         strict: new FormControl<boolean>(true, { nonNullable: true }),
     });
 
-    urlResult = new BehaviorSubject<UrlResult | undefined>(undefined);
-    urls$: Observable<ConvertorUrl[]> = this.urlResult.pipe(
-        map((result?: UrlResult) => {
-            if (!result) {
-                return [];
-            }
-            return [
-                result.raw_url,
-                result.raw_profile_url,
-                result.profile_url,
-                ...result.rule_providers_url,
-            ];
-        }),
-    );
+    // urlResult = new BehaviorSubject<UrlResult | undefined>(undefined);
+    // urls$: Observable<ConvertorUrl[]> = this.urlResult.pipe(
+    //     map((result?: UrlResult) => {
+    //         if (!result) {
+    //             return [];
+    //         }
+    //         return [
+    //             result.raw_url,
+    //             result.raw_profile_url,
+    //             result.profile_url,
+    //             ...result.rule_providers_url,
+    //         ];
+    //     }),
+    // );
 
     submit: Subject<void> = new Subject<void>();
     cancel: Subject<void> = new Subject<void>();
-
-    loading: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
-    error: BehaviorSubject<HttpErrorResponse | undefined> = new BehaviorSubject<HttpErrorResponse | undefined>(undefined);
 
     params$ = this.subscriptionForm.valueChanges.pipe(
         debounceTime(300),
@@ -177,40 +172,21 @@ export class DashboardParam {
                 return defer(() => {
                     // 请求开始：锁表单 & 开 loading
                     this.subscriptionForm.disable({ emitEvent: false });
-                    this.loading.next(true);
 
                     const query = this.urlService.buildSubscriptionQuery(urlParams);
                     return this.dashboardService.getSubscription(query).pipe(
                         // 主动取消当前请求
                         takeUntil(this.cancel),
-                        // 错误只在 HTTP 内部处理，吞掉，不打断主流
-                        catchError((err: HttpErrorResponse) => {
-                            console.error(err.message, err);
-                            // this.error$.next(this.extractHttpError(err));
-                            this.error.next(err);
-                            return EMPTY;
-                        }),
-
-                        // 结束（成功/失败/取消）：解锁 & 关 loading
+                        // 结束（成功/失败/取消）：解锁
                         finalize(() => {
                             this.subscriptionForm.enable({ emitEvent: false });
-                            this.loading.next(false);
                         }),
                     );
                 });
             }),
             takeUntilDestroyed(this.destroyRef),
         )
-        .subscribe(value => {
-            console.log(value);
-            // 请求成功时清除错误信息
-            this.error.next(undefined);
-            if (value.status.isOk()) {
-                this.urlResult.next(value.data!);
-            } else {
-                // 处理非网络的业务型错误
-            }
-        });
+        .subscribe();
 
     onSubmit() {
         this.submit.next();

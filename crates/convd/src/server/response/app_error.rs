@@ -1,6 +1,5 @@
-use crate::server::response::{ApiResponse, ApiStatus};
+use crate::server::response::ApiResponse;
 use axum::http::header::ToStrError;
-use color_eyre::eyre::eyre;
 use convertor::config::proxy_client::ProxyClient;
 use convertor::error::{ParseError, ProviderError, QueryError, RenderError, UrlBuilderError};
 use redis::RedisError;
@@ -16,7 +15,6 @@ macro_rules! define_error {
                 $var:ident
                 $( ( $( $(#[$fattr:meta])* $fty:ty ),+ $(,)? ) )?
                 $( { $( $(#[$field_attr:meta])* $fname:ident : $ftyt:ty ),+ $(,)? } )?
-                ; $vi:expr
                 $(,)?
             )*
         }
@@ -33,17 +31,19 @@ macro_rules! define_error {
 
         impl From<$name> for ApiResponse<()> {
             fn from(value: $name) -> Self {
-                ApiResponse::error_with_status(value.into())
-            }
-        }
-
-        impl From<$name> for ApiStatus {
-            fn from(value: $name) -> Self {
                 match value {
-                    $($name::$var(e) => Self::from_error($vi, e),)*
+                    $($name::$var(e) => Self::from_error(stringify!($var), e),)*
                 }
             }
         }
+
+        // impl From<$name> for ApiStatus {
+        //     fn from(value: $name) -> Self {
+        //         match value {
+        //             $($name::$var(e) => Self::from_error($vi, e),)*
+        //         }
+        //     }
+        // }
 
     };
 }
@@ -54,37 +54,37 @@ define_error! {
     #[derive(Debug, Error)]
     pub enum AppError {
         #[error(transparent)]
-        RequestError(#[from] RequestError) ; 1001,
+        RequestError(#[from] RequestError),
 
         #[error(transparent)]
-        UrlBuilderError(#[from] UrlBuilderError) ; 1002,
+        UrlBuilderError(#[from] UrlBuilderError),
 
         #[error(transparent)]
-        QueryError(#[from] QueryError) ; 1003,
+        QueryError(#[from] QueryError),
 
         #[error(transparent)]
-        ProviderError(#[from] ProviderError) ; 1004,
+        ProviderError(#[from] ProviderError),
 
         #[error(transparent)]
-        ParseError(#[from] ParseError) ; 1005,
+        ParseError(#[from] ParseError),
 
         #[error(transparent)]
-        RenderError(#[from] RenderError) ; 1006,
+        RenderError(#[from] RenderError),
 
         #[error(transparent)]
-        ToStr(#[from] ToStrError) ; 1007,
+        ToStrError(#[from] ToStrError),
 
         #[error(transparent)]
-        Utf8Error(#[from] std::str::Utf8Error) ; 1008,
+        Utf8Error(#[from] std::str::Utf8Error),
 
         #[error(transparent)]
-        CacheError(#[from] Arc<AppError>) ; 1009,
+        CacheError(#[from] Arc<AppError>),
 
         #[error("Redis 错误: {0:?}")]
-        RedisError(#[from] RedisError) ; 1010,
+        RedisError(#[from] RedisError),
 
         #[error(transparent)]
-        JsonError(#[from] serde_json::Error) ; 1011,
+        JsonError(#[from] serde_json::Error),
     }
 }
 

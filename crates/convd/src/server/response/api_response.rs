@@ -1,9 +1,9 @@
-use crate::server::response::AppError;
 use crate::server::response::api_error::ApiError;
-use crate::server::response::api_status::ApiStatus;
+use crate::server::response::{AppError, RequestSnapshot};
 use axum::http::{HeaderValue, StatusCode, header};
 use axum::response::{IntoResponse, Response};
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 use std::fmt::Display;
 use tokio_util::bytes::{BufMut, BytesMut};
 
@@ -12,7 +12,10 @@ pub struct ApiResponse<T>
 where
     T: serde::Serialize,
 {
-    pub status: ApiStatus,
+    pub status: String,
+    pub messages: Vec<Cow<'static, str>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub request: Option<RequestSnapshot>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<T>,
 }
@@ -23,25 +26,39 @@ where
 {
     pub fn ok(data: T) -> Self {
         Self {
-            status: ApiStatus::ok(),
+            status: "ok".to_string(),
+            messages: vec![],
+            request: None,
             data: Some(data),
         }
     }
 
-    pub fn ok_with_message(data: Option<T>, message: impl Display) -> Self {
-        Self {
-            status: ApiStatus::ok().with_message(message),
-            data,
-        }
+    pub fn with_message(mut self, message: impl Display) -> Self {
+        self.messages = vec![Cow::Owned(message.to_string())];
+        self
+    }
+
+    pub fn with_request(mut self, request: RequestSnapshot) -> Self {
+        self.request = Some(request);
+        self
     }
 }
 
-impl<T> ApiResponse<T>
-where
-    T: serde::Serialize,
-{
-    pub fn error_with_status(status: ApiStatus) -> Self {
-        Self { status, data: None }
+impl ApiResponse<()> {
+    pub fn from_error(status: impl Display, error: impl core::error::Error) -> Self {
+        let status = status.to_string();
+        let mut messages = vec![Cow::Owned(error.to_string())];
+        let mut source = error.source();
+        while let Some(src) = source {
+            messages.push(Cow::Owned(src.to_string()));
+            source = src.source();
+        }
+        Self {
+            status,
+            messages,
+            request: None,
+            data: None::<()>,
+        }
     }
 }
 
@@ -64,6 +81,7 @@ where
                 let api_error = ApiError {
                     status: StatusCode::INTERNAL_SERVER_ERROR,
                     error: AppError::JsonError(err),
+                    request: None,
                 };
                 api_error.into_response()
             }
