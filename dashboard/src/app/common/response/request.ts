@@ -25,4 +25,8 @@ export class RequestSnapshot {
             new Map(Object.entries(json.headers)),
         );
     }
+
+    public url(): string {
+        return `${this.scheme}://${this.host}${this.uri}`;
+    }
 }

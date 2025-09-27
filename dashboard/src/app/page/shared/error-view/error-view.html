@@ -2,106 +2,60 @@
 
 <mat-divider></mat-divider>
 
-<div class="error-sections">
-    <!-- 请求信息 -->
-    <mat-card appearance="outlined">
-        <mat-card-header>
-            <mat-card-title>请求信息</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-            <pre><code>{{ apiResponse().messages.join("\n") }}</code></pre>
-        </mat-card-content>
-    </mat-card>
 
-    <!-- 响应状态 -->
-    <mat-card appearance="outlined">
-        <mat-card-header>
-            <mat-card-title>响应状态</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-            <!--            <div class="info-grid">-->
-            <!--                <div class="info-item">-->
-            <!--                    <strong>状态码:</strong>-->
-            <!--                    <mat-chip>{{ statusCode() }}</mat-chip>-->
-            <!--                </div>-->
-            <!--                <div class="info-item">-->
-            <!--                    <strong>状态描述:</strong>-->
-            <!--                    <span>{{ statusText() }}</span>-->
-            <!--                </div>-->
-            <!--            </div>-->
-        </mat-card-content>
-    </mat-card>
+<mat-card appearance="outlined">
+    <mat-card-header>
+        <mat-card-title>客户端发出请求</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+        <code class="url">{{ clientRequest()?.url() }}</code>
+        @for (header of clientRequest()?.headers?.entries(); track header[0]) {
+        <div>
+            <mat-chip>{{ header[0] }}</mat-chip>
+            <code>{{ header[1] }}</code>
+        </div>
+        }
+    </mat-card-content>
+</mat-card>
 
-    <!-- 错误消息 -->
-    <mat-card appearance="outlined">
-        <mat-card-header>
-            <mat-card-title>错误消息</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-            <p class="error-message">{{ responseMessage() }}</p>
-        </mat-card-content>
-    </mat-card>
+<mat-card appearance="outlined">
+    <mat-card-header>
+        <mat-card-title>服务端接收请求</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+        <code class="url">{{ serverRequest()?.url() }}</code>
+        @for (header of serverRequest()?.headers?.entries(); track header[0]) {
+        <div>
+            <mat-chip>{{ header[0] }}</mat-chip>
+            <code>{{ header[1] }}</code>
+        </div>
+        }
+    </mat-card-content>
+</mat-card>
 
-    <!-- 响应详情 -->
-    @if (responseBody(); as body) {
-        <mat-card appearance="outlined">
-            <mat-card-header>
-                <mat-card-title>响应详情</mat-card-title>
-            </mat-card-header>
-            <mat-card-content>
-                <div class="info-grid">
-                    @if (body.status) {
-                        <div class="info-item">
-                            <strong>响应状态:</strong>
-                            <span>{{ body.status }}</span>
-                        </div>
-                    }
-                    @if (body.error && body.error !== body.message) {
-                        <div class="info-item">
-                            <strong>错误类型:</strong>
-                            <span>{{ body.error }}</span>
-                        </div>
-                    }
-                    @if (body.timestamp) {
-                        <div class="info-item">
-                            <strong>时间戳:</strong>
-                            <span>{{ body.timestamp }}</span>
-                        </div>
-                    }
-                    @if (body.path) {
-                        <div class="info-item">
-                            <strong>请求路径:</strong>
-                            <span>{{ body.path }}</span>
-                        </div>
-                    }
-                </div>
-            </mat-card-content>
-        </mat-card>
-    }
-
-    <!-- 响应头 -->
-    @if (hasHeaders()) {
-        <mat-card appearance="outlined">
-            <mat-card-header>
-                <mat-card-title>响应头</mat-card-title>
-            </mat-card-header>
-            <mat-card-content>
-                @for (header of responseHeaders() | keyvalue; track header.key) {
-                    <div class="header-item">
-                        <strong>{{ header.key }}:</strong>
-                        <span>{{ header.value }}</span>
-                    </div>
-                }
-            </mat-card-content>
-        </mat-card>
-    }
-
-    <!-- 原始响应 -->
-    <mat-expansion-panel>
-        <mat-expansion-panel-header>
-            <mat-panel-title>原始响应数据</mat-panel-title>
-            <mat-panel-description>显示完整的错误对象（调试用）</mat-panel-description>
-        </mat-expansion-panel-header>
-        <pre class="raw-content">{{ error() | json }}</pre>
-    </mat-expansion-panel>
-</div>
+<!-- 响应状态 -->
+<mat-card appearance="outlined">
+    <mat-card-header>
+        <mat-card-title>响应状态</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+        <div class="error-message">
+            <span>HTTP Status</span>
+            <code>{{ httpErrorResponse().status }}</code>
+        </div>
+        <div class="error-message">
+            <span>Response Status</span>
+            <code>{{ apiResponse().status }}</code>
+        </div>
+        <div class="error-message">
+            <span>Error</span>
+            <pre class="inline"><code>{{ apiResponse().messages[0] }}</code></pre>
+        </div>
+        @for (cause of causeMessages(); track cause) {
+        <div class="error-message">
+            <span>Cause By</span>
+            <pre class="inline"><code>{{ cause }}</code></pre>
+        </div>
+        }
+    </mat-card-content>
+</mat-card>

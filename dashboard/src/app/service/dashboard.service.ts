@@ -1,11 +1,12 @@
-import { HttpClient, HttpErrorResponse } from "@angular/common/http";
-import { Injectable } from "@angular/core";
-import { BehaviorSubject, catchError, EMPTY, finalize, map, Observable, tap } from "rxjs";
+import {HttpClient, HttpErrorResponse} from "@angular/common/http";
+import {Injectable} from "@angular/core";
+import {BehaviorSubject, catchError, EMPTY, finalize, map, Observable, tap} from "rxjs";
 import ConvertorQuery from "../common/model/convertor_query";
-import { UrlResult } from "../common/model/url_result";
-import { ApiResponse } from "../common/response/response";
-import { LatencyService } from "./latency/latency-service";
-import { LatencyResult } from "./latency/latency-types";
+import {DashboardHttpError} from "../common/model/dashboard-http-error";
+import {UrlResult} from "../common/model/url_result";
+import {ApiResponse} from "../common/response/response";
+import {LatencyService} from "./latency/latency-service";
+import {LatencyResult} from "./latency/latency-types";
 
 @Injectable()
 export class DashboardService {
@@ -15,7 +16,7 @@ export class DashboardService {
     loading: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
     loading$ = this.loading.asObservable();
 
-    error: BehaviorSubject<HttpErrorResponse | undefined> = new BehaviorSubject<HttpErrorResponse | undefined>(undefined);
+    error: BehaviorSubject<DashboardHttpError | null> = new BehaviorSubject<DashboardHttpError | null>(null);
     error$ = this.error.asObservable();
 
     urlResult = new BehaviorSubject<UrlResult | undefined>(undefined);
@@ -56,7 +57,7 @@ export class DashboardService {
             map(response => ApiResponse.deserialize(response, UrlResult)),
             // 请求成功时清除错误信息
             tap(response => {
-                this.error.next(undefined);
+                this.error.next(null);
                 if (response.isOk()) {
                     this.urlResult.next(response.data!);
                 } else {
@@ -66,8 +67,9 @@ export class DashboardService {
             }),
             // 错误只在 HTTP 内部处理，吞掉，不打断主流
             catchError((err: HttpErrorResponse) => {
-                console.log(err);
-                this.error.next(err);
+                const httpError = new DashboardHttpError(err, "GET");
+                console.log(httpError);
+                this.error.next(httpError);
                 return EMPTY;
             }),
             // 结束（成功/失败/取消）：关 loading

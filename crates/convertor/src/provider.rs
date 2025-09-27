@@ -18,7 +18,7 @@ pub struct SubsProvider {
 impl SubsProvider {
     pub fn new(redis: Option<ConnectionManager>, cache_prefix: Option<impl AsRef<str>>) -> Self {
         let client = reqwest::Client::builder()
-            .connect_timeout(Duration::from_millis(100))
+            .connect_timeout(Duration::from_millis(10))
             // .connection_verbose(true)
             .build()
             .expect("构建 reqwest 客户端失败");
