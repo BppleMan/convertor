@@ -26,7 +26,6 @@
 
             padding:         12px;
             border-radius:   12px;
-            background:      #1a1c20;
             gap:             12px;
 
             .convertor-url-label {
@@ -41,7 +40,6 @@
                     font-style:  normal;
                     line-height: normal;
                     flex:        1 1 auto;
-                    color:       #ffffff;
                 }
             }
 
@@ -68,7 +66,6 @@
                     width:         100%;
                     text-overflow: ellipsis;
                     word-break:    break-word;
-                    color:         #ffffff;
                     overflow-wrap: anywhere;
                 }
             }

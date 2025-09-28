@@ -1,0 +1,112 @@
+<app-dashboard-panel>
+    <mat-card-header>
+        <app-title>HTTP 错误详情</app-title>
+    </mat-card-header>
+    <mat-card-content>
+        <mat-accordion multi>
+            <mat-expansion-panel (afterCollapse)="afterCollapse()" (afterExpand)="afterExpand()" expanded="true">
+                <mat-expansion-panel-header>
+                    <mat-panel-title>客户端发出请求</mat-panel-title>
+                    <mat-panel-description>
+                        <code class="url">{{ (clientRequest$ | async)?.url() ?? "" }}</code>
+                    </mat-panel-description>
+                </mat-expansion-panel-header>
+                <mat-divider></mat-divider>
+                <mat-grid-list cols="2" rowHeight="fit" style="height: 200px;">
+                    <!--                    <div class="names">-->
+                    <!--                    <mat-grid-tile>-->
+                    <!--                        @for (header of (clientRequest$ | async)?.headers?.keys() ?? []; track header) {-->
+                    <!--                            <h5 class="name">{{ header }}</h5>-->
+                    <!--                        }-->
+                    <!--                    </mat-grid-tile>-->
+                    <!--                    </div>-->
+                    <!--                    <div class="values">-->
+
+                    @for (header of (clientRequest$ | async)?.headers?.entries() ?? []; track header[0]) {
+                        <mat-grid-tile>
+                            <h5 class="name">{{ header[0] }}</h5>
+                        </mat-grid-tile>
+                        <mat-grid-tile>
+                            <code class="value">{{ header[1] }}{{ header[1] }}{{ header[1] }}{{ header[1] }}{{ header[1] }}{{ header[1] }}{{ header[1] }}{{ header[1] }}{{ header[1] }}</code>
+                        </mat-grid-tile>
+                    }
+                    <!--                    </div>-->
+                </mat-grid-list>
+            </mat-expansion-panel>
+            <mat-expansion-panel expanded="true">
+                <mat-expansion-panel-header>
+                    <mat-panel-title>服务端收到请求</mat-panel-title>
+                    <mat-panel-description>
+                        Inform the date you wish to travel
+                        <mat-icon>date_range</mat-icon>
+                    </mat-panel-description>
+                </mat-expansion-panel-header>
+            </mat-expansion-panel>
+            <mat-expansion-panel expanded="true">
+                <mat-expansion-panel-header>
+                    <mat-panel-title>错误详情</mat-panel-title>
+                    <mat-panel-description>
+                        Inform the date you wish to travel
+                        <mat-icon>date_range</mat-icon>
+                    </mat-panel-description>
+                </mat-expansion-panel-header>
+            </mat-expansion-panel>
+        </mat-accordion>
+        <!--        <mat-card appearance="outlined">-->
+        <!--            <mat-card-header>-->
+        <!--                <mat-card-title>客户端发出请求</mat-card-title>-->
+        <!--            </mat-card-header>-->
+        <!--            <mat-card-content>-->
+        <!--                <code class="url">{{ clientRequest()?.url() }}</code>-->
+        <!--                @for (header of clientRequest()?.headers?.entries(); track header[0]) {-->
+        <!--                    <div>-->
+        <!--                        <mat-chip>{{ header[0] }}</mat-chip>-->
+        <!--                        <code>{{ header[1] }}</code>-->
+        <!--                    </div>-->
+        <!--                }-->
+        <!--            </mat-card-content>-->
+        <!--        </mat-card>-->
+
+        <!--        <mat-card appearance="outlined">-->
+        <!--            <mat-card-header>-->
+        <!--                <mat-card-title>服务端接收请求</mat-card-title>-->
+        <!--            </mat-card-header>-->
+        <!--            <mat-card-content>-->
+        <!--                <code class="url">{{ serverRequest()?.url() }}</code>-->
+        <!--                @for (header of serverRequest()?.headers?.entries(); track header[0]) {-->
+        <!--                    <div>-->
+        <!--                        <mat-chip>{{ header[0] }}</mat-chip>-->
+        <!--                        <code>{{ header[1] }}</code>-->
+        <!--                    </div>-->
+        <!--                }-->
+        <!--            </mat-card-content>-->
+        <!--        </mat-card>-->
+
+        <!--        &lt;!&ndash; 响应状态 &ndash;&gt;-->
+        <!--        <mat-card appearance="outlined">-->
+        <!--            <mat-card-header>-->
+        <!--                <mat-card-title>响应状态</mat-card-title>-->
+        <!--            </mat-card-header>-->
+        <!--            <mat-card-content>-->
+        <!--                <div class="error-message">-->
+        <!--                    <span>HTTP Status</span>-->
+        <!--                    <code>{{ httpErrorResponse().status }}</code>-->
+        <!--                </div>-->
+        <!--                <div class="error-message">-->
+        <!--                    <span>Response Status</span>-->
+        <!--                    <code>{{ apiResponse().status }}</code>-->
+        <!--                </div>-->
+        <!--                <div class="error-message">-->
+        <!--                    <span>Error</span>-->
+        <!--                    <pre class="inline"><code>{{ apiResponse().messages[0] }}</code></pre>-->
+        <!--                </div>-->
+        <!--                @for (cause of causeMessages(); track cause) {-->
+        <!--                    <div class="error-message">-->
+        <!--                        <span>Cause By</span>-->
+        <!--                        <pre class="inline"><code>{{ cause }}</code></pre>-->
+        <!--                    </div>-->
+        <!--                }-->
+        <!--            </mat-card-content>-->
+        <!--        </mat-card>-->
+    </mat-card-content>
+</app-dashboard-panel>

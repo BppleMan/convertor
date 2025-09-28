@@ -1,7 +1,7 @@
-<app-dashboard-info></app-dashboard-info>
+<h1>Convertor · Dashboard</h1>
 <app-dashboard-param></app-dashboard-param>
 @if ((error$ | async); as error) {
-    <app-error-view [error]="error"></app-error-view>
+    <app-dashboard-error></app-dashboard-error>
 } @else if (!(data$ | async)) {
     <app-no-content></app-no-content>
 } @else {

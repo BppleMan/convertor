@@ -1,12 +1,12 @@
-import {HttpClient, HttpErrorResponse} from "@angular/common/http";
-import {Injectable} from "@angular/core";
-import {BehaviorSubject, catchError, EMPTY, finalize, map, Observable, tap} from "rxjs";
+import { HttpClient, HttpErrorResponse } from "@angular/common/http";
+import { Injectable } from "@angular/core";
+import { BehaviorSubject, catchError, finalize, map, Observable, tap } from "rxjs";
 import ConvertorQuery from "../common/model/convertor_query";
-import {DashboardHttpError} from "../common/model/dashboard-http-error";
-import {UrlResult} from "../common/model/url_result";
-import {ApiResponse} from "../common/response/response";
-import {LatencyService} from "./latency/latency-service";
-import {LatencyResult} from "./latency/latency-types";
+import { DashboardHttpError } from "../common/model/dashboard-http-error";
+import { UrlResult } from "../common/model/url_result";
+import { ApiResponse } from "../common/response/response";
+import { LatencyService } from "./latency/latency-service";
+import { LatencyResult } from "./latency/latency-types";
 
 @Injectable()
 export class DashboardService {
@@ -53,7 +53,7 @@ export class DashboardService {
     public getSubscription(query: ConvertorQuery): Observable<ApiResponse<UrlResult>> {
         this.loading.next(true);
         return this.http.get(query.subscriptionPath()).pipe(
-            tap(console.log),
+            // tap(console.log),
             map(response => ApiResponse.deserialize(response, UrlResult)),
             // 请求成功时清除错误信息
             tap(response => {
@@ -67,13 +67,15 @@ export class DashboardService {
             }),
             // 错误只在 HTTP 内部处理，吞掉，不打断主流
             catchError((err: HttpErrorResponse) => {
+                console.log("DashboardService.getSubscription catchError:");
                 const httpError = new DashboardHttpError(err, "GET");
                 console.log(httpError);
                 this.error.next(httpError);
-                return EMPTY;
+                throw httpError;
             }),
             // 结束（成功/失败/取消）：关 loading
             finalize(() => {
+                console.log("DashboardService.getSubscription finalize:");
                 this.loading.next(false);
             }),
         );

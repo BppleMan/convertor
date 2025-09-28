@@ -1,0 +1,77 @@
+:host {
+    display:        flex;
+    overflow-y:     auto;
+    flex-direction: column;
+    width:          100%;
+    height:         100%;
+    gap:            12px;
+
+    mat-panel-title {
+        flex-basis:  auto;
+        flex-shrink: 0;
+    }
+
+    mat-panel-description {
+        overflow:    hidden;
+        flex-basis:  auto;
+        flex-grow:   1;
+        flex-shrink: 1;
+    }
+
+    code.url {
+        overflow:      hidden;
+        flex:          1;
+        text-wrap:     nowrap;
+        text-overflow: ellipsis;
+        word-break:    break-all;
+    }
+
+    .headers {
+        display:        flex;
+        flex-direction: row;
+        gap:            12px;
+
+        .names {
+            display:        flex;
+            flex:           1 0 auto;
+            flex-direction: column;
+        }
+
+        .values {
+            display:        flex;
+            flex:           2;
+            flex-direction: column;
+
+            .value {
+                overflow:      hidden;
+                flex:          1;
+                text-wrap:     nowrap;
+                text-overflow: ellipsis;
+                word-break:    break-all;
+            }
+        }
+    }
+
+    .header {
+        line-height:    18px;
+        display:        flex;
+        flex-direction: row;
+
+        .name {
+            width: 200px;
+        }
+
+
+    }
+
+    // pre {
+    //     box-sizing: border-box;
+    //     margin:     0;
+    //     padding:    0;
+    // }
+
+    .error-message {
+        display:        flex;
+        flex-direction: row;
+    }
+}

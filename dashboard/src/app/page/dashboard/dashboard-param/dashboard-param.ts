@@ -3,9 +3,9 @@ import { Component, DestroyRef, inject } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from "@angular/forms";
 import { MatButton } from "@angular/material/button";
-import { MatDivider } from "@angular/material/divider";
-import { MatFormField } from "@angular/material/form-field";
-import { MatInput, MatLabel } from "@angular/material/input";
+import { MatCardContent, MatCardHeader } from "@angular/material/card";
+import { MatFormField, MatLabel } from "@angular/material/form-field";
+import { MatInput } from "@angular/material/input";
 import { MatOption, MatSelect } from "@angular/material/select";
 import { MatSlideToggle } from "@angular/material/slide-toggle";
 import { StorageMap } from "@ngx-pwa/local-storage";
@@ -31,21 +31,24 @@ import { ProxyClient } from "../../../common/model/enums";
 import { DashboardService } from "../../../service/dashboard.service";
 import { UrlParams, UrlService } from "../../../service/url.service";
 import { Title } from "../../shared/title/title";
+import { DashboardPanel } from "../dashboard-panel/dashboard-panel";
 
 @Component({
     selector: "app-dashboard-param",
     imports: [
-        AsyncPipe,
-        MatButton,
-        MatDivider,
-        MatFormField,
-        MatInput,
-        MatLabel,
-        MatOption,
-        MatSelect,
-        MatSlideToggle,
         ReactiveFormsModule,
         Title,
+        DashboardPanel,
+        MatCardHeader,
+        MatCardContent,
+        MatFormField,
+        MatLabel,
+        MatInput,
+        MatSelect,
+        MatOption,
+        MatSlideToggle,
+        AsyncPipe,
+        MatButton,
     ],
     templateUrl: "./dashboard-param.html",
     styleUrl: "./dashboard-param.scss",
@@ -177,9 +180,16 @@ export class DashboardParam {
                     return this.dashboardService.getSubscription(query).pipe(
                         // 主动取消当前请求
                         takeUntil(this.cancel),
+                        catchError(() => {
+                            console.log("dashboard-param requestSub catchError:");
+                            // 捕获错误，避免流中断
+                            return EMPTY;
+                        }),
                         // 结束（成功/失败/取消）：解锁
                         finalize(() => {
+                            console.log("dashboard-param requestSub finalize:");
                             this.subscriptionForm.enable({ emitEvent: false });
+                            return EMPTY;
                         }),
                     );
                 });

@@ -25,10 +25,10 @@ $font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
         density: -2,
     ));
     @include mat.theme-overrides((
-        surface: #0c0e12,
-        on-surface: #c3c3c3,
-        outline: rgba(255, 255, 255, 0.15),
-        outline-variant: #6969691a,
+        // surface: #0c0e12,
+        // on-surface: #c3c3c3,
+        // outline: rgba(255, 255, 255, 0.15),
+        // outline-variant: #6969691a,
     ));
     @include mat.form-field-overrides((
         container-height: 24px,
@@ -62,10 +62,10 @@ $font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
         label-text-size: 12px,
     ));
     @include mat.icon-overrides((
-        color: #505050,
+        // color: #505050,
     ));
     @include mat.select-overrides((
-        enabled-arrow-color: #505050,
+        // enabled-arrow-color: #505050,
     ))
 }
 

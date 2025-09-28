@@ -1,0 +1,115 @@
+import { AsyncPipe } from "@angular/common";
+import { HttpErrorResponse } from "@angular/common/http";
+import { ChangeDetectionStrategy, Component, effect, inject, model } from "@angular/core";
+import { MatCardContent, MatCardHeader } from "@angular/material/card";
+import { MatDivider } from "@angular/material/divider";
+import {
+    MatAccordion,
+    MatExpansionPanel,
+    MatExpansionPanelDescription,
+    MatExpansionPanelHeader,
+    MatExpansionPanelTitle,
+} from "@angular/material/expansion";
+import { MatGridList, MatGridTile } from "@angular/material/grid-list";
+import { MatIcon } from "@angular/material/icon";
+import { combineLatest, filter, map, withLatestFrom } from "rxjs";
+import { RequestSnapshot } from "../../../common/response/request";
+import { ApiResponse } from "../../../common/response/response";
+import { DashboardService } from "../../../service/dashboard.service";
+import { Title } from "../../shared/title/title";
+import { DashboardPanel } from "../dashboard-panel/dashboard-panel";
+
+@Component({
+    selector: "app-dashboard-error",
+    imports: [
+        DashboardPanel,
+        MatCardHeader,
+        Title,
+        MatCardContent,
+        MatAccordion,
+        MatExpansionPanel,
+        MatExpansionPanelHeader,
+        MatExpansionPanelTitle,
+        MatExpansionPanelDescription,
+        MatIcon,
+        AsyncPipe,
+        MatDivider,
+        MatGridList,
+        MatGridTile,
+    ],
+    templateUrl: "./dashboard-error.html",
+    styleUrl: "./dashboard-error.scss",
+    changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class DashboardError {
+    dashboardService: DashboardService = inject(DashboardService);
+
+    dashboardHttpError$ = this.dashboardService.error$;
+
+    httpErrorResponse$ = this.dashboardHttpError$.pipe(
+        map((error) => error?.cause),
+    );
+
+    apiResponse$ = this.httpErrorResponse$.pipe(
+        map((error) => error?.error),
+        filter((error) => !!error),
+        map((error) => ApiResponse.deserialize(error)),
+    );
+
+    test = combineLatest([]).pipe();
+
+    clientRequest$ = this.httpErrorResponse$.pipe(
+        filter((error) => !!(error?.url)),
+        map((error) => <[ HttpErrorResponse, string ]>[ error!, error!.url! ]),
+        withLatestFrom(this.dashboardHttpError$.pipe(
+            filter((error) => !!(error?.method)),
+            map((error) => error!.method!),
+        )),
+        map(([ [ error, url ], method ]) => {
+            const parsedUrl = new URL(url);
+            const headers = new Map<string, string>();
+            error.headers.keys().forEach(key => {
+                headers.set(key, error.headers.get(key) ?? "");
+            });
+            return new RequestSnapshot(
+                method,
+                parsedUrl.protocol,
+                parsedUrl.host,
+                parsedUrl.pathname + parsedUrl.search,
+                headers,
+            );
+        }),
+    );
+
+    serverRequest$ = this.apiResponse$.pipe(
+        map((response) => response.request),
+    );
+
+    mainMessage$ = this.apiResponse$.pipe(
+        map((response) => response.messages[0] ?? ""),
+    );
+    causeMessages$ = this.apiResponse$.pipe(
+        map((response) => response.messages.slice(1)),
+    );
+
+    // ui
+
+    // clientRequestCollapsed = new BehaviorSubject<boolean>(true);
+    clientRequestCollapsed = model(false);
+
+    constructor() {
+        effect(() => {
+            console.log(this.clientRequestCollapsed());
+        });
+    }
+
+    afterCollapse() {
+        console.log("afterCollapse");
+        this.clientRequestCollapsed.set(true);
+    }
+
+    afterExpand() {
+        console.log("afterExpand");
+        this.clientRequestCollapsed.set(false);
+    }
+}
