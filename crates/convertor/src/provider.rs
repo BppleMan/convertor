@@ -18,13 +18,16 @@ pub struct SubsProvider {
 impl SubsProvider {
     pub fn new(redis: Option<ConnectionManager>, cache_prefix: Option<impl AsRef<str>>) -> Self {
         let client = reqwest::Client::builder()
-            .connect_timeout(Duration::from_millis(10))
+            .connect_timeout(Duration::from_millis(5000))
             // .connection_verbose(true)
             .build()
             .expect("构建 reqwest 客户端失败");
         let cache = Cache::new(
             redis,
             10,
+            #[cfg(debug_assertions)]
+            Duration::from_secs(60 * 60 * 24),
+            #[cfg(not(debug_assertions))]
             Duration::from_secs(60 * 60),
             Duration::from_secs(60 * 60 * 12),
         );
