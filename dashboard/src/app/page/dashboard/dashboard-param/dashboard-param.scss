@@ -36,6 +36,9 @@
         mat-form-field {
             @include mat.form-field-overrides((
                 container-text-size: 12px,
+                outlined-label-text-color: color-mix(in srgb, var(--mat-sys-on-surface), transparent 30%),
+                outlined-hover-label-text-color: color-mix(in srgb, var(--mat-sys-on-surface), transparent 10%),
+                outlined-hover-outline-color: color-mix(in srgb, var(--mat-sys-on-surface), transparent 70%),
             ));
         }
 

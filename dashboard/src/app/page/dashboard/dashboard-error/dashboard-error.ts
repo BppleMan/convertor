@@ -1,7 +1,8 @@
 import { AsyncPipe } from "@angular/common";
 import { HttpErrorResponse } from "@angular/common/http";
 import { ChangeDetectionStrategy, Component, effect, inject, model } from "@angular/core";
-import { MatCardContent, MatCardHeader } from "@angular/material/card";
+import { MatCardContent, MatCardHeader, MatCardTitle } from "@angular/material/card";
+import { MatChip } from "@angular/material/chips";
 import { MatDivider } from "@angular/material/divider";
 import {
     MatAccordion,
@@ -10,13 +11,10 @@ import {
     MatExpansionPanelHeader,
     MatExpansionPanelTitle,
 } from "@angular/material/expansion";
-import { MatGridList, MatGridTile } from "@angular/material/grid-list";
-import { MatIcon } from "@angular/material/icon";
-import { combineLatest, filter, map, withLatestFrom } from "rxjs";
+import { combineLatest, filter, map, Observable, tap, withLatestFrom } from "rxjs";
 import { RequestSnapshot } from "../../../common/response/request";
 import { ApiResponse } from "../../../common/response/response";
 import { DashboardService } from "../../../service/dashboard.service";
-import { Title } from "../../shared/title/title";
 import { DashboardPanel } from "../dashboard-panel/dashboard-panel";
 
 @Component({
@@ -24,18 +22,17 @@ import { DashboardPanel } from "../dashboard-panel/dashboard-panel";
     imports: [
         DashboardPanel,
         MatCardHeader,
-        Title,
         MatCardContent,
         MatAccordion,
         MatExpansionPanel,
         MatExpansionPanelHeader,
         MatExpansionPanelTitle,
         MatExpansionPanelDescription,
-        MatIcon,
         AsyncPipe,
         MatDivider,
-        MatGridList,
-        MatGridTile,
+        MatChip,
+        MatCardTitle,
+
     ],
     templateUrl: "./dashboard-error.html",
     styleUrl: "./dashboard-error.scss",
@@ -80,13 +77,29 @@ export class DashboardError {
             );
         }),
     );
-
     serverRequest$ = this.apiResponse$.pipe(
         map((response) => response.request),
     );
+    requests$: Observable<Record<string, RequestSnapshot | null>> = combineLatest([
+        this.clientRequest$,
+        this.serverRequest$,
+    ]).pipe(
+        map(([ client, server ]) => {
+            return {
+                "客户端发出请求": client,
+                "服务端收到请求": server,
+            };
+        }),
+    );
 
+    errorMessage$ = this.httpErrorResponse$.pipe(
+        map((error) => error?.message ?? ""),
+    );
+
+    // response messages
     mainMessage$ = this.apiResponse$.pipe(
         map((response) => response.messages[0] ?? ""),
+        tap(console.log),
     );
     causeMessages$ = this.apiResponse$.pipe(
         map((response) => response.messages.slice(1)),
@@ -112,4 +125,6 @@ export class DashboardError {
         console.log("afterExpand");
         this.clientRequestCollapsed.set(false);
     }
+
+    protected readonly Object = Object;
 }

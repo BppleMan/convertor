@@ -1,8 +1,9 @@
 :host {
-    width: 100%;
-    // ::ng-deep {
-    //     .mat-mdc-card-header {
-    //         padding: 0;
-    //     }
-    // }
+    overflow: hidden;
+    flex:     1;
+
+    mat-card {
+        max-height: 100%;
+        gap:        12px;
+    }
 }

@@ -3,7 +3,7 @@ import { Component, DestroyRef, inject } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from "@angular/forms";
 import { MatButton } from "@angular/material/button";
-import { MatCardContent, MatCardHeader } from "@angular/material/card";
+import { MatCardContent, MatCardHeader, MatCardTitle } from "@angular/material/card";
 import { MatFormField, MatLabel } from "@angular/material/form-field";
 import { MatInput } from "@angular/material/input";
 import { MatOption, MatSelect } from "@angular/material/select";
@@ -30,14 +30,12 @@ import {
 import { ProxyClient } from "../../../common/model/enums";
 import { DashboardService } from "../../../service/dashboard.service";
 import { UrlParams, UrlService } from "../../../service/url.service";
-import { Title } from "../../shared/title/title";
 import { DashboardPanel } from "../dashboard-panel/dashboard-panel";
 
 @Component({
     selector: "app-dashboard-param",
     imports: [
         ReactiveFormsModule,
-        Title,
         DashboardPanel,
         MatCardHeader,
         MatCardContent,
@@ -49,6 +47,7 @@ import { DashboardPanel } from "../dashboard-panel/dashboard-panel";
         MatSlideToggle,
         AsyncPipe,
         MatButton,
+        MatCardTitle,
     ],
     templateUrl: "./dashboard-param.html",
     styleUrl: "./dashboard-param.scss",
