@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/page/shared/title/title.scss"],
+  "sourcesContent": ["h2 {\n    font-size:   16px;\n    font-weight: 500;\n}\n"],
+  "mappings": ";AAAA;AACI,aAAA;AACA,eAAA;;",
+  "names": []
+}

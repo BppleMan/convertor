@@ -2772,6 +2772,32 @@ function tap(observerOrNext, error, complete) {
   }) : identity;
 }
 
+// node_modules/.pnpm/rxjs@7.8.2/node_modules/rxjs/dist/esm/internal/operators/withLatestFrom.js
+function withLatestFrom(...inputs) {
+  const project = popResultSelector(inputs);
+  return operate((source, subscriber) => {
+    const len = inputs.length;
+    const otherValues = new Array(len);
+    let hasValue = inputs.map(() => false);
+    let ready = false;
+    for (let i = 0; i < len; i++) {
+      innerFrom(inputs[i]).subscribe(createOperatorSubscriber(subscriber, (value) => {
+        otherValues[i] = value;
+        if (!ready && !hasValue[i]) {
+          hasValue[i] = true;
+          (ready = hasValue.every(identity)) && (hasValue = null);
+        }
+      }, noop));
+    }
+    source.subscribe(createOperatorSubscriber(subscriber, (value) => {
+      if (ready) {
+        const values = [value, ...otherValues];
+        subscriber.next(project ? project(...values) : values);
+      }
+    }));
+  });
+}
+
 // node_modules/.pnpm/@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs@7.8.2/node_modules/@angular/core/fesm2022/untracked.mjs
 function createLinkedSignal(sourceFn, computationFn, equalityFn) {
   const node = Object.create(LINKED_SIGNAL_NODE);
@@ -29978,7 +30004,7 @@ function booleanOrUrlAttribute(value) {
   return booleanAttribute(value);
 }
 
-// node_modules/.pnpm/@angular+platform-browser@20.2.1_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compile_b4fkdnyec4c2x5ti6yyl4kmq7u/node_modules/@angular/platform-browser/fesm2022/dom_renderer.mjs
+// node_modules/.pnpm/@angular+platform-browser@20.2.1_@angular+common@20.2.1_@angular+core@20.2.1_@angular+c_25bfa0ec5701a42ea82cbd6f7727ed91/node_modules/@angular/platform-browser/fesm2022/dom_renderer.mjs
 var EVENT_MANAGER_PLUGINS = new InjectionToken(ngDevMode ? "EventManagerPlugins" : "");
 var EventManager = class _EventManager {
   _zone;
@@ -30721,7 +30747,7 @@ var EmulatedEncapsulationDomRenderer2 = class extends NoneEncapsulationDomRender
   }
 };
 
-// node_modules/.pnpm/@angular+platform-browser@20.2.1_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compile_b4fkdnyec4c2x5ti6yyl4kmq7u/node_modules/@angular/platform-browser/fesm2022/browser.mjs
+// node_modules/.pnpm/@angular+platform-browser@20.2.1_@angular+common@20.2.1_@angular+core@20.2.1_@angular+c_25bfa0ec5701a42ea82cbd6f7727ed91/node_modules/@angular/platform-browser/fesm2022/browser.mjs
 var BrowserDomAdapter = class _BrowserDomAdapter extends DomAdapter {
   supportsDOMEvents = true;
   static makeCurrent() {
@@ -33663,7 +33689,7 @@ var HttpResourceImpl = class extends ResourceImpl {
 var HTTP_TRANSFER_CACHE_ORIGIN_MAP = new InjectionToken(ngDevMode ? "HTTP_TRANSFER_CACHE_ORIGIN_MAP" : "");
 var CACHE_OPTIONS = new InjectionToken(ngDevMode ? "HTTP_TRANSFER_STATE_CACHE_OPTIONS" : "");
 
-// node_modules/.pnpm/@angular+platform-browser@20.2.1_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compile_b4fkdnyec4c2x5ti6yyl4kmq7u/node_modules/@angular/platform-browser/fesm2022/platform-browser.mjs
+// node_modules/.pnpm/@angular+platform-browser@20.2.1_@angular+common@20.2.1_@angular+core@20.2.1_@angular+c_25bfa0ec5701a42ea82cbd6f7727ed91/node_modules/@angular/platform-browser/fesm2022/platform-browser.mjs
 var Meta = class _Meta {
   _doc;
   _dom;
@@ -34247,258 +34273,549 @@ var appConfig = {
   ]
 };
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/clipboard.mjs
-var PendingCopy = class {
-  _document;
-  _textarea;
-  constructor(text, _document2) {
-    this._document = _document2;
-    const textarea = this._textarea = this._document.createElement("textarea");
-    const styles = textarea.style;
-    styles.position = "fixed";
-    styles.top = styles.opacity = "0";
-    styles.left = "-999em";
-    textarea.setAttribute("aria-hidden", "true");
-    textarea.value = text;
-    textarea.readOnly = true;
-    (this._document.fullscreenElement || this._document.body).appendChild(textarea);
+// src/app/common/model/dashboard-http-error.ts
+var DashboardHttpError = class {
+  method;
+  name = "DashboardError";
+  message;
+  cause;
+  constructor(error, method) {
+    this.method = method;
+    this.message = error.message;
+    this.cause = error;
   }
-  /** Finishes copying the text. */
-  copy() {
-    const textarea = this._textarea;
-    let successful = false;
-    try {
-      if (textarea) {
-        const currentFocus = this._document.activeElement;
-        textarea.select();
-        textarea.setSelectionRange(0, textarea.value.length);
-        successful = this._document.execCommand("copy");
-        if (currentFocus) {
-          currentFocus.focus();
-        }
+};
+
+// src/app/common/model/policy.ts
+var Policy = class _Policy {
+  name;
+  is_subscription;
+  option;
+  constructor(name, is_subscription, option) {
+    this.name = name;
+    this.is_subscription = is_subscription;
+    this.option = option;
+  }
+  static deserialize(policy2) {
+    return new _Policy(policy2.name, policy2.is_subscription, policy2.option);
+  }
+  clone() {
+    return new _Policy(this.name, this.is_subscription, this.option);
+  }
+  equals(other) {
+    if (!other)
+      return false;
+    return this.name === other.name && this.is_subscription === other.is_subscription && this.option === other.option;
+  }
+  serialize() {
+    return {
+      name: this.name,
+      is_subscription: this.is_subscription,
+      option: this.option
+    };
+  }
+};
+
+// src/app/common/model/convertor_url.ts
+var ConvertorUrl = class _ConvertorUrl {
+  type;
+  server;
+  desc;
+  path;
+  query;
+  url;
+  constructor(type, server, desc, path, query) {
+    this.type = type;
+    this.server = server;
+    this.desc = desc;
+    this.path = path;
+    this.query = query;
+    if (server.length > 0) {
+      this.url = new URL(server);
+    }
+    const url = this.url;
+    if (url) {
+      if (!!path && path.length > 0 && !!query && query.length > 0) {
+        url.pathname = path;
+        url.search = query;
       }
-    } catch {
     }
-    return successful;
   }
-  /** Cleans up DOM changes used to perform the copy operation. */
-  destroy() {
-    const textarea = this._textarea;
-    if (textarea) {
-      textarea.remove();
-      this._textarea = void 0;
-    }
+  clone() {
+    return new _ConvertorUrl(this.type.clone(), this.server, this.desc, this.path, this.query);
+  }
+  equals(other) {
+    if (!other)
+      return false;
+    return this.type.equals(other.type) && this.server === other.server && this.desc === other.desc && this.path === other.path;
+  }
+  serialize() {
+    return {
+      type: this.type.serialize(),
+      server: this.server,
+      desc: this.desc,
+      path: this.path,
+      query: this.query
+    };
+  }
+  static deserialize(url) {
+    return new _ConvertorUrl(UrlType.deserialize(url.type), url.server, url.desc, url.path, url.query);
   }
 };
-var Clipboard = class _Clipboard {
-  _document = inject2(DOCUMENT);
-  constructor() {
+var UrlType = class _UrlType {
+  name;
+  policy;
+  constructor(name, policy2) {
+    this.name = name;
+    this.policy = policy2;
   }
-  /**
-   * Copies the provided text into the user's clipboard.
-   *
-   * @param text The string to copy.
-   * @returns Whether the operation was successful.
-   */
-  copy(text) {
-    const pendingCopy = this.beginCopy(text);
-    const successful = pendingCopy.copy();
-    pendingCopy.destroy();
-    return successful;
+  clone() {
+    return new _UrlType(this.name, this.policy?.clone());
   }
-  /**
-   * Prepares a string to be copied later. This is useful for large strings
-   * which take too long to successfully render and be copied in the same tick.
-   *
-   * The caller must call `destroy` on the returned `PendingCopy`.
-   *
-   * @param text The string to copy.
-   * @returns the pending copy operation.
-   */
-  beginCopy(text) {
-    return new PendingCopy(text, this._document);
+  equals(other) {
+    if (!other)
+      return false;
+    return this.name === other?.name && (this.policy?.equals(other?.policy) ?? false);
   }
-  static \u0275fac = function Clipboard_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _Clipboard)();
-  };
-  static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
-    token: _Clipboard,
-    factory: _Clipboard.\u0275fac,
-    providedIn: "root"
-  });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(Clipboard, [{
-    type: Injectable,
-    args: [{
-      providedIn: "root"
-    }]
-  }], () => [], null);
-})();
-var CDK_COPY_TO_CLIPBOARD_CONFIG = new InjectionToken("CDK_COPY_TO_CLIPBOARD_CONFIG");
-var CdkCopyToClipboard = class _CdkCopyToClipboard {
-  _clipboard = inject2(Clipboard);
-  _ngZone = inject2(NgZone);
-  /** Content to be copied. */
-  text = "";
-  /**
-   * How many times to attempt to copy the text. This may be necessary for longer text, because
-   * the browser needs time to fill an intermediate textarea element and copy the content.
-   */
-  attempts = 1;
-  /**
-   * Emits when some text is copied to the clipboard. The
-   * emitted value indicates whether copying was successful.
-   */
-  copied = new EventEmitter();
-  /** Copies that are currently being attempted. */
-  _pending = /* @__PURE__ */ new Set();
-  /** Whether the directive has been destroyed. */
-  _destroyed;
-  /** Timeout for the current copy attempt. */
-  _currentTimeout;
-  constructor() {
-    const config2 = inject2(CDK_COPY_TO_CLIPBOARD_CONFIG, {
-      optional: true
-    });
-    if (config2 && config2.attempts != null) {
-      this.attempts = config2.attempts;
-    }
+  serialize() {
+    return {
+      name: this.name,
+      policy: this.policy
+    };
   }
-  /** Copies the current text to the clipboard. */
-  copy(attempts = this.attempts) {
-    if (attempts > 1) {
-      let remainingAttempts = attempts;
-      const pending = this._clipboard.beginCopy(this.text);
-      this._pending.add(pending);
-      const attempt = () => {
-        const successful = pending.copy();
-        if (!successful && --remainingAttempts && !this._destroyed) {
-          this._currentTimeout = this._ngZone.runOutsideAngular(() => setTimeout(attempt, 1));
-        } else {
-          this._currentTimeout = null;
-          this._pending.delete(pending);
-          pending.destroy();
-          this.copied.emit(successful);
-        }
-      };
-      attempt();
+  static deserialize(type) {
+    if (typeof type === "string") {
+      return new _UrlType(type);
     } else {
-      this.copied.emit(this._clipboard.copy(this.text));
+      const name = Object.keys(type)[0];
+      const policy2 = !!type[name] ? Policy.deserialize(type[name]) : void 0;
+      return new _UrlType(name, policy2);
     }
   }
-  ngOnDestroy() {
-    if (this._currentTimeout) {
-      clearTimeout(this._currentTimeout);
-    }
-    this._pending.forEach((copy) => copy.destroy());
-    this._pending.clear();
-    this._destroyed = true;
+};
+
+// src/app/common/model/url_result.ts
+var UrlResult = class _UrlResult {
+  raw_url;
+  raw_profile_url;
+  profile_url;
+  rule_providers_url;
+  constructor(raw_url, raw_profile_url, profile_url, rule_providers_url) {
+    this.raw_url = raw_url;
+    this.raw_profile_url = raw_profile_url;
+    this.profile_url = profile_url;
+    this.rule_providers_url = rule_providers_url;
   }
-  static \u0275fac = function CdkCopyToClipboard_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _CdkCopyToClipboard)();
-  };
-  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
-    type: _CdkCopyToClipboard,
-    selectors: [["", "cdkCopyToClipboard", ""]],
-    hostBindings: function CdkCopyToClipboard_HostBindings(rf, ctx) {
-      if (rf & 1) {
-        \u0275\u0275listener("click", function CdkCopyToClipboard_click_HostBindingHandler() {
-          return ctx.copy();
-        });
-      }
-    },
-    inputs: {
-      text: [0, "cdkCopyToClipboard", "text"],
-      attempts: [0, "cdkCopyToClipboardAttempts", "attempts"]
-    },
-    outputs: {
-      copied: "cdkCopyToClipboardCopied"
+  static deserialize(result) {
+    return new _UrlResult(ConvertorUrl.deserialize(result.raw_url), ConvertorUrl.deserialize(result.raw_profile_url), ConvertorUrl.deserialize(result.profile_url), result.rule_providers_url.map(ConvertorUrl.deserialize));
+  }
+  clone() {
+    return new _UrlResult(this.raw_url.clone(), this.raw_profile_url.clone(), this.profile_url.clone(), this.rule_providers_url.map((rp) => rp.clone()));
+  }
+  equals(other) {
+    if (!other)
+      return false;
+    return this.raw_url.equals(other.raw_url) && this.raw_profile_url.equals(other.raw_profile_url) && this.profile_url.equals(other.profile_url) && this.rule_providers_url.length === other.rule_providers_url.length && this.rule_providers_url.every((rp, index) => rp.equals(other.rule_providers_url[index]));
+  }
+  serialize() {
+    return {
+      raw_url: this.raw_url.serialize(),
+      raw_profile_url: this.raw_profile_url.serialize(),
+      profile_url: this.profile_url.serialize(),
+      rule_providers_url: this.rule_providers_url.map((rp) => rp.serialize())
+    };
+  }
+};
+
+// src/app/common/response/request.ts
+var RequestSnapshot = class _RequestSnapshot {
+  method;
+  scheme;
+  host;
+  uri;
+  headers;
+  constructor(method, scheme, host, uri, headers) {
+    this.method = method;
+    this.scheme = scheme;
+    this.host = host;
+    this.uri = uri;
+    this.headers = headers;
+  }
+  static deserialize(json) {
+    let isRequestSnapshot = Object.hasOwn(json, "method") && Object.hasOwn(json, "scheme") && Object.hasOwn(json, "host") && Object.hasOwn(json, "uri") && Object.hasOwn(json, "headers");
+    if (!isRequestSnapshot) {
+      return null;
+    }
+    return new _RequestSnapshot(json.method, json.scheme, json.host, json.uri, new Map(Object.entries(json.headers)));
+  }
+  url() {
+    return `${this.scheme}://${this.host}${this.uri}`;
+  }
+};
+
+// src/app/common/response/response.ts
+var ApiResponse = class _ApiResponse {
+  status;
+  messages;
+  request;
+  data;
+  constructor(status, messages, request, data) {
+    this.status = status;
+    this.messages = messages;
+    this.request = request;
+    this.data = data;
+  }
+  static deserialize(json, ctor) {
+    return new _ApiResponse(json.status, json.messages, RequestSnapshot.deserialize(json.request), ctor?.deserialize(json.data) ?? json.data);
+  }
+  isOk() {
+    return this.status === "ok";
+  }
+};
+
+// src/app/service/latency/latency-types.ts
+var ResponseStatus;
+(function(ResponseStatus2) {
+  ResponseStatus2["OK"] = "OK";
+  ResponseStatus2["TIMEOUT"] = "TIMEOUT";
+  ResponseStatus2["ERROR"] = "ERROR";
+})(ResponseStatus || (ResponseStatus = {}));
+
+// src/app/service/latency/latency-utils.ts
+function toEpochMs(highResMs) {
+  return Math.round(performance.timeOrigin + highResMs);
+}
+function nowEpochMs() {
+  return toEpochMs(performance.now());
+}
+function nextFrame() {
+  return new Promise((resolve) => {
+    if (typeof requestAnimationFrame === "function") {
+      requestAnimationFrame(() => resolve());
+    } else {
+      setTimeout(() => resolve(), 0);
     }
   });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(CdkCopyToClipboard, [{
-    type: Directive,
-    args: [{
-      selector: "[cdkCopyToClipboard]",
-      host: {
-        "(click)": "copy()"
-      }
-    }]
-  }], () => [], {
-    text: [{
-      type: Input,
-      args: ["cdkCopyToClipboard"]
-    }],
-    attempts: [{
-      type: Input,
-      args: ["cdkCopyToClipboardAttempts"]
-    }],
-    copied: [{
-      type: Output,
-      args: ["cdkCopyToClipboardCopied"]
-    }]
-  });
-})();
-var ClipboardModule = class _ClipboardModule {
-  static \u0275fac = function ClipboardModule_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _ClipboardModule)();
+}
+function addRtid(url, rtid, paramName) {
+  const u2 = typeof url === "string" ? new URL(url, location.href) : new URL(url.toString());
+  u2.searchParams.set(paramName, rtid);
+  return u2.toString();
+}
+function parseServerTimingHeader(value) {
+  if (!value)
+    return void 0;
+  const out = {};
+  for (const part of value.split(",")) {
+    const token = part.trim();
+    if (!token)
+      continue;
+    const name = token.split(";")[0]?.trim();
+    const durMatch = token.match(/dur=([\d.]+)/i);
+    if (name && durMatch) {
+      const n = Number(durMatch[1]);
+      if (Number.isFinite(n))
+        out[name] = n;
+    }
+  }
+  return Object.keys(out).length ? out : void 0;
+}
+function isAbortError(err) {
+  return !!(err && typeof err === "object" && err.name === "AbortError");
+}
+function getExactResourceTimingByName(url) {
+  const list = performance.getEntriesByName(url, "resource");
+  if (!Array.isArray(list) || list.length === 0)
+    return void 0;
+  const hit = list.find((e) => e.initiatorType === "fetch" || e.initiatorType === "xmlhttprequest");
+  return hit ?? list[0];
+}
+function buildPhases(e) {
+  const between = (a, b) => Number.isFinite(a) && Number.isFinite(b) && a > 0 && b > 0 ? Math.max(0, Math.round(b - a)) : 0;
+  const redirectMs = between(e.redirectStart, e.redirectEnd);
+  const dnsMs = between(e.domainLookupStart, e.domainLookupEnd);
+  const connectMs = between(e.connectStart, e.connectEnd);
+  const tlsMs = Number.isFinite(e.secureConnectionStart) && e.secureConnectionStart > 0 ? between(e.secureConnectionStart, e.connectEnd) : 0;
+  const requestMs = between(e.requestStart, e.responseStart);
+  const contentDownloadMs = between(e.responseStart, e.responseEnd);
+  return {
+    redirectMs: redirectMs || void 0,
+    dnsMs: dnsMs || void 0,
+    connectMs: connectMs || void 0,
+    tlsMs: tlsMs || void 0,
+    requestMs: requestMs || void 0,
+    ttfbMs: requestMs || void 0,
+    contentDownloadMs: contentDownloadMs || void 0,
+    transferSize: e.transferSize || void 0,
+    encodedBodySize: e.encodedBodySize || void 0,
+    decodedBodySize: e.decodedBodySize || void 0
   };
-  static \u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({
-    type: _ClipboardModule,
-    imports: [CdkCopyToClipboard],
-    exports: [CdkCopyToClipboard]
-  });
-  static \u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({});
+}
+
+// src/app/service/latency/latency-service.ts
+var LatencyService = class _LatencyService {
+  /**
+   * 发起 JSON 请求并测量延迟，自动注入 rtid，用 Performance 覆盖自测
+   */
+  async fetchWithLatency(input2, options = {}) {
+    const method = (options.method ?? "GET").toUpperCase();
+    const rtid = crypto.randomUUID();
+    const rtidParam = options.rtidParam ?? "rtid";
+    const url = addRtid(input2, rtid, rtidParam);
+    const ac = new AbortController();
+    const userSignal = options.signal;
+    if (userSignal?.aborted)
+      ac.abort();
+    else if (userSignal)
+      userSignal.addEventListener("abort", () => ac.abort(), { once: true });
+    let timeoutId;
+    if (typeof options.timeoutMs === "number" && options.timeoutMs > 0) {
+      timeoutId = window.setTimeout(() => ac.abort(), options.timeoutMs);
+    }
+    let startedAt = nowEpochMs();
+    let headersAt = startedAt;
+    let endedAt = startedAt;
+    let httpStatus = 0;
+    let httpOk = false;
+    let serverTiming;
+    let responseObj;
+    let status = ResponseStatus.ERROR;
+    let errorMessage;
+    try {
+      const resp = await fetch(url, __spreadProps(__spreadValues({}, options), {
+        signal: ac.signal
+      }));
+      headersAt = nowEpochMs();
+      httpStatus = resp.status;
+      httpOk = resp.ok;
+      serverTiming = parseServerTimingHeader(resp.headers.get("server-timing"));
+      const raw = await resp.json();
+      responseObj = ApiResponse.deserialize(raw);
+      endedAt = nowEpochMs();
+      let ttfbMs = Math.max(0, headersAt - startedAt);
+      let totalMs = Math.max(0, endedAt - startedAt);
+      await nextFrame();
+      const entry = getExactResourceTimingByName(url);
+      if (entry) {
+        const pStart = toEpochMs(entry.startTime);
+        const pHeaders = toEpochMs(entry.responseStart);
+        const pEnd = toEpochMs(entry.responseEnd);
+        startedAt = pStart;
+        headersAt = pHeaders;
+        endedAt = pEnd;
+        totalMs = Math.max(0, Math.round(entry.duration));
+        if (Number.isFinite(entry.requestStart) && Number.isFinite(entry.responseStart)) {
+          ttfbMs = Math.max(0, Math.round(entry.responseStart - entry.requestStart));
+        }
+        const phases = buildPhases(entry);
+        return {
+          url,
+          method,
+          status: ResponseStatus.OK,
+          httpStatus,
+          httpOk,
+          startedAt,
+          headersAt,
+          endedAt,
+          ttfbMs,
+          totalMs,
+          serverTiming,
+          phases,
+          response: responseObj,
+          rtid
+        };
+      }
+      status = ResponseStatus.OK;
+      return {
+        url,
+        method,
+        status,
+        httpStatus,
+        httpOk,
+        startedAt,
+        headersAt,
+        endedAt,
+        ttfbMs,
+        totalMs,
+        serverTiming,
+        response: responseObj,
+        rtid
+      };
+    } catch (err) {
+      endedAt = nowEpochMs();
+      if (isAbortError(err)) {
+        status = ResponseStatus.TIMEOUT;
+        errorMessage = "Request timed out or aborted";
+      } else {
+        status = ResponseStatus.ERROR;
+        errorMessage = err?.message ?? String(err);
+      }
+      try {
+        await nextFrame();
+        const entry = getExactResourceTimingByName(url);
+        if (entry) {
+          const pStart = toEpochMs(entry.startTime);
+          const pHeaders = toEpochMs(entry.responseStart);
+          const pEnd = toEpochMs(entry.responseEnd);
+          startedAt = pStart;
+          headersAt = Number.isFinite(entry.responseStart) ? pHeaders : startedAt;
+          endedAt = Number.isFinite(entry.responseEnd) ? pEnd : endedAt;
+        }
+      } catch {
+      }
+      const ttfbMs = Math.max(0, headersAt - startedAt);
+      const totalMs = Math.max(0, endedAt - startedAt);
+      return {
+        url,
+        method,
+        status,
+        httpStatus,
+        httpOk,
+        startedAt,
+        headersAt,
+        endedAt,
+        ttfbMs,
+        totalMs,
+        serverTiming,
+        response: responseObj,
+        errorMessage,
+        rtid
+      };
+    } finally {
+      if (timeoutId !== void 0) {
+        clearTimeout(timeoutId);
+      }
+    }
+  }
+  /**
+   * RxJS 封装：取消订阅（unsubscribe）将触发 fetch 的 Abort
+   */
+  fetchWithLatency$(input2, options = {}) {
+    return new Observable((subscriber) => {
+      const ctrl = new AbortController();
+      const opts = __spreadProps(__spreadValues({}, options), { signal: ctrl.signal });
+      subscriber.add(() => {
+        try {
+          ctrl.abort();
+        } catch {
+        }
+      });
+      this.fetchWithLatency(input2, opts).then((res) => {
+        if (subscriber.closed)
+          return;
+        subscriber.next(res);
+        subscriber.complete();
+      }).catch((err) => {
+        if (subscriber.closed)
+          return;
+        subscriber.error(err);
+      });
+    });
+  }
+  static \u0275fac = function LatencyService_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _LatencyService)();
+  };
+  static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _LatencyService, factory: _LatencyService.\u0275fac, providedIn: "root" });
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(ClipboardModule, [{
-    type: NgModule,
-    args: [{
-      imports: [CdkCopyToClipboard],
-      exports: [CdkCopyToClipboard]
-    }]
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(LatencyService, [{
+    type: Injectable,
+    args: [{ providedIn: "root" }]
   }], null, null);
 })();
 
-// src/app/service/env.service.ts
-var EnvService = class _EnvService {
-  document;
-  platformId;
-  host;
-  userAgent;
-  constructor(document2, platformId) {
-    this.document = document2;
-    this.platformId = platformId;
-    this.host = new BehaviorSubject(this.getHost() ?? "");
-    this.userAgent = new BehaviorSubject(this.getUserAgent() ?? "");
+// src/app/service/dashboard.service.ts
+var DashboardService = class _DashboardService {
+  http;
+  latencyService;
+  static HEALTH_ENDPOINT = `/actuator/healthy`;
+  static REDIS_ENDPOINT = `/actuator/redis`;
+  loading = new BehaviorSubject(false);
+  loading$ = this.loading.asObservable();
+  error = new BehaviorSubject(null);
+  error$ = this.error.asObservable();
+  urlResult = new BehaviorSubject(void 0);
+  urlResult$ = this.urlResult.asObservable();
+  constructor(http, latencyService) {
+    this.http = http;
+    this.latencyService = latencyService;
   }
-  getHost() {
-    return isPlatformBrowser(this.platformId) ? this.document.location.host : null;
+  healthCheck() {
+    return this.http.get(_DashboardService.HEALTH_ENDPOINT).pipe(map((response) => ApiResponse.deserialize(response)));
   }
-  getUserAgent() {
-    return isPlatformBrowser(this.platformId) ? navigator.userAgent : null;
+  async healthLatency() {
+    return await this.latencyService.fetchWithLatency(_DashboardService.HEALTH_ENDPOINT);
   }
-  static \u0275fac = function EnvService_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _EnvService)(\u0275\u0275inject(DOCUMENT), \u0275\u0275inject(PLATFORM_ID));
+  redisCheck() {
+    return this.http.get(_DashboardService.REDIS_ENDPOINT).pipe(map((response) => ApiResponse.deserialize(response)));
+  }
+  async redisLatency() {
+    return await this.latencyService.fetchWithLatency(_DashboardService.REDIS_ENDPOINT);
+  }
+  getSubscription(query) {
+    this.loading.next(true);
+    return this.http.get(query.subscriptionPath()).pipe(
+      // tap(console.log),
+      map((response) => ApiResponse.deserialize(response, UrlResult)),
+      // 请求成功时清除错误信息
+      tap((response) => {
+        this.error.next(null);
+        if (response.isOk()) {
+          this.urlResult.next(response.data);
+        } else {
+        }
+        return response;
+      }),
+      // 错误只在 HTTP 内部处理，吞掉，不打断主流
+      catchError((err) => {
+        console.log("DashboardService.getSubscription catchError:");
+        const httpError = new DashboardHttpError(err, "GET");
+        console.log(httpError);
+        this.error.next(httpError);
+        throw httpError;
+      }),
+      // 结束（成功/失败/取消）：关 loading
+      finalize(() => {
+        console.log("DashboardService.getSubscription finalize:");
+        this.loading.next(false);
+      })
+    );
+  }
+  static \u0275fac = function DashboardService_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _DashboardService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(LatencyService));
   };
-  static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _EnvService, factory: _EnvService.\u0275fac, providedIn: "root" });
+  static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _DashboardService, factory: _DashboardService.\u0275fac });
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(EnvService, [{
-    type: Injectable,
-    args: [{ providedIn: "root" }]
-  }], () => [{ type: Document, decorators: [{
-    type: Inject,
-    args: [DOCUMENT]
-  }] }, { type: Object, decorators: [{
-    type: Inject,
-    args: [PLATFORM_ID]
-  }] }], null);
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(DashboardService, [{
+    type: Injectable
+  }], () => [{ type: HttpClient }, { type: LatencyService }], null);
 })();
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/fake-event-detection.mjs
+// src/app/page/shared/no-content/no-content.ts
+var NoContent = class _NoContent {
+  static \u0275fac = function NoContent_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _NoContent)();
+  };
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _NoContent, selectors: [["app-no-content"]], decls: 2, vars: 0, template: function NoContent_Template(rf, ctx) {
+    if (rf & 1) {
+      \u0275\u0275domElementStart(0, "p");
+      \u0275\u0275text(1, "no-content works!");
+      \u0275\u0275domElementEnd();
+    }
+  }, encapsulation: 2 });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(NoContent, [{
+    type: Component,
+    args: [{ selector: "app-no-content", imports: [], template: "<p>no-content works!</p>\n" }]
+  }], null, null);
+})();
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(NoContent, { className: "NoContent", filePath: "src/app/page/shared/no-content/no-content.ts", lineNumber: 9 });
+})();
+
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/fake-event-detection.mjs
 function isFakeMousedownFromScreenReader(event) {
   return event.buttons === 0 || event.detail === 0;
 }
@@ -34507,7 +34824,8 @@ function isFakeTouchstartFromScreenReader(event) {
   return !!touch && touch.identifier === -1 && (touch.radiusX == null || touch.radiusX === 1) && (touch.radiusY == null || touch.radiusY === 1);
 }
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/keycodes2.mjs
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/keycodes2.mjs
+var BACKSPACE = 8;
 var TAB = 9;
 var ENTER = 13;
 var SHIFT = 16;
@@ -34523,6 +34841,7 @@ var LEFT_ARROW = 37;
 var UP_ARROW = 38;
 var RIGHT_ARROW = 39;
 var DOWN_ARROW = 40;
+var DELETE = 46;
 var ZERO = 48;
 var NINE = 57;
 var A = 65;
@@ -34530,7 +34849,7 @@ var Z = 90;
 var META = 91;
 var MAC_META = 224;
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/shadow-dom.mjs
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/shadow-dom.mjs
 var shadowDomIsSupported;
 function _supportsShadowDom() {
   if (shadowDomIsSupported == null) {
@@ -34564,7 +34883,7 @@ function _getEventTarget(event) {
   return event.composedPath ? event.composedPath()[0] : event.target;
 }
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/platform2.mjs
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/platform2.mjs
 var hasV8BreakIterator;
 try {
   hasV8BreakIterator = typeof Intl !== "undefined" && Intl.v8BreakIterator;
@@ -34625,7 +34944,7 @@ var Platform = class _Platform {
   }], () => [], null);
 })();
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/passive-listeners.mjs
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/passive-listeners.mjs
 var supportsPassiveEvents;
 function supportsPassiveEventListeners() {
   if (supportsPassiveEvents == null && typeof window !== "undefined") {
@@ -34643,7 +34962,7 @@ function normalizePassiveListenerOptions(options) {
   return supportsPassiveEventListeners() ? options : !!options.capture;
 }
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/element.mjs
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/element.mjs
 function coerceNumberProperty(value, fallbackValue = 0) {
   if (_isNumberValue(value)) {
     return Number(value);
@@ -34657,7 +34976,7 @@ function coerceElement(elementOrRef) {
   return elementOrRef instanceof ElementRef ? elementOrRef.nativeElement : elementOrRef;
 }
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/focus-monitor.mjs
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/focus-monitor.mjs
 var INPUT_MODALITY_DETECTOR_OPTIONS = new InjectionToken("cdk-input-modality-detector-options");
 var INPUT_MODALITY_DETECTOR_DEFAULT_OPTIONS = {
   ignoreKeys: [ALT, CONTROL, MAC_META, META, SHIFT]
@@ -35137,7 +35456,7 @@ var CdkMonitorFocus = class _CdkMonitorFocus {
   });
 })();
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/style-loader.mjs
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/style-loader.mjs
 var appsWithLoaders = /* @__PURE__ */ new WeakMap();
 var _CdkPrivateStyleLoader = class __CdkPrivateStyleLoader {
   _appRef;
@@ -35186,7 +35505,7 @@ var _CdkPrivateStyleLoader = class __CdkPrivateStyleLoader {
   }], null, null);
 })();
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/private.mjs
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/private.mjs
 var _VisuallyHiddenLoader = class __VisuallyHiddenLoader {
   static \u0275fac = function _VisuallyHiddenLoader_Factory(__ngFactoryType__) {
     return new (__ngFactoryType__ || __VisuallyHiddenLoader)();
@@ -35217,12 +35536,12 @@ var _VisuallyHiddenLoader = class __VisuallyHiddenLoader {
   }], null, null);
 })();
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/array.mjs
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/array.mjs
 function coerceArray(value) {
   return Array.isArray(value) ? value : [value];
 }
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/breakpoints-observer.mjs
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/breakpoints-observer.mjs
 var mediaQueriesForWebkitCompatibility = /* @__PURE__ */ new Set();
 var mediaQueryStyleNode;
 var MediaMatcher = class _MediaMatcher {
@@ -35394,7 +35713,7 @@ function splitQueries(queries) {
   return queries.map((query) => query.split(",")).reduce((a1, a2) => a1.concat(a2)).map((query) => query.trim());
 }
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/observers.mjs
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/observers.mjs
 function shouldIgnoreRecord(record) {
   if (record.type === "characterData" && record.target instanceof Comment) {
     return true;
@@ -35639,7 +35958,7 @@ var ObserversModule = class _ObserversModule {
   }], null, null);
 })();
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/a11y-module.mjs
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/a11y-module.mjs
 var InteractivityChecker = class _InteractivityChecker {
   _platform = inject2(Platform);
   constructor() {
@@ -36481,7 +36800,7 @@ var A11yModule = class _A11yModule {
   }], () => [], null);
 })();
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/id-generator.mjs
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/id-generator.mjs
 var counters = {};
 var _IdGenerator = class __IdGenerator {
   _appId = inject2(APP_ID);
@@ -36516,7 +36835,7 @@ var _IdGenerator = class __IdGenerator {
   }], null, null);
 })();
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/typeahead.mjs
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/typeahead.mjs
 var DEFAULT_TYPEAHEAD_DEBOUNCE_INTERVAL_MS = 200;
 var Typeahead = class {
   _letterKeyStream = new Subject();
@@ -36580,7 +36899,7 @@ var Typeahead = class {
   }
 };
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/keycodes.mjs
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/keycodes.mjs
 function hasModifierKey(event, ...modifiers) {
   if (modifiers.length) {
     return modifiers.some((modifier) => event[modifier]);
@@ -36588,7 +36907,7 @@ function hasModifierKey(event, ...modifiers) {
   return event.altKey || event.shiftKey || event.ctrlKey || event.metaKey;
 }
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/list-key-manager.mjs
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/list-key-manager.mjs
 var ListKeyManager = class {
   _items;
   _activeItemIndex = signal(-1, ...ngDevMode ? [{ debugName: "_activeItemIndex" }] : []);
@@ -36920,7 +37239,7 @@ var ListKeyManager = class {
   }
 };
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/activedescendant-key-manager.mjs
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/activedescendant-key-manager.mjs
 var ActiveDescendantKeyManager = class extends ListKeyManager {
   setActiveItem(index) {
     if (this.activeItem) {
@@ -36933,7 +37252,26 @@ var ActiveDescendantKeyManager = class extends ListKeyManager {
   }
 };
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/a11y.mjs
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/focus-key-manager.mjs
+var FocusKeyManager = class extends ListKeyManager {
+  _origin = "program";
+  /**
+   * Sets the focus origin that will be passed in to the items for any subsequent `focus` calls.
+   * @param origin Focus origin to be used when focusing items.
+   */
+  setFocusOrigin(origin) {
+    this._origin = origin;
+    return this;
+  }
+  setActiveItem(item) {
+    super.setActiveItem(item);
+    if (this.activeItem) {
+      this.activeItem.focus(this._origin);
+    }
+  }
+};
+
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/a11y.mjs
 var ID_DELIMITER = " ";
 function addAriaReferencedId(el, attr, id) {
   const ids = getAriaReferenceIds(el, attr);
@@ -37309,7 +37647,656 @@ var ConfigurableFocusTrapFactory = class _ConfigurableFocusTrapFactory {
   }], () => [], null);
 })();
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/scrolling2.mjs
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/directionality.mjs
+var DIR_DOCUMENT = new InjectionToken("cdk-dir-doc", {
+  providedIn: "root",
+  factory: DIR_DOCUMENT_FACTORY
+});
+function DIR_DOCUMENT_FACTORY() {
+  return inject2(DOCUMENT);
+}
+var RTL_LOCALE_PATTERN = /^(ar|ckb|dv|he|iw|fa|nqo|ps|sd|ug|ur|yi|.*[-_](Adlm|Arab|Hebr|Nkoo|Rohg|Thaa))(?!.*[-_](Latn|Cyrl)($|-|_))($|-|_)/i;
+function _resolveDirectionality(rawValue) {
+  const value = rawValue?.toLowerCase() || "";
+  if (value === "auto" && typeof navigator !== "undefined" && navigator?.language) {
+    return RTL_LOCALE_PATTERN.test(navigator.language) ? "rtl" : "ltr";
+  }
+  return value === "rtl" ? "rtl" : "ltr";
+}
+var Directionality = class _Directionality {
+  /** The current 'ltr' or 'rtl' value. */
+  get value() {
+    return this.valueSignal();
+  }
+  /**
+   * The current 'ltr' or 'rtl' value.
+   */
+  valueSignal = signal("ltr", ...ngDevMode ? [{
+    debugName: "valueSignal"
+  }] : []);
+  /** Stream that emits whenever the 'ltr' / 'rtl' state changes. */
+  change = new EventEmitter();
+  constructor() {
+    const _document2 = inject2(DIR_DOCUMENT, {
+      optional: true
+    });
+    if (_document2) {
+      const bodyDir = _document2.body ? _document2.body.dir : null;
+      const htmlDir = _document2.documentElement ? _document2.documentElement.dir : null;
+      this.valueSignal.set(_resolveDirectionality(bodyDir || htmlDir || "ltr"));
+    }
+  }
+  ngOnDestroy() {
+    this.change.complete();
+  }
+  static \u0275fac = function Directionality_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _Directionality)();
+  };
+  static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
+    token: _Directionality,
+    factory: _Directionality.\u0275fac,
+    providedIn: "root"
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(Directionality, [{
+    type: Injectable,
+    args: [{
+      providedIn: "root"
+    }]
+  }], () => [], null);
+})();
+
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/bidi.mjs
+var Dir = class _Dir {
+  /** Whether the `value` has been set to its initial value. */
+  _isInitialized = false;
+  /** Direction as passed in by the consumer. */
+  _rawDir;
+  /** Event emitted when the direction changes. */
+  change = new EventEmitter();
+  /** @docs-private */
+  get dir() {
+    return this.valueSignal();
+  }
+  set dir(value) {
+    const previousValue = this.valueSignal();
+    this.valueSignal.set(_resolveDirectionality(value));
+    this._rawDir = value;
+    if (previousValue !== this.valueSignal() && this._isInitialized) {
+      this.change.emit(this.valueSignal());
+    }
+  }
+  /** Current layout direction of the element. */
+  get value() {
+    return this.dir;
+  }
+  valueSignal = signal("ltr", ...ngDevMode ? [{
+    debugName: "valueSignal"
+  }] : []);
+  /** Initialize once default value has been set. */
+  ngAfterContentInit() {
+    this._isInitialized = true;
+  }
+  ngOnDestroy() {
+    this.change.complete();
+  }
+  static \u0275fac = function Dir_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _Dir)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _Dir,
+    selectors: [["", "dir", ""]],
+    hostVars: 1,
+    hostBindings: function Dir_HostBindings(rf, ctx) {
+      if (rf & 2) {
+        \u0275\u0275attribute("dir", ctx._rawDir);
+      }
+    },
+    inputs: {
+      dir: "dir"
+    },
+    outputs: {
+      change: "dirChange"
+    },
+    exportAs: ["dir"],
+    features: [\u0275\u0275ProvidersFeature([{
+      provide: Directionality,
+      useExisting: _Dir
+    }])]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(Dir, [{
+    type: Directive,
+    args: [{
+      selector: "[dir]",
+      providers: [{
+        provide: Directionality,
+        useExisting: Dir
+      }],
+      host: {
+        "[attr.dir]": "_rawDir"
+      },
+      exportAs: "dir"
+    }]
+  }], null, {
+    change: [{
+      type: Output,
+      args: ["dirChange"]
+    }],
+    dir: [{
+      type: Input
+    }]
+  });
+})();
+var BidiModule = class _BidiModule {
+  static \u0275fac = function BidiModule_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _BidiModule)();
+  };
+  static \u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({
+    type: _BidiModule,
+    imports: [Dir],
+    exports: [Dir]
+  });
+  static \u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({});
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(BidiModule, [{
+    type: NgModule,
+    args: [{
+      imports: [Dir],
+      exports: [Dir]
+    }]
+  }], null, null);
+})();
+
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/common-module.mjs
+var MATERIAL_SANITY_CHECKS = new InjectionToken("mat-sanity-checks", {
+  providedIn: "root",
+  factory: () => true
+});
+var MatCommonModule = class _MatCommonModule {
+  constructor() {
+    inject2(HighContrastModeDetector)._applyBodyHighContrastModeCssClasses();
+  }
+  static \u0275fac = function MatCommonModule_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatCommonModule)();
+  };
+  static \u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({
+    type: _MatCommonModule,
+    imports: [BidiModule],
+    exports: [BidiModule]
+  });
+  static \u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({
+    imports: [BidiModule, BidiModule]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatCommonModule, [{
+    type: NgModule,
+    args: [{
+      imports: [BidiModule],
+      exports: [BidiModule]
+    }]
+  }], () => [], null);
+})();
+
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/card.mjs
+var _c0 = ["*"];
+var _c1 = [[["mat-card-title"], ["mat-card-subtitle"], ["", "mat-card-title", ""], ["", "mat-card-subtitle", ""], ["", "matCardTitle", ""], ["", "matCardSubtitle", ""]], [["", "mat-card-image", ""], ["", "matCardImage", ""], ["", "mat-card-sm-image", ""], ["", "matCardImageSmall", ""], ["", "mat-card-md-image", ""], ["", "matCardImageMedium", ""], ["", "mat-card-lg-image", ""], ["", "matCardImageLarge", ""], ["", "mat-card-xl-image", ""], ["", "matCardImageXLarge", ""]], "*"];
+var _c2 = ["mat-card-title, mat-card-subtitle,\n      [mat-card-title], [mat-card-subtitle],\n      [matCardTitle], [matCardSubtitle]", "[mat-card-image], [matCardImage],\n                    [mat-card-sm-image], [matCardImageSmall],\n                    [mat-card-md-image], [matCardImageMedium],\n                    [mat-card-lg-image], [matCardImageLarge],\n                    [mat-card-xl-image], [matCardImageXLarge]", "*"];
+var _c3 = [[["", "mat-card-avatar", ""], ["", "matCardAvatar", ""]], [["mat-card-title"], ["mat-card-subtitle"], ["", "mat-card-title", ""], ["", "mat-card-subtitle", ""], ["", "matCardTitle", ""], ["", "matCardSubtitle", ""]], "*"];
+var _c4 = ["[mat-card-avatar], [matCardAvatar]", "mat-card-title, mat-card-subtitle,\n      [mat-card-title], [mat-card-subtitle],\n      [matCardTitle], [matCardSubtitle]", "*"];
+var MAT_CARD_CONFIG = new InjectionToken("MAT_CARD_CONFIG");
+var MatCard = class _MatCard {
+  appearance;
+  constructor() {
+    const config2 = inject2(MAT_CARD_CONFIG, {
+      optional: true
+    });
+    this.appearance = config2?.appearance || "raised";
+  }
+  static \u0275fac = function MatCard_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatCard)();
+  };
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+    type: _MatCard,
+    selectors: [["mat-card"]],
+    hostAttrs: [1, "mat-mdc-card", "mdc-card"],
+    hostVars: 8,
+    hostBindings: function MatCard_HostBindings(rf, ctx) {
+      if (rf & 2) {
+        \u0275\u0275classProp("mat-mdc-card-outlined", ctx.appearance === "outlined")("mdc-card--outlined", ctx.appearance === "outlined")("mat-mdc-card-filled", ctx.appearance === "filled")("mdc-card--filled", ctx.appearance === "filled");
+      }
+    },
+    inputs: {
+      appearance: "appearance"
+    },
+    exportAs: ["matCard"],
+    ngContentSelectors: _c0,
+    decls: 1,
+    vars: 0,
+    template: function MatCard_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275projectionDef();
+        \u0275\u0275projection(0);
+      }
+    },
+    styles: ['.mat-mdc-card{display:flex;flex-direction:column;box-sizing:border-box;position:relative;border-style:solid;border-width:0;background-color:var(--mat-card-elevated-container-color, var(--mat-sys-surface-container-low));border-color:var(--mat-card-elevated-container-color, var(--mat-sys-surface-container-low));border-radius:var(--mat-card-elevated-container-shape, var(--mat-sys-corner-medium));box-shadow:var(--mat-card-elevated-container-elevation, var(--mat-sys-level1))}.mat-mdc-card::after{position:absolute;top:0;left:0;width:100%;height:100%;border:solid 1px rgba(0,0,0,0);content:"";display:block;pointer-events:none;box-sizing:border-box;border-radius:var(--mat-card-elevated-container-shape, var(--mat-sys-corner-medium))}.mat-mdc-card-outlined{background-color:var(--mat-card-outlined-container-color, var(--mat-sys-surface));border-radius:var(--mat-card-outlined-container-shape, var(--mat-sys-corner-medium));border-width:var(--mat-card-outlined-outline-width, 1px);border-color:var(--mat-card-outlined-outline-color, var(--mat-sys-outline-variant));box-shadow:var(--mat-card-outlined-container-elevation, var(--mat-sys-level0))}.mat-mdc-card-outlined::after{border:none}.mat-mdc-card-filled{background-color:var(--mat-card-filled-container-color, var(--mat-sys-surface-container-highest));border-radius:var(--mat-card-filled-container-shape, var(--mat-sys-corner-medium));box-shadow:var(--mat-card-filled-container-elevation, var(--mat-sys-level0))}.mdc-card__media{position:relative;box-sizing:border-box;background-repeat:no-repeat;background-position:center;background-size:cover}.mdc-card__media::before{display:block;content:""}.mdc-card__media:first-child{border-top-left-radius:inherit;border-top-right-radius:inherit}.mdc-card__media:last-child{border-bottom-left-radius:inherit;border-bottom-right-radius:inherit}.mat-mdc-card-actions{display:flex;flex-direction:row;align-items:center;box-sizing:border-box;min-height:52px;padding:8px}.mat-mdc-card-title{font-family:var(--mat-card-title-text-font, var(--mat-sys-title-large-font));line-height:var(--mat-card-title-text-line-height, var(--mat-sys-title-large-line-height));font-size:var(--mat-card-title-text-size, var(--mat-sys-title-large-size));letter-spacing:var(--mat-card-title-text-tracking, var(--mat-sys-title-large-tracking));font-weight:var(--mat-card-title-text-weight, var(--mat-sys-title-large-weight))}.mat-mdc-card-subtitle{color:var(--mat-card-subtitle-text-color, var(--mat-sys-on-surface));font-family:var(--mat-card-subtitle-text-font, var(--mat-sys-title-medium-font));line-height:var(--mat-card-subtitle-text-line-height, var(--mat-sys-title-medium-line-height));font-size:var(--mat-card-subtitle-text-size, var(--mat-sys-title-medium-size));letter-spacing:var(--mat-card-subtitle-text-tracking, var(--mat-sys-title-medium-tracking));font-weight:var(--mat-card-subtitle-text-weight, var(--mat-sys-title-medium-weight))}.mat-mdc-card-title,.mat-mdc-card-subtitle{display:block;margin:0}.mat-mdc-card-avatar~.mat-mdc-card-header-text .mat-mdc-card-title,.mat-mdc-card-avatar~.mat-mdc-card-header-text .mat-mdc-card-subtitle{padding:16px 16px 0}.mat-mdc-card-header{display:flex;padding:16px 16px 0}.mat-mdc-card-content{display:block;padding:0 16px}.mat-mdc-card-content:first-child{padding-top:16px}.mat-mdc-card-content:last-child{padding-bottom:16px}.mat-mdc-card-title-group{display:flex;justify-content:space-between;width:100%}.mat-mdc-card-avatar{height:40px;width:40px;border-radius:50%;flex-shrink:0;margin-bottom:16px;object-fit:cover}.mat-mdc-card-avatar~.mat-mdc-card-header-text .mat-mdc-card-subtitle,.mat-mdc-card-avatar~.mat-mdc-card-header-text .mat-mdc-card-title{line-height:normal}.mat-mdc-card-sm-image{width:80px;height:80px}.mat-mdc-card-md-image{width:112px;height:112px}.mat-mdc-card-lg-image{width:152px;height:152px}.mat-mdc-card-xl-image{width:240px;height:240px}.mat-mdc-card-subtitle~.mat-mdc-card-title,.mat-mdc-card-title~.mat-mdc-card-subtitle,.mat-mdc-card-header .mat-mdc-card-header-text .mat-mdc-card-title,.mat-mdc-card-header .mat-mdc-card-header-text .mat-mdc-card-subtitle,.mat-mdc-card-title-group .mat-mdc-card-title,.mat-mdc-card-title-group .mat-mdc-card-subtitle{padding-top:0}.mat-mdc-card-content>:last-child:not(.mat-mdc-card-footer){margin-bottom:0}.mat-mdc-card-actions-align-end{justify-content:flex-end}\n'],
+    encapsulation: 2,
+    changeDetection: 0
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatCard, [{
+    type: Component,
+    args: [{
+      selector: "mat-card",
+      host: {
+        "class": "mat-mdc-card mdc-card",
+        "[class.mat-mdc-card-outlined]": 'appearance === "outlined"',
+        "[class.mdc-card--outlined]": 'appearance === "outlined"',
+        "[class.mat-mdc-card-filled]": 'appearance === "filled"',
+        "[class.mdc-card--filled]": 'appearance === "filled"'
+      },
+      exportAs: "matCard",
+      encapsulation: ViewEncapsulation.None,
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      template: "<ng-content></ng-content>\n",
+      styles: ['.mat-mdc-card{display:flex;flex-direction:column;box-sizing:border-box;position:relative;border-style:solid;border-width:0;background-color:var(--mat-card-elevated-container-color, var(--mat-sys-surface-container-low));border-color:var(--mat-card-elevated-container-color, var(--mat-sys-surface-container-low));border-radius:var(--mat-card-elevated-container-shape, var(--mat-sys-corner-medium));box-shadow:var(--mat-card-elevated-container-elevation, var(--mat-sys-level1))}.mat-mdc-card::after{position:absolute;top:0;left:0;width:100%;height:100%;border:solid 1px rgba(0,0,0,0);content:"";display:block;pointer-events:none;box-sizing:border-box;border-radius:var(--mat-card-elevated-container-shape, var(--mat-sys-corner-medium))}.mat-mdc-card-outlined{background-color:var(--mat-card-outlined-container-color, var(--mat-sys-surface));border-radius:var(--mat-card-outlined-container-shape, var(--mat-sys-corner-medium));border-width:var(--mat-card-outlined-outline-width, 1px);border-color:var(--mat-card-outlined-outline-color, var(--mat-sys-outline-variant));box-shadow:var(--mat-card-outlined-container-elevation, var(--mat-sys-level0))}.mat-mdc-card-outlined::after{border:none}.mat-mdc-card-filled{background-color:var(--mat-card-filled-container-color, var(--mat-sys-surface-container-highest));border-radius:var(--mat-card-filled-container-shape, var(--mat-sys-corner-medium));box-shadow:var(--mat-card-filled-container-elevation, var(--mat-sys-level0))}.mdc-card__media{position:relative;box-sizing:border-box;background-repeat:no-repeat;background-position:center;background-size:cover}.mdc-card__media::before{display:block;content:""}.mdc-card__media:first-child{border-top-left-radius:inherit;border-top-right-radius:inherit}.mdc-card__media:last-child{border-bottom-left-radius:inherit;border-bottom-right-radius:inherit}.mat-mdc-card-actions{display:flex;flex-direction:row;align-items:center;box-sizing:border-box;min-height:52px;padding:8px}.mat-mdc-card-title{font-family:var(--mat-card-title-text-font, var(--mat-sys-title-large-font));line-height:var(--mat-card-title-text-line-height, var(--mat-sys-title-large-line-height));font-size:var(--mat-card-title-text-size, var(--mat-sys-title-large-size));letter-spacing:var(--mat-card-title-text-tracking, var(--mat-sys-title-large-tracking));font-weight:var(--mat-card-title-text-weight, var(--mat-sys-title-large-weight))}.mat-mdc-card-subtitle{color:var(--mat-card-subtitle-text-color, var(--mat-sys-on-surface));font-family:var(--mat-card-subtitle-text-font, var(--mat-sys-title-medium-font));line-height:var(--mat-card-subtitle-text-line-height, var(--mat-sys-title-medium-line-height));font-size:var(--mat-card-subtitle-text-size, var(--mat-sys-title-medium-size));letter-spacing:var(--mat-card-subtitle-text-tracking, var(--mat-sys-title-medium-tracking));font-weight:var(--mat-card-subtitle-text-weight, var(--mat-sys-title-medium-weight))}.mat-mdc-card-title,.mat-mdc-card-subtitle{display:block;margin:0}.mat-mdc-card-avatar~.mat-mdc-card-header-text .mat-mdc-card-title,.mat-mdc-card-avatar~.mat-mdc-card-header-text .mat-mdc-card-subtitle{padding:16px 16px 0}.mat-mdc-card-header{display:flex;padding:16px 16px 0}.mat-mdc-card-content{display:block;padding:0 16px}.mat-mdc-card-content:first-child{padding-top:16px}.mat-mdc-card-content:last-child{padding-bottom:16px}.mat-mdc-card-title-group{display:flex;justify-content:space-between;width:100%}.mat-mdc-card-avatar{height:40px;width:40px;border-radius:50%;flex-shrink:0;margin-bottom:16px;object-fit:cover}.mat-mdc-card-avatar~.mat-mdc-card-header-text .mat-mdc-card-subtitle,.mat-mdc-card-avatar~.mat-mdc-card-header-text .mat-mdc-card-title{line-height:normal}.mat-mdc-card-sm-image{width:80px;height:80px}.mat-mdc-card-md-image{width:112px;height:112px}.mat-mdc-card-lg-image{width:152px;height:152px}.mat-mdc-card-xl-image{width:240px;height:240px}.mat-mdc-card-subtitle~.mat-mdc-card-title,.mat-mdc-card-title~.mat-mdc-card-subtitle,.mat-mdc-card-header .mat-mdc-card-header-text .mat-mdc-card-title,.mat-mdc-card-header .mat-mdc-card-header-text .mat-mdc-card-subtitle,.mat-mdc-card-title-group .mat-mdc-card-title,.mat-mdc-card-title-group .mat-mdc-card-subtitle{padding-top:0}.mat-mdc-card-content>:last-child:not(.mat-mdc-card-footer){margin-bottom:0}.mat-mdc-card-actions-align-end{justify-content:flex-end}\n']
+    }]
+  }], () => [], {
+    appearance: [{
+      type: Input
+    }]
+  });
+})();
+var MatCardTitle = class _MatCardTitle {
+  static \u0275fac = function MatCardTitle_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatCardTitle)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _MatCardTitle,
+    selectors: [["mat-card-title"], ["", "mat-card-title", ""], ["", "matCardTitle", ""]],
+    hostAttrs: [1, "mat-mdc-card-title"]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatCardTitle, [{
+    type: Directive,
+    args: [{
+      selector: `mat-card-title, [mat-card-title], [matCardTitle]`,
+      host: {
+        "class": "mat-mdc-card-title"
+      }
+    }]
+  }], null, null);
+})();
+var MatCardTitleGroup = class _MatCardTitleGroup {
+  static \u0275fac = function MatCardTitleGroup_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatCardTitleGroup)();
+  };
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+    type: _MatCardTitleGroup,
+    selectors: [["mat-card-title-group"]],
+    hostAttrs: [1, "mat-mdc-card-title-group"],
+    ngContentSelectors: _c2,
+    decls: 4,
+    vars: 0,
+    template: function MatCardTitleGroup_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275projectionDef(_c1);
+        \u0275\u0275domElementStart(0, "div");
+        \u0275\u0275projection(1);
+        \u0275\u0275domElementEnd();
+        \u0275\u0275projection(2, 1);
+        \u0275\u0275projection(3, 2);
+      }
+    },
+    encapsulation: 2,
+    changeDetection: 0
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatCardTitleGroup, [{
+    type: Component,
+    args: [{
+      selector: "mat-card-title-group",
+      encapsulation: ViewEncapsulation.None,
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      host: {
+        "class": "mat-mdc-card-title-group"
+      },
+      template: '<div>\n  <ng-content\n      select="mat-card-title, mat-card-subtitle,\n      [mat-card-title], [mat-card-subtitle],\n      [matCardTitle], [matCardSubtitle]"></ng-content>\n</div>\n<ng-content select="[mat-card-image], [matCardImage],\n                    [mat-card-sm-image], [matCardImageSmall],\n                    [mat-card-md-image], [matCardImageMedium],\n                    [mat-card-lg-image], [matCardImageLarge],\n                    [mat-card-xl-image], [matCardImageXLarge]"></ng-content>\n<ng-content></ng-content>\n'
+    }]
+  }], null, null);
+})();
+var MatCardContent = class _MatCardContent {
+  static \u0275fac = function MatCardContent_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatCardContent)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _MatCardContent,
+    selectors: [["mat-card-content"]],
+    hostAttrs: [1, "mat-mdc-card-content"]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatCardContent, [{
+    type: Directive,
+    args: [{
+      selector: "mat-card-content",
+      host: {
+        "class": "mat-mdc-card-content"
+      }
+    }]
+  }], null, null);
+})();
+var MatCardSubtitle = class _MatCardSubtitle {
+  static \u0275fac = function MatCardSubtitle_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatCardSubtitle)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _MatCardSubtitle,
+    selectors: [["mat-card-subtitle"], ["", "mat-card-subtitle", ""], ["", "matCardSubtitle", ""]],
+    hostAttrs: [1, "mat-mdc-card-subtitle"]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatCardSubtitle, [{
+    type: Directive,
+    args: [{
+      selector: `mat-card-subtitle, [mat-card-subtitle], [matCardSubtitle]`,
+      host: {
+        "class": "mat-mdc-card-subtitle"
+      }
+    }]
+  }], null, null);
+})();
+var MatCardActions = class _MatCardActions {
+  // TODO(jelbourn): deprecate `align` in favor of `actionPosition` or `actionAlignment`
+  // as to not conflict with the native `align` attribute.
+  /** Position of the actions inside the card. */
+  align = "start";
+  static \u0275fac = function MatCardActions_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatCardActions)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _MatCardActions,
+    selectors: [["mat-card-actions"]],
+    hostAttrs: [1, "mat-mdc-card-actions", "mdc-card__actions"],
+    hostVars: 2,
+    hostBindings: function MatCardActions_HostBindings(rf, ctx) {
+      if (rf & 2) {
+        \u0275\u0275classProp("mat-mdc-card-actions-align-end", ctx.align === "end");
+      }
+    },
+    inputs: {
+      align: "align"
+    },
+    exportAs: ["matCardActions"]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatCardActions, [{
+    type: Directive,
+    args: [{
+      selector: "mat-card-actions",
+      exportAs: "matCardActions",
+      host: {
+        "class": "mat-mdc-card-actions mdc-card__actions",
+        "[class.mat-mdc-card-actions-align-end]": 'align === "end"'
+      }
+    }]
+  }], null, {
+    align: [{
+      type: Input
+    }]
+  });
+})();
+var MatCardHeader = class _MatCardHeader {
+  static \u0275fac = function MatCardHeader_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatCardHeader)();
+  };
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+    type: _MatCardHeader,
+    selectors: [["mat-card-header"]],
+    hostAttrs: [1, "mat-mdc-card-header"],
+    ngContentSelectors: _c4,
+    decls: 4,
+    vars: 0,
+    consts: [[1, "mat-mdc-card-header-text"]],
+    template: function MatCardHeader_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275projectionDef(_c3);
+        \u0275\u0275projection(0);
+        \u0275\u0275domElementStart(1, "div", 0);
+        \u0275\u0275projection(2, 1);
+        \u0275\u0275domElementEnd();
+        \u0275\u0275projection(3, 2);
+      }
+    },
+    encapsulation: 2,
+    changeDetection: 0
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatCardHeader, [{
+    type: Component,
+    args: [{
+      selector: "mat-card-header",
+      encapsulation: ViewEncapsulation.None,
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      host: {
+        "class": "mat-mdc-card-header"
+      },
+      template: '<ng-content select="[mat-card-avatar], [matCardAvatar]"></ng-content>\n<div class="mat-mdc-card-header-text">\n  <ng-content\n      select="mat-card-title, mat-card-subtitle,\n      [mat-card-title], [mat-card-subtitle],\n      [matCardTitle], [matCardSubtitle]"></ng-content>\n</div>\n<ng-content></ng-content>\n'
+    }]
+  }], null, null);
+})();
+var MatCardFooter = class _MatCardFooter {
+  static \u0275fac = function MatCardFooter_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatCardFooter)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _MatCardFooter,
+    selectors: [["mat-card-footer"]],
+    hostAttrs: [1, "mat-mdc-card-footer"]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatCardFooter, [{
+    type: Directive,
+    args: [{
+      selector: "mat-card-footer",
+      host: {
+        "class": "mat-mdc-card-footer"
+      }
+    }]
+  }], null, null);
+})();
+var MatCardImage = class _MatCardImage {
+  static \u0275fac = function MatCardImage_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatCardImage)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _MatCardImage,
+    selectors: [["", "mat-card-image", ""], ["", "matCardImage", ""]],
+    hostAttrs: [1, "mat-mdc-card-image", "mdc-card__media"]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatCardImage, [{
+    type: Directive,
+    args: [{
+      selector: "[mat-card-image], [matCardImage]",
+      host: {
+        "class": "mat-mdc-card-image mdc-card__media"
+      }
+    }]
+  }], null, null);
+})();
+var MatCardSmImage = class _MatCardSmImage {
+  static \u0275fac = function MatCardSmImage_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatCardSmImage)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _MatCardSmImage,
+    selectors: [["", "mat-card-sm-image", ""], ["", "matCardImageSmall", ""]],
+    hostAttrs: [1, "mat-mdc-card-sm-image", "mdc-card__media"]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatCardSmImage, [{
+    type: Directive,
+    args: [{
+      selector: "[mat-card-sm-image], [matCardImageSmall]",
+      host: {
+        "class": "mat-mdc-card-sm-image mdc-card__media"
+      }
+    }]
+  }], null, null);
+})();
+var MatCardMdImage = class _MatCardMdImage {
+  static \u0275fac = function MatCardMdImage_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatCardMdImage)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _MatCardMdImage,
+    selectors: [["", "mat-card-md-image", ""], ["", "matCardImageMedium", ""]],
+    hostAttrs: [1, "mat-mdc-card-md-image", "mdc-card__media"]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatCardMdImage, [{
+    type: Directive,
+    args: [{
+      selector: "[mat-card-md-image], [matCardImageMedium]",
+      host: {
+        "class": "mat-mdc-card-md-image mdc-card__media"
+      }
+    }]
+  }], null, null);
+})();
+var MatCardLgImage = class _MatCardLgImage {
+  static \u0275fac = function MatCardLgImage_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatCardLgImage)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _MatCardLgImage,
+    selectors: [["", "mat-card-lg-image", ""], ["", "matCardImageLarge", ""]],
+    hostAttrs: [1, "mat-mdc-card-lg-image", "mdc-card__media"]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatCardLgImage, [{
+    type: Directive,
+    args: [{
+      selector: "[mat-card-lg-image], [matCardImageLarge]",
+      host: {
+        "class": "mat-mdc-card-lg-image mdc-card__media"
+      }
+    }]
+  }], null, null);
+})();
+var MatCardXlImage = class _MatCardXlImage {
+  static \u0275fac = function MatCardXlImage_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatCardXlImage)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _MatCardXlImage,
+    selectors: [["", "mat-card-xl-image", ""], ["", "matCardImageXLarge", ""]],
+    hostAttrs: [1, "mat-mdc-card-xl-image", "mdc-card__media"]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatCardXlImage, [{
+    type: Directive,
+    args: [{
+      selector: "[mat-card-xl-image], [matCardImageXLarge]",
+      host: {
+        "class": "mat-mdc-card-xl-image mdc-card__media"
+      }
+    }]
+  }], null, null);
+})();
+var MatCardAvatar = class _MatCardAvatar {
+  static \u0275fac = function MatCardAvatar_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatCardAvatar)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _MatCardAvatar,
+    selectors: [["", "mat-card-avatar", ""], ["", "matCardAvatar", ""]],
+    hostAttrs: [1, "mat-mdc-card-avatar"]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatCardAvatar, [{
+    type: Directive,
+    args: [{
+      selector: "[mat-card-avatar], [matCardAvatar]",
+      host: {
+        "class": "mat-mdc-card-avatar"
+      }
+    }]
+  }], null, null);
+})();
+var CARD_DIRECTIVES = [MatCard, MatCardActions, MatCardAvatar, MatCardContent, MatCardFooter, MatCardHeader, MatCardImage, MatCardLgImage, MatCardMdImage, MatCardSmImage, MatCardSubtitle, MatCardTitle, MatCardTitleGroup, MatCardXlImage];
+var MatCardModule = class _MatCardModule {
+  static \u0275fac = function MatCardModule_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatCardModule)();
+  };
+  static \u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({
+    type: _MatCardModule,
+    imports: [MatCommonModule, MatCard, MatCardActions, MatCardAvatar, MatCardContent, MatCardFooter, MatCardHeader, MatCardImage, MatCardLgImage, MatCardMdImage, MatCardSmImage, MatCardSubtitle, MatCardTitle, MatCardTitleGroup, MatCardXlImage],
+    exports: [MatCard, MatCardActions, MatCardAvatar, MatCardContent, MatCardFooter, MatCardHeader, MatCardImage, MatCardLgImage, MatCardMdImage, MatCardSmImage, MatCardSubtitle, MatCardTitle, MatCardTitleGroup, MatCardXlImage, MatCommonModule]
+  });
+  static \u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({
+    imports: [MatCommonModule, MatCommonModule]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatCardModule, [{
+    type: NgModule,
+    args: [{
+      imports: [MatCommonModule, ...CARD_DIRECTIVES],
+      exports: [CARD_DIRECTIVES, MatCommonModule]
+    }]
+  }], null, null);
+})();
+
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/structural-styles.mjs
+var _StructuralStylesLoader = class __StructuralStylesLoader {
+  static \u0275fac = function _StructuralStylesLoader_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || __StructuralStylesLoader)();
+  };
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+    type: __StructuralStylesLoader,
+    selectors: [["structural-styles"]],
+    decls: 0,
+    vars: 0,
+    template: function _StructuralStylesLoader_Template(rf, ctx) {
+    },
+    styles: ['.mat-focus-indicator{position:relative}.mat-focus-indicator::before{top:0;left:0;right:0;bottom:0;position:absolute;box-sizing:border-box;pointer-events:none;display:var(--mat-focus-indicator-display, none);border-width:var(--mat-focus-indicator-border-width, 3px);border-style:var(--mat-focus-indicator-border-style, solid);border-color:var(--mat-focus-indicator-border-color, transparent);border-radius:var(--mat-focus-indicator-border-radius, 4px)}.mat-focus-indicator:focus::before{content:""}@media(forced-colors: active){html{--mat-focus-indicator-display: block}}\n'],
+    encapsulation: 2,
+    changeDetection: 0
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(_StructuralStylesLoader, [{
+    type: Component,
+    args: [{
+      selector: "structural-styles",
+      encapsulation: ViewEncapsulation.None,
+      template: "",
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      styles: ['.mat-focus-indicator{position:relative}.mat-focus-indicator::before{top:0;left:0;right:0;bottom:0;position:absolute;box-sizing:border-box;pointer-events:none;display:var(--mat-focus-indicator-display, none);border-width:var(--mat-focus-indicator-border-width, 3px);border-style:var(--mat-focus-indicator-border-style, solid);border-color:var(--mat-focus-indicator-border-color, transparent);border-radius:var(--mat-focus-indicator-border-radius, 4px)}.mat-focus-indicator:focus::before{content:""}@media(forced-colors: active){html{--mat-focus-indicator-display: block}}\n']
+    }]
+  }], null, null);
+})();
+
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/scrolling2.mjs
 var RtlScrollAxisType;
 (function(RtlScrollAxisType2) {
   RtlScrollAxisType2[RtlScrollAxisType2["NORMAL"] = 0] = "NORMAL";
@@ -37366,7 +38353,7 @@ function getRtlScrollAxisType() {
   return rtlScrollAxisType;
 }
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/test-environment.mjs
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/test-environment.mjs
 function _isTestEnvironment() {
   return (
     // @ts-ignore
@@ -37377,7 +38364,7 @@ function _isTestEnvironment() {
   );
 }
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/platform.mjs
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/platform.mjs
 var PlatformModule = class _PlatformModule {
   static \u0275fac = function PlatformModule_Factory(__ngFactoryType__) {
     return new (__ngFactoryType__ || _PlatformModule)();
@@ -37438,7 +38425,20 @@ function getSupportedInputTypes() {
   return supportedInputTypes;
 }
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/layout.mjs
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/css-pixel-value.mjs
+function coerceCssPixelValue(value) {
+  if (value == null) {
+    return "";
+  }
+  return typeof value === "string" ? value : `${value}px`;
+}
+
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/coercion.mjs
+function coerceBooleanProperty(value) {
+  return value != null && `${value}` !== "false";
+}
+
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/layout.mjs
 var LayoutModule = class _LayoutModule {
   static \u0275fac = function LayoutModule_Factory(__ngFactoryType__) {
     return new (__ngFactoryType__ || _LayoutModule)();
@@ -37455,7 +38455,7 @@ var LayoutModule = class _LayoutModule {
   }], null, null);
 })();
 
-// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@ang_awrsjmhxfn5unao7dg6glqdxaq/node_modules/@angular/material/fesm2022/animation.mjs
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/animation.mjs
 var MATERIAL_ANIMATIONS = new InjectionToken("MATERIAL_ANIMATIONS");
 var reducedMotion = null;
 function _getAnimationsState() {
@@ -37469,20 +38469,7 @@ function _animationsDisabled() {
   return _getAnimationsState() !== "enabled";
 }
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/css-pixel-value.mjs
-function coerceCssPixelValue(value) {
-  if (value == null) {
-    return "";
-  }
-  return typeof value === "string" ? value : `${value}px`;
-}
-
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/coercion.mjs
-function coerceBooleanProperty(value) {
-  return value != null && `${value}` !== "false";
-}
-
-// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@ang_awrsjmhxfn5unao7dg6glqdxaq/node_modules/@angular/material/fesm2022/ripple.mjs
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/ripple.mjs
 var RippleState;
 (function(RippleState2) {
   RippleState2[RippleState2["FADING_IN"] = 0] = "FADING_IN";
@@ -38056,7 +39043,7 @@ var MatRipple = class _MatRipple {
   });
 })();
 
-// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@ang_awrsjmhxfn5unao7dg6glqdxaq/node_modules/@angular/material/fesm2022/ripple-loader.mjs
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/ripple-loader.mjs
 var eventListenerOptions2 = {
   capture: true
 };
@@ -38193,1909 +39180,7 @@ var MatRippleLoader = class _MatRippleLoader {
   }], () => [], null);
 })();
 
-// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@ang_awrsjmhxfn5unao7dg6glqdxaq/node_modules/@angular/material/fesm2022/structural-styles.mjs
-var _StructuralStylesLoader = class __StructuralStylesLoader {
-  static \u0275fac = function _StructuralStylesLoader_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || __StructuralStylesLoader)();
-  };
-  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
-    type: __StructuralStylesLoader,
-    selectors: [["structural-styles"]],
-    decls: 0,
-    vars: 0,
-    template: function _StructuralStylesLoader_Template(rf, ctx) {
-    },
-    styles: ['.mat-focus-indicator{position:relative}.mat-focus-indicator::before{top:0;left:0;right:0;bottom:0;position:absolute;box-sizing:border-box;pointer-events:none;display:var(--mat-focus-indicator-display, none);border-width:var(--mat-focus-indicator-border-width, 3px);border-style:var(--mat-focus-indicator-border-style, solid);border-color:var(--mat-focus-indicator-border-color, transparent);border-radius:var(--mat-focus-indicator-border-radius, 4px)}.mat-focus-indicator:focus::before{content:""}@media(forced-colors: active){html{--mat-focus-indicator-display: block}}\n'],
-    encapsulation: 2,
-    changeDetection: 0
-  });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(_StructuralStylesLoader, [{
-    type: Component,
-    args: [{
-      selector: "structural-styles",
-      encapsulation: ViewEncapsulation.None,
-      template: "",
-      changeDetection: ChangeDetectionStrategy.OnPush,
-      styles: ['.mat-focus-indicator{position:relative}.mat-focus-indicator::before{top:0;left:0;right:0;bottom:0;position:absolute;box-sizing:border-box;pointer-events:none;display:var(--mat-focus-indicator-display, none);border-width:var(--mat-focus-indicator-border-width, 3px);border-style:var(--mat-focus-indicator-border-style, solid);border-color:var(--mat-focus-indicator-border-color, transparent);border-radius:var(--mat-focus-indicator-border-radius, 4px)}.mat-focus-indicator:focus::before{content:""}@media(forced-colors: active){html{--mat-focus-indicator-display: block}}\n']
-    }]
-  }], null, null);
-})();
-
-// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@ang_awrsjmhxfn5unao7dg6glqdxaq/node_modules/@angular/material/fesm2022/icon-button.mjs
-var _c0 = ["mat-icon-button", ""];
-var _c1 = ["*"];
-var MAT_BUTTON_CONFIG = new InjectionToken("MAT_BUTTON_CONFIG");
-function transformTabIndex(value) {
-  return value == null ? void 0 : numberAttribute(value);
-}
-var MatButtonBase = class _MatButtonBase {
-  _elementRef = inject2(ElementRef);
-  _ngZone = inject2(NgZone);
-  _animationsDisabled = _animationsDisabled();
-  _config = inject2(MAT_BUTTON_CONFIG, {
-    optional: true
-  });
-  _focusMonitor = inject2(FocusMonitor);
-  _cleanupClick;
-  _renderer = inject2(Renderer2);
-  /**
-   * Handles the lazy creation of the MatButton ripple.
-   * Used to improve initial load time of large applications.
-   */
-  _rippleLoader = inject2(MatRippleLoader);
-  /** Whether the button is set on an anchor node. */
-  _isAnchor;
-  /** Whether this button is a FAB. Used to apply the correct class on the ripple. */
-  _isFab = false;
-  /**
-   * Theme color of the button. This API is supported in M2 themes only, it has
-   * no effect in M3 themes. For color customization in M3, see https://material.angular.dev/components/button/styling.
-   *
-   * For information on applying color variants in M3, see
-   * https://material.angular.dev/guide/material-2-theming#optional-add-backwards-compatibility-styles-for-color-variants
-   */
-  color;
-  /** Whether the ripple effect is disabled or not. */
-  get disableRipple() {
-    return this._disableRipple;
-  }
-  set disableRipple(value) {
-    this._disableRipple = value;
-    this._updateRippleDisabled();
-  }
-  _disableRipple = false;
-  /** Whether the button is disabled. */
-  get disabled() {
-    return this._disabled;
-  }
-  set disabled(value) {
-    this._disabled = value;
-    this._updateRippleDisabled();
-  }
-  _disabled = false;
-  /** `aria-disabled` value of the button. */
-  ariaDisabled;
-  /**
-   * Natively disabled buttons prevent focus and any pointer events from reaching the button.
-   * In some scenarios this might not be desirable, because it can prevent users from finding out
-   * why the button is disabled (e.g. via tooltip). This is also useful for buttons that may
-   * become disabled when activated, which would cause focus to be transferred to the document
-   * body instead of remaining on the button.
-   *
-   * Enabling this input will change the button so that it is styled to be disabled and will be
-   * marked as `aria-disabled`, but it will allow the button to receive events and focus.
-   *
-   * Note that by enabling this, you need to set the `tabindex` yourself if the button isn't
-   * meant to be tabbable and you have to prevent the button action (e.g. form submissions).
-   */
-  disabledInteractive;
-  /** Tab index for the button. */
-  tabIndex;
-  /**
-   * Backwards-compatibility input that handles pre-existing `[tabindex]` bindings.
-   * @docs-private
-   */
-  set _tabindex(value) {
-    this.tabIndex = value;
-  }
-  constructor() {
-    inject2(_CdkPrivateStyleLoader).load(_StructuralStylesLoader);
-    const element = this._elementRef.nativeElement;
-    this._isAnchor = element.tagName === "A";
-    this.disabledInteractive = this._config?.disabledInteractive ?? false;
-    this.color = this._config?.color ?? null;
-    this._rippleLoader?.configureRipple(element, {
-      className: "mat-mdc-button-ripple"
-    });
-  }
-  ngAfterViewInit() {
-    this._focusMonitor.monitor(this._elementRef, true);
-    if (this._isAnchor) {
-      this._setupAsAnchor();
-    }
-  }
-  ngOnDestroy() {
-    this._cleanupClick?.();
-    this._focusMonitor.stopMonitoring(this._elementRef);
-    this._rippleLoader?.destroyRipple(this._elementRef.nativeElement);
-  }
-  /** Focuses the button. */
-  focus(origin = "program", options) {
-    if (origin) {
-      this._focusMonitor.focusVia(this._elementRef.nativeElement, origin, options);
-    } else {
-      this._elementRef.nativeElement.focus(options);
-    }
-  }
-  _getAriaDisabled() {
-    if (this.ariaDisabled != null) {
-      return this.ariaDisabled;
-    }
-    if (this._isAnchor) {
-      return this.disabled || null;
-    }
-    return this.disabled && this.disabledInteractive ? true : null;
-  }
-  _getDisabledAttribute() {
-    return this.disabledInteractive || !this.disabled ? null : true;
-  }
-  _updateRippleDisabled() {
-    this._rippleLoader?.setDisabled(this._elementRef.nativeElement, this.disableRipple || this.disabled);
-  }
-  _getTabIndex() {
-    if (this._isAnchor) {
-      return this.disabled && !this.disabledInteractive ? -1 : this.tabIndex;
-    }
-    return this.tabIndex;
-  }
-  _setupAsAnchor() {
-    this._cleanupClick = this._ngZone.runOutsideAngular(() => this._renderer.listen(this._elementRef.nativeElement, "click", (event) => {
-      if (this.disabled) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-      }
-    }));
-  }
-  static \u0275fac = function MatButtonBase_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _MatButtonBase)();
-  };
-  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
-    type: _MatButtonBase,
-    hostAttrs: [1, "mat-mdc-button-base"],
-    hostVars: 13,
-    hostBindings: function MatButtonBase_HostBindings(rf, ctx) {
-      if (rf & 2) {
-        \u0275\u0275attribute("disabled", ctx._getDisabledAttribute())("aria-disabled", ctx._getAriaDisabled())("tabindex", ctx._getTabIndex());
-        \u0275\u0275classMap(ctx.color ? "mat-" + ctx.color : "");
-        \u0275\u0275classProp("mat-mdc-button-disabled", ctx.disabled)("mat-mdc-button-disabled-interactive", ctx.disabledInteractive)("mat-unthemed", !ctx.color)("_mat-animation-noopable", ctx._animationsDisabled);
-      }
-    },
-    inputs: {
-      color: "color",
-      disableRipple: [2, "disableRipple", "disableRipple", booleanAttribute],
-      disabled: [2, "disabled", "disabled", booleanAttribute],
-      ariaDisabled: [2, "aria-disabled", "ariaDisabled", booleanAttribute],
-      disabledInteractive: [2, "disabledInteractive", "disabledInteractive", booleanAttribute],
-      tabIndex: [2, "tabIndex", "tabIndex", transformTabIndex],
-      _tabindex: [2, "tabindex", "_tabindex", transformTabIndex]
-    }
-  });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatButtonBase, [{
-    type: Directive,
-    args: [{
-      host: {
-        // Add a class that applies to all buttons. This makes it easier to target if somebody
-        // wants to target all Material buttons.
-        "class": "mat-mdc-button-base",
-        "[class]": 'color ? "mat-" + color : ""',
-        "[attr.disabled]": "_getDisabledAttribute()",
-        "[attr.aria-disabled]": "_getAriaDisabled()",
-        "[attr.tabindex]": "_getTabIndex()",
-        "[class.mat-mdc-button-disabled]": "disabled",
-        "[class.mat-mdc-button-disabled-interactive]": "disabledInteractive",
-        "[class.mat-unthemed]": "!color",
-        "[class._mat-animation-noopable]": "_animationsDisabled"
-      }
-    }]
-  }], () => [], {
-    color: [{
-      type: Input
-    }],
-    disableRipple: [{
-      type: Input,
-      args: [{
-        transform: booleanAttribute
-      }]
-    }],
-    disabled: [{
-      type: Input,
-      args: [{
-        transform: booleanAttribute
-      }]
-    }],
-    ariaDisabled: [{
-      type: Input,
-      args: [{
-        transform: booleanAttribute,
-        alias: "aria-disabled"
-      }]
-    }],
-    disabledInteractive: [{
-      type: Input,
-      args: [{
-        transform: booleanAttribute
-      }]
-    }],
-    tabIndex: [{
-      type: Input,
-      args: [{
-        transform: transformTabIndex
-      }]
-    }],
-    _tabindex: [{
-      type: Input,
-      args: [{
-        alias: "tabindex",
-        transform: transformTabIndex
-      }]
-    }]
-  });
-})();
-var MatIconButton = class _MatIconButton extends MatButtonBase {
-  constructor() {
-    super();
-    this._rippleLoader.configureRipple(this._elementRef.nativeElement, {
-      centered: true
-    });
-  }
-  static \u0275fac = function MatIconButton_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _MatIconButton)();
-  };
-  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
-    type: _MatIconButton,
-    selectors: [["button", "mat-icon-button", ""], ["a", "mat-icon-button", ""], ["button", "matIconButton", ""], ["a", "matIconButton", ""]],
-    hostAttrs: [1, "mdc-icon-button", "mat-mdc-icon-button"],
-    exportAs: ["matButton", "matAnchor"],
-    features: [\u0275\u0275InheritDefinitionFeature],
-    attrs: _c0,
-    ngContentSelectors: _c1,
-    decls: 4,
-    vars: 0,
-    consts: [[1, "mat-mdc-button-persistent-ripple", "mdc-icon-button__ripple"], [1, "mat-focus-indicator"], [1, "mat-mdc-button-touch-target"]],
-    template: function MatIconButton_Template(rf, ctx) {
-      if (rf & 1) {
-        \u0275\u0275projectionDef();
-        \u0275\u0275domElement(0, "span", 0);
-        \u0275\u0275projection(1);
-        \u0275\u0275domElement(2, "span", 1)(3, "span", 2);
-      }
-    },
-    styles: ['.mat-mdc-icon-button{-webkit-user-select:none;user-select:none;display:inline-block;position:relative;box-sizing:border-box;border:none;outline:none;background-color:rgba(0,0,0,0);fill:currentColor;text-decoration:none;cursor:pointer;z-index:0;overflow:visible;border-radius:var(--mat-icon-button-container-shape, var(--mat-sys-corner-full, 50%));flex-shrink:0;text-align:center;width:var(--mat-icon-button-state-layer-size, 40px);height:var(--mat-icon-button-state-layer-size, 40px);padding:calc(calc(var(--mat-icon-button-state-layer-size, 40px) - var(--mat-icon-button-icon-size, 24px)) / 2);font-size:var(--mat-icon-button-icon-size, 24px);color:var(--mat-icon-button-icon-color, var(--mat-sys-on-surface-variant));-webkit-tap-highlight-color:rgba(0,0,0,0)}.mat-mdc-icon-button .mat-mdc-button-ripple,.mat-mdc-icon-button .mat-mdc-button-persistent-ripple,.mat-mdc-icon-button .mat-mdc-button-persistent-ripple::before{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;border-radius:inherit}.mat-mdc-icon-button .mat-mdc-button-ripple{overflow:hidden}.mat-mdc-icon-button .mat-mdc-button-persistent-ripple::before{content:"";opacity:0}.mat-mdc-icon-button .mdc-button__label,.mat-mdc-icon-button .mat-icon{z-index:1;position:relative}.mat-mdc-icon-button .mat-focus-indicator{top:0;left:0;right:0;bottom:0;position:absolute;border-radius:inherit}.mat-mdc-icon-button:focus>.mat-focus-indicator::before{content:"";border-radius:inherit}.mat-mdc-icon-button .mat-ripple-element{background-color:var(--mat-icon-button-ripple-color, color-mix(in srgb, var(--mat-sys-on-surface-variant) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-icon-button .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-icon-button-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-icon-button.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-icon-button-disabled-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-icon-button:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-icon-button-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-icon-button.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-icon-button.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-icon-button.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-icon-button-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-icon-button:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-icon-button-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-icon-button .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-icon-button-touch-target-size, 48px);display:var(--mat-icon-button-touch-target-display, block);left:50%;width:var(--mat-icon-button-touch-target-size, 48px);transform:translate(-50%, -50%)}.mat-mdc-icon-button._mat-animation-noopable{transition:none !important;animation:none !important}.mat-mdc-icon-button[disabled],.mat-mdc-icon-button.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-icon-button-disabled-icon-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent))}.mat-mdc-icon-button.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-icon-button img,.mat-mdc-icon-button svg{width:var(--mat-icon-button-icon-size, 24px);height:var(--mat-icon-button-icon-size, 24px);vertical-align:baseline}.mat-mdc-icon-button .mat-mdc-button-persistent-ripple{border-radius:var(--mat-icon-button-container-shape, var(--mat-sys-corner-full, 50%))}.mat-mdc-icon-button[hidden]{display:none}.mat-mdc-icon-button.mat-unthemed:not(.mdc-ripple-upgraded):focus::before,.mat-mdc-icon-button.mat-primary:not(.mdc-ripple-upgraded):focus::before,.mat-mdc-icon-button.mat-accent:not(.mdc-ripple-upgraded):focus::before,.mat-mdc-icon-button.mat-warn:not(.mdc-ripple-upgraded):focus::before{background:rgba(0,0,0,0);opacity:1}\n', "@media(forced-colors: active){.mat-mdc-button:not(.mdc-button--outlined),.mat-mdc-unelevated-button:not(.mdc-button--outlined),.mat-mdc-raised-button:not(.mdc-button--outlined),.mat-mdc-outlined-button:not(.mdc-button--outlined),.mat-mdc-button-base.mat-tonal-button,.mat-mdc-icon-button.mat-mdc-icon-button,.mat-mdc-outlined-button .mdc-button__ripple{outline:solid 1px}}\n"],
-    encapsulation: 2,
-    changeDetection: 0
-  });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatIconButton, [{
-    type: Component,
-    args: [{
-      selector: `button[mat-icon-button], a[mat-icon-button], button[matIconButton], a[matIconButton]`,
-      host: {
-        "class": "mdc-icon-button mat-mdc-icon-button"
-      },
-      exportAs: "matButton, matAnchor",
-      encapsulation: ViewEncapsulation.None,
-      changeDetection: ChangeDetectionStrategy.OnPush,
-      template: `<span class="mat-mdc-button-persistent-ripple mdc-icon-button__ripple"></span>
-
-<ng-content></ng-content>
-
-<!--
-  The indicator can't be directly on the button, because MDC uses ::before for high contrast
-  indication and it can't be on the ripple, because it has a border radius and overflow: hidden.
--->
-<span class="mat-focus-indicator"></span>
-
-<span class="mat-mdc-button-touch-target"></span>
-`,
-      styles: ['.mat-mdc-icon-button{-webkit-user-select:none;user-select:none;display:inline-block;position:relative;box-sizing:border-box;border:none;outline:none;background-color:rgba(0,0,0,0);fill:currentColor;text-decoration:none;cursor:pointer;z-index:0;overflow:visible;border-radius:var(--mat-icon-button-container-shape, var(--mat-sys-corner-full, 50%));flex-shrink:0;text-align:center;width:var(--mat-icon-button-state-layer-size, 40px);height:var(--mat-icon-button-state-layer-size, 40px);padding:calc(calc(var(--mat-icon-button-state-layer-size, 40px) - var(--mat-icon-button-icon-size, 24px)) / 2);font-size:var(--mat-icon-button-icon-size, 24px);color:var(--mat-icon-button-icon-color, var(--mat-sys-on-surface-variant));-webkit-tap-highlight-color:rgba(0,0,0,0)}.mat-mdc-icon-button .mat-mdc-button-ripple,.mat-mdc-icon-button .mat-mdc-button-persistent-ripple,.mat-mdc-icon-button .mat-mdc-button-persistent-ripple::before{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;border-radius:inherit}.mat-mdc-icon-button .mat-mdc-button-ripple{overflow:hidden}.mat-mdc-icon-button .mat-mdc-button-persistent-ripple::before{content:"";opacity:0}.mat-mdc-icon-button .mdc-button__label,.mat-mdc-icon-button .mat-icon{z-index:1;position:relative}.mat-mdc-icon-button .mat-focus-indicator{top:0;left:0;right:0;bottom:0;position:absolute;border-radius:inherit}.mat-mdc-icon-button:focus>.mat-focus-indicator::before{content:"";border-radius:inherit}.mat-mdc-icon-button .mat-ripple-element{background-color:var(--mat-icon-button-ripple-color, color-mix(in srgb, var(--mat-sys-on-surface-variant) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-icon-button .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-icon-button-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-icon-button.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-icon-button-disabled-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-icon-button:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-icon-button-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-icon-button.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-icon-button.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-icon-button.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-icon-button-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-icon-button:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-icon-button-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-icon-button .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-icon-button-touch-target-size, 48px);display:var(--mat-icon-button-touch-target-display, block);left:50%;width:var(--mat-icon-button-touch-target-size, 48px);transform:translate(-50%, -50%)}.mat-mdc-icon-button._mat-animation-noopable{transition:none !important;animation:none !important}.mat-mdc-icon-button[disabled],.mat-mdc-icon-button.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-icon-button-disabled-icon-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent))}.mat-mdc-icon-button.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-icon-button img,.mat-mdc-icon-button svg{width:var(--mat-icon-button-icon-size, 24px);height:var(--mat-icon-button-icon-size, 24px);vertical-align:baseline}.mat-mdc-icon-button .mat-mdc-button-persistent-ripple{border-radius:var(--mat-icon-button-container-shape, var(--mat-sys-corner-full, 50%))}.mat-mdc-icon-button[hidden]{display:none}.mat-mdc-icon-button.mat-unthemed:not(.mdc-ripple-upgraded):focus::before,.mat-mdc-icon-button.mat-primary:not(.mdc-ripple-upgraded):focus::before,.mat-mdc-icon-button.mat-accent:not(.mdc-ripple-upgraded):focus::before,.mat-mdc-icon-button.mat-warn:not(.mdc-ripple-upgraded):focus::before{background:rgba(0,0,0,0);opacity:1}\n', "@media(forced-colors: active){.mat-mdc-button:not(.mdc-button--outlined),.mat-mdc-unelevated-button:not(.mdc-button--outlined),.mat-mdc-raised-button:not(.mdc-button--outlined),.mat-mdc-outlined-button:not(.mdc-button--outlined),.mat-mdc-button-base.mat-tonal-button,.mat-mdc-icon-button.mat-mdc-icon-button,.mat-mdc-outlined-button .mdc-button__ripple{outline:solid 1px}}\n"]
-    }]
-  }], () => [], null);
-})();
-
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/directionality.mjs
-var DIR_DOCUMENT = new InjectionToken("cdk-dir-doc", {
-  providedIn: "root",
-  factory: DIR_DOCUMENT_FACTORY
-});
-function DIR_DOCUMENT_FACTORY() {
-  return inject2(DOCUMENT);
-}
-var RTL_LOCALE_PATTERN = /^(ar|ckb|dv|he|iw|fa|nqo|ps|sd|ug|ur|yi|.*[-_](Adlm|Arab|Hebr|Nkoo|Rohg|Thaa))(?!.*[-_](Latn|Cyrl)($|-|_))($|-|_)/i;
-function _resolveDirectionality(rawValue) {
-  const value = rawValue?.toLowerCase() || "";
-  if (value === "auto" && typeof navigator !== "undefined" && navigator?.language) {
-    return RTL_LOCALE_PATTERN.test(navigator.language) ? "rtl" : "ltr";
-  }
-  return value === "rtl" ? "rtl" : "ltr";
-}
-var Directionality = class _Directionality {
-  /** The current 'ltr' or 'rtl' value. */
-  get value() {
-    return this.valueSignal();
-  }
-  /**
-   * The current 'ltr' or 'rtl' value.
-   */
-  valueSignal = signal("ltr", ...ngDevMode ? [{
-    debugName: "valueSignal"
-  }] : []);
-  /** Stream that emits whenever the 'ltr' / 'rtl' state changes. */
-  change = new EventEmitter();
-  constructor() {
-    const _document2 = inject2(DIR_DOCUMENT, {
-      optional: true
-    });
-    if (_document2) {
-      const bodyDir = _document2.body ? _document2.body.dir : null;
-      const htmlDir = _document2.documentElement ? _document2.documentElement.dir : null;
-      this.valueSignal.set(_resolveDirectionality(bodyDir || htmlDir || "ltr"));
-    }
-  }
-  ngOnDestroy() {
-    this.change.complete();
-  }
-  static \u0275fac = function Directionality_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _Directionality)();
-  };
-  static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
-    token: _Directionality,
-    factory: _Directionality.\u0275fac,
-    providedIn: "root"
-  });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(Directionality, [{
-    type: Injectable,
-    args: [{
-      providedIn: "root"
-    }]
-  }], () => [], null);
-})();
-
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/bidi.mjs
-var Dir = class _Dir {
-  /** Whether the `value` has been set to its initial value. */
-  _isInitialized = false;
-  /** Direction as passed in by the consumer. */
-  _rawDir;
-  /** Event emitted when the direction changes. */
-  change = new EventEmitter();
-  /** @docs-private */
-  get dir() {
-    return this.valueSignal();
-  }
-  set dir(value) {
-    const previousValue = this.valueSignal();
-    this.valueSignal.set(_resolveDirectionality(value));
-    this._rawDir = value;
-    if (previousValue !== this.valueSignal() && this._isInitialized) {
-      this.change.emit(this.valueSignal());
-    }
-  }
-  /** Current layout direction of the element. */
-  get value() {
-    return this.dir;
-  }
-  valueSignal = signal("ltr", ...ngDevMode ? [{
-    debugName: "valueSignal"
-  }] : []);
-  /** Initialize once default value has been set. */
-  ngAfterContentInit() {
-    this._isInitialized = true;
-  }
-  ngOnDestroy() {
-    this.change.complete();
-  }
-  static \u0275fac = function Dir_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _Dir)();
-  };
-  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
-    type: _Dir,
-    selectors: [["", "dir", ""]],
-    hostVars: 1,
-    hostBindings: function Dir_HostBindings(rf, ctx) {
-      if (rf & 2) {
-        \u0275\u0275attribute("dir", ctx._rawDir);
-      }
-    },
-    inputs: {
-      dir: "dir"
-    },
-    outputs: {
-      change: "dirChange"
-    },
-    exportAs: ["dir"],
-    features: [\u0275\u0275ProvidersFeature([{
-      provide: Directionality,
-      useExisting: _Dir
-    }])]
-  });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(Dir, [{
-    type: Directive,
-    args: [{
-      selector: "[dir]",
-      providers: [{
-        provide: Directionality,
-        useExisting: Dir
-      }],
-      host: {
-        "[attr.dir]": "_rawDir"
-      },
-      exportAs: "dir"
-    }]
-  }], null, {
-    change: [{
-      type: Output,
-      args: ["dirChange"]
-    }],
-    dir: [{
-      type: Input
-    }]
-  });
-})();
-var BidiModule = class _BidiModule {
-  static \u0275fac = function BidiModule_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _BidiModule)();
-  };
-  static \u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({
-    type: _BidiModule,
-    imports: [Dir],
-    exports: [Dir]
-  });
-  static \u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({});
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(BidiModule, [{
-    type: NgModule,
-    args: [{
-      imports: [Dir],
-      exports: [Dir]
-    }]
-  }], null, null);
-})();
-
-// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@ang_awrsjmhxfn5unao7dg6glqdxaq/node_modules/@angular/material/fesm2022/common-module.mjs
-var MATERIAL_SANITY_CHECKS = new InjectionToken("mat-sanity-checks", {
-  providedIn: "root",
-  factory: () => true
-});
-var MatCommonModule = class _MatCommonModule {
-  constructor() {
-    inject2(HighContrastModeDetector)._applyBodyHighContrastModeCssClasses();
-  }
-  static \u0275fac = function MatCommonModule_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _MatCommonModule)();
-  };
-  static \u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({
-    type: _MatCommonModule,
-    imports: [BidiModule],
-    exports: [BidiModule]
-  });
-  static \u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({
-    imports: [BidiModule, BidiModule]
-  });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatCommonModule, [{
-    type: NgModule,
-    args: [{
-      imports: [BidiModule],
-      exports: [BidiModule]
-    }]
-  }], () => [], null);
-})();
-
-// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@ang_awrsjmhxfn5unao7dg6glqdxaq/node_modules/@angular/material/fesm2022/ripple-module.mjs
-var MatRippleModule = class _MatRippleModule {
-  static \u0275fac = function MatRippleModule_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _MatRippleModule)();
-  };
-  static \u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({
-    type: _MatRippleModule,
-    imports: [MatCommonModule, MatRipple],
-    exports: [MatRipple, MatCommonModule]
-  });
-  static \u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({
-    imports: [MatCommonModule, MatCommonModule]
-  });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatRippleModule, [{
-    type: NgModule,
-    args: [{
-      imports: [MatCommonModule, MatRipple],
-      exports: [MatRipple, MatCommonModule]
-    }]
-  }], null, null);
-})();
-
-// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@ang_awrsjmhxfn5unao7dg6glqdxaq/node_modules/@angular/material/fesm2022/button.mjs
-var _c02 = ["matButton", ""];
-var _c12 = [[["", 8, "material-icons", 3, "iconPositionEnd", ""], ["mat-icon", 3, "iconPositionEnd", ""], ["", "matButtonIcon", "", 3, "iconPositionEnd", ""]], "*", [["", "iconPositionEnd", "", 8, "material-icons"], ["mat-icon", "iconPositionEnd", ""], ["", "matButtonIcon", "", "iconPositionEnd", ""]]];
-var _c2 = [".material-icons:not([iconPositionEnd]), mat-icon:not([iconPositionEnd]), [matButtonIcon]:not([iconPositionEnd])", "*", ".material-icons[iconPositionEnd], mat-icon[iconPositionEnd], [matButtonIcon][iconPositionEnd]"];
-var _c3 = ["mat-fab", ""];
-var _c4 = ["mat-mini-fab", ""];
-var _c5 = '.mat-mdc-fab-base{-webkit-user-select:none;user-select:none;position:relative;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:56px;height:56px;padding:0;border:none;fill:currentColor;text-decoration:none;cursor:pointer;-moz-appearance:none;-webkit-appearance:none;overflow:visible;transition:box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1),opacity 15ms linear 30ms,transform 270ms 0ms cubic-bezier(0, 0, 0.2, 1);flex-shrink:0;-webkit-tap-highlight-color:rgba(0,0,0,0)}.mat-mdc-fab-base .mat-mdc-button-ripple,.mat-mdc-fab-base .mat-mdc-button-persistent-ripple,.mat-mdc-fab-base .mat-mdc-button-persistent-ripple::before{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;border-radius:inherit}.mat-mdc-fab-base .mat-mdc-button-ripple{overflow:hidden}.mat-mdc-fab-base .mat-mdc-button-persistent-ripple::before{content:"";opacity:0}.mat-mdc-fab-base .mdc-button__label,.mat-mdc-fab-base .mat-icon{z-index:1;position:relative}.mat-mdc-fab-base .mat-focus-indicator{top:0;left:0;right:0;bottom:0;position:absolute}.mat-mdc-fab-base:focus>.mat-focus-indicator::before{content:""}.mat-mdc-fab-base._mat-animation-noopable{transition:none !important;animation:none !important}.mat-mdc-fab-base::before{position:absolute;box-sizing:border-box;width:100%;height:100%;top:0;left:0;border:1px solid rgba(0,0,0,0);border-radius:inherit;content:"";pointer-events:none}.mat-mdc-fab-base[hidden]{display:none}.mat-mdc-fab-base::-moz-focus-inner{padding:0;border:0}.mat-mdc-fab-base:active,.mat-mdc-fab-base:focus{outline:none}.mat-mdc-fab-base:hover{cursor:pointer}.mat-mdc-fab-base>svg{width:100%}.mat-mdc-fab-base .mat-icon,.mat-mdc-fab-base .material-icons{transition:transform 180ms 90ms cubic-bezier(0, 0, 0.2, 1);fill:currentColor;will-change:transform}.mat-mdc-fab-base .mat-focus-indicator::before{margin:calc(calc(var(--mat-focus-indicator-border-width, 3px) + 2px)*-1)}.mat-mdc-fab-base[disabled],.mat-mdc-fab-base.mat-mdc-button-disabled{cursor:default;pointer-events:none}.mat-mdc-fab-base[disabled],.mat-mdc-fab-base[disabled]:focus,.mat-mdc-fab-base.mat-mdc-button-disabled,.mat-mdc-fab-base.mat-mdc-button-disabled:focus{box-shadow:none}.mat-mdc-fab-base.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-fab{background-color:var(--mat-fab-container-color, var(--mat-sys-primary-container));border-radius:var(--mat-fab-container-shape, var(--mat-sys-corner-large));color:var(--mat-fab-foreground-color, var(--mat-sys-on-primary-container, inherit));box-shadow:var(--mat-fab-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-fab:hover{box-shadow:var(--mat-fab-hover-container-elevation-shadow, var(--mat-sys-level4))}.mat-mdc-fab:focus{box-shadow:var(--mat-fab-focus-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-fab:active,.mat-mdc-fab:focus:active{box-shadow:var(--mat-fab-pressed-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-fab[disabled],.mat-mdc-fab.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-fab-disabled-state-foreground-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-fab-disabled-state-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-fab.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-fab .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-fab-touch-target-size, 48px);display:var(--mat-fab-touch-target-display, block);left:50%;width:var(--mat-fab-touch-target-size, 48px);transform:translate(-50%, -50%)}.mat-mdc-fab .mat-ripple-element{background-color:var(--mat-fab-ripple-color, color-mix(in srgb, var(--mat-sys-on-primary-container) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-fab .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-state-layer-color, var(--mat-sys-on-primary-container))}.mat-mdc-fab.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-disabled-state-layer-color)}.mat-mdc-fab:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-fab.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-fab.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-fab.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-fab:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-mini-fab{width:40px;height:40px;background-color:var(--mat-fab-small-container-color, var(--mat-sys-primary-container));border-radius:var(--mat-fab-small-container-shape, var(--mat-sys-corner-medium));color:var(--mat-fab-small-foreground-color, var(--mat-sys-on-primary-container, inherit));box-shadow:var(--mat-fab-small-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-mini-fab:hover{box-shadow:var(--mat-fab-small-hover-container-elevation-shadow, var(--mat-sys-level4))}.mat-mdc-mini-fab:focus{box-shadow:var(--mat-fab-small-focus-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-mini-fab:active,.mat-mdc-mini-fab:focus:active{box-shadow:var(--mat-fab-small-pressed-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-mini-fab[disabled],.mat-mdc-mini-fab.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-fab-small-disabled-state-foreground-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-fab-small-disabled-state-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-mini-fab.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-mini-fab .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-fab-small-touch-target-size, 48px);display:var(--mat-fab-small-touch-target-display);left:50%;width:var(--mat-fab-small-touch-target-size, 48px);transform:translate(-50%, -50%)}.mat-mdc-mini-fab .mat-ripple-element{background-color:var(--mat-fab-small-ripple-color, color-mix(in srgb, var(--mat-sys-on-primary-container) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-mini-fab .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-small-state-layer-color, var(--mat-sys-on-primary-container))}.mat-mdc-mini-fab.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-small-disabled-state-layer-color)}.mat-mdc-mini-fab:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-small-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-mini-fab.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-mini-fab.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-mini-fab.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-small-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-mini-fab:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-small-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-extended-fab{-moz-osx-font-smoothing:grayscale;-webkit-font-smoothing:antialiased;padding-left:20px;padding-right:20px;width:auto;max-width:100%;line-height:normal;box-shadow:var(--mat-fab-extended-container-elevation-shadow, var(--mat-sys-level3));height:var(--mat-fab-extended-container-height, 56px);border-radius:var(--mat-fab-extended-container-shape, var(--mat-sys-corner-large));font-family:var(--mat-fab-extended-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-fab-extended-label-text-size, var(--mat-sys-label-large-size));font-weight:var(--mat-fab-extended-label-text-weight, var(--mat-sys-label-large-weight));letter-spacing:var(--mat-fab-extended-label-text-tracking, var(--mat-sys-label-large-tracking))}.mat-mdc-extended-fab:hover{box-shadow:var(--mat-fab-extended-hover-container-elevation-shadow, var(--mat-sys-level4))}.mat-mdc-extended-fab:focus{box-shadow:var(--mat-fab-extended-focus-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-extended-fab:active,.mat-mdc-extended-fab:focus:active{box-shadow:var(--mat-fab-extended-pressed-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-extended-fab[disabled],.mat-mdc-extended-fab.mat-mdc-button-disabled{cursor:default;pointer-events:none}.mat-mdc-extended-fab[disabled],.mat-mdc-extended-fab[disabled]:focus,.mat-mdc-extended-fab.mat-mdc-button-disabled,.mat-mdc-extended-fab.mat-mdc-button-disabled:focus{box-shadow:none}.mat-mdc-extended-fab.mat-mdc-button-disabled-interactive{pointer-events:auto}[dir=rtl] .mat-mdc-extended-fab .mdc-button__label+.mat-icon,[dir=rtl] .mat-mdc-extended-fab .mdc-button__label+.material-icons,.mat-mdc-extended-fab>.mat-icon,.mat-mdc-extended-fab>.material-icons{margin-left:-8px;margin-right:12px}.mat-mdc-extended-fab .mdc-button__label+.mat-icon,.mat-mdc-extended-fab .mdc-button__label+.material-icons,[dir=rtl] .mat-mdc-extended-fab>.mat-icon,[dir=rtl] .mat-mdc-extended-fab>.material-icons{margin-left:12px;margin-right:-8px}.mat-mdc-extended-fab .mat-mdc-button-touch-target{width:100%}\n';
-var APPEARANCE_CLASSES = /* @__PURE__ */ new Map([["text", ["mat-mdc-button"]], ["filled", ["mdc-button--unelevated", "mat-mdc-unelevated-button"]], ["elevated", ["mdc-button--raised", "mat-mdc-raised-button"]], ["outlined", ["mdc-button--outlined", "mat-mdc-outlined-button"]], ["tonal", ["mat-tonal-button"]]]);
-var MatButton = class _MatButton extends MatButtonBase {
-  /** Appearance of the button. */
-  get appearance() {
-    return this._appearance;
-  }
-  set appearance(value) {
-    this.setAppearance(value || this._config?.defaultAppearance || "text");
-  }
-  _appearance = null;
-  constructor() {
-    super();
-    const inferredAppearance = _inferAppearance(this._elementRef.nativeElement);
-    if (inferredAppearance) {
-      this.setAppearance(inferredAppearance);
-    }
-  }
-  /** Programmatically sets the appearance of the button. */
-  setAppearance(appearance) {
-    if (appearance === this._appearance) {
-      return;
-    }
-    const classList = this._elementRef.nativeElement.classList;
-    const previousClasses = this._appearance ? APPEARANCE_CLASSES.get(this._appearance) : null;
-    const newClasses = APPEARANCE_CLASSES.get(appearance);
-    if ((typeof ngDevMode === "undefined" || ngDevMode) && !newClasses) {
-      throw new Error(`Unsupported MatButton appearance "${appearance}"`);
-    }
-    if (previousClasses) {
-      classList.remove(...previousClasses);
-    }
-    classList.add(...newClasses);
-    this._appearance = appearance;
-  }
-  static \u0275fac = function MatButton_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _MatButton)();
-  };
-  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
-    type: _MatButton,
-    selectors: [["button", "matButton", ""], ["a", "matButton", ""], ["button", "mat-button", ""], ["button", "mat-raised-button", ""], ["button", "mat-flat-button", ""], ["button", "mat-stroked-button", ""], ["a", "mat-button", ""], ["a", "mat-raised-button", ""], ["a", "mat-flat-button", ""], ["a", "mat-stroked-button", ""]],
-    hostAttrs: [1, "mdc-button"],
-    inputs: {
-      appearance: [0, "matButton", "appearance"]
-    },
-    exportAs: ["matButton", "matAnchor"],
-    features: [\u0275\u0275InheritDefinitionFeature],
-    attrs: _c02,
-    ngContentSelectors: _c2,
-    decls: 7,
-    vars: 4,
-    consts: [[1, "mat-mdc-button-persistent-ripple"], [1, "mdc-button__label"], [1, "mat-focus-indicator"], [1, "mat-mdc-button-touch-target"]],
-    template: function MatButton_Template(rf, ctx) {
-      if (rf & 1) {
-        \u0275\u0275projectionDef(_c12);
-        \u0275\u0275domElement(0, "span", 0);
-        \u0275\u0275projection(1);
-        \u0275\u0275domElementStart(2, "span", 1);
-        \u0275\u0275projection(3, 1);
-        \u0275\u0275domElementEnd();
-        \u0275\u0275projection(4, 2);
-        \u0275\u0275domElement(5, "span", 2)(6, "span", 3);
-      }
-      if (rf & 2) {
-        \u0275\u0275classProp("mdc-button__ripple", !ctx._isFab)("mdc-fab__ripple", ctx._isFab);
-      }
-    },
-    styles: ['.mat-mdc-button-base{text-decoration:none}.mat-mdc-button-base .mat-icon{min-height:fit-content;flex-shrink:0}.mdc-button{-webkit-user-select:none;user-select:none;position:relative;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:64px;border:none;outline:none;line-height:inherit;-webkit-appearance:none;overflow:visible;vertical-align:middle;background:rgba(0,0,0,0);padding:0 8px}.mdc-button::-moz-focus-inner{padding:0;border:0}.mdc-button:active{outline:none}.mdc-button:hover{cursor:pointer}.mdc-button:disabled{cursor:default;pointer-events:none}.mdc-button[hidden]{display:none}.mdc-button .mdc-button__label{position:relative}.mat-mdc-button{padding:0 var(--mat-button-text-horizontal-padding, 12px);height:var(--mat-button-text-container-height, 40px);font-family:var(--mat-button-text-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-button-text-label-text-size, var(--mat-sys-label-large-size));letter-spacing:var(--mat-button-text-label-text-tracking, var(--mat-sys-label-large-tracking));text-transform:var(--mat-button-text-label-text-transform);font-weight:var(--mat-button-text-label-text-weight, var(--mat-sys-label-large-weight))}.mat-mdc-button,.mat-mdc-button .mdc-button__ripple{border-radius:var(--mat-button-text-container-shape, var(--mat-sys-corner-full))}.mat-mdc-button:not(:disabled){color:var(--mat-button-text-label-text-color, var(--mat-sys-primary))}.mat-mdc-button[disabled],.mat-mdc-button.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-button-text-disabled-label-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent))}.mat-mdc-button.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-button:has(.material-icons,mat-icon,[matButtonIcon]){padding:0 var(--mat-button-text-with-icon-horizontal-padding, 16px)}.mat-mdc-button>.mat-icon{margin-right:var(--mat-button-text-icon-spacing, 8px);margin-left:var(--mat-button-text-icon-offset, -4px)}[dir=rtl] .mat-mdc-button>.mat-icon{margin-right:var(--mat-button-text-icon-offset, -4px);margin-left:var(--mat-button-text-icon-spacing, 8px)}.mat-mdc-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-text-icon-offset, -4px);margin-left:var(--mat-button-text-icon-spacing, 8px)}[dir=rtl] .mat-mdc-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-text-icon-spacing, 8px);margin-left:var(--mat-button-text-icon-offset, -4px)}.mat-mdc-button .mat-ripple-element{background-color:var(--mat-button-text-ripple-color, color-mix(in srgb, var(--mat-sys-primary) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-button .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-text-state-layer-color, var(--mat-sys-primary))}.mat-mdc-button.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-text-disabled-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-button:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-text-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-button.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-button.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-button.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-text-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-button:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-text-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-button .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-button-text-touch-target-size, 48px);display:var(--mat-button-text-touch-target-display, block);left:0;right:0;transform:translateY(-50%)}.mat-mdc-unelevated-button{transition:box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1);height:var(--mat-button-filled-container-height, 40px);font-family:var(--mat-button-filled-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-button-filled-label-text-size, var(--mat-sys-label-large-size));letter-spacing:var(--mat-button-filled-label-text-tracking, var(--mat-sys-label-large-tracking));text-transform:var(--mat-button-filled-label-text-transform);font-weight:var(--mat-button-filled-label-text-weight, var(--mat-sys-label-large-weight));padding:0 var(--mat-button-filled-horizontal-padding, 24px)}.mat-mdc-unelevated-button>.mat-icon{margin-right:var(--mat-button-filled-icon-spacing, 8px);margin-left:var(--mat-button-filled-icon-offset, -8px)}[dir=rtl] .mat-mdc-unelevated-button>.mat-icon{margin-right:var(--mat-button-filled-icon-offset, -8px);margin-left:var(--mat-button-filled-icon-spacing, 8px)}.mat-mdc-unelevated-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-filled-icon-offset, -8px);margin-left:var(--mat-button-filled-icon-spacing, 8px)}[dir=rtl] .mat-mdc-unelevated-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-filled-icon-spacing, 8px);margin-left:var(--mat-button-filled-icon-offset, -8px)}.mat-mdc-unelevated-button .mat-ripple-element{background-color:var(--mat-button-filled-ripple-color, color-mix(in srgb, var(--mat-sys-on-primary) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-unelevated-button .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-filled-state-layer-color, var(--mat-sys-on-primary))}.mat-mdc-unelevated-button.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-filled-disabled-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-unelevated-button:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-filled-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-unelevated-button.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-unelevated-button.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-unelevated-button.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-filled-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-unelevated-button:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-filled-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-unelevated-button .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-button-filled-touch-target-size, 48px);display:var(--mat-button-filled-touch-target-display, block);left:0;right:0;transform:translateY(-50%)}.mat-mdc-unelevated-button:not(:disabled){color:var(--mat-button-filled-label-text-color, var(--mat-sys-on-primary));background-color:var(--mat-button-filled-container-color, var(--mat-sys-primary))}.mat-mdc-unelevated-button,.mat-mdc-unelevated-button .mdc-button__ripple{border-radius:var(--mat-button-filled-container-shape, var(--mat-sys-corner-full))}.mat-mdc-unelevated-button[disabled],.mat-mdc-unelevated-button.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-button-filled-disabled-label-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-button-filled-disabled-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-unelevated-button.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-raised-button{transition:box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1);box-shadow:var(--mat-button-protected-container-elevation-shadow, var(--mat-sys-level1));height:var(--mat-button-protected-container-height, 40px);font-family:var(--mat-button-protected-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-button-protected-label-text-size, var(--mat-sys-label-large-size));letter-spacing:var(--mat-button-protected-label-text-tracking, var(--mat-sys-label-large-tracking));text-transform:var(--mat-button-protected-label-text-transform);font-weight:var(--mat-button-protected-label-text-weight, var(--mat-sys-label-large-weight));padding:0 var(--mat-button-protected-horizontal-padding, 24px)}.mat-mdc-raised-button>.mat-icon{margin-right:var(--mat-button-protected-icon-spacing, 8px);margin-left:var(--mat-button-protected-icon-offset, -8px)}[dir=rtl] .mat-mdc-raised-button>.mat-icon{margin-right:var(--mat-button-protected-icon-offset, -8px);margin-left:var(--mat-button-protected-icon-spacing, 8px)}.mat-mdc-raised-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-protected-icon-offset, -8px);margin-left:var(--mat-button-protected-icon-spacing, 8px)}[dir=rtl] .mat-mdc-raised-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-protected-icon-spacing, 8px);margin-left:var(--mat-button-protected-icon-offset, -8px)}.mat-mdc-raised-button .mat-ripple-element{background-color:var(--mat-button-protected-ripple-color, color-mix(in srgb, var(--mat-sys-primary) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-raised-button .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-protected-state-layer-color, var(--mat-sys-primary))}.mat-mdc-raised-button.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-protected-disabled-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-raised-button:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-protected-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-raised-button.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-raised-button.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-raised-button.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-protected-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-raised-button:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-protected-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-raised-button .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-button-protected-touch-target-size, 48px);display:var(--mat-button-protected-touch-target-display, block);left:0;right:0;transform:translateY(-50%)}.mat-mdc-raised-button:not(:disabled){color:var(--mat-button-protected-label-text-color, var(--mat-sys-primary));background-color:var(--mat-button-protected-container-color, var(--mat-sys-surface))}.mat-mdc-raised-button,.mat-mdc-raised-button .mdc-button__ripple{border-radius:var(--mat-button-protected-container-shape, var(--mat-sys-corner-full))}.mat-mdc-raised-button:hover{box-shadow:var(--mat-button-protected-hover-container-elevation-shadow, var(--mat-sys-level2))}.mat-mdc-raised-button:focus{box-shadow:var(--mat-button-protected-focus-container-elevation-shadow, var(--mat-sys-level1))}.mat-mdc-raised-button:active,.mat-mdc-raised-button:focus:active{box-shadow:var(--mat-button-protected-pressed-container-elevation-shadow, var(--mat-sys-level1))}.mat-mdc-raised-button[disabled],.mat-mdc-raised-button.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-button-protected-disabled-label-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-button-protected-disabled-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-raised-button[disabled].mat-mdc-button-disabled,.mat-mdc-raised-button.mat-mdc-button-disabled.mat-mdc-button-disabled{box-shadow:var(--mat-button-protected-disabled-container-elevation-shadow, var(--mat-sys-level0))}.mat-mdc-raised-button.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-outlined-button{border-style:solid;transition:border 280ms cubic-bezier(0.4, 0, 0.2, 1);height:var(--mat-button-outlined-container-height, 40px);font-family:var(--mat-button-outlined-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-button-outlined-label-text-size, var(--mat-sys-label-large-size));letter-spacing:var(--mat-button-outlined-label-text-tracking, var(--mat-sys-label-large-tracking));text-transform:var(--mat-button-outlined-label-text-transform);font-weight:var(--mat-button-outlined-label-text-weight, var(--mat-sys-label-large-weight));border-radius:var(--mat-button-outlined-container-shape, var(--mat-sys-corner-full));border-width:var(--mat-button-outlined-outline-width, 1px);padding:0 var(--mat-button-outlined-horizontal-padding, 24px)}.mat-mdc-outlined-button>.mat-icon{margin-right:var(--mat-button-outlined-icon-spacing, 8px);margin-left:var(--mat-button-outlined-icon-offset, -8px)}[dir=rtl] .mat-mdc-outlined-button>.mat-icon{margin-right:var(--mat-button-outlined-icon-offset, -8px);margin-left:var(--mat-button-outlined-icon-spacing, 8px)}.mat-mdc-outlined-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-outlined-icon-offset, -8px);margin-left:var(--mat-button-outlined-icon-spacing, 8px)}[dir=rtl] .mat-mdc-outlined-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-outlined-icon-spacing, 8px);margin-left:var(--mat-button-outlined-icon-offset, -8px)}.mat-mdc-outlined-button .mat-ripple-element{background-color:var(--mat-button-outlined-ripple-color, color-mix(in srgb, var(--mat-sys-primary) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-outlined-button .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-outlined-state-layer-color, var(--mat-sys-primary))}.mat-mdc-outlined-button.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-outlined-disabled-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-outlined-button:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-outlined-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-outlined-button.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-outlined-button.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-outlined-button.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-outlined-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-outlined-button:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-outlined-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-outlined-button .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-button-outlined-touch-target-size, 48px);display:var(--mat-button-outlined-touch-target-display, block);left:0;right:0;transform:translateY(-50%)}.mat-mdc-outlined-button:not(:disabled){color:var(--mat-button-outlined-label-text-color, var(--mat-sys-primary));border-color:var(--mat-button-outlined-outline-color, var(--mat-sys-outline))}.mat-mdc-outlined-button[disabled],.mat-mdc-outlined-button.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-button-outlined-disabled-label-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));border-color:var(--mat-button-outlined-disabled-outline-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-outlined-button.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-tonal-button{transition:box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1);height:var(--mat-button-tonal-container-height, 40px);font-family:var(--mat-button-tonal-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-button-tonal-label-text-size, var(--mat-sys-label-large-size));letter-spacing:var(--mat-button-tonal-label-text-tracking, var(--mat-sys-label-large-tracking));text-transform:var(--mat-button-tonal-label-text-transform);font-weight:var(--mat-button-tonal-label-text-weight, var(--mat-sys-label-large-weight));padding:0 var(--mat-button-tonal-horizontal-padding, 24px)}.mat-tonal-button:not(:disabled){color:var(--mat-button-tonal-label-text-color, var(--mat-sys-on-secondary-container));background-color:var(--mat-button-tonal-container-color, var(--mat-sys-secondary-container))}.mat-tonal-button,.mat-tonal-button .mdc-button__ripple{border-radius:var(--mat-button-tonal-container-shape, var(--mat-sys-corner-full))}.mat-tonal-button[disabled],.mat-tonal-button.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-button-tonal-disabled-label-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-button-tonal-disabled-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-tonal-button.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-tonal-button>.mat-icon{margin-right:var(--mat-button-tonal-icon-spacing, 8px);margin-left:var(--mat-button-tonal-icon-offset, -8px)}[dir=rtl] .mat-tonal-button>.mat-icon{margin-right:var(--mat-button-tonal-icon-offset, -8px);margin-left:var(--mat-button-tonal-icon-spacing, 8px)}.mat-tonal-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-tonal-icon-offset, -8px);margin-left:var(--mat-button-tonal-icon-spacing, 8px)}[dir=rtl] .mat-tonal-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-tonal-icon-spacing, 8px);margin-left:var(--mat-button-tonal-icon-offset, -8px)}.mat-tonal-button .mat-ripple-element{background-color:var(--mat-button-tonal-ripple-color, color-mix(in srgb, var(--mat-sys-on-secondary-container) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-tonal-button .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-tonal-state-layer-color, var(--mat-sys-on-secondary-container))}.mat-tonal-button.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-tonal-disabled-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-tonal-button:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-tonal-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-tonal-button.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-tonal-button.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-tonal-button.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-tonal-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-tonal-button:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-tonal-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-tonal-button .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-button-tonal-touch-target-size, 48px);display:var(--mat-button-tonal-touch-target-display, block);left:0;right:0;transform:translateY(-50%)}.mat-mdc-button,.mat-mdc-unelevated-button,.mat-mdc-raised-button,.mat-mdc-outlined-button,.mat-tonal-button{-webkit-tap-highlight-color:rgba(0,0,0,0)}.mat-mdc-button .mat-mdc-button-ripple,.mat-mdc-button .mat-mdc-button-persistent-ripple,.mat-mdc-button .mat-mdc-button-persistent-ripple::before,.mat-mdc-unelevated-button .mat-mdc-button-ripple,.mat-mdc-unelevated-button .mat-mdc-button-persistent-ripple,.mat-mdc-unelevated-button .mat-mdc-button-persistent-ripple::before,.mat-mdc-raised-button .mat-mdc-button-ripple,.mat-mdc-raised-button .mat-mdc-button-persistent-ripple,.mat-mdc-raised-button .mat-mdc-button-persistent-ripple::before,.mat-mdc-outlined-button .mat-mdc-button-ripple,.mat-mdc-outlined-button .mat-mdc-button-persistent-ripple,.mat-mdc-outlined-button .mat-mdc-button-persistent-ripple::before,.mat-tonal-button .mat-mdc-button-ripple,.mat-tonal-button .mat-mdc-button-persistent-ripple,.mat-tonal-button .mat-mdc-button-persistent-ripple::before{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;border-radius:inherit}.mat-mdc-button .mat-mdc-button-ripple,.mat-mdc-unelevated-button .mat-mdc-button-ripple,.mat-mdc-raised-button .mat-mdc-button-ripple,.mat-mdc-outlined-button .mat-mdc-button-ripple,.mat-tonal-button .mat-mdc-button-ripple{overflow:hidden}.mat-mdc-button .mat-mdc-button-persistent-ripple::before,.mat-mdc-unelevated-button .mat-mdc-button-persistent-ripple::before,.mat-mdc-raised-button .mat-mdc-button-persistent-ripple::before,.mat-mdc-outlined-button .mat-mdc-button-persistent-ripple::before,.mat-tonal-button .mat-mdc-button-persistent-ripple::before{content:"";opacity:0}.mat-mdc-button .mdc-button__label,.mat-mdc-button .mat-icon,.mat-mdc-unelevated-button .mdc-button__label,.mat-mdc-unelevated-button .mat-icon,.mat-mdc-raised-button .mdc-button__label,.mat-mdc-raised-button .mat-icon,.mat-mdc-outlined-button .mdc-button__label,.mat-mdc-outlined-button .mat-icon,.mat-tonal-button .mdc-button__label,.mat-tonal-button .mat-icon{z-index:1;position:relative}.mat-mdc-button .mat-focus-indicator,.mat-mdc-unelevated-button .mat-focus-indicator,.mat-mdc-raised-button .mat-focus-indicator,.mat-mdc-outlined-button .mat-focus-indicator,.mat-tonal-button .mat-focus-indicator{top:0;left:0;right:0;bottom:0;position:absolute;border-radius:inherit}.mat-mdc-button:focus>.mat-focus-indicator::before,.mat-mdc-unelevated-button:focus>.mat-focus-indicator::before,.mat-mdc-raised-button:focus>.mat-focus-indicator::before,.mat-mdc-outlined-button:focus>.mat-focus-indicator::before,.mat-tonal-button:focus>.mat-focus-indicator::before{content:"";border-radius:inherit}.mat-mdc-button._mat-animation-noopable,.mat-mdc-unelevated-button._mat-animation-noopable,.mat-mdc-raised-button._mat-animation-noopable,.mat-mdc-outlined-button._mat-animation-noopable,.mat-tonal-button._mat-animation-noopable{transition:none !important;animation:none !important}.mat-mdc-button>.mat-icon,.mat-mdc-unelevated-button>.mat-icon,.mat-mdc-raised-button>.mat-icon,.mat-mdc-outlined-button>.mat-icon,.mat-tonal-button>.mat-icon{display:inline-block;position:relative;vertical-align:top;font-size:1.125rem;height:1.125rem;width:1.125rem}.mat-mdc-outlined-button .mat-mdc-button-ripple,.mat-mdc-outlined-button .mdc-button__ripple{top:-1px;left:-1px;bottom:-1px;right:-1px}.mat-mdc-unelevated-button .mat-focus-indicator::before,.mat-tonal-button .mat-focus-indicator::before,.mat-mdc-raised-button .mat-focus-indicator::before{margin:calc(calc(var(--mat-focus-indicator-border-width, 3px) + 2px)*-1)}.mat-mdc-outlined-button .mat-focus-indicator::before{margin:calc(calc(var(--mat-focus-indicator-border-width, 3px) + 3px)*-1)}\n', "@media(forced-colors: active){.mat-mdc-button:not(.mdc-button--outlined),.mat-mdc-unelevated-button:not(.mdc-button--outlined),.mat-mdc-raised-button:not(.mdc-button--outlined),.mat-mdc-outlined-button:not(.mdc-button--outlined),.mat-mdc-button-base.mat-tonal-button,.mat-mdc-icon-button.mat-mdc-icon-button,.mat-mdc-outlined-button .mdc-button__ripple{outline:solid 1px}}\n"],
-    encapsulation: 2,
-    changeDetection: 0
-  });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatButton, [{
-    type: Component,
-    args: [{
-      selector: `
-    button[matButton], a[matButton], button[mat-button], button[mat-raised-button],
-    button[mat-flat-button], button[mat-stroked-button], a[mat-button], a[mat-raised-button],
-    a[mat-flat-button], a[mat-stroked-button]
-  `,
-      host: {
-        "class": "mdc-button"
-      },
-      exportAs: "matButton, matAnchor",
-      encapsulation: ViewEncapsulation.None,
-      changeDetection: ChangeDetectionStrategy.OnPush,
-      template: `<span
-    class="mat-mdc-button-persistent-ripple"
-    [class.mdc-button__ripple]="!_isFab"
-    [class.mdc-fab__ripple]="_isFab"></span>
-
-<ng-content select=".material-icons:not([iconPositionEnd]), mat-icon:not([iconPositionEnd]), [matButtonIcon]:not([iconPositionEnd])">
-</ng-content>
-
-<span class="mdc-button__label"><ng-content></ng-content></span>
-
-<ng-content select=".material-icons[iconPositionEnd], mat-icon[iconPositionEnd], [matButtonIcon][iconPositionEnd]">
-</ng-content>
-
-<!--
-  The indicator can't be directly on the button, because MDC uses ::before for high contrast
-  indication and it can't be on the ripple, because it has a border radius and overflow: hidden.
--->
-<span class="mat-focus-indicator"></span>
-
-<span class="mat-mdc-button-touch-target"></span>
-`,
-      styles: ['.mat-mdc-button-base{text-decoration:none}.mat-mdc-button-base .mat-icon{min-height:fit-content;flex-shrink:0}.mdc-button{-webkit-user-select:none;user-select:none;position:relative;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:64px;border:none;outline:none;line-height:inherit;-webkit-appearance:none;overflow:visible;vertical-align:middle;background:rgba(0,0,0,0);padding:0 8px}.mdc-button::-moz-focus-inner{padding:0;border:0}.mdc-button:active{outline:none}.mdc-button:hover{cursor:pointer}.mdc-button:disabled{cursor:default;pointer-events:none}.mdc-button[hidden]{display:none}.mdc-button .mdc-button__label{position:relative}.mat-mdc-button{padding:0 var(--mat-button-text-horizontal-padding, 12px);height:var(--mat-button-text-container-height, 40px);font-family:var(--mat-button-text-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-button-text-label-text-size, var(--mat-sys-label-large-size));letter-spacing:var(--mat-button-text-label-text-tracking, var(--mat-sys-label-large-tracking));text-transform:var(--mat-button-text-label-text-transform);font-weight:var(--mat-button-text-label-text-weight, var(--mat-sys-label-large-weight))}.mat-mdc-button,.mat-mdc-button .mdc-button__ripple{border-radius:var(--mat-button-text-container-shape, var(--mat-sys-corner-full))}.mat-mdc-button:not(:disabled){color:var(--mat-button-text-label-text-color, var(--mat-sys-primary))}.mat-mdc-button[disabled],.mat-mdc-button.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-button-text-disabled-label-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent))}.mat-mdc-button.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-button:has(.material-icons,mat-icon,[matButtonIcon]){padding:0 var(--mat-button-text-with-icon-horizontal-padding, 16px)}.mat-mdc-button>.mat-icon{margin-right:var(--mat-button-text-icon-spacing, 8px);margin-left:var(--mat-button-text-icon-offset, -4px)}[dir=rtl] .mat-mdc-button>.mat-icon{margin-right:var(--mat-button-text-icon-offset, -4px);margin-left:var(--mat-button-text-icon-spacing, 8px)}.mat-mdc-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-text-icon-offset, -4px);margin-left:var(--mat-button-text-icon-spacing, 8px)}[dir=rtl] .mat-mdc-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-text-icon-spacing, 8px);margin-left:var(--mat-button-text-icon-offset, -4px)}.mat-mdc-button .mat-ripple-element{background-color:var(--mat-button-text-ripple-color, color-mix(in srgb, var(--mat-sys-primary) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-button .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-text-state-layer-color, var(--mat-sys-primary))}.mat-mdc-button.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-text-disabled-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-button:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-text-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-button.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-button.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-button.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-text-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-button:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-text-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-button .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-button-text-touch-target-size, 48px);display:var(--mat-button-text-touch-target-display, block);left:0;right:0;transform:translateY(-50%)}.mat-mdc-unelevated-button{transition:box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1);height:var(--mat-button-filled-container-height, 40px);font-family:var(--mat-button-filled-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-button-filled-label-text-size, var(--mat-sys-label-large-size));letter-spacing:var(--mat-button-filled-label-text-tracking, var(--mat-sys-label-large-tracking));text-transform:var(--mat-button-filled-label-text-transform);font-weight:var(--mat-button-filled-label-text-weight, var(--mat-sys-label-large-weight));padding:0 var(--mat-button-filled-horizontal-padding, 24px)}.mat-mdc-unelevated-button>.mat-icon{margin-right:var(--mat-button-filled-icon-spacing, 8px);margin-left:var(--mat-button-filled-icon-offset, -8px)}[dir=rtl] .mat-mdc-unelevated-button>.mat-icon{margin-right:var(--mat-button-filled-icon-offset, -8px);margin-left:var(--mat-button-filled-icon-spacing, 8px)}.mat-mdc-unelevated-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-filled-icon-offset, -8px);margin-left:var(--mat-button-filled-icon-spacing, 8px)}[dir=rtl] .mat-mdc-unelevated-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-filled-icon-spacing, 8px);margin-left:var(--mat-button-filled-icon-offset, -8px)}.mat-mdc-unelevated-button .mat-ripple-element{background-color:var(--mat-button-filled-ripple-color, color-mix(in srgb, var(--mat-sys-on-primary) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-unelevated-button .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-filled-state-layer-color, var(--mat-sys-on-primary))}.mat-mdc-unelevated-button.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-filled-disabled-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-unelevated-button:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-filled-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-unelevated-button.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-unelevated-button.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-unelevated-button.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-filled-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-unelevated-button:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-filled-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-unelevated-button .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-button-filled-touch-target-size, 48px);display:var(--mat-button-filled-touch-target-display, block);left:0;right:0;transform:translateY(-50%)}.mat-mdc-unelevated-button:not(:disabled){color:var(--mat-button-filled-label-text-color, var(--mat-sys-on-primary));background-color:var(--mat-button-filled-container-color, var(--mat-sys-primary))}.mat-mdc-unelevated-button,.mat-mdc-unelevated-button .mdc-button__ripple{border-radius:var(--mat-button-filled-container-shape, var(--mat-sys-corner-full))}.mat-mdc-unelevated-button[disabled],.mat-mdc-unelevated-button.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-button-filled-disabled-label-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-button-filled-disabled-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-unelevated-button.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-raised-button{transition:box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1);box-shadow:var(--mat-button-protected-container-elevation-shadow, var(--mat-sys-level1));height:var(--mat-button-protected-container-height, 40px);font-family:var(--mat-button-protected-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-button-protected-label-text-size, var(--mat-sys-label-large-size));letter-spacing:var(--mat-button-protected-label-text-tracking, var(--mat-sys-label-large-tracking));text-transform:var(--mat-button-protected-label-text-transform);font-weight:var(--mat-button-protected-label-text-weight, var(--mat-sys-label-large-weight));padding:0 var(--mat-button-protected-horizontal-padding, 24px)}.mat-mdc-raised-button>.mat-icon{margin-right:var(--mat-button-protected-icon-spacing, 8px);margin-left:var(--mat-button-protected-icon-offset, -8px)}[dir=rtl] .mat-mdc-raised-button>.mat-icon{margin-right:var(--mat-button-protected-icon-offset, -8px);margin-left:var(--mat-button-protected-icon-spacing, 8px)}.mat-mdc-raised-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-protected-icon-offset, -8px);margin-left:var(--mat-button-protected-icon-spacing, 8px)}[dir=rtl] .mat-mdc-raised-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-protected-icon-spacing, 8px);margin-left:var(--mat-button-protected-icon-offset, -8px)}.mat-mdc-raised-button .mat-ripple-element{background-color:var(--mat-button-protected-ripple-color, color-mix(in srgb, var(--mat-sys-primary) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-raised-button .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-protected-state-layer-color, var(--mat-sys-primary))}.mat-mdc-raised-button.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-protected-disabled-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-raised-button:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-protected-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-raised-button.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-raised-button.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-raised-button.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-protected-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-raised-button:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-protected-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-raised-button .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-button-protected-touch-target-size, 48px);display:var(--mat-button-protected-touch-target-display, block);left:0;right:0;transform:translateY(-50%)}.mat-mdc-raised-button:not(:disabled){color:var(--mat-button-protected-label-text-color, var(--mat-sys-primary));background-color:var(--mat-button-protected-container-color, var(--mat-sys-surface))}.mat-mdc-raised-button,.mat-mdc-raised-button .mdc-button__ripple{border-radius:var(--mat-button-protected-container-shape, var(--mat-sys-corner-full))}.mat-mdc-raised-button:hover{box-shadow:var(--mat-button-protected-hover-container-elevation-shadow, var(--mat-sys-level2))}.mat-mdc-raised-button:focus{box-shadow:var(--mat-button-protected-focus-container-elevation-shadow, var(--mat-sys-level1))}.mat-mdc-raised-button:active,.mat-mdc-raised-button:focus:active{box-shadow:var(--mat-button-protected-pressed-container-elevation-shadow, var(--mat-sys-level1))}.mat-mdc-raised-button[disabled],.mat-mdc-raised-button.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-button-protected-disabled-label-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-button-protected-disabled-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-raised-button[disabled].mat-mdc-button-disabled,.mat-mdc-raised-button.mat-mdc-button-disabled.mat-mdc-button-disabled{box-shadow:var(--mat-button-protected-disabled-container-elevation-shadow, var(--mat-sys-level0))}.mat-mdc-raised-button.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-outlined-button{border-style:solid;transition:border 280ms cubic-bezier(0.4, 0, 0.2, 1);height:var(--mat-button-outlined-container-height, 40px);font-family:var(--mat-button-outlined-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-button-outlined-label-text-size, var(--mat-sys-label-large-size));letter-spacing:var(--mat-button-outlined-label-text-tracking, var(--mat-sys-label-large-tracking));text-transform:var(--mat-button-outlined-label-text-transform);font-weight:var(--mat-button-outlined-label-text-weight, var(--mat-sys-label-large-weight));border-radius:var(--mat-button-outlined-container-shape, var(--mat-sys-corner-full));border-width:var(--mat-button-outlined-outline-width, 1px);padding:0 var(--mat-button-outlined-horizontal-padding, 24px)}.mat-mdc-outlined-button>.mat-icon{margin-right:var(--mat-button-outlined-icon-spacing, 8px);margin-left:var(--mat-button-outlined-icon-offset, -8px)}[dir=rtl] .mat-mdc-outlined-button>.mat-icon{margin-right:var(--mat-button-outlined-icon-offset, -8px);margin-left:var(--mat-button-outlined-icon-spacing, 8px)}.mat-mdc-outlined-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-outlined-icon-offset, -8px);margin-left:var(--mat-button-outlined-icon-spacing, 8px)}[dir=rtl] .mat-mdc-outlined-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-outlined-icon-spacing, 8px);margin-left:var(--mat-button-outlined-icon-offset, -8px)}.mat-mdc-outlined-button .mat-ripple-element{background-color:var(--mat-button-outlined-ripple-color, color-mix(in srgb, var(--mat-sys-primary) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-outlined-button .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-outlined-state-layer-color, var(--mat-sys-primary))}.mat-mdc-outlined-button.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-outlined-disabled-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-outlined-button:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-outlined-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-outlined-button.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-outlined-button.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-outlined-button.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-outlined-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-outlined-button:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-outlined-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-outlined-button .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-button-outlined-touch-target-size, 48px);display:var(--mat-button-outlined-touch-target-display, block);left:0;right:0;transform:translateY(-50%)}.mat-mdc-outlined-button:not(:disabled){color:var(--mat-button-outlined-label-text-color, var(--mat-sys-primary));border-color:var(--mat-button-outlined-outline-color, var(--mat-sys-outline))}.mat-mdc-outlined-button[disabled],.mat-mdc-outlined-button.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-button-outlined-disabled-label-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));border-color:var(--mat-button-outlined-disabled-outline-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-outlined-button.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-tonal-button{transition:box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1);height:var(--mat-button-tonal-container-height, 40px);font-family:var(--mat-button-tonal-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-button-tonal-label-text-size, var(--mat-sys-label-large-size));letter-spacing:var(--mat-button-tonal-label-text-tracking, var(--mat-sys-label-large-tracking));text-transform:var(--mat-button-tonal-label-text-transform);font-weight:var(--mat-button-tonal-label-text-weight, var(--mat-sys-label-large-weight));padding:0 var(--mat-button-tonal-horizontal-padding, 24px)}.mat-tonal-button:not(:disabled){color:var(--mat-button-tonal-label-text-color, var(--mat-sys-on-secondary-container));background-color:var(--mat-button-tonal-container-color, var(--mat-sys-secondary-container))}.mat-tonal-button,.mat-tonal-button .mdc-button__ripple{border-radius:var(--mat-button-tonal-container-shape, var(--mat-sys-corner-full))}.mat-tonal-button[disabled],.mat-tonal-button.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-button-tonal-disabled-label-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-button-tonal-disabled-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-tonal-button.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-tonal-button>.mat-icon{margin-right:var(--mat-button-tonal-icon-spacing, 8px);margin-left:var(--mat-button-tonal-icon-offset, -8px)}[dir=rtl] .mat-tonal-button>.mat-icon{margin-right:var(--mat-button-tonal-icon-offset, -8px);margin-left:var(--mat-button-tonal-icon-spacing, 8px)}.mat-tonal-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-tonal-icon-offset, -8px);margin-left:var(--mat-button-tonal-icon-spacing, 8px)}[dir=rtl] .mat-tonal-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-tonal-icon-spacing, 8px);margin-left:var(--mat-button-tonal-icon-offset, -8px)}.mat-tonal-button .mat-ripple-element{background-color:var(--mat-button-tonal-ripple-color, color-mix(in srgb, var(--mat-sys-on-secondary-container) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-tonal-button .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-tonal-state-layer-color, var(--mat-sys-on-secondary-container))}.mat-tonal-button.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-tonal-disabled-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-tonal-button:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-tonal-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-tonal-button.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-tonal-button.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-tonal-button.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-tonal-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-tonal-button:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-tonal-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-tonal-button .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-button-tonal-touch-target-size, 48px);display:var(--mat-button-tonal-touch-target-display, block);left:0;right:0;transform:translateY(-50%)}.mat-mdc-button,.mat-mdc-unelevated-button,.mat-mdc-raised-button,.mat-mdc-outlined-button,.mat-tonal-button{-webkit-tap-highlight-color:rgba(0,0,0,0)}.mat-mdc-button .mat-mdc-button-ripple,.mat-mdc-button .mat-mdc-button-persistent-ripple,.mat-mdc-button .mat-mdc-button-persistent-ripple::before,.mat-mdc-unelevated-button .mat-mdc-button-ripple,.mat-mdc-unelevated-button .mat-mdc-button-persistent-ripple,.mat-mdc-unelevated-button .mat-mdc-button-persistent-ripple::before,.mat-mdc-raised-button .mat-mdc-button-ripple,.mat-mdc-raised-button .mat-mdc-button-persistent-ripple,.mat-mdc-raised-button .mat-mdc-button-persistent-ripple::before,.mat-mdc-outlined-button .mat-mdc-button-ripple,.mat-mdc-outlined-button .mat-mdc-button-persistent-ripple,.mat-mdc-outlined-button .mat-mdc-button-persistent-ripple::before,.mat-tonal-button .mat-mdc-button-ripple,.mat-tonal-button .mat-mdc-button-persistent-ripple,.mat-tonal-button .mat-mdc-button-persistent-ripple::before{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;border-radius:inherit}.mat-mdc-button .mat-mdc-button-ripple,.mat-mdc-unelevated-button .mat-mdc-button-ripple,.mat-mdc-raised-button .mat-mdc-button-ripple,.mat-mdc-outlined-button .mat-mdc-button-ripple,.mat-tonal-button .mat-mdc-button-ripple{overflow:hidden}.mat-mdc-button .mat-mdc-button-persistent-ripple::before,.mat-mdc-unelevated-button .mat-mdc-button-persistent-ripple::before,.mat-mdc-raised-button .mat-mdc-button-persistent-ripple::before,.mat-mdc-outlined-button .mat-mdc-button-persistent-ripple::before,.mat-tonal-button .mat-mdc-button-persistent-ripple::before{content:"";opacity:0}.mat-mdc-button .mdc-button__label,.mat-mdc-button .mat-icon,.mat-mdc-unelevated-button .mdc-button__label,.mat-mdc-unelevated-button .mat-icon,.mat-mdc-raised-button .mdc-button__label,.mat-mdc-raised-button .mat-icon,.mat-mdc-outlined-button .mdc-button__label,.mat-mdc-outlined-button .mat-icon,.mat-tonal-button .mdc-button__label,.mat-tonal-button .mat-icon{z-index:1;position:relative}.mat-mdc-button .mat-focus-indicator,.mat-mdc-unelevated-button .mat-focus-indicator,.mat-mdc-raised-button .mat-focus-indicator,.mat-mdc-outlined-button .mat-focus-indicator,.mat-tonal-button .mat-focus-indicator{top:0;left:0;right:0;bottom:0;position:absolute;border-radius:inherit}.mat-mdc-button:focus>.mat-focus-indicator::before,.mat-mdc-unelevated-button:focus>.mat-focus-indicator::before,.mat-mdc-raised-button:focus>.mat-focus-indicator::before,.mat-mdc-outlined-button:focus>.mat-focus-indicator::before,.mat-tonal-button:focus>.mat-focus-indicator::before{content:"";border-radius:inherit}.mat-mdc-button._mat-animation-noopable,.mat-mdc-unelevated-button._mat-animation-noopable,.mat-mdc-raised-button._mat-animation-noopable,.mat-mdc-outlined-button._mat-animation-noopable,.mat-tonal-button._mat-animation-noopable{transition:none !important;animation:none !important}.mat-mdc-button>.mat-icon,.mat-mdc-unelevated-button>.mat-icon,.mat-mdc-raised-button>.mat-icon,.mat-mdc-outlined-button>.mat-icon,.mat-tonal-button>.mat-icon{display:inline-block;position:relative;vertical-align:top;font-size:1.125rem;height:1.125rem;width:1.125rem}.mat-mdc-outlined-button .mat-mdc-button-ripple,.mat-mdc-outlined-button .mdc-button__ripple{top:-1px;left:-1px;bottom:-1px;right:-1px}.mat-mdc-unelevated-button .mat-focus-indicator::before,.mat-tonal-button .mat-focus-indicator::before,.mat-mdc-raised-button .mat-focus-indicator::before{margin:calc(calc(var(--mat-focus-indicator-border-width, 3px) + 2px)*-1)}.mat-mdc-outlined-button .mat-focus-indicator::before{margin:calc(calc(var(--mat-focus-indicator-border-width, 3px) + 3px)*-1)}\n', "@media(forced-colors: active){.mat-mdc-button:not(.mdc-button--outlined),.mat-mdc-unelevated-button:not(.mdc-button--outlined),.mat-mdc-raised-button:not(.mdc-button--outlined),.mat-mdc-outlined-button:not(.mdc-button--outlined),.mat-mdc-button-base.mat-tonal-button,.mat-mdc-icon-button.mat-mdc-icon-button,.mat-mdc-outlined-button .mdc-button__ripple{outline:solid 1px}}\n"]
-    }]
-  }], () => [], {
-    appearance: [{
-      type: Input,
-      args: ["matButton"]
-    }]
-  });
-})();
-function _inferAppearance(button) {
-  if (button.hasAttribute("mat-raised-button")) {
-    return "elevated";
-  }
-  if (button.hasAttribute("mat-stroked-button")) {
-    return "outlined";
-  }
-  if (button.hasAttribute("mat-flat-button")) {
-    return "filled";
-  }
-  if (button.hasAttribute("mat-button")) {
-    return "text";
-  }
-  return null;
-}
-var MAT_FAB_DEFAULT_OPTIONS = new InjectionToken("mat-mdc-fab-default-options", {
-  providedIn: "root",
-  factory: MAT_FAB_DEFAULT_OPTIONS_FACTORY
-});
-function MAT_FAB_DEFAULT_OPTIONS_FACTORY() {
-  return {
-    // The FAB by default has its color set to accent.
-    color: "accent"
-  };
-}
-var defaults = MAT_FAB_DEFAULT_OPTIONS_FACTORY();
-var MatFabButton = class _MatFabButton extends MatButtonBase {
-  _options = inject2(MAT_FAB_DEFAULT_OPTIONS, {
-    optional: true
-  });
-  _isFab = true;
-  extended;
-  constructor() {
-    super();
-    this._options = this._options || defaults;
-    this.color = this._options.color || defaults.color;
-  }
-  static \u0275fac = function MatFabButton_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _MatFabButton)();
-  };
-  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
-    type: _MatFabButton,
-    selectors: [["button", "mat-fab", ""], ["a", "mat-fab", ""], ["button", "matFab", ""], ["a", "matFab", ""]],
-    hostAttrs: [1, "mdc-fab", "mat-mdc-fab-base", "mat-mdc-fab"],
-    hostVars: 4,
-    hostBindings: function MatFabButton_HostBindings(rf, ctx) {
-      if (rf & 2) {
-        \u0275\u0275classProp("mdc-fab--extended", ctx.extended)("mat-mdc-extended-fab", ctx.extended);
-      }
-    },
-    inputs: {
-      extended: [2, "extended", "extended", booleanAttribute]
-    },
-    exportAs: ["matButton", "matAnchor"],
-    features: [\u0275\u0275InheritDefinitionFeature],
-    attrs: _c3,
-    ngContentSelectors: _c2,
-    decls: 7,
-    vars: 4,
-    consts: [[1, "mat-mdc-button-persistent-ripple"], [1, "mdc-button__label"], [1, "mat-focus-indicator"], [1, "mat-mdc-button-touch-target"]],
-    template: function MatFabButton_Template(rf, ctx) {
-      if (rf & 1) {
-        \u0275\u0275projectionDef(_c12);
-        \u0275\u0275domElement(0, "span", 0);
-        \u0275\u0275projection(1);
-        \u0275\u0275domElementStart(2, "span", 1);
-        \u0275\u0275projection(3, 1);
-        \u0275\u0275domElementEnd();
-        \u0275\u0275projection(4, 2);
-        \u0275\u0275domElement(5, "span", 2)(6, "span", 3);
-      }
-      if (rf & 2) {
-        \u0275\u0275classProp("mdc-button__ripple", !ctx._isFab)("mdc-fab__ripple", ctx._isFab);
-      }
-    },
-    styles: ['.mat-mdc-fab-base{-webkit-user-select:none;user-select:none;position:relative;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:56px;height:56px;padding:0;border:none;fill:currentColor;text-decoration:none;cursor:pointer;-moz-appearance:none;-webkit-appearance:none;overflow:visible;transition:box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1),opacity 15ms linear 30ms,transform 270ms 0ms cubic-bezier(0, 0, 0.2, 1);flex-shrink:0;-webkit-tap-highlight-color:rgba(0,0,0,0)}.mat-mdc-fab-base .mat-mdc-button-ripple,.mat-mdc-fab-base .mat-mdc-button-persistent-ripple,.mat-mdc-fab-base .mat-mdc-button-persistent-ripple::before{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;border-radius:inherit}.mat-mdc-fab-base .mat-mdc-button-ripple{overflow:hidden}.mat-mdc-fab-base .mat-mdc-button-persistent-ripple::before{content:"";opacity:0}.mat-mdc-fab-base .mdc-button__label,.mat-mdc-fab-base .mat-icon{z-index:1;position:relative}.mat-mdc-fab-base .mat-focus-indicator{top:0;left:0;right:0;bottom:0;position:absolute}.mat-mdc-fab-base:focus>.mat-focus-indicator::before{content:""}.mat-mdc-fab-base._mat-animation-noopable{transition:none !important;animation:none !important}.mat-mdc-fab-base::before{position:absolute;box-sizing:border-box;width:100%;height:100%;top:0;left:0;border:1px solid rgba(0,0,0,0);border-radius:inherit;content:"";pointer-events:none}.mat-mdc-fab-base[hidden]{display:none}.mat-mdc-fab-base::-moz-focus-inner{padding:0;border:0}.mat-mdc-fab-base:active,.mat-mdc-fab-base:focus{outline:none}.mat-mdc-fab-base:hover{cursor:pointer}.mat-mdc-fab-base>svg{width:100%}.mat-mdc-fab-base .mat-icon,.mat-mdc-fab-base .material-icons{transition:transform 180ms 90ms cubic-bezier(0, 0, 0.2, 1);fill:currentColor;will-change:transform}.mat-mdc-fab-base .mat-focus-indicator::before{margin:calc(calc(var(--mat-focus-indicator-border-width, 3px) + 2px)*-1)}.mat-mdc-fab-base[disabled],.mat-mdc-fab-base.mat-mdc-button-disabled{cursor:default;pointer-events:none}.mat-mdc-fab-base[disabled],.mat-mdc-fab-base[disabled]:focus,.mat-mdc-fab-base.mat-mdc-button-disabled,.mat-mdc-fab-base.mat-mdc-button-disabled:focus{box-shadow:none}.mat-mdc-fab-base.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-fab{background-color:var(--mat-fab-container-color, var(--mat-sys-primary-container));border-radius:var(--mat-fab-container-shape, var(--mat-sys-corner-large));color:var(--mat-fab-foreground-color, var(--mat-sys-on-primary-container, inherit));box-shadow:var(--mat-fab-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-fab:hover{box-shadow:var(--mat-fab-hover-container-elevation-shadow, var(--mat-sys-level4))}.mat-mdc-fab:focus{box-shadow:var(--mat-fab-focus-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-fab:active,.mat-mdc-fab:focus:active{box-shadow:var(--mat-fab-pressed-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-fab[disabled],.mat-mdc-fab.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-fab-disabled-state-foreground-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-fab-disabled-state-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-fab.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-fab .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-fab-touch-target-size, 48px);display:var(--mat-fab-touch-target-display, block);left:50%;width:var(--mat-fab-touch-target-size, 48px);transform:translate(-50%, -50%)}.mat-mdc-fab .mat-ripple-element{background-color:var(--mat-fab-ripple-color, color-mix(in srgb, var(--mat-sys-on-primary-container) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-fab .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-state-layer-color, var(--mat-sys-on-primary-container))}.mat-mdc-fab.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-disabled-state-layer-color)}.mat-mdc-fab:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-fab.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-fab.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-fab.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-fab:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-mini-fab{width:40px;height:40px;background-color:var(--mat-fab-small-container-color, var(--mat-sys-primary-container));border-radius:var(--mat-fab-small-container-shape, var(--mat-sys-corner-medium));color:var(--mat-fab-small-foreground-color, var(--mat-sys-on-primary-container, inherit));box-shadow:var(--mat-fab-small-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-mini-fab:hover{box-shadow:var(--mat-fab-small-hover-container-elevation-shadow, var(--mat-sys-level4))}.mat-mdc-mini-fab:focus{box-shadow:var(--mat-fab-small-focus-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-mini-fab:active,.mat-mdc-mini-fab:focus:active{box-shadow:var(--mat-fab-small-pressed-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-mini-fab[disabled],.mat-mdc-mini-fab.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-fab-small-disabled-state-foreground-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-fab-small-disabled-state-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-mini-fab.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-mini-fab .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-fab-small-touch-target-size, 48px);display:var(--mat-fab-small-touch-target-display);left:50%;width:var(--mat-fab-small-touch-target-size, 48px);transform:translate(-50%, -50%)}.mat-mdc-mini-fab .mat-ripple-element{background-color:var(--mat-fab-small-ripple-color, color-mix(in srgb, var(--mat-sys-on-primary-container) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-mini-fab .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-small-state-layer-color, var(--mat-sys-on-primary-container))}.mat-mdc-mini-fab.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-small-disabled-state-layer-color)}.mat-mdc-mini-fab:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-small-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-mini-fab.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-mini-fab.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-mini-fab.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-small-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-mini-fab:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-small-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-extended-fab{-moz-osx-font-smoothing:grayscale;-webkit-font-smoothing:antialiased;padding-left:20px;padding-right:20px;width:auto;max-width:100%;line-height:normal;box-shadow:var(--mat-fab-extended-container-elevation-shadow, var(--mat-sys-level3));height:var(--mat-fab-extended-container-height, 56px);border-radius:var(--mat-fab-extended-container-shape, var(--mat-sys-corner-large));font-family:var(--mat-fab-extended-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-fab-extended-label-text-size, var(--mat-sys-label-large-size));font-weight:var(--mat-fab-extended-label-text-weight, var(--mat-sys-label-large-weight));letter-spacing:var(--mat-fab-extended-label-text-tracking, var(--mat-sys-label-large-tracking))}.mat-mdc-extended-fab:hover{box-shadow:var(--mat-fab-extended-hover-container-elevation-shadow, var(--mat-sys-level4))}.mat-mdc-extended-fab:focus{box-shadow:var(--mat-fab-extended-focus-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-extended-fab:active,.mat-mdc-extended-fab:focus:active{box-shadow:var(--mat-fab-extended-pressed-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-extended-fab[disabled],.mat-mdc-extended-fab.mat-mdc-button-disabled{cursor:default;pointer-events:none}.mat-mdc-extended-fab[disabled],.mat-mdc-extended-fab[disabled]:focus,.mat-mdc-extended-fab.mat-mdc-button-disabled,.mat-mdc-extended-fab.mat-mdc-button-disabled:focus{box-shadow:none}.mat-mdc-extended-fab.mat-mdc-button-disabled-interactive{pointer-events:auto}[dir=rtl] .mat-mdc-extended-fab .mdc-button__label+.mat-icon,[dir=rtl] .mat-mdc-extended-fab .mdc-button__label+.material-icons,.mat-mdc-extended-fab>.mat-icon,.mat-mdc-extended-fab>.material-icons{margin-left:-8px;margin-right:12px}.mat-mdc-extended-fab .mdc-button__label+.mat-icon,.mat-mdc-extended-fab .mdc-button__label+.material-icons,[dir=rtl] .mat-mdc-extended-fab>.mat-icon,[dir=rtl] .mat-mdc-extended-fab>.material-icons{margin-left:12px;margin-right:-8px}.mat-mdc-extended-fab .mat-mdc-button-touch-target{width:100%}\n'],
-    encapsulation: 2,
-    changeDetection: 0
-  });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatFabButton, [{
-    type: Component,
-    args: [{
-      selector: `button[mat-fab], a[mat-fab], button[matFab], a[matFab]`,
-      host: {
-        "class": "mdc-fab mat-mdc-fab-base mat-mdc-fab",
-        "[class.mdc-fab--extended]": "extended",
-        "[class.mat-mdc-extended-fab]": "extended"
-      },
-      exportAs: "matButton, matAnchor",
-      encapsulation: ViewEncapsulation.None,
-      changeDetection: ChangeDetectionStrategy.OnPush,
-      template: `<span
-    class="mat-mdc-button-persistent-ripple"
-    [class.mdc-button__ripple]="!_isFab"
-    [class.mdc-fab__ripple]="_isFab"></span>
-
-<ng-content select=".material-icons:not([iconPositionEnd]), mat-icon:not([iconPositionEnd]), [matButtonIcon]:not([iconPositionEnd])">
-</ng-content>
-
-<span class="mdc-button__label"><ng-content></ng-content></span>
-
-<ng-content select=".material-icons[iconPositionEnd], mat-icon[iconPositionEnd], [matButtonIcon][iconPositionEnd]">
-</ng-content>
-
-<!--
-  The indicator can't be directly on the button, because MDC uses ::before for high contrast
-  indication and it can't be on the ripple, because it has a border radius and overflow: hidden.
--->
-<span class="mat-focus-indicator"></span>
-
-<span class="mat-mdc-button-touch-target"></span>
-`,
-      styles: ['.mat-mdc-fab-base{-webkit-user-select:none;user-select:none;position:relative;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:56px;height:56px;padding:0;border:none;fill:currentColor;text-decoration:none;cursor:pointer;-moz-appearance:none;-webkit-appearance:none;overflow:visible;transition:box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1),opacity 15ms linear 30ms,transform 270ms 0ms cubic-bezier(0, 0, 0.2, 1);flex-shrink:0;-webkit-tap-highlight-color:rgba(0,0,0,0)}.mat-mdc-fab-base .mat-mdc-button-ripple,.mat-mdc-fab-base .mat-mdc-button-persistent-ripple,.mat-mdc-fab-base .mat-mdc-button-persistent-ripple::before{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;border-radius:inherit}.mat-mdc-fab-base .mat-mdc-button-ripple{overflow:hidden}.mat-mdc-fab-base .mat-mdc-button-persistent-ripple::before{content:"";opacity:0}.mat-mdc-fab-base .mdc-button__label,.mat-mdc-fab-base .mat-icon{z-index:1;position:relative}.mat-mdc-fab-base .mat-focus-indicator{top:0;left:0;right:0;bottom:0;position:absolute}.mat-mdc-fab-base:focus>.mat-focus-indicator::before{content:""}.mat-mdc-fab-base._mat-animation-noopable{transition:none !important;animation:none !important}.mat-mdc-fab-base::before{position:absolute;box-sizing:border-box;width:100%;height:100%;top:0;left:0;border:1px solid rgba(0,0,0,0);border-radius:inherit;content:"";pointer-events:none}.mat-mdc-fab-base[hidden]{display:none}.mat-mdc-fab-base::-moz-focus-inner{padding:0;border:0}.mat-mdc-fab-base:active,.mat-mdc-fab-base:focus{outline:none}.mat-mdc-fab-base:hover{cursor:pointer}.mat-mdc-fab-base>svg{width:100%}.mat-mdc-fab-base .mat-icon,.mat-mdc-fab-base .material-icons{transition:transform 180ms 90ms cubic-bezier(0, 0, 0.2, 1);fill:currentColor;will-change:transform}.mat-mdc-fab-base .mat-focus-indicator::before{margin:calc(calc(var(--mat-focus-indicator-border-width, 3px) + 2px)*-1)}.mat-mdc-fab-base[disabled],.mat-mdc-fab-base.mat-mdc-button-disabled{cursor:default;pointer-events:none}.mat-mdc-fab-base[disabled],.mat-mdc-fab-base[disabled]:focus,.mat-mdc-fab-base.mat-mdc-button-disabled,.mat-mdc-fab-base.mat-mdc-button-disabled:focus{box-shadow:none}.mat-mdc-fab-base.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-fab{background-color:var(--mat-fab-container-color, var(--mat-sys-primary-container));border-radius:var(--mat-fab-container-shape, var(--mat-sys-corner-large));color:var(--mat-fab-foreground-color, var(--mat-sys-on-primary-container, inherit));box-shadow:var(--mat-fab-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-fab:hover{box-shadow:var(--mat-fab-hover-container-elevation-shadow, var(--mat-sys-level4))}.mat-mdc-fab:focus{box-shadow:var(--mat-fab-focus-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-fab:active,.mat-mdc-fab:focus:active{box-shadow:var(--mat-fab-pressed-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-fab[disabled],.mat-mdc-fab.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-fab-disabled-state-foreground-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-fab-disabled-state-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-fab.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-fab .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-fab-touch-target-size, 48px);display:var(--mat-fab-touch-target-display, block);left:50%;width:var(--mat-fab-touch-target-size, 48px);transform:translate(-50%, -50%)}.mat-mdc-fab .mat-ripple-element{background-color:var(--mat-fab-ripple-color, color-mix(in srgb, var(--mat-sys-on-primary-container) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-fab .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-state-layer-color, var(--mat-sys-on-primary-container))}.mat-mdc-fab.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-disabled-state-layer-color)}.mat-mdc-fab:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-fab.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-fab.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-fab.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-fab:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-mini-fab{width:40px;height:40px;background-color:var(--mat-fab-small-container-color, var(--mat-sys-primary-container));border-radius:var(--mat-fab-small-container-shape, var(--mat-sys-corner-medium));color:var(--mat-fab-small-foreground-color, var(--mat-sys-on-primary-container, inherit));box-shadow:var(--mat-fab-small-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-mini-fab:hover{box-shadow:var(--mat-fab-small-hover-container-elevation-shadow, var(--mat-sys-level4))}.mat-mdc-mini-fab:focus{box-shadow:var(--mat-fab-small-focus-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-mini-fab:active,.mat-mdc-mini-fab:focus:active{box-shadow:var(--mat-fab-small-pressed-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-mini-fab[disabled],.mat-mdc-mini-fab.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-fab-small-disabled-state-foreground-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-fab-small-disabled-state-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-mini-fab.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-mini-fab .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-fab-small-touch-target-size, 48px);display:var(--mat-fab-small-touch-target-display);left:50%;width:var(--mat-fab-small-touch-target-size, 48px);transform:translate(-50%, -50%)}.mat-mdc-mini-fab .mat-ripple-element{background-color:var(--mat-fab-small-ripple-color, color-mix(in srgb, var(--mat-sys-on-primary-container) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-mini-fab .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-small-state-layer-color, var(--mat-sys-on-primary-container))}.mat-mdc-mini-fab.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-small-disabled-state-layer-color)}.mat-mdc-mini-fab:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-small-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-mini-fab.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-mini-fab.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-mini-fab.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-small-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-mini-fab:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-small-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-extended-fab{-moz-osx-font-smoothing:grayscale;-webkit-font-smoothing:antialiased;padding-left:20px;padding-right:20px;width:auto;max-width:100%;line-height:normal;box-shadow:var(--mat-fab-extended-container-elevation-shadow, var(--mat-sys-level3));height:var(--mat-fab-extended-container-height, 56px);border-radius:var(--mat-fab-extended-container-shape, var(--mat-sys-corner-large));font-family:var(--mat-fab-extended-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-fab-extended-label-text-size, var(--mat-sys-label-large-size));font-weight:var(--mat-fab-extended-label-text-weight, var(--mat-sys-label-large-weight));letter-spacing:var(--mat-fab-extended-label-text-tracking, var(--mat-sys-label-large-tracking))}.mat-mdc-extended-fab:hover{box-shadow:var(--mat-fab-extended-hover-container-elevation-shadow, var(--mat-sys-level4))}.mat-mdc-extended-fab:focus{box-shadow:var(--mat-fab-extended-focus-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-extended-fab:active,.mat-mdc-extended-fab:focus:active{box-shadow:var(--mat-fab-extended-pressed-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-extended-fab[disabled],.mat-mdc-extended-fab.mat-mdc-button-disabled{cursor:default;pointer-events:none}.mat-mdc-extended-fab[disabled],.mat-mdc-extended-fab[disabled]:focus,.mat-mdc-extended-fab.mat-mdc-button-disabled,.mat-mdc-extended-fab.mat-mdc-button-disabled:focus{box-shadow:none}.mat-mdc-extended-fab.mat-mdc-button-disabled-interactive{pointer-events:auto}[dir=rtl] .mat-mdc-extended-fab .mdc-button__label+.mat-icon,[dir=rtl] .mat-mdc-extended-fab .mdc-button__label+.material-icons,.mat-mdc-extended-fab>.mat-icon,.mat-mdc-extended-fab>.material-icons{margin-left:-8px;margin-right:12px}.mat-mdc-extended-fab .mdc-button__label+.mat-icon,.mat-mdc-extended-fab .mdc-button__label+.material-icons,[dir=rtl] .mat-mdc-extended-fab>.mat-icon,[dir=rtl] .mat-mdc-extended-fab>.material-icons{margin-left:12px;margin-right:-8px}.mat-mdc-extended-fab .mat-mdc-button-touch-target{width:100%}\n']
-    }]
-  }], () => [], {
-    extended: [{
-      type: Input,
-      args: [{
-        transform: booleanAttribute
-      }]
-    }]
-  });
-})();
-var MatMiniFabButton = class _MatMiniFabButton extends MatButtonBase {
-  _options = inject2(MAT_FAB_DEFAULT_OPTIONS, {
-    optional: true
-  });
-  _isFab = true;
-  constructor() {
-    super();
-    this._options = this._options || defaults;
-    this.color = this._options.color || defaults.color;
-  }
-  static \u0275fac = function MatMiniFabButton_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _MatMiniFabButton)();
-  };
-  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
-    type: _MatMiniFabButton,
-    selectors: [["button", "mat-mini-fab", ""], ["a", "mat-mini-fab", ""], ["button", "matMiniFab", ""], ["a", "matMiniFab", ""]],
-    hostAttrs: [1, "mdc-fab", "mat-mdc-fab-base", "mdc-fab--mini", "mat-mdc-mini-fab"],
-    exportAs: ["matButton", "matAnchor"],
-    features: [\u0275\u0275InheritDefinitionFeature],
-    attrs: _c4,
-    ngContentSelectors: _c2,
-    decls: 7,
-    vars: 4,
-    consts: [[1, "mat-mdc-button-persistent-ripple"], [1, "mdc-button__label"], [1, "mat-focus-indicator"], [1, "mat-mdc-button-touch-target"]],
-    template: function MatMiniFabButton_Template(rf, ctx) {
-      if (rf & 1) {
-        \u0275\u0275projectionDef(_c12);
-        \u0275\u0275domElement(0, "span", 0);
-        \u0275\u0275projection(1);
-        \u0275\u0275domElementStart(2, "span", 1);
-        \u0275\u0275projection(3, 1);
-        \u0275\u0275domElementEnd();
-        \u0275\u0275projection(4, 2);
-        \u0275\u0275domElement(5, "span", 2)(6, "span", 3);
-      }
-      if (rf & 2) {
-        \u0275\u0275classProp("mdc-button__ripple", !ctx._isFab)("mdc-fab__ripple", ctx._isFab);
-      }
-    },
-    styles: [_c5],
-    encapsulation: 2,
-    changeDetection: 0
-  });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatMiniFabButton, [{
-    type: Component,
-    args: [{
-      selector: `button[mat-mini-fab], a[mat-mini-fab], button[matMiniFab], a[matMiniFab]`,
-      host: {
-        "class": "mdc-fab mat-mdc-fab-base mdc-fab--mini mat-mdc-mini-fab"
-      },
-      exportAs: "matButton, matAnchor",
-      encapsulation: ViewEncapsulation.None,
-      changeDetection: ChangeDetectionStrategy.OnPush,
-      template: `<span
-    class="mat-mdc-button-persistent-ripple"
-    [class.mdc-button__ripple]="!_isFab"
-    [class.mdc-fab__ripple]="_isFab"></span>
-
-<ng-content select=".material-icons:not([iconPositionEnd]), mat-icon:not([iconPositionEnd]), [matButtonIcon]:not([iconPositionEnd])">
-</ng-content>
-
-<span class="mdc-button__label"><ng-content></ng-content></span>
-
-<ng-content select=".material-icons[iconPositionEnd], mat-icon[iconPositionEnd], [matButtonIcon][iconPositionEnd]">
-</ng-content>
-
-<!--
-  The indicator can't be directly on the button, because MDC uses ::before for high contrast
-  indication and it can't be on the ripple, because it has a border radius and overflow: hidden.
--->
-<span class="mat-focus-indicator"></span>
-
-<span class="mat-mdc-button-touch-target"></span>
-`,
-      styles: ['.mat-mdc-fab-base{-webkit-user-select:none;user-select:none;position:relative;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:56px;height:56px;padding:0;border:none;fill:currentColor;text-decoration:none;cursor:pointer;-moz-appearance:none;-webkit-appearance:none;overflow:visible;transition:box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1),opacity 15ms linear 30ms,transform 270ms 0ms cubic-bezier(0, 0, 0.2, 1);flex-shrink:0;-webkit-tap-highlight-color:rgba(0,0,0,0)}.mat-mdc-fab-base .mat-mdc-button-ripple,.mat-mdc-fab-base .mat-mdc-button-persistent-ripple,.mat-mdc-fab-base .mat-mdc-button-persistent-ripple::before{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;border-radius:inherit}.mat-mdc-fab-base .mat-mdc-button-ripple{overflow:hidden}.mat-mdc-fab-base .mat-mdc-button-persistent-ripple::before{content:"";opacity:0}.mat-mdc-fab-base .mdc-button__label,.mat-mdc-fab-base .mat-icon{z-index:1;position:relative}.mat-mdc-fab-base .mat-focus-indicator{top:0;left:0;right:0;bottom:0;position:absolute}.mat-mdc-fab-base:focus>.mat-focus-indicator::before{content:""}.mat-mdc-fab-base._mat-animation-noopable{transition:none !important;animation:none !important}.mat-mdc-fab-base::before{position:absolute;box-sizing:border-box;width:100%;height:100%;top:0;left:0;border:1px solid rgba(0,0,0,0);border-radius:inherit;content:"";pointer-events:none}.mat-mdc-fab-base[hidden]{display:none}.mat-mdc-fab-base::-moz-focus-inner{padding:0;border:0}.mat-mdc-fab-base:active,.mat-mdc-fab-base:focus{outline:none}.mat-mdc-fab-base:hover{cursor:pointer}.mat-mdc-fab-base>svg{width:100%}.mat-mdc-fab-base .mat-icon,.mat-mdc-fab-base .material-icons{transition:transform 180ms 90ms cubic-bezier(0, 0, 0.2, 1);fill:currentColor;will-change:transform}.mat-mdc-fab-base .mat-focus-indicator::before{margin:calc(calc(var(--mat-focus-indicator-border-width, 3px) + 2px)*-1)}.mat-mdc-fab-base[disabled],.mat-mdc-fab-base.mat-mdc-button-disabled{cursor:default;pointer-events:none}.mat-mdc-fab-base[disabled],.mat-mdc-fab-base[disabled]:focus,.mat-mdc-fab-base.mat-mdc-button-disabled,.mat-mdc-fab-base.mat-mdc-button-disabled:focus{box-shadow:none}.mat-mdc-fab-base.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-fab{background-color:var(--mat-fab-container-color, var(--mat-sys-primary-container));border-radius:var(--mat-fab-container-shape, var(--mat-sys-corner-large));color:var(--mat-fab-foreground-color, var(--mat-sys-on-primary-container, inherit));box-shadow:var(--mat-fab-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-fab:hover{box-shadow:var(--mat-fab-hover-container-elevation-shadow, var(--mat-sys-level4))}.mat-mdc-fab:focus{box-shadow:var(--mat-fab-focus-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-fab:active,.mat-mdc-fab:focus:active{box-shadow:var(--mat-fab-pressed-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-fab[disabled],.mat-mdc-fab.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-fab-disabled-state-foreground-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-fab-disabled-state-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-fab.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-fab .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-fab-touch-target-size, 48px);display:var(--mat-fab-touch-target-display, block);left:50%;width:var(--mat-fab-touch-target-size, 48px);transform:translate(-50%, -50%)}.mat-mdc-fab .mat-ripple-element{background-color:var(--mat-fab-ripple-color, color-mix(in srgb, var(--mat-sys-on-primary-container) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-fab .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-state-layer-color, var(--mat-sys-on-primary-container))}.mat-mdc-fab.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-disabled-state-layer-color)}.mat-mdc-fab:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-fab.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-fab.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-fab.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-fab:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-mini-fab{width:40px;height:40px;background-color:var(--mat-fab-small-container-color, var(--mat-sys-primary-container));border-radius:var(--mat-fab-small-container-shape, var(--mat-sys-corner-medium));color:var(--mat-fab-small-foreground-color, var(--mat-sys-on-primary-container, inherit));box-shadow:var(--mat-fab-small-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-mini-fab:hover{box-shadow:var(--mat-fab-small-hover-container-elevation-shadow, var(--mat-sys-level4))}.mat-mdc-mini-fab:focus{box-shadow:var(--mat-fab-small-focus-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-mini-fab:active,.mat-mdc-mini-fab:focus:active{box-shadow:var(--mat-fab-small-pressed-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-mini-fab[disabled],.mat-mdc-mini-fab.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-fab-small-disabled-state-foreground-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-fab-small-disabled-state-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-mini-fab.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-mini-fab .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-fab-small-touch-target-size, 48px);display:var(--mat-fab-small-touch-target-display);left:50%;width:var(--mat-fab-small-touch-target-size, 48px);transform:translate(-50%, -50%)}.mat-mdc-mini-fab .mat-ripple-element{background-color:var(--mat-fab-small-ripple-color, color-mix(in srgb, var(--mat-sys-on-primary-container) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-mini-fab .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-small-state-layer-color, var(--mat-sys-on-primary-container))}.mat-mdc-mini-fab.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-small-disabled-state-layer-color)}.mat-mdc-mini-fab:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-small-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-mini-fab.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-mini-fab.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-mini-fab.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-small-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-mini-fab:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-small-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-extended-fab{-moz-osx-font-smoothing:grayscale;-webkit-font-smoothing:antialiased;padding-left:20px;padding-right:20px;width:auto;max-width:100%;line-height:normal;box-shadow:var(--mat-fab-extended-container-elevation-shadow, var(--mat-sys-level3));height:var(--mat-fab-extended-container-height, 56px);border-radius:var(--mat-fab-extended-container-shape, var(--mat-sys-corner-large));font-family:var(--mat-fab-extended-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-fab-extended-label-text-size, var(--mat-sys-label-large-size));font-weight:var(--mat-fab-extended-label-text-weight, var(--mat-sys-label-large-weight));letter-spacing:var(--mat-fab-extended-label-text-tracking, var(--mat-sys-label-large-tracking))}.mat-mdc-extended-fab:hover{box-shadow:var(--mat-fab-extended-hover-container-elevation-shadow, var(--mat-sys-level4))}.mat-mdc-extended-fab:focus{box-shadow:var(--mat-fab-extended-focus-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-extended-fab:active,.mat-mdc-extended-fab:focus:active{box-shadow:var(--mat-fab-extended-pressed-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-extended-fab[disabled],.mat-mdc-extended-fab.mat-mdc-button-disabled{cursor:default;pointer-events:none}.mat-mdc-extended-fab[disabled],.mat-mdc-extended-fab[disabled]:focus,.mat-mdc-extended-fab.mat-mdc-button-disabled,.mat-mdc-extended-fab.mat-mdc-button-disabled:focus{box-shadow:none}.mat-mdc-extended-fab.mat-mdc-button-disabled-interactive{pointer-events:auto}[dir=rtl] .mat-mdc-extended-fab .mdc-button__label+.mat-icon,[dir=rtl] .mat-mdc-extended-fab .mdc-button__label+.material-icons,.mat-mdc-extended-fab>.mat-icon,.mat-mdc-extended-fab>.material-icons{margin-left:-8px;margin-right:12px}.mat-mdc-extended-fab .mdc-button__label+.mat-icon,.mat-mdc-extended-fab .mdc-button__label+.material-icons,[dir=rtl] .mat-mdc-extended-fab>.mat-icon,[dir=rtl] .mat-mdc-extended-fab>.material-icons{margin-left:12px;margin-right:-8px}.mat-mdc-extended-fab .mat-mdc-button-touch-target{width:100%}\n']
-    }]
-  }], () => [], null);
-})();
-var MatButtonModule = class _MatButtonModule {
-  static \u0275fac = function MatButtonModule_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _MatButtonModule)();
-  };
-  static \u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({
-    type: _MatButtonModule,
-    imports: [MatCommonModule, MatRippleModule, MatButton, MatMiniFabButton, MatIconButton, MatFabButton],
-    exports: [MatCommonModule, MatButton, MatMiniFabButton, MatIconButton, MatFabButton]
-  });
-  static \u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({
-    imports: [MatCommonModule, MatRippleModule, MatCommonModule]
-  });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatButtonModule, [{
-    type: NgModule,
-    args: [{
-      imports: [MatCommonModule, MatRippleModule, MatButton, MatMiniFabButton, MatIconButton, MatFabButton],
-      exports: [MatCommonModule, MatButton, MatMiniFabButton, MatIconButton, MatFabButton]
-    }]
-  }], null, null);
-})();
-
-// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@ang_awrsjmhxfn5unao7dg6glqdxaq/node_modules/@angular/material/fesm2022/icon-registry.mjs
-var policy2;
-function getPolicy2() {
-  if (policy2 === void 0) {
-    policy2 = null;
-    if (typeof window !== "undefined") {
-      const ttWindow = window;
-      if (ttWindow.trustedTypes !== void 0) {
-        policy2 = ttWindow.trustedTypes.createPolicy("angular#components", {
-          createHTML: (s) => s
-        });
-      }
-    }
-  }
-  return policy2;
-}
-function trustedHTMLFromString2(html) {
-  return getPolicy2()?.createHTML(html) || html;
-}
-function getMatIconNameNotFoundError(iconName) {
-  return Error(`Unable to find icon with the name "${iconName}"`);
-}
-function getMatIconNoHttpProviderError() {
-  return Error("Could not find HttpClient for use with Angular Material icons. Please add provideHttpClient() to your providers.");
-}
-function getMatIconFailedToSanitizeUrlError(url) {
-  return Error(`The URL provided to MatIconRegistry was not trusted as a resource URL via Angular's DomSanitizer. Attempted URL was "${url}".`);
-}
-function getMatIconFailedToSanitizeLiteralError(literal) {
-  return Error(`The literal provided to MatIconRegistry was not trusted as safe HTML by Angular's DomSanitizer. Attempted literal was "${literal}".`);
-}
-var SvgIconConfig = class {
-  url;
-  svgText;
-  options;
-  svgElement;
-  constructor(url, svgText, options) {
-    this.url = url;
-    this.svgText = svgText;
-    this.options = options;
-  }
-};
-var MatIconRegistry = class _MatIconRegistry {
-  _httpClient;
-  _sanitizer;
-  _errorHandler;
-  _document;
-  /**
-   * URLs and cached SVG elements for individual icons. Keys are of the format "[namespace]:[icon]".
-   */
-  _svgIconConfigs = /* @__PURE__ */ new Map();
-  /**
-   * SvgIconConfig objects and cached SVG elements for icon sets, keyed by namespace.
-   * Multiple icon sets can be registered under the same namespace.
-   */
-  _iconSetConfigs = /* @__PURE__ */ new Map();
-  /** Cache for icons loaded by direct URLs. */
-  _cachedIconsByUrl = /* @__PURE__ */ new Map();
-  /** In-progress icon fetches. Used to coalesce multiple requests to the same URL. */
-  _inProgressUrlFetches = /* @__PURE__ */ new Map();
-  /** Map from font identifiers to their CSS class names. Used for icon fonts. */
-  _fontCssClassesByAlias = /* @__PURE__ */ new Map();
-  /** Registered icon resolver functions. */
-  _resolvers = [];
-  /**
-   * The CSS classes to apply when an `<mat-icon>` component has no icon name, url, or font
-   * specified. The default 'material-icons' value assumes that the material icon font has been
-   * loaded as described at https://google.github.io/material-design-icons/#icon-font-for-the-web
-   */
-  _defaultFontSetClass = ["material-icons", "mat-ligature-font"];
-  constructor(_httpClient, _sanitizer, document2, _errorHandler) {
-    this._httpClient = _httpClient;
-    this._sanitizer = _sanitizer;
-    this._errorHandler = _errorHandler;
-    this._document = document2;
-  }
-  /**
-   * Registers an icon by URL in the default namespace.
-   * @param iconName Name under which the icon should be registered.
-   * @param url
-   */
-  addSvgIcon(iconName, url, options) {
-    return this.addSvgIconInNamespace("", iconName, url, options);
-  }
-  /**
-   * Registers an icon using an HTML string in the default namespace.
-   * @param iconName Name under which the icon should be registered.
-   * @param literal SVG source of the icon.
-   */
-  addSvgIconLiteral(iconName, literal, options) {
-    return this.addSvgIconLiteralInNamespace("", iconName, literal, options);
-  }
-  /**
-   * Registers an icon by URL in the specified namespace.
-   * @param namespace Namespace in which the icon should be registered.
-   * @param iconName Name under which the icon should be registered.
-   * @param url
-   */
-  addSvgIconInNamespace(namespace, iconName, url, options) {
-    return this._addSvgIconConfig(namespace, iconName, new SvgIconConfig(url, null, options));
-  }
-  /**
-   * Registers an icon resolver function with the registry. The function will be invoked with the
-   * name and namespace of an icon when the registry tries to resolve the URL from which to fetch
-   * the icon. The resolver is expected to return a `SafeResourceUrl` that points to the icon,
-   * an object with the icon URL and icon options, or `null` if the icon is not supported. Resolvers
-   * will be invoked in the order in which they have been registered.
-   * @param resolver Resolver function to be registered.
-   */
-  addSvgIconResolver(resolver) {
-    this._resolvers.push(resolver);
-    return this;
-  }
-  /**
-   * Registers an icon using an HTML string in the specified namespace.
-   * @param namespace Namespace in which the icon should be registered.
-   * @param iconName Name under which the icon should be registered.
-   * @param literal SVG source of the icon.
-   */
-  addSvgIconLiteralInNamespace(namespace, iconName, literal, options) {
-    const cleanLiteral = this._sanitizer.sanitize(SecurityContext.HTML, literal);
-    if (!cleanLiteral) {
-      throw getMatIconFailedToSanitizeLiteralError(literal);
-    }
-    const trustedLiteral = trustedHTMLFromString2(cleanLiteral);
-    return this._addSvgIconConfig(namespace, iconName, new SvgIconConfig("", trustedLiteral, options));
-  }
-  /**
-   * Registers an icon set by URL in the default namespace.
-   * @param url
-   */
-  addSvgIconSet(url, options) {
-    return this.addSvgIconSetInNamespace("", url, options);
-  }
-  /**
-   * Registers an icon set using an HTML string in the default namespace.
-   * @param literal SVG source of the icon set.
-   */
-  addSvgIconSetLiteral(literal, options) {
-    return this.addSvgIconSetLiteralInNamespace("", literal, options);
-  }
-  /**
-   * Registers an icon set by URL in the specified namespace.
-   * @param namespace Namespace in which to register the icon set.
-   * @param url
-   */
-  addSvgIconSetInNamespace(namespace, url, options) {
-    return this._addSvgIconSetConfig(namespace, new SvgIconConfig(url, null, options));
-  }
-  /**
-   * Registers an icon set using an HTML string in the specified namespace.
-   * @param namespace Namespace in which to register the icon set.
-   * @param literal SVG source of the icon set.
-   */
-  addSvgIconSetLiteralInNamespace(namespace, literal, options) {
-    const cleanLiteral = this._sanitizer.sanitize(SecurityContext.HTML, literal);
-    if (!cleanLiteral) {
-      throw getMatIconFailedToSanitizeLiteralError(literal);
-    }
-    const trustedLiteral = trustedHTMLFromString2(cleanLiteral);
-    return this._addSvgIconSetConfig(namespace, new SvgIconConfig("", trustedLiteral, options));
-  }
-  /**
-   * Defines an alias for CSS class names to be used for icon fonts. Creating an matIcon
-   * component with the alias as the fontSet input will cause the class name to be applied
-   * to the `<mat-icon>` element.
-   *
-   * If the registered font is a ligature font, then don't forget to also include the special
-   * class `mat-ligature-font` to allow the usage via attribute. So register like this:
-   *
-   * ```ts
-   * iconRegistry.registerFontClassAlias('f1', 'font1 mat-ligature-font');
-   * ```
-   *
-   * And use like this:
-   *
-   * ```html
-   * <mat-icon fontSet="f1" fontIcon="home"></mat-icon>
-   * ```
-   *
-   * @param alias Alias for the font.
-   * @param classNames Class names override to be used instead of the alias.
-   */
-  registerFontClassAlias(alias, classNames = alias) {
-    this._fontCssClassesByAlias.set(alias, classNames);
-    return this;
-  }
-  /**
-   * Returns the CSS class name associated with the alias by a previous call to
-   * registerFontClassAlias. If no CSS class has been associated, returns the alias unmodified.
-   */
-  classNameForFontAlias(alias) {
-    return this._fontCssClassesByAlias.get(alias) || alias;
-  }
-  /**
-   * Sets the CSS classes to be used for icon fonts when an `<mat-icon>` component does not
-   * have a fontSet input value, and is not loading an icon by name or URL.
-   */
-  setDefaultFontSetClass(...classNames) {
-    this._defaultFontSetClass = classNames;
-    return this;
-  }
-  /**
-   * Returns the CSS classes to be used for icon fonts when an `<mat-icon>` component does not
-   * have a fontSet input value, and is not loading an icon by name or URL.
-   */
-  getDefaultFontSetClass() {
-    return this._defaultFontSetClass;
-  }
-  /**
-   * Returns an Observable that produces the icon (as an `<svg>` DOM element) from the given URL.
-   * The response from the URL may be cached so this will not always cause an HTTP request, but
-   * the produced element will always be a new copy of the originally fetched icon. (That is,
-   * it will not contain any modifications made to elements previously returned).
-   *
-   * @param safeUrl URL from which to fetch the SVG icon.
-   */
-  getSvgIconFromUrl(safeUrl) {
-    const url = this._sanitizer.sanitize(SecurityContext.RESOURCE_URL, safeUrl);
-    if (!url) {
-      throw getMatIconFailedToSanitizeUrlError(safeUrl);
-    }
-    const cachedIcon = this._cachedIconsByUrl.get(url);
-    if (cachedIcon) {
-      return of(cloneSvg(cachedIcon));
-    }
-    return this._loadSvgIconFromConfig(new SvgIconConfig(safeUrl, null)).pipe(tap((svg) => this._cachedIconsByUrl.set(url, svg)), map((svg) => cloneSvg(svg)));
-  }
-  /**
-   * Returns an Observable that produces the icon (as an `<svg>` DOM element) with the given name
-   * and namespace. The icon must have been previously registered with addIcon or addIconSet;
-   * if not, the Observable will throw an error.
-   *
-   * @param name Name of the icon to be retrieved.
-   * @param namespace Namespace in which to look for the icon.
-   */
-  getNamedSvgIcon(name, namespace = "") {
-    const key = iconKey(namespace, name);
-    let config2 = this._svgIconConfigs.get(key);
-    if (config2) {
-      return this._getSvgFromConfig(config2);
-    }
-    config2 = this._getIconConfigFromResolvers(namespace, name);
-    if (config2) {
-      this._svgIconConfigs.set(key, config2);
-      return this._getSvgFromConfig(config2);
-    }
-    const iconSetConfigs = this._iconSetConfigs.get(namespace);
-    if (iconSetConfigs) {
-      return this._getSvgFromIconSetConfigs(name, iconSetConfigs);
-    }
-    return throwError(getMatIconNameNotFoundError(key));
-  }
-  ngOnDestroy() {
-    this._resolvers = [];
-    this._svgIconConfigs.clear();
-    this._iconSetConfigs.clear();
-    this._cachedIconsByUrl.clear();
-  }
-  /**
-   * Returns the cached icon for a SvgIconConfig if available, or fetches it from its URL if not.
-   */
-  _getSvgFromConfig(config2) {
-    if (config2.svgText) {
-      return of(cloneSvg(this._svgElementFromConfig(config2)));
-    } else {
-      return this._loadSvgIconFromConfig(config2).pipe(map((svg) => cloneSvg(svg)));
-    }
-  }
-  /**
-   * Attempts to find an icon with the specified name in any of the SVG icon sets.
-   * First searches the available cached icons for a nested element with a matching name, and
-   * if found copies the element to a new `<svg>` element. If not found, fetches all icon sets
-   * that have not been cached, and searches again after all fetches are completed.
-   * The returned Observable produces the SVG element if possible, and throws
-   * an error if no icon with the specified name can be found.
-   */
-  _getSvgFromIconSetConfigs(name, iconSetConfigs) {
-    const namedIcon = this._extractIconWithNameFromAnySet(name, iconSetConfigs);
-    if (namedIcon) {
-      return of(namedIcon);
-    }
-    const iconSetFetchRequests = iconSetConfigs.filter((iconSetConfig) => !iconSetConfig.svgText).map((iconSetConfig) => {
-      return this._loadSvgIconSetFromConfig(iconSetConfig).pipe(catchError((err) => {
-        const url = this._sanitizer.sanitize(SecurityContext.RESOURCE_URL, iconSetConfig.url);
-        const errorMessage = `Loading icon set URL: ${url} failed: ${err.message}`;
-        this._errorHandler.handleError(new Error(errorMessage));
-        return of(null);
-      }));
-    });
-    return forkJoin(iconSetFetchRequests).pipe(map(() => {
-      const foundIcon = this._extractIconWithNameFromAnySet(name, iconSetConfigs);
-      if (!foundIcon) {
-        throw getMatIconNameNotFoundError(name);
-      }
-      return foundIcon;
-    }));
-  }
-  /**
-   * Searches the cached SVG elements for the given icon sets for a nested icon element whose "id"
-   * tag matches the specified name. If found, copies the nested element to a new SVG element and
-   * returns it. Returns null if no matching element is found.
-   */
-  _extractIconWithNameFromAnySet(iconName, iconSetConfigs) {
-    for (let i = iconSetConfigs.length - 1; i >= 0; i--) {
-      const config2 = iconSetConfigs[i];
-      if (config2.svgText && config2.svgText.toString().indexOf(iconName) > -1) {
-        const svg = this._svgElementFromConfig(config2);
-        const foundIcon = this._extractSvgIconFromSet(svg, iconName, config2.options);
-        if (foundIcon) {
-          return foundIcon;
-        }
-      }
-    }
-    return null;
-  }
-  /**
-   * Loads the content of the icon URL specified in the SvgIconConfig and creates an SVG element
-   * from it.
-   */
-  _loadSvgIconFromConfig(config2) {
-    return this._fetchIcon(config2).pipe(tap((svgText) => config2.svgText = svgText), map(() => this._svgElementFromConfig(config2)));
-  }
-  /**
-   * Loads the content of the icon set URL specified in the
-   * SvgIconConfig and attaches it to the config.
-   */
-  _loadSvgIconSetFromConfig(config2) {
-    if (config2.svgText) {
-      return of(null);
-    }
-    return this._fetchIcon(config2).pipe(tap((svgText) => config2.svgText = svgText));
-  }
-  /**
-   * Searches the cached element of the given SvgIconConfig for a nested icon element whose "id"
-   * tag matches the specified name. If found, copies the nested element to a new SVG element and
-   * returns it. Returns null if no matching element is found.
-   */
-  _extractSvgIconFromSet(iconSet, iconName, options) {
-    const iconSource = iconSet.querySelector(`[id="${iconName}"]`);
-    if (!iconSource) {
-      return null;
-    }
-    const iconElement = iconSource.cloneNode(true);
-    iconElement.removeAttribute("id");
-    if (iconElement.nodeName.toLowerCase() === "svg") {
-      return this._setSvgAttributes(iconElement, options);
-    }
-    if (iconElement.nodeName.toLowerCase() === "symbol") {
-      return this._setSvgAttributes(this._toSvgElement(iconElement), options);
-    }
-    const svg = this._svgElementFromString(trustedHTMLFromString2("<svg></svg>"));
-    svg.appendChild(iconElement);
-    return this._setSvgAttributes(svg, options);
-  }
-  /**
-   * Creates a DOM element from the given SVG string.
-   */
-  _svgElementFromString(str) {
-    const div = this._document.createElement("DIV");
-    div.innerHTML = str;
-    const svg = div.querySelector("svg");
-    if (!svg) {
-      throw Error("<svg> tag not found");
-    }
-    return svg;
-  }
-  /**
-   * Converts an element into an SVG node by cloning all of its children.
-   */
-  _toSvgElement(element) {
-    const svg = this._svgElementFromString(trustedHTMLFromString2("<svg></svg>"));
-    const attributes = element.attributes;
-    for (let i = 0; i < attributes.length; i++) {
-      const {
-        name,
-        value
-      } = attributes[i];
-      if (name !== "id") {
-        svg.setAttribute(name, value);
-      }
-    }
-    for (let i = 0; i < element.childNodes.length; i++) {
-      if (element.childNodes[i].nodeType === this._document.ELEMENT_NODE) {
-        svg.appendChild(element.childNodes[i].cloneNode(true));
-      }
-    }
-    return svg;
-  }
-  /**
-   * Sets the default attributes for an SVG element to be used as an icon.
-   */
-  _setSvgAttributes(svg, options) {
-    svg.setAttribute("fit", "");
-    svg.setAttribute("height", "100%");
-    svg.setAttribute("width", "100%");
-    svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
-    svg.setAttribute("focusable", "false");
-    if (options && options.viewBox) {
-      svg.setAttribute("viewBox", options.viewBox);
-    }
-    return svg;
-  }
-  /**
-   * Returns an Observable which produces the string contents of the given icon. Results may be
-   * cached, so future calls with the same URL may not cause another HTTP request.
-   */
-  _fetchIcon(iconConfig) {
-    const {
-      url: safeUrl,
-      options
-    } = iconConfig;
-    const withCredentials = options?.withCredentials ?? false;
-    if (!this._httpClient) {
-      throw getMatIconNoHttpProviderError();
-    }
-    if (safeUrl == null) {
-      throw Error(`Cannot fetch icon from URL "${safeUrl}".`);
-    }
-    const url = this._sanitizer.sanitize(SecurityContext.RESOURCE_URL, safeUrl);
-    if (!url) {
-      throw getMatIconFailedToSanitizeUrlError(safeUrl);
-    }
-    const inProgressFetch = this._inProgressUrlFetches.get(url);
-    if (inProgressFetch) {
-      return inProgressFetch;
-    }
-    const req = this._httpClient.get(url, {
-      responseType: "text",
-      withCredentials
-    }).pipe(map((svg) => {
-      return trustedHTMLFromString2(svg);
-    }), finalize(() => this._inProgressUrlFetches.delete(url)), share());
-    this._inProgressUrlFetches.set(url, req);
-    return req;
-  }
-  /**
-   * Registers an icon config by name in the specified namespace.
-   * @param namespace Namespace in which to register the icon config.
-   * @param iconName Name under which to register the config.
-   * @param config Config to be registered.
-   */
-  _addSvgIconConfig(namespace, iconName, config2) {
-    this._svgIconConfigs.set(iconKey(namespace, iconName), config2);
-    return this;
-  }
-  /**
-   * Registers an icon set config in the specified namespace.
-   * @param namespace Namespace in which to register the icon config.
-   * @param config Config to be registered.
-   */
-  _addSvgIconSetConfig(namespace, config2) {
-    const configNamespace = this._iconSetConfigs.get(namespace);
-    if (configNamespace) {
-      configNamespace.push(config2);
-    } else {
-      this._iconSetConfigs.set(namespace, [config2]);
-    }
-    return this;
-  }
-  /** Parses a config's text into an SVG element. */
-  _svgElementFromConfig(config2) {
-    if (!config2.svgElement) {
-      const svg = this._svgElementFromString(config2.svgText);
-      this._setSvgAttributes(svg, config2.options);
-      config2.svgElement = svg;
-    }
-    return config2.svgElement;
-  }
-  /** Tries to create an icon config through the registered resolver functions. */
-  _getIconConfigFromResolvers(namespace, name) {
-    for (let i = 0; i < this._resolvers.length; i++) {
-      const result = this._resolvers[i](name, namespace);
-      if (result) {
-        return isSafeUrlWithOptions(result) ? new SvgIconConfig(result.url, null, result.options) : new SvgIconConfig(result, null);
-      }
-    }
-    return void 0;
-  }
-  static \u0275fac = function MatIconRegistry_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _MatIconRegistry)(\u0275\u0275inject(HttpClient, 8), \u0275\u0275inject(DomSanitizer), \u0275\u0275inject(DOCUMENT, 8), \u0275\u0275inject(ErrorHandler));
-  };
-  static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
-    token: _MatIconRegistry,
-    factory: _MatIconRegistry.\u0275fac,
-    providedIn: "root"
-  });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatIconRegistry, [{
-    type: Injectable,
-    args: [{
-      providedIn: "root"
-    }]
-  }], () => [{
-    type: HttpClient,
-    decorators: [{
-      type: Optional
-    }]
-  }, {
-    type: DomSanitizer
-  }, {
-    type: void 0,
-    decorators: [{
-      type: Optional
-    }, {
-      type: Inject,
-      args: [DOCUMENT]
-    }]
-  }, {
-    type: ErrorHandler
-  }], null);
-})();
-function ICON_REGISTRY_PROVIDER_FACTORY(parentRegistry, httpClient, sanitizer, errorHandler2, document2) {
-  return parentRegistry || new MatIconRegistry(httpClient, sanitizer, document2, errorHandler2);
-}
-var ICON_REGISTRY_PROVIDER = {
-  // If there is already an MatIconRegistry available, use that. Otherwise, provide a new one.
-  provide: MatIconRegistry,
-  deps: [[new Optional(), new SkipSelf(), MatIconRegistry], [new Optional(), HttpClient], DomSanitizer, ErrorHandler, [new Optional(), DOCUMENT]],
-  useFactory: ICON_REGISTRY_PROVIDER_FACTORY
-};
-function cloneSvg(svg) {
-  return svg.cloneNode(true);
-}
-function iconKey(namespace, name) {
-  return namespace + ":" + name;
-}
-function isSafeUrlWithOptions(value) {
-  return !!(value.url && value.options);
-}
-
-// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@ang_awrsjmhxfn5unao7dg6glqdxaq/node_modules/@angular/material/fesm2022/icon.mjs
-var _c03 = ["*"];
-var MAT_ICON_DEFAULT_OPTIONS = new InjectionToken("MAT_ICON_DEFAULT_OPTIONS");
-var MAT_ICON_LOCATION = new InjectionToken("mat-icon-location", {
-  providedIn: "root",
-  factory: MAT_ICON_LOCATION_FACTORY
-});
-function MAT_ICON_LOCATION_FACTORY() {
-  const _document2 = inject2(DOCUMENT);
-  const _location = _document2 ? _document2.location : null;
-  return {
-    // Note that this needs to be a function, rather than a property, because Angular
-    // will only resolve it once, but we want the current path on each call.
-    getPathname: () => _location ? _location.pathname + _location.search : ""
-  };
-}
-var funcIriAttributes = ["clip-path", "color-profile", "src", "cursor", "fill", "filter", "marker", "marker-start", "marker-mid", "marker-end", "mask", "stroke"];
-var funcIriAttributeSelector = funcIriAttributes.map((attr) => `[${attr}]`).join(", ");
-var funcIriPattern = /^url\(['"]?#(.*?)['"]?\)$/;
-var MatIcon = class _MatIcon {
-  _elementRef = inject2(ElementRef);
-  _iconRegistry = inject2(MatIconRegistry);
-  _location = inject2(MAT_ICON_LOCATION);
-  _errorHandler = inject2(ErrorHandler);
-  _defaultColor;
-  /**
-   * Theme color of the icon. This API is supported in M2 themes only, it
-   * has no effect in M3 themes. For color customization in M3, see https://material.angular.dev/components/icon/styling.
-   *
-   * For information on applying color variants in M3, see
-   * https://material.angular.dev/guide/material-2-theming#optional-add-backwards-compatibility-styles-for-color-variants
-   */
-  get color() {
-    return this._color || this._defaultColor;
-  }
-  set color(value) {
-    this._color = value;
-  }
-  _color;
-  /**
-   * Whether the icon should be inlined, automatically sizing the icon to match the font size of
-   * the element the icon is contained in.
-   */
-  inline = false;
-  /** Name of the icon in the SVG icon set. */
-  get svgIcon() {
-    return this._svgIcon;
-  }
-  set svgIcon(value) {
-    if (value !== this._svgIcon) {
-      if (value) {
-        this._updateSvgIcon(value);
-      } else if (this._svgIcon) {
-        this._clearSvgElement();
-      }
-      this._svgIcon = value;
-    }
-  }
-  _svgIcon;
-  /** Font set that the icon is a part of. */
-  get fontSet() {
-    return this._fontSet;
-  }
-  set fontSet(value) {
-    const newValue = this._cleanupFontValue(value);
-    if (newValue !== this._fontSet) {
-      this._fontSet = newValue;
-      this._updateFontIconClasses();
-    }
-  }
-  _fontSet;
-  /** Name of an icon within a font set. */
-  get fontIcon() {
-    return this._fontIcon;
-  }
-  set fontIcon(value) {
-    const newValue = this._cleanupFontValue(value);
-    if (newValue !== this._fontIcon) {
-      this._fontIcon = newValue;
-      this._updateFontIconClasses();
-    }
-  }
-  _fontIcon;
-  _previousFontSetClass = [];
-  _previousFontIconClass;
-  _svgName;
-  _svgNamespace;
-  /** Keeps track of the current page path. */
-  _previousPath;
-  /** Keeps track of the elements and attributes that we've prefixed with the current path. */
-  _elementsWithExternalReferences;
-  /** Subscription to the current in-progress SVG icon request. */
-  _currentIconFetch = Subscription.EMPTY;
-  constructor() {
-    const ariaHidden = inject2(new HostAttributeToken("aria-hidden"), {
-      optional: true
-    });
-    const defaults2 = inject2(MAT_ICON_DEFAULT_OPTIONS, {
-      optional: true
-    });
-    if (defaults2) {
-      if (defaults2.color) {
-        this.color = this._defaultColor = defaults2.color;
-      }
-      if (defaults2.fontSet) {
-        this.fontSet = defaults2.fontSet;
-      }
-    }
-    if (!ariaHidden) {
-      this._elementRef.nativeElement.setAttribute("aria-hidden", "true");
-    }
-  }
-  /**
-   * Splits an svgIcon binding value into its icon set and icon name components.
-   * Returns a 2-element array of [(icon set), (icon name)].
-   * The separator for the two fields is ':'. If there is no separator, an empty
-   * string is returned for the icon set and the entire value is returned for
-   * the icon name. If the argument is falsy, returns an array of two empty strings.
-   * Throws an error if the name contains two or more ':' separators.
-   * Examples:
-   *   `'social:cake' -> ['social', 'cake']
-   *   'penguin' -> ['', 'penguin']
-   *   null -> ['', '']
-   *   'a:b:c' -> (throws Error)`
-   */
-  _splitIconName(iconName) {
-    if (!iconName) {
-      return ["", ""];
-    }
-    const parts = iconName.split(":");
-    switch (parts.length) {
-      case 1:
-        return ["", parts[0]];
-      // Use default namespace.
-      case 2:
-        return parts;
-      default:
-        throw Error(`Invalid icon name: "${iconName}"`);
-    }
-  }
-  ngOnInit() {
-    this._updateFontIconClasses();
-  }
-  ngAfterViewChecked() {
-    const cachedElements = this._elementsWithExternalReferences;
-    if (cachedElements && cachedElements.size) {
-      const newPath = this._location.getPathname();
-      if (newPath !== this._previousPath) {
-        this._previousPath = newPath;
-        this._prependPathToReferences(newPath);
-      }
-    }
-  }
-  ngOnDestroy() {
-    this._currentIconFetch.unsubscribe();
-    if (this._elementsWithExternalReferences) {
-      this._elementsWithExternalReferences.clear();
-    }
-  }
-  _usingFontIcon() {
-    return !this.svgIcon;
-  }
-  _setSvgElement(svg) {
-    this._clearSvgElement();
-    const path = this._location.getPathname();
-    this._previousPath = path;
-    this._cacheChildrenWithExternalReferences(svg);
-    this._prependPathToReferences(path);
-    this._elementRef.nativeElement.appendChild(svg);
-  }
-  _clearSvgElement() {
-    const layoutElement = this._elementRef.nativeElement;
-    let childCount = layoutElement.childNodes.length;
-    if (this._elementsWithExternalReferences) {
-      this._elementsWithExternalReferences.clear();
-    }
-    while (childCount--) {
-      const child = layoutElement.childNodes[childCount];
-      if (child.nodeType !== 1 || child.nodeName.toLowerCase() === "svg") {
-        child.remove();
-      }
-    }
-  }
-  _updateFontIconClasses() {
-    if (!this._usingFontIcon()) {
-      return;
-    }
-    const elem = this._elementRef.nativeElement;
-    const fontSetClasses = (this.fontSet ? this._iconRegistry.classNameForFontAlias(this.fontSet).split(/ +/) : this._iconRegistry.getDefaultFontSetClass()).filter((className) => className.length > 0);
-    this._previousFontSetClass.forEach((className) => elem.classList.remove(className));
-    fontSetClasses.forEach((className) => elem.classList.add(className));
-    this._previousFontSetClass = fontSetClasses;
-    if (this.fontIcon !== this._previousFontIconClass && !fontSetClasses.includes("mat-ligature-font")) {
-      if (this._previousFontIconClass) {
-        elem.classList.remove(this._previousFontIconClass);
-      }
-      if (this.fontIcon) {
-        elem.classList.add(this.fontIcon);
-      }
-      this._previousFontIconClass = this.fontIcon;
-    }
-  }
-  /**
-   * Cleans up a value to be used as a fontIcon or fontSet.
-   * Since the value ends up being assigned as a CSS class, we
-   * have to trim the value and omit space-separated values.
-   */
-  _cleanupFontValue(value) {
-    return typeof value === "string" ? value.trim().split(" ")[0] : value;
-  }
-  /**
-   * Prepends the current path to all elements that have an attribute pointing to a `FuncIRI`
-   * reference. This is required because WebKit browsers require references to be prefixed with
-   * the current path, if the page has a `base` tag.
-   */
-  _prependPathToReferences(path) {
-    const elements = this._elementsWithExternalReferences;
-    if (elements) {
-      elements.forEach((attrs, element) => {
-        attrs.forEach((attr) => {
-          element.setAttribute(attr.name, `url('${path}#${attr.value}')`);
-        });
-      });
-    }
-  }
-  /**
-   * Caches the children of an SVG element that have `url()`
-   * references that we need to prefix with the current path.
-   */
-  _cacheChildrenWithExternalReferences(element) {
-    const elementsWithFuncIri = element.querySelectorAll(funcIriAttributeSelector);
-    const elements = this._elementsWithExternalReferences = this._elementsWithExternalReferences || /* @__PURE__ */ new Map();
-    for (let i = 0; i < elementsWithFuncIri.length; i++) {
-      funcIriAttributes.forEach((attr) => {
-        const elementWithReference = elementsWithFuncIri[i];
-        const value = elementWithReference.getAttribute(attr);
-        const match = value ? value.match(funcIriPattern) : null;
-        if (match) {
-          let attributes = elements.get(elementWithReference);
-          if (!attributes) {
-            attributes = [];
-            elements.set(elementWithReference, attributes);
-          }
-          attributes.push({
-            name: attr,
-            value: match[1]
-          });
-        }
-      });
-    }
-  }
-  /** Sets a new SVG icon with a particular name. */
-  _updateSvgIcon(rawName) {
-    this._svgNamespace = null;
-    this._svgName = null;
-    this._currentIconFetch.unsubscribe();
-    if (rawName) {
-      const [namespace, iconName] = this._splitIconName(rawName);
-      if (namespace) {
-        this._svgNamespace = namespace;
-      }
-      if (iconName) {
-        this._svgName = iconName;
-      }
-      this._currentIconFetch = this._iconRegistry.getNamedSvgIcon(iconName, namespace).pipe(take(1)).subscribe((svg) => this._setSvgElement(svg), (err) => {
-        const errorMessage = `Error retrieving icon ${namespace}:${iconName}! ${err.message}`;
-        this._errorHandler.handleError(new Error(errorMessage));
-      });
-    }
-  }
-  static \u0275fac = function MatIcon_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _MatIcon)();
-  };
-  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
-    type: _MatIcon,
-    selectors: [["mat-icon"]],
-    hostAttrs: ["role", "img", 1, "mat-icon", "notranslate"],
-    hostVars: 10,
-    hostBindings: function MatIcon_HostBindings(rf, ctx) {
-      if (rf & 2) {
-        \u0275\u0275attribute("data-mat-icon-type", ctx._usingFontIcon() ? "font" : "svg")("data-mat-icon-name", ctx._svgName || ctx.fontIcon)("data-mat-icon-namespace", ctx._svgNamespace || ctx.fontSet)("fontIcon", ctx._usingFontIcon() ? ctx.fontIcon : null);
-        \u0275\u0275classMap(ctx.color ? "mat-" + ctx.color : "");
-        \u0275\u0275classProp("mat-icon-inline", ctx.inline)("mat-icon-no-color", ctx.color !== "primary" && ctx.color !== "accent" && ctx.color !== "warn");
-      }
-    },
-    inputs: {
-      color: "color",
-      inline: [2, "inline", "inline", booleanAttribute],
-      svgIcon: "svgIcon",
-      fontSet: "fontSet",
-      fontIcon: "fontIcon"
-    },
-    exportAs: ["matIcon"],
-    ngContentSelectors: _c03,
-    decls: 1,
-    vars: 0,
-    template: function MatIcon_Template(rf, ctx) {
-      if (rf & 1) {
-        \u0275\u0275projectionDef();
-        \u0275\u0275projection(0);
-      }
-    },
-    styles: ["mat-icon,mat-icon.mat-primary,mat-icon.mat-accent,mat-icon.mat-warn{color:var(--mat-icon-color, inherit)}.mat-icon{-webkit-user-select:none;user-select:none;background-repeat:no-repeat;display:inline-block;fill:currentColor;height:24px;width:24px;overflow:hidden}.mat-icon.mat-icon-inline{font-size:inherit;height:inherit;line-height:inherit;width:inherit}.mat-icon.mat-ligature-font[fontIcon]::before{content:attr(fontIcon)}[dir=rtl] .mat-icon-rtl-mirror{transform:scale(-1, 1)}.mat-form-field:not(.mat-form-field-appearance-legacy) .mat-form-field-prefix .mat-icon,.mat-form-field:not(.mat-form-field-appearance-legacy) .mat-form-field-suffix .mat-icon{display:block}.mat-form-field:not(.mat-form-field-appearance-legacy) .mat-form-field-prefix .mat-icon-button .mat-icon,.mat-form-field:not(.mat-form-field-appearance-legacy) .mat-form-field-suffix .mat-icon-button .mat-icon{margin:auto}\n"],
-    encapsulation: 2,
-    changeDetection: 0
-  });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatIcon, [{
-    type: Component,
-    args: [{
-      template: "<ng-content></ng-content>",
-      selector: "mat-icon",
-      exportAs: "matIcon",
-      host: {
-        "role": "img",
-        "class": "mat-icon notranslate",
-        "[class]": 'color ? "mat-" + color : ""',
-        "[attr.data-mat-icon-type]": '_usingFontIcon() ? "font" : "svg"',
-        "[attr.data-mat-icon-name]": "_svgName || fontIcon",
-        "[attr.data-mat-icon-namespace]": "_svgNamespace || fontSet",
-        "[attr.fontIcon]": "_usingFontIcon() ? fontIcon : null",
-        "[class.mat-icon-inline]": "inline",
-        "[class.mat-icon-no-color]": 'color !== "primary" && color !== "accent" && color !== "warn"'
-      },
-      encapsulation: ViewEncapsulation.None,
-      changeDetection: ChangeDetectionStrategy.OnPush,
-      styles: ["mat-icon,mat-icon.mat-primary,mat-icon.mat-accent,mat-icon.mat-warn{color:var(--mat-icon-color, inherit)}.mat-icon{-webkit-user-select:none;user-select:none;background-repeat:no-repeat;display:inline-block;fill:currentColor;height:24px;width:24px;overflow:hidden}.mat-icon.mat-icon-inline{font-size:inherit;height:inherit;line-height:inherit;width:inherit}.mat-icon.mat-ligature-font[fontIcon]::before{content:attr(fontIcon)}[dir=rtl] .mat-icon-rtl-mirror{transform:scale(-1, 1)}.mat-form-field:not(.mat-form-field-appearance-legacy) .mat-form-field-prefix .mat-icon,.mat-form-field:not(.mat-form-field-appearance-legacy) .mat-form-field-suffix .mat-icon{display:block}.mat-form-field:not(.mat-form-field-appearance-legacy) .mat-form-field-prefix .mat-icon-button .mat-icon,.mat-form-field:not(.mat-form-field-appearance-legacy) .mat-form-field-suffix .mat-icon-button .mat-icon{margin:auto}\n"]
-    }]
-  }], () => [], {
-    color: [{
-      type: Input
-    }],
-    inline: [{
-      type: Input,
-      args: [{
-        transform: booleanAttribute
-      }]
-    }],
-    svgIcon: [{
-      type: Input
-    }],
-    fontSet: [{
-      type: Input
-    }],
-    fontIcon: [{
-      type: Input
-    }]
-  });
-})();
-var MatIconModule = class _MatIconModule {
-  static \u0275fac = function MatIconModule_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _MatIconModule)();
-  };
-  static \u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({
-    type: _MatIconModule,
-    imports: [MatCommonModule, MatIcon],
-    exports: [MatIcon, MatCommonModule]
-  });
-  static \u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({
-    imports: [MatCommonModule, MatCommonModule]
-  });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatIconModule, [{
-    type: NgModule,
-    args: [{
-      imports: [MatCommonModule, MatIcon],
-      exports: [MatIcon, MatCommonModule]
-    }]
-  }], null, null);
-})();
-
-// src/app/page/shared/icon-button/icon-button.ts
-var _c04 = ["*"];
-var IconButton = class _IconButton {
-  static \u0275fac = function IconButton_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _IconButton)();
-  };
-  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _IconButton, selectors: [["app-icon-button"]], ngContentSelectors: _c04, decls: 3, vars: 0, consts: [["matIconButton", ""]], template: function IconButton_Template(rf, ctx) {
-    if (rf & 1) {
-      \u0275\u0275projectionDef();
-      \u0275\u0275elementStart(0, "button", 0)(1, "mat-icon");
-      \u0275\u0275projection(2);
-      \u0275\u0275elementEnd()();
-    }
-  }, dependencies: [
-    MatIcon,
-    MatIconButton
-  ], styles: ["\n\n[_nghost-%COMP%]   button[matIconButton][_ngcontent-%COMP%] {\n  font-size: 16px;\n  width: 24px;\n  height: 24px;\n  padding: 4px;\n}\n[_nghost-%COMP%]   button[matIconButton][_ngcontent-%COMP%]   mat-icon[_ngcontent-%COMP%] {\n  font-size: 16px;\n  width: 16px;\n  height: 16px;\n}\n/*# sourceMappingURL=icon-button.css.map */"] });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(IconButton, [{
-    type: Component,
-    args: [{ selector: "app-icon-button", imports: [
-      MatIcon,
-      MatIconButton
-    ], template: "<button matIconButton>\n    <mat-icon>\n        <ng-content></ng-content>\n    </mat-icon>\n</button>\n", styles: ["/* src/app/page/shared/icon-button/icon-button.scss */\n:host button[matIconButton] {\n  font-size: 16px;\n  width: 24px;\n  height: 24px;\n  padding: 4px;\n}\n:host button[matIconButton] mat-icon {\n  font-size: 16px;\n  width: 16px;\n  height: 16px;\n}\n/*# sourceMappingURL=icon-button.css.map */\n"] }]
-  }], null, null);
-})();
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IconButton, { className: "IconButton", filePath: "src/app/page/shared/icon-button/icon-button.ts", lineNumber: 14 });
-})();
-
-// src/app/page/dashboard/dashboard-info/dashboard-info.ts
-var DashboardInfo = class _DashboardInfo {
-  envService = inject2(EnvService);
-  host$ = this.envService.host.asObservable();
-  userAgent$ = this.envService.userAgent.asObservable();
-  static \u0275fac = function DashboardInfo_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _DashboardInfo)();
-  };
-  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DashboardInfo, selectors: [["app-dashboard-info"]], decls: 18, vars: 14, consts: [[1, "info"], [3, "cdkCopyToClipboard"]], template: function DashboardInfo_Template(rf, ctx) {
-    if (rf & 1) {
-      \u0275\u0275elementStart(0, "div", 0)(1, "span");
-      \u0275\u0275text(2, "Host");
-      \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(3, "code");
-      \u0275\u0275text(4);
-      \u0275\u0275pipe(5, "async");
-      \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(6, "app-icon-button", 1);
-      \u0275\u0275pipe(7, "async");
-      \u0275\u0275text(8, "content_copy");
-      \u0275\u0275elementEnd()();
-      \u0275\u0275elementStart(9, "div", 0)(10, "span");
-      \u0275\u0275text(11, "User-Agent");
-      \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(12, "code");
-      \u0275\u0275text(13);
-      \u0275\u0275pipe(14, "async");
-      \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(15, "app-icon-button", 1);
-      \u0275\u0275pipe(16, "async");
-      \u0275\u0275text(17, "content_copy");
-      \u0275\u0275elementEnd()();
-    }
-    if (rf & 2) {
-      \u0275\u0275advance(4);
-      \u0275\u0275textInterpolate(\u0275\u0275pipeBind1(5, 6, ctx.host$));
-      \u0275\u0275advance(2);
-      \u0275\u0275property("cdkCopyToClipboard", \u0275\u0275interpolate(\u0275\u0275pipeBind1(7, 8, ctx.host$)));
-      \u0275\u0275advance(7);
-      \u0275\u0275textInterpolate(\u0275\u0275pipeBind1(14, 10, ctx.userAgent$));
-      \u0275\u0275advance(2);
-      \u0275\u0275property("cdkCopyToClipboard", \u0275\u0275interpolate(\u0275\u0275pipeBind1(16, 12, ctx.host$)));
-    }
-  }, dependencies: [
-    IconButton,
-    CdkCopyToClipboard,
-    AsyncPipe
-  ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  width: 100%;\n  gap: 8px;\n}\n[_nghost-%COMP%]   .info[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: start;\n  flex-direction: row;\n  gap: 12px;\n}\n[_nghost-%COMP%]   .info[_ngcontent-%COMP%]   span[_ngcontent-%COMP%] {\n  font-size: 12px;\n  overflow: hidden;\n  flex-shrink: 0;\n  width: 66px;\n  padding: 2px 6px;\n  text-align: center;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n  border-radius: 4px;\n  background-color: #1a1c20;\n}\n[_nghost-%COMP%]   .info[_ngcontent-%COMP%]   code[_ngcontent-%COMP%] {\n  font-size: 12px;\n  flex: 9 1 auto;\n  padding: 2px 6px;\n}\n/*# sourceMappingURL=dashboard-info.css.map */"] });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(DashboardInfo, [{
-    type: Component,
-    args: [{ selector: "app-dashboard-info", imports: [
-      IconButton,
-      AsyncPipe,
-      CdkCopyToClipboard
-    ], template: '<div class="info">\n    <span>Host</span>\n    <code>{{ host$ | async }}</code>\n    <app-icon-button cdkCopyToClipboard="{{host$ | async}}">content_copy</app-icon-button>\n</div>\n<div class="info">\n    <span>User-Agent</span>\n    <code>{{ userAgent$ | async }}</code>\n    <app-icon-button cdkCopyToClipboard="{{host$ | async}}">content_copy</app-icon-button>\n</div>\n', styles: ["/* src/app/page/dashboard/dashboard-info/dashboard-info.scss */\n:host {\n  display: flex;\n  flex-direction: column;\n  width: 100%;\n  gap: 8px;\n}\n:host .info {\n  display: flex;\n  align-items: start;\n  flex-direction: row;\n  gap: 12px;\n}\n:host .info span {\n  font-size: 12px;\n  overflow: hidden;\n  flex-shrink: 0;\n  width: 66px;\n  padding: 2px 6px;\n  text-align: center;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n  border-radius: 4px;\n  background-color: #1a1c20;\n}\n:host .info code {\n  font-size: 12px;\n  flex: 9 1 auto;\n  padding: 2px 6px;\n}\n/*# sourceMappingURL=dashboard-info.css.map */\n"] }]
-  }], null, null);
-})();
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardInfo, { className: "DashboardInfo", filePath: "src/app/page/dashboard/dashboard-info/dashboard-info.ts", lineNumber: 17 });
-})();
-
-// node_modules/.pnpm/@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs@7.8.2/node_modules/@angular/core/fesm2022/rxjs-interop.mjs
-function takeUntilDestroyed(destroyRef) {
-  if (!destroyRef) {
-    ngDevMode && assertInInjectionContext(takeUntilDestroyed);
-    destroyRef = inject2(DestroyRef);
-  }
-  const destroyed$ = new Observable((subscriber) => {
-    if (destroyRef.destroyed) {
-      subscriber.next();
-      return;
-    }
-    const unregisterFn = destroyRef.onDestroy(subscriber.next.bind(subscriber));
-    return unregisterFn;
-  });
-  return (source) => {
-    return source.pipe(takeUntil(destroyed$));
-  };
-}
-
-// node_modules/.pnpm/@angular+forms@20.2.1_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rx_lxjqpmyb34mu4qimmqbrdd2gcm/node_modules/@angular/forms/fesm2022/forms.mjs
+// node_modules/.pnpm/@angular+forms@20.2.1_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20._34f8144e95b7738c0dc72ba04c4479e9/node_modules/@angular/forms/fesm2022/forms.mjs
 var BaseControlValueAccessor = class _BaseControlValueAccessor {
   _renderer;
   _elementRef;
@@ -46919,7 +46004,79 @@ var ReactiveFormsModule = class _ReactiveFormsModule {
   }], null, null);
 })();
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/observers/private.mjs
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/error-options.mjs
+var ShowOnDirtyErrorStateMatcher = class _ShowOnDirtyErrorStateMatcher {
+  isErrorState(control, form) {
+    return !!(control && control.invalid && (control.dirty || form && form.submitted));
+  }
+  static \u0275fac = function ShowOnDirtyErrorStateMatcher_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _ShowOnDirtyErrorStateMatcher)();
+  };
+  static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
+    token: _ShowOnDirtyErrorStateMatcher,
+    factory: _ShowOnDirtyErrorStateMatcher.\u0275fac
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(ShowOnDirtyErrorStateMatcher, [{
+    type: Injectable
+  }], null, null);
+})();
+var ErrorStateMatcher = class _ErrorStateMatcher {
+  isErrorState(control, form) {
+    return !!(control && control.invalid && (control.touched || form && form.submitted));
+  }
+  static \u0275fac = function ErrorStateMatcher_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _ErrorStateMatcher)();
+  };
+  static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
+    token: _ErrorStateMatcher,
+    factory: _ErrorStateMatcher.\u0275fac,
+    providedIn: "root"
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(ErrorStateMatcher, [{
+    type: Injectable,
+    args: [{
+      providedIn: "root"
+    }]
+  }], null, null);
+})();
+
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/error-state.mjs
+var _ErrorStateTracker = class {
+  _defaultMatcher;
+  ngControl;
+  _parentFormGroup;
+  _parentForm;
+  _stateChanges;
+  /** Whether the tracker is currently in an error state. */
+  errorState = false;
+  /** User-defined matcher for the error state. */
+  matcher;
+  constructor(_defaultMatcher, ngControl, _parentFormGroup, _parentForm, _stateChanges) {
+    this._defaultMatcher = _defaultMatcher;
+    this.ngControl = ngControl;
+    this._parentFormGroup = _parentFormGroup;
+    this._parentForm = _parentForm;
+    this._stateChanges = _stateChanges;
+  }
+  /** Updates the error state based on the provided error state matcher. */
+  updateErrorState() {
+    const oldState = this.errorState;
+    const parent = this._parentFormGroup || this._parentForm;
+    const matcher = this.matcher || this._defaultMatcher;
+    const control = this.ngControl ? this.ngControl.control : null;
+    const newState = matcher?.isErrorState(control, parent) ?? false;
+    if (newState !== oldState) {
+      this.errorState = newState;
+      this._stateChanges.next();
+    }
+  }
+};
+
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/observers/private.mjs
 var loopLimitExceededErrorHandler = (e) => {
   if (e instanceof ErrorEvent && e.message === "ResizeObserver loop limit exceeded") {
     console.error(`${e.message}. This could indicate a performance issue with your app. See https://github.com/WICG/resize-observer/blob/master/explainer.md#error-handling`);
@@ -47032,13 +46189,13 @@ var SharedResizeObserver = class _SharedResizeObserver {
   }], () => [], null);
 })();
 
-// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@ang_awrsjmhxfn5unao7dg6glqdxaq/node_modules/@angular/material/fesm2022/form-field2.mjs
-var _c05 = ["notch"];
-var _c13 = ["matFormFieldNotchedOutline", ""];
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/form-field2.mjs
+var _c02 = ["notch"];
+var _c12 = ["matFormFieldNotchedOutline", ""];
 var _c22 = ["*"];
 var _c32 = ["iconPrefixContainer"];
 var _c42 = ["textPrefixContainer"];
-var _c52 = ["iconSuffixContainer"];
+var _c5 = ["iconSuffixContainer"];
 var _c6 = ["textSuffixContainer"];
 var _c7 = ["textField"];
 var _c8 = ["*", [["mat-label"]], [["", "matPrefix", ""], ["", "matIconPrefix", ""]], [["", "matTextPrefix", ""]], [["", "matTextSuffix", ""]], [["", "matSuffix", ""], ["", "matIconSuffix", ""]], [["mat-error"], ["", "matError", ""]], [["mat-hint", 3, "align", "end"]], [["mat-hint", "align", "end"]]];
@@ -47569,7 +46726,7 @@ var MatFormFieldNotchedOutline = class _MatFormFieldNotchedOutline {
     selectors: [["div", "matFormFieldNotchedOutline", ""]],
     viewQuery: function MatFormFieldNotchedOutline_Query(rf, ctx) {
       if (rf & 1) {
-        \u0275\u0275viewQuery(_c05, 5);
+        \u0275\u0275viewQuery(_c02, 5);
       }
       if (rf & 2) {
         let _t;
@@ -47586,7 +46743,7 @@ var MatFormFieldNotchedOutline = class _MatFormFieldNotchedOutline {
     inputs: {
       open: [0, "matFormFieldNotchedOutlineOpen", "open"]
     },
-    attrs: _c13,
+    attrs: _c12,
     ngContentSelectors: _c22,
     decls: 5,
     vars: 0,
@@ -48216,12 +47373,12 @@ var MatFormField = class _MatFormField {
       if (rf & 1) {
         \u0275\u0275viewQuerySignal(ctx._iconPrefixContainerSignal, _c32, 5);
         \u0275\u0275viewQuerySignal(ctx._textPrefixContainerSignal, _c42, 5);
-        \u0275\u0275viewQuerySignal(ctx._iconSuffixContainerSignal, _c52, 5);
+        \u0275\u0275viewQuerySignal(ctx._iconSuffixContainerSignal, _c5, 5);
         \u0275\u0275viewQuerySignal(ctx._textSuffixContainerSignal, _c6, 5);
         \u0275\u0275viewQuery(_c7, 5);
         \u0275\u0275viewQuery(_c32, 5);
         \u0275\u0275viewQuery(_c42, 5);
-        \u0275\u0275viewQuery(_c52, 5);
+        \u0275\u0275viewQuery(_c5, 5);
         \u0275\u0275viewQuery(_c6, 5);
         \u0275\u0275viewQuery(MatFormFieldFloatingLabel, 5);
         \u0275\u0275viewQuery(MatFormFieldNotchedOutline, 5);
@@ -48456,7 +47613,5847 @@ var MatFormField = class _MatFormField {
   });
 })();
 
-// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@ang_awrsjmhxfn5unao7dg6glqdxaq/node_modules/@angular/material/fesm2022/form-field-module.mjs
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/ripple-module.mjs
+var MatRippleModule = class _MatRippleModule {
+  static \u0275fac = function MatRippleModule_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatRippleModule)();
+  };
+  static \u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({
+    type: _MatRippleModule,
+    imports: [MatCommonModule, MatRipple],
+    exports: [MatRipple, MatCommonModule]
+  });
+  static \u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({
+    imports: [MatCommonModule, MatCommonModule]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatRippleModule, [{
+    type: NgModule,
+    args: [{
+      imports: [MatCommonModule, MatRipple],
+      exports: [MatRipple, MatCommonModule]
+    }]
+  }], null, null);
+})();
+
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/chips.mjs
+var _c03 = ["*", [["mat-chip-avatar"], ["", "matChipAvatar", ""]], [["mat-chip-trailing-icon"], ["", "matChipRemove", ""], ["", "matChipTrailingIcon", ""]]];
+var _c13 = ["*", "mat-chip-avatar, [matChipAvatar]", "mat-chip-trailing-icon,[matChipRemove],[matChipTrailingIcon]"];
+function MatChip_Conditional_3_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span", 3);
+    \u0275\u0275projection(1, 1);
+    \u0275\u0275elementEnd();
+  }
+}
+function MatChip_Conditional_7_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span", 6);
+    \u0275\u0275projection(1, 2);
+    \u0275\u0275elementEnd();
+  }
+}
+function MatChipOption_Conditional_3_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span", 3);
+    \u0275\u0275projection(1, 1);
+    \u0275\u0275elementStart(2, "span", 7);
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(3, "svg", 8);
+    \u0275\u0275element(4, "path", 9);
+    \u0275\u0275elementEnd()()();
+  }
+}
+function MatChipOption_Conditional_7_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span", 6);
+    \u0275\u0275projection(1, 2);
+    \u0275\u0275elementEnd();
+  }
+}
+var _c23 = '.mdc-evolution-chip,.mdc-evolution-chip__cell,.mdc-evolution-chip__action{display:inline-flex;align-items:center}.mdc-evolution-chip{position:relative;max-width:100%}.mdc-evolution-chip__cell,.mdc-evolution-chip__action{height:100%}.mdc-evolution-chip__cell--primary{flex-basis:100%;overflow-x:hidden}.mdc-evolution-chip__cell--trailing{flex:1 0 auto}.mdc-evolution-chip__action{align-items:center;background:none;border:none;box-sizing:content-box;cursor:pointer;display:inline-flex;justify-content:center;outline:none;padding:0;text-decoration:none;color:inherit}.mdc-evolution-chip__action--presentational{cursor:auto}.mdc-evolution-chip--disabled,.mdc-evolution-chip__action:disabled{pointer-events:none}@media(forced-colors: active){.mdc-evolution-chip--disabled,.mdc-evolution-chip__action:disabled{forced-color-adjust:none}}.mdc-evolution-chip__action--primary{font:inherit;letter-spacing:inherit;white-space:inherit;overflow-x:hidden}.mat-mdc-standard-chip .mdc-evolution-chip__action--primary::before{border-width:var(--mat-chip-outline-width, 1px);border-radius:var(--mat-chip-container-shape-radius, 8px);box-sizing:border-box;content:"";height:100%;left:0;position:absolute;pointer-events:none;top:0;width:100%;z-index:1;border-style:solid}.mat-mdc-standard-chip .mdc-evolution-chip__action--primary{padding-left:12px;padding-right:12px}.mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__action--primary{padding-left:0;padding-right:12px}[dir=rtl] .mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__action--primary{padding-left:12px;padding-right:0}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__action--primary::before{border-color:var(--mat-chip-outline-color, var(--mat-sys-outline))}.mdc-evolution-chip__action--primary:not(.mdc-evolution-chip__action--presentational):not(.mdc-ripple-upgraded):focus::before{border-color:var(--mat-chip-focus-outline-color, var(--mat-sys-on-surface-variant))}.mat-mdc-standard-chip.mdc-evolution-chip--disabled .mdc-evolution-chip__action--primary::before{border-color:var(--mat-chip-disabled-outline-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-standard-chip.mdc-evolution-chip--selected .mdc-evolution-chip__action--primary::before{border-width:var(--mat-chip-flat-selected-outline-width, 0)}.mat-mdc-basic-chip .mdc-evolution-chip__action--primary{font:inherit}.mat-mdc-standard-chip.mdc-evolution-chip--with-leading-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:12px}[dir=rtl] .mat-mdc-standard-chip.mdc-evolution-chip--with-leading-action .mdc-evolution-chip__action--primary{padding-left:12px;padding-right:0}.mat-mdc-standard-chip.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:12px;padding-right:0}[dir=rtl] .mat-mdc-standard-chip.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:12px}.mat-mdc-standard-chip.mdc-evolution-chip--with-leading-action.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:0}.mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:0}[dir=rtl] .mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:0}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__action--primary{padding-left:0;padding-right:12px}[dir=rtl] .mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__action--primary{padding-left:12px;padding-right:0}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:0}[dir=rtl] .mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:0}.mdc-evolution-chip__action--secondary{position:relative;overflow:visible}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__action--secondary{color:var(--mat-chip-with-trailing-icon-trailing-icon-color, var(--mat-sys-on-surface-variant))}.mat-mdc-standard-chip.mdc-evolution-chip--disabled .mdc-evolution-chip__action--secondary{color:var(--mat-chip-with-trailing-icon-disabled-trailing-icon-color, var(--mat-sys-on-surface))}.mat-mdc-standard-chip.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--secondary{padding-left:8px;padding-right:8px}.mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--secondary{padding-left:8px;padding-right:8px}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--secondary{padding-left:8px;padding-right:8px}[dir=rtl] .mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--secondary{padding-left:8px;padding-right:8px}.mdc-evolution-chip__text-label{-webkit-user-select:none;user-select:none;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}.mat-mdc-standard-chip .mdc-evolution-chip__text-label{font-family:var(--mat-chip-label-text-font, var(--mat-sys-label-large-font));line-height:var(--mat-chip-label-text-line-height, var(--mat-sys-label-large-line-height));font-size:var(--mat-chip-label-text-size, var(--mat-sys-label-large-size));font-weight:var(--mat-chip-label-text-weight, var(--mat-sys-label-large-weight));letter-spacing:var(--mat-chip-label-text-tracking, var(--mat-sys-label-large-tracking))}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__text-label{color:var(--mat-chip-label-text-color, var(--mat-sys-on-surface-variant))}.mat-mdc-standard-chip.mdc-evolution-chip--selected:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__text-label{color:var(--mat-chip-selected-label-text-color, var(--mat-sys-on-secondary-container))}.mat-mdc-standard-chip.mdc-evolution-chip--disabled .mdc-evolution-chip__text-label,.mat-mdc-standard-chip.mdc-evolution-chip--selected.mdc-evolution-chip--disabled .mdc-evolution-chip__text-label{color:var(--mat-chip-disabled-label-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent))}.mdc-evolution-chip__graphic{align-items:center;display:inline-flex;justify-content:center;overflow:hidden;pointer-events:none;position:relative;flex:1 0 auto}.mat-mdc-standard-chip .mdc-evolution-chip__graphic{width:var(--mat-chip-with-avatar-avatar-size, 24px);height:var(--mat-chip-with-avatar-avatar-size, 24px);font-size:var(--mat-chip-with-avatar-avatar-size, 24px)}.mdc-evolution-chip--selecting .mdc-evolution-chip__graphic{transition:width 150ms 0ms cubic-bezier(0.4, 0, 0.2, 1)}.mdc-evolution-chip--selectable:not(.mdc-evolution-chip--selected):not(.mdc-evolution-chip--with-primary-icon) .mdc-evolution-chip__graphic{width:0}.mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__graphic{padding-left:6px;padding-right:6px}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__graphic{padding-left:4px;padding-right:8px}[dir=rtl] .mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__graphic{padding-left:8px;padding-right:4px}.mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__graphic{padding-left:6px;padding-right:6px}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__graphic{padding-left:4px;padding-right:8px}[dir=rtl] .mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__graphic{padding-left:8px;padding-right:4px}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-leading-action .mdc-evolution-chip__graphic{padding-left:0}.mdc-evolution-chip__checkmark{position:absolute;opacity:0;top:50%;left:50%;height:20px;width:20px}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__checkmark{color:var(--mat-chip-with-icon-selected-icon-color, var(--mat-sys-on-secondary-container))}.mat-mdc-standard-chip.mdc-evolution-chip--disabled .mdc-evolution-chip__checkmark{color:var(--mat-chip-with-icon-disabled-icon-color, var(--mat-sys-on-surface))}.mdc-evolution-chip--selecting .mdc-evolution-chip__checkmark{transition:transform 150ms 0ms cubic-bezier(0.4, 0, 0.2, 1);transform:translate(-75%, -50%)}.mdc-evolution-chip--selected .mdc-evolution-chip__checkmark{transform:translate(-50%, -50%);opacity:1}.mdc-evolution-chip__checkmark-svg{display:block}.mdc-evolution-chip__checkmark-path{stroke-width:2px;stroke-dasharray:29.7833385;stroke-dashoffset:29.7833385;stroke:currentColor}.mdc-evolution-chip--selecting .mdc-evolution-chip__checkmark-path{transition:stroke-dashoffset 150ms 45ms cubic-bezier(0.4, 0, 0.2, 1)}.mdc-evolution-chip--selected .mdc-evolution-chip__checkmark-path{stroke-dashoffset:0}@media(forced-colors: active){.mdc-evolution-chip__checkmark-path{stroke:CanvasText !important}}.mat-mdc-standard-chip .mdc-evolution-chip__icon--trailing{height:18px;width:18px;font-size:18px}.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--trailing.mat-mdc-chip-remove{opacity:calc(var(--mat-chip-trailing-action-opacity, 1)*var(--mat-chip-with-trailing-icon-disabled-trailing-icon-opacity, 0.38))}.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--trailing.mat-mdc-chip-remove:focus{opacity:calc(var(--mat-chip-trailing-action-focus-opacity, 1)*var(--mat-chip-with-trailing-icon-disabled-trailing-icon-opacity, 0.38))}.mat-mdc-standard-chip{border-radius:var(--mat-chip-container-shape-radius, 8px);height:var(--mat-chip-container-height, 32px)}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled){background-color:var(--mat-chip-elevated-container-color, transparent)}.mat-mdc-standard-chip.mdc-evolution-chip--disabled{background-color:var(--mat-chip-elevated-disabled-container-color)}.mat-mdc-standard-chip.mdc-evolution-chip--selected:not(.mdc-evolution-chip--disabled){background-color:var(--mat-chip-elevated-selected-container-color, var(--mat-sys-secondary-container))}.mat-mdc-standard-chip.mdc-evolution-chip--selected.mdc-evolution-chip--disabled{background-color:var(--mat-chip-flat-disabled-selected-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}@media(forced-colors: active){.mat-mdc-standard-chip{outline:solid 1px}}.mat-mdc-standard-chip .mdc-evolution-chip__icon--primary{border-radius:var(--mat-chip-with-avatar-avatar-shape-radius, 24px);width:var(--mat-chip-with-icon-icon-size, 18px);height:var(--mat-chip-with-icon-icon-size, 18px);font-size:var(--mat-chip-with-icon-icon-size, 18px)}.mdc-evolution-chip--selected .mdc-evolution-chip__icon--primary{opacity:0}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__icon--primary{color:var(--mat-chip-with-icon-icon-color, var(--mat-sys-on-surface-variant))}.mat-mdc-standard-chip.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--primary{color:var(--mat-chip-with-icon-disabled-icon-color, var(--mat-sys-on-surface))}.mat-mdc-chip-highlighted{--mat-chip-with-icon-icon-color: var(--mat-chip-with-icon-selected-icon-color, var(--mat-sys-on-secondary-container));--mat-chip-elevated-container-color: var(--mat-chip-elevated-selected-container-color, var(--mat-sys-secondary-container));--mat-chip-label-text-color: var(--mat-chip-selected-label-text-color, var(--mat-sys-on-secondary-container));--mat-chip-outline-width: var(--mat-chip-flat-selected-outline-width, 0)}.mat-mdc-chip-focus-overlay{background:var(--mat-chip-focus-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-chip-selected .mat-mdc-chip-focus-overlay,.mat-mdc-chip-highlighted .mat-mdc-chip-focus-overlay{background:var(--mat-chip-selected-focus-state-layer-color, var(--mat-sys-on-secondary-container))}.mat-mdc-chip:hover .mat-mdc-chip-focus-overlay{background:var(--mat-chip-hover-state-layer-color, var(--mat-sys-on-surface-variant));opacity:var(--mat-chip-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-chip-focus-overlay .mat-mdc-chip-selected:hover,.mat-mdc-chip-highlighted:hover .mat-mdc-chip-focus-overlay{background:var(--mat-chip-selected-hover-state-layer-color, var(--mat-sys-on-secondary-container));opacity:var(--mat-chip-selected-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-chip.cdk-focused .mat-mdc-chip-focus-overlay{background:var(--mat-chip-focus-state-layer-color, var(--mat-sys-on-surface-variant));opacity:var(--mat-chip-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-chip-selected.cdk-focused .mat-mdc-chip-focus-overlay,.mat-mdc-chip-highlighted.cdk-focused .mat-mdc-chip-focus-overlay{background:var(--mat-chip-selected-focus-state-layer-color, var(--mat-sys-on-secondary-container));opacity:var(--mat-chip-selected-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mdc-evolution-chip--disabled:not(.mdc-evolution-chip--selected) .mat-mdc-chip-avatar{opacity:var(--mat-chip-with-avatar-disabled-avatar-opacity, 0.38)}.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--trailing{opacity:var(--mat-chip-with-trailing-icon-disabled-trailing-icon-opacity, 0.38)}.mdc-evolution-chip--disabled.mdc-evolution-chip--selected .mdc-evolution-chip__checkmark{opacity:var(--mat-chip-with-icon-disabled-icon-opacity, 0.38)}.mat-mdc-standard-chip.mdc-evolution-chip--disabled{opacity:var(--mat-chip-disabled-container-opacity, 1)}.mat-mdc-standard-chip.mdc-evolution-chip--selected .mdc-evolution-chip__icon--trailing,.mat-mdc-standard-chip.mat-mdc-chip-highlighted .mdc-evolution-chip__icon--trailing{color:var(--mat-chip-selected-trailing-icon-color, var(--mat-sys-on-secondary-container))}.mat-mdc-standard-chip.mdc-evolution-chip--selected.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--trailing,.mat-mdc-standard-chip.mat-mdc-chip-highlighted.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--trailing{color:var(--mat-chip-selected-disabled-trailing-icon-color, var(--mat-sys-on-surface))}.mat-mdc-chip-edit,.mat-mdc-chip-remove{opacity:var(--mat-chip-trailing-action-opacity, 1)}.mat-mdc-chip-edit:focus,.mat-mdc-chip-remove:focus{opacity:var(--mat-chip-trailing-action-focus-opacity, 1)}.mat-mdc-chip-edit::after,.mat-mdc-chip-remove::after{background-color:var(--mat-chip-trailing-action-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-chip-edit:hover::after,.mat-mdc-chip-remove:hover::after{opacity:var(--mat-chip-trailing-action-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-chip-edit:focus::after,.mat-mdc-chip-remove:focus::after{opacity:var(--mat-chip-trailing-action-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-chip-selected .mat-mdc-chip-remove::after,.mat-mdc-chip-highlighted .mat-mdc-chip-remove::after{background-color:var(--mat-chip-selected-trailing-action-state-layer-color, var(--mat-sys-on-secondary-container))}.mat-mdc-standard-chip{-webkit-tap-highlight-color:rgba(0,0,0,0)}.mat-mdc-standard-chip .mdc-evolution-chip__cell--primary,.mat-mdc-standard-chip .mdc-evolution-chip__action--primary,.mat-mdc-standard-chip .mat-mdc-chip-action-label{overflow:visible}.mat-mdc-standard-chip .mat-mdc-chip-graphic,.mat-mdc-standard-chip .mat-mdc-chip-trailing-icon{box-sizing:content-box}.mat-mdc-standard-chip._mat-animation-noopable,.mat-mdc-standard-chip._mat-animation-noopable .mdc-evolution-chip__graphic,.mat-mdc-standard-chip._mat-animation-noopable .mdc-evolution-chip__checkmark,.mat-mdc-standard-chip._mat-animation-noopable .mdc-evolution-chip__checkmark-path{transition-duration:1ms;animation-duration:1ms}.mat-mdc-chip-focus-overlay{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;opacity:0;border-radius:inherit;transition:opacity 150ms linear}._mat-animation-noopable .mat-mdc-chip-focus-overlay{transition:none}.mat-mdc-basic-chip .mat-mdc-chip-focus-overlay{display:none}.mat-mdc-chip .mat-ripple.mat-mdc-chip-ripple{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;border-radius:inherit}.mat-mdc-chip-avatar{text-align:center;line-height:1;color:var(--mat-chip-with-icon-icon-color, currentColor)}.mat-mdc-chip{position:relative;z-index:0}.mat-mdc-chip-action-label{text-align:left;z-index:1}[dir=rtl] .mat-mdc-chip-action-label{text-align:right}.mat-mdc-chip.mdc-evolution-chip--with-trailing-action .mat-mdc-chip-action-label{position:relative}.mat-mdc-chip-action-label .mat-mdc-chip-primary-focus-indicator{position:absolute;top:0;right:0;bottom:0;left:0;pointer-events:none}.mat-mdc-chip-action-label .mat-focus-indicator::before{margin:calc(calc(var(--mat-focus-indicator-border-width, 3px) + 2px)*-1)}.mat-mdc-chip-edit::before,.mat-mdc-chip-remove::before{margin:calc(var(--mat-focus-indicator-border-width, 3px)*-1);left:8px;right:8px}.mat-mdc-chip-edit::after,.mat-mdc-chip-remove::after{content:"";display:block;opacity:0;position:absolute;top:-3px;bottom:-3px;left:5px;right:5px;border-radius:50%;box-sizing:border-box;padding:12px;margin:-12px;background-clip:content-box}.mat-mdc-chip-edit .mat-icon,.mat-mdc-chip-remove .mat-icon{width:18px;height:18px;font-size:18px;box-sizing:content-box}.mat-chip-edit-input{cursor:text;display:inline-block;color:inherit;outline:0}@media(forced-colors: active){.mat-mdc-chip-selected:not(.mat-mdc-chip-multiple){outline-width:3px}}.mat-mdc-chip-action:focus .mat-focus-indicator::before{content:""}.mdc-evolution-chip__icon,.mat-mdc-chip-edit .mat-icon,.mat-mdc-chip-remove .mat-icon{min-height:fit-content}\n';
+var _c33 = [[["", "matChipEdit", ""]], [["mat-chip-avatar"], ["", "matChipAvatar", ""]], [["", "matChipEditInput", ""]], "*", [["mat-chip-trailing-icon"], ["", "matChipRemove", ""], ["", "matChipTrailingIcon", ""]]];
+var _c43 = ["[matChipEdit]", "mat-chip-avatar, [matChipAvatar]", "[matChipEditInput]", "*", "mat-chip-trailing-icon,[matChipRemove],[matChipTrailingIcon]"];
+function MatChipRow_Conditional_0_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275element(0, "span", 0);
+  }
+}
+function MatChipRow_Conditional_1_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span", 1);
+    \u0275\u0275projection(1);
+    \u0275\u0275elementEnd();
+  }
+}
+function MatChipRow_Conditional_3_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span", 3);
+    \u0275\u0275projection(1, 1);
+    \u0275\u0275elementEnd();
+  }
+}
+function MatChipRow_Conditional_5_Conditional_0_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275projection(0, 2);
+  }
+}
+function MatChipRow_Conditional_5_Conditional_1_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275element(0, "span", 7);
+  }
+}
+function MatChipRow_Conditional_5_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275conditionalCreate(0, MatChipRow_Conditional_5_Conditional_0_Template, 1, 0)(1, MatChipRow_Conditional_5_Conditional_1_Template, 1, 0, "span", 7);
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275conditional(ctx_r0.contentEditInput ? 0 : 1);
+  }
+}
+function MatChipRow_Conditional_6_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275projection(0, 3);
+  }
+}
+function MatChipRow_Conditional_8_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span", 6);
+    \u0275\u0275projection(1, 4);
+    \u0275\u0275elementEnd();
+  }
+}
+var _c52 = ["*"];
+var _c62 = ".mat-mdc-chip-set{display:flex}.mat-mdc-chip-set:focus{outline:none}.mat-mdc-chip-set .mdc-evolution-chip-set__chips{min-width:100%;margin-left:-8px;margin-right:0}.mat-mdc-chip-set .mdc-evolution-chip{margin:4px 0 4px 8px}[dir=rtl] .mat-mdc-chip-set .mdc-evolution-chip-set__chips{margin-left:0;margin-right:-8px}[dir=rtl] .mat-mdc-chip-set .mdc-evolution-chip{margin-left:0;margin-right:8px}.mdc-evolution-chip-set__chips{display:flex;flex-flow:wrap;min-width:0}.mat-mdc-chip-set-stacked{flex-direction:column;align-items:flex-start}.mat-mdc-chip-set-stacked .mat-mdc-chip{width:100%}.mat-mdc-chip-set-stacked .mdc-evolution-chip__graphic{flex-grow:0}.mat-mdc-chip-set-stacked .mdc-evolution-chip__action--primary{flex-basis:100%;justify-content:start}input.mat-mdc-chip-input{flex:1 0 150px;margin-left:8px}[dir=rtl] input.mat-mdc-chip-input{margin-left:0;margin-right:8px}.mat-mdc-form-field:not(.mat-form-field-hide-placeholder) input.mat-mdc-chip-input::placeholder{opacity:1}.mat-mdc-form-field:not(.mat-form-field-hide-placeholder) input.mat-mdc-chip-input::-moz-placeholder{opacity:1}.mat-mdc-form-field:not(.mat-form-field-hide-placeholder) input.mat-mdc-chip-input::-webkit-input-placeholder{opacity:1}.mat-mdc-form-field:not(.mat-form-field-hide-placeholder) input.mat-mdc-chip-input:-ms-input-placeholder{opacity:1}.mat-mdc-chip-set+input.mat-mdc-chip-input{margin-left:0;margin-right:0}\n";
+var MAT_CHIPS_DEFAULT_OPTIONS = new InjectionToken("mat-chips-default-options", {
+  providedIn: "root",
+  factory: () => ({
+    separatorKeyCodes: [ENTER]
+  })
+});
+var MAT_CHIP_AVATAR = new InjectionToken("MatChipAvatar");
+var MAT_CHIP_TRAILING_ICON = new InjectionToken("MatChipTrailingIcon");
+var MAT_CHIP_EDIT = new InjectionToken("MatChipEdit");
+var MAT_CHIP_REMOVE = new InjectionToken("MatChipRemove");
+var MAT_CHIP = new InjectionToken("MatChip");
+var MatChipAction = class _MatChipAction {
+  _elementRef = inject2(ElementRef);
+  _parentChip = inject2(MAT_CHIP);
+  /** Whether the action is interactive. */
+  isInteractive = true;
+  /** Whether this is the primary action in the chip. */
+  _isPrimary = true;
+  /** Whether this is the leading action in the chip. */
+  _isLeading = false;
+  // TODO(adolgachev): consolidate usage to secondary css class
+  /** Whether the action is disabled. */
+  get disabled() {
+    return this._disabled || this._parentChip?.disabled || false;
+  }
+  set disabled(value) {
+    this._disabled = value;
+  }
+  _disabled = false;
+  /** Tab index of the action. */
+  tabIndex = -1;
+  /**
+   * Private API to allow focusing this chip when it is disabled.
+   */
+  _allowFocusWhenDisabled = false;
+  /**
+   * Determine the value of the disabled attribute for this chip action.
+   */
+  _getDisabledAttribute() {
+    return this.disabled && !this._allowFocusWhenDisabled ? "" : null;
+  }
+  /**
+   * Determine the value of the tabindex attribute for this chip action.
+   */
+  _getTabindex() {
+    return this.disabled && !this._allowFocusWhenDisabled || !this.isInteractive ? null : this.tabIndex.toString();
+  }
+  constructor() {
+    inject2(_CdkPrivateStyleLoader).load(_StructuralStylesLoader);
+    if (this._elementRef.nativeElement.nodeName === "BUTTON") {
+      this._elementRef.nativeElement.setAttribute("type", "button");
+    }
+  }
+  focus() {
+    this._elementRef.nativeElement.focus();
+  }
+  _handleClick(event) {
+    if (!this.disabled && this.isInteractive && this._isPrimary) {
+      event.preventDefault();
+      this._parentChip._handlePrimaryActionInteraction();
+    }
+  }
+  _handleKeydown(event) {
+    if ((event.keyCode === ENTER || event.keyCode === SPACE) && !this.disabled && this.isInteractive && this._isPrimary && !this._parentChip._isEditing) {
+      event.preventDefault();
+      this._parentChip._handlePrimaryActionInteraction();
+    }
+  }
+  static \u0275fac = function MatChipAction_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatChipAction)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _MatChipAction,
+    selectors: [["", "matChipAction", ""]],
+    hostAttrs: [1, "mdc-evolution-chip__action", "mat-mdc-chip-action"],
+    hostVars: 11,
+    hostBindings: function MatChipAction_HostBindings(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275listener("click", function MatChipAction_click_HostBindingHandler($event) {
+          return ctx._handleClick($event);
+        })("keydown", function MatChipAction_keydown_HostBindingHandler($event) {
+          return ctx._handleKeydown($event);
+        });
+      }
+      if (rf & 2) {
+        \u0275\u0275attribute("tabindex", ctx._getTabindex())("disabled", ctx._getDisabledAttribute())("aria-disabled", ctx.disabled);
+        \u0275\u0275classProp("mdc-evolution-chip__action--primary", ctx._isPrimary)("mdc-evolution-chip__action--presentational", !ctx.isInteractive)("mdc-evolution-chip__action--secondary", !ctx._isPrimary)("mdc-evolution-chip__action--trailing", !ctx._isPrimary && !ctx._isLeading);
+      }
+    },
+    inputs: {
+      isInteractive: "isInteractive",
+      disabled: [2, "disabled", "disabled", booleanAttribute],
+      tabIndex: [2, "tabIndex", "tabIndex", (value) => value == null ? -1 : numberAttribute(value)],
+      _allowFocusWhenDisabled: "_allowFocusWhenDisabled"
+    }
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatChipAction, [{
+    type: Directive,
+    args: [{
+      selector: "[matChipAction]",
+      host: {
+        "class": "mdc-evolution-chip__action mat-mdc-chip-action",
+        "[class.mdc-evolution-chip__action--primary]": "_isPrimary",
+        "[class.mdc-evolution-chip__action--presentational]": "!isInteractive",
+        "[class.mdc-evolution-chip__action--secondary]": "!_isPrimary",
+        "[class.mdc-evolution-chip__action--trailing]": "!_isPrimary && !_isLeading",
+        "[attr.tabindex]": "_getTabindex()",
+        "[attr.disabled]": "_getDisabledAttribute()",
+        "[attr.aria-disabled]": "disabled",
+        "(click)": "_handleClick($event)",
+        "(keydown)": "_handleKeydown($event)"
+      }
+    }]
+  }], () => [], {
+    isInteractive: [{
+      type: Input
+    }],
+    disabled: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    tabIndex: [{
+      type: Input,
+      args: [{
+        transform: (value) => value == null ? -1 : numberAttribute(value)
+      }]
+    }],
+    _allowFocusWhenDisabled: [{
+      type: Input
+    }]
+  });
+})();
+var MatChipAvatar = class _MatChipAvatar {
+  static \u0275fac = function MatChipAvatar_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatChipAvatar)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _MatChipAvatar,
+    selectors: [["mat-chip-avatar"], ["", "matChipAvatar", ""]],
+    hostAttrs: ["role", "img", 1, "mat-mdc-chip-avatar", "mdc-evolution-chip__icon", "mdc-evolution-chip__icon--primary"],
+    features: [\u0275\u0275ProvidersFeature([{
+      provide: MAT_CHIP_AVATAR,
+      useExisting: _MatChipAvatar
+    }])]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatChipAvatar, [{
+    type: Directive,
+    args: [{
+      selector: "mat-chip-avatar, [matChipAvatar]",
+      host: {
+        "class": "mat-mdc-chip-avatar mdc-evolution-chip__icon mdc-evolution-chip__icon--primary",
+        "role": "img"
+      },
+      providers: [{
+        provide: MAT_CHIP_AVATAR,
+        useExisting: MatChipAvatar
+      }]
+    }]
+  }], null, null);
+})();
+var MatChipTrailingIcon = class _MatChipTrailingIcon extends MatChipAction {
+  /**
+   * MDC considers all trailing actions as a remove icon,
+   * but we support non-interactive trailing icons.
+   */
+  isInteractive = false;
+  _isPrimary = false;
+  static \u0275fac = /* @__PURE__ */ (() => {
+    let \u0275MatChipTrailingIcon_BaseFactory;
+    return function MatChipTrailingIcon_Factory(__ngFactoryType__) {
+      return (\u0275MatChipTrailingIcon_BaseFactory || (\u0275MatChipTrailingIcon_BaseFactory = \u0275\u0275getInheritedFactory(_MatChipTrailingIcon)))(__ngFactoryType__ || _MatChipTrailingIcon);
+    };
+  })();
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _MatChipTrailingIcon,
+    selectors: [["mat-chip-trailing-icon"], ["", "matChipTrailingIcon", ""]],
+    hostAttrs: ["aria-hidden", "true", 1, "mat-mdc-chip-trailing-icon", "mdc-evolution-chip__icon", "mdc-evolution-chip__icon--trailing"],
+    features: [\u0275\u0275ProvidersFeature([{
+      provide: MAT_CHIP_TRAILING_ICON,
+      useExisting: _MatChipTrailingIcon
+    }]), \u0275\u0275InheritDefinitionFeature]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatChipTrailingIcon, [{
+    type: Directive,
+    args: [{
+      selector: "mat-chip-trailing-icon, [matChipTrailingIcon]",
+      host: {
+        "class": "mat-mdc-chip-trailing-icon mdc-evolution-chip__icon mdc-evolution-chip__icon--trailing",
+        "aria-hidden": "true"
+      },
+      providers: [{
+        provide: MAT_CHIP_TRAILING_ICON,
+        useExisting: MatChipTrailingIcon
+      }]
+    }]
+  }], null, null);
+})();
+var MatChipEdit = class _MatChipEdit extends MatChipAction {
+  _isPrimary = false;
+  _isLeading = true;
+  _handleClick(event) {
+    if (!this.disabled) {
+      event.stopPropagation();
+      event.preventDefault();
+      this._parentChip._edit();
+    }
+  }
+  _handleKeydown(event) {
+    if ((event.keyCode === ENTER || event.keyCode === SPACE) && !this.disabled) {
+      event.stopPropagation();
+      event.preventDefault();
+      this._parentChip._edit();
+    }
+  }
+  static \u0275fac = /* @__PURE__ */ (() => {
+    let \u0275MatChipEdit_BaseFactory;
+    return function MatChipEdit_Factory(__ngFactoryType__) {
+      return (\u0275MatChipEdit_BaseFactory || (\u0275MatChipEdit_BaseFactory = \u0275\u0275getInheritedFactory(_MatChipEdit)))(__ngFactoryType__ || _MatChipEdit);
+    };
+  })();
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _MatChipEdit,
+    selectors: [["", "matChipEdit", ""]],
+    hostAttrs: ["role", "button", 1, "mat-mdc-chip-edit", "mat-mdc-chip-avatar", "mat-focus-indicator", "mdc-evolution-chip__icon", "mdc-evolution-chip__icon--primary"],
+    hostVars: 1,
+    hostBindings: function MatChipEdit_HostBindings(rf, ctx) {
+      if (rf & 2) {
+        \u0275\u0275attribute("aria-hidden", null);
+      }
+    },
+    features: [\u0275\u0275ProvidersFeature([{
+      provide: MAT_CHIP_EDIT,
+      useExisting: _MatChipEdit
+    }]), \u0275\u0275InheritDefinitionFeature]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatChipEdit, [{
+    type: Directive,
+    args: [{
+      selector: "[matChipEdit]",
+      host: {
+        "class": "mat-mdc-chip-edit mat-mdc-chip-avatar mat-focus-indicator mdc-evolution-chip__icon mdc-evolution-chip__icon--primary",
+        "role": "button",
+        "[attr.aria-hidden]": "null"
+      },
+      providers: [{
+        provide: MAT_CHIP_EDIT,
+        useExisting: MatChipEdit
+      }]
+    }]
+  }], null, null);
+})();
+var MatChipRemove = class _MatChipRemove extends MatChipAction {
+  _isPrimary = false;
+  _handleClick(event) {
+    if (!this.disabled) {
+      event.stopPropagation();
+      event.preventDefault();
+      this._parentChip.remove();
+    }
+  }
+  _handleKeydown(event) {
+    if ((event.keyCode === ENTER || event.keyCode === SPACE) && !this.disabled) {
+      event.stopPropagation();
+      event.preventDefault();
+      this._parentChip.remove();
+    }
+  }
+  static \u0275fac = /* @__PURE__ */ (() => {
+    let \u0275MatChipRemove_BaseFactory;
+    return function MatChipRemove_Factory(__ngFactoryType__) {
+      return (\u0275MatChipRemove_BaseFactory || (\u0275MatChipRemove_BaseFactory = \u0275\u0275getInheritedFactory(_MatChipRemove)))(__ngFactoryType__ || _MatChipRemove);
+    };
+  })();
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _MatChipRemove,
+    selectors: [["", "matChipRemove", ""]],
+    hostAttrs: ["role", "button", 1, "mat-mdc-chip-remove", "mat-mdc-chip-trailing-icon", "mat-focus-indicator", "mdc-evolution-chip__icon", "mdc-evolution-chip__icon--trailing"],
+    hostVars: 1,
+    hostBindings: function MatChipRemove_HostBindings(rf, ctx) {
+      if (rf & 2) {
+        \u0275\u0275attribute("aria-hidden", null);
+      }
+    },
+    features: [\u0275\u0275ProvidersFeature([{
+      provide: MAT_CHIP_REMOVE,
+      useExisting: _MatChipRemove
+    }]), \u0275\u0275InheritDefinitionFeature]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatChipRemove, [{
+    type: Directive,
+    args: [{
+      selector: "[matChipRemove]",
+      host: {
+        "class": "mat-mdc-chip-remove mat-mdc-chip-trailing-icon mat-focus-indicator mdc-evolution-chip__icon mdc-evolution-chip__icon--trailing",
+        "role": "button",
+        "[attr.aria-hidden]": "null"
+      },
+      providers: [{
+        provide: MAT_CHIP_REMOVE,
+        useExisting: MatChipRemove
+      }]
+    }]
+  }], null, null);
+})();
+var MatChip = class _MatChip {
+  _changeDetectorRef = inject2(ChangeDetectorRef);
+  _elementRef = inject2(ElementRef);
+  _tagName = inject2(HOST_TAG_NAME);
+  _ngZone = inject2(NgZone);
+  _focusMonitor = inject2(FocusMonitor);
+  _globalRippleOptions = inject2(MAT_RIPPLE_GLOBAL_OPTIONS, {
+    optional: true
+  });
+  _document = inject2(DOCUMENT);
+  /** Emits when the chip is focused. */
+  _onFocus = new Subject();
+  /** Emits when the chip is blurred. */
+  _onBlur = new Subject();
+  /** Whether this chip is a basic (unstyled) chip. */
+  _isBasicChip;
+  /** Role for the root of the chip. */
+  role = null;
+  /** Whether the chip has focus. */
+  _hasFocusInternal = false;
+  /** Whether moving focus into the chip is pending. */
+  _pendingFocus;
+  /** Subscription to changes in the chip's actions. */
+  _actionChanges;
+  /** Whether animations for the chip are enabled. */
+  _animationsDisabled = _animationsDisabled();
+  /** All avatars present in the chip. */
+  _allLeadingIcons;
+  /** All trailing icons present in the chip. */
+  _allTrailingIcons;
+  /** All edit icons present in the chip. */
+  _allEditIcons;
+  /** All remove icons present in the chip. */
+  _allRemoveIcons;
+  _hasFocus() {
+    return this._hasFocusInternal;
+  }
+  /** A unique id for the chip. If none is supplied, it will be auto-generated. */
+  id = inject2(_IdGenerator).getId("mat-mdc-chip-");
+  // TODO(#26104): Consider deprecating and using `_computeAriaAccessibleName` instead.
+  // `ariaLabel` may be unnecessary, and `_computeAriaAccessibleName` only supports
+  // datepicker's use case.
+  /** ARIA label for the content of the chip. */
+  ariaLabel = null;
+  // TODO(#26104): Consider deprecating and using `_computeAriaAccessibleName` instead.
+  // `ariaDescription` may be unnecessary, and `_computeAriaAccessibleName` only supports
+  // datepicker's use case.
+  /** ARIA description for the content of the chip. */
+  ariaDescription = null;
+  /** Whether the chip list is disabled. */
+  _chipListDisabled = false;
+  /** Whether the chip was focused when it was removed. */
+  _hadFocusOnRemove = false;
+  _textElement;
+  /**
+   * The value of the chip. Defaults to the content inside
+   * the `mat-mdc-chip-action-label` element.
+   */
+  get value() {
+    return this._value !== void 0 ? this._value : this._textElement.textContent.trim();
+  }
+  set value(value) {
+    this._value = value;
+  }
+  _value;
+  // TODO: should be typed as `ThemePalette` but internal apps pass in arbitrary strings.
+  /**
+   * Theme color of the chip. This API is supported in M2 themes only, it has no
+   * effect in M3 themes. For color customization in M3, see https://material.angular.dev/components/chips/styling.
+   *
+   * For information on applying color variants in M3, see
+   * https://material.angular.dev/guide/material-2-theming#optional-add-backwards-compatibility-styles-for-color-variants
+   */
+  color;
+  /**
+   * Determines whether or not the chip displays the remove styling and emits (removed) events.
+   */
+  removable = true;
+  /**
+   * Colors the chip for emphasis as if it were selected.
+   */
+  highlighted = false;
+  /** Whether the ripple effect is disabled or not. */
+  disableRipple = false;
+  /** Whether the chip is disabled. */
+  get disabled() {
+    return this._disabled || this._chipListDisabled;
+  }
+  set disabled(value) {
+    this._disabled = value;
+  }
+  _disabled = false;
+  /** Emitted when a chip is to be removed. */
+  removed = new EventEmitter();
+  /** Emitted when the chip is destroyed. */
+  destroyed = new EventEmitter();
+  /** The unstyled chip selector for this component. */
+  basicChipAttrName = "mat-basic-chip";
+  /** The chip's leading icon. */
+  leadingIcon;
+  /** The chip's leading edit icon. */
+  editIcon;
+  /** The chip's trailing icon. */
+  trailingIcon;
+  /** The chip's trailing remove icon. */
+  removeIcon;
+  /** Action receiving the primary set of user interactions. */
+  primaryAction;
+  /**
+   * Handles the lazy creation of the MatChip ripple.
+   * Used to improve initial load time of large applications.
+   */
+  _rippleLoader = inject2(MatRippleLoader);
+  _injector = inject2(Injector);
+  constructor() {
+    const styleLoader = inject2(_CdkPrivateStyleLoader);
+    styleLoader.load(_StructuralStylesLoader);
+    styleLoader.load(_VisuallyHiddenLoader);
+    this._monitorFocus();
+    this._rippleLoader?.configureRipple(this._elementRef.nativeElement, {
+      className: "mat-mdc-chip-ripple",
+      disabled: this._isRippleDisabled()
+    });
+  }
+  ngOnInit() {
+    this._isBasicChip = this._elementRef.nativeElement.hasAttribute(this.basicChipAttrName) || this._tagName.toLowerCase() === this.basicChipAttrName;
+  }
+  ngAfterViewInit() {
+    this._textElement = this._elementRef.nativeElement.querySelector(".mat-mdc-chip-action-label");
+    if (this._pendingFocus) {
+      this._pendingFocus = false;
+      this.focus();
+    }
+  }
+  ngAfterContentInit() {
+    this._actionChanges = merge(this._allLeadingIcons.changes, this._allTrailingIcons.changes, this._allEditIcons.changes, this._allRemoveIcons.changes).subscribe(() => this._changeDetectorRef.markForCheck());
+  }
+  ngDoCheck() {
+    this._rippleLoader.setDisabled(this._elementRef.nativeElement, this._isRippleDisabled());
+  }
+  ngOnDestroy() {
+    this._focusMonitor.stopMonitoring(this._elementRef);
+    this._rippleLoader?.destroyRipple(this._elementRef.nativeElement);
+    this._actionChanges?.unsubscribe();
+    this.destroyed.emit({
+      chip: this
+    });
+    this.destroyed.complete();
+  }
+  /**
+   * Allows for programmatic removal of the chip.
+   *
+   * Informs any listeners of the removal request. Does not remove the chip from the DOM.
+   */
+  remove() {
+    if (this.removable) {
+      this._hadFocusOnRemove = this._hasFocus();
+      this.removed.emit({
+        chip: this
+      });
+    }
+  }
+  /** Whether or not the ripple should be disabled. */
+  _isRippleDisabled() {
+    return this.disabled || this.disableRipple || this._animationsDisabled || this._isBasicChip || !this._hasInteractiveActions() || !!this._globalRippleOptions?.disabled;
+  }
+  /** Returns whether the chip has a trailing icon. */
+  _hasTrailingIcon() {
+    return !!(this.trailingIcon || this.removeIcon);
+  }
+  /** Handles keyboard events on the chip. */
+  _handleKeydown(event) {
+    if (event.keyCode === BACKSPACE && !event.repeat || event.keyCode === DELETE) {
+      event.preventDefault();
+      this.remove();
+    }
+  }
+  /** Allows for programmatic focusing of the chip. */
+  focus() {
+    if (!this.disabled) {
+      if (this.primaryAction) {
+        this.primaryAction.focus();
+      } else {
+        this._pendingFocus = true;
+      }
+    }
+  }
+  /** Gets the action that contains a specific target node. */
+  _getSourceAction(target) {
+    return this._getActions().find((action) => {
+      const element = action._elementRef.nativeElement;
+      return element === target || element.contains(target);
+    });
+  }
+  /** Gets all of the actions within the chip. */
+  _getActions() {
+    const result = [];
+    if (this.editIcon) {
+      result.push(this.editIcon);
+    }
+    if (this.primaryAction) {
+      result.push(this.primaryAction);
+    }
+    if (this.removeIcon) {
+      result.push(this.removeIcon);
+    }
+    if (this.trailingIcon) {
+      result.push(this.trailingIcon);
+    }
+    return result;
+  }
+  /** Handles interactions with the primary action of the chip. */
+  _handlePrimaryActionInteraction() {
+  }
+  /** Returns whether the chip has any interactive actions. */
+  _hasInteractiveActions() {
+    return this._getActions().some((a) => a.isInteractive);
+  }
+  /** Handles interactions with the edit action of the chip. */
+  _edit(event) {
+  }
+  /** Starts the focus monitoring process on the chip. */
+  _monitorFocus() {
+    this._focusMonitor.monitor(this._elementRef, true).subscribe((origin) => {
+      const hasFocus = origin !== null;
+      if (hasFocus !== this._hasFocusInternal) {
+        this._hasFocusInternal = hasFocus;
+        if (hasFocus) {
+          this._onFocus.next({
+            chip: this
+          });
+        } else {
+          this._changeDetectorRef.markForCheck();
+          setTimeout(() => this._ngZone.run(() => this._onBlur.next({
+            chip: this
+          })));
+        }
+      }
+    });
+  }
+  static \u0275fac = function MatChip_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatChip)();
+  };
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+    type: _MatChip,
+    selectors: [["mat-basic-chip"], ["", "mat-basic-chip", ""], ["mat-chip"], ["", "mat-chip", ""]],
+    contentQueries: function MatChip_ContentQueries(rf, ctx, dirIndex) {
+      if (rf & 1) {
+        \u0275\u0275contentQuery(dirIndex, MAT_CHIP_AVATAR, 5);
+        \u0275\u0275contentQuery(dirIndex, MAT_CHIP_EDIT, 5);
+        \u0275\u0275contentQuery(dirIndex, MAT_CHIP_TRAILING_ICON, 5);
+        \u0275\u0275contentQuery(dirIndex, MAT_CHIP_REMOVE, 5);
+        \u0275\u0275contentQuery(dirIndex, MAT_CHIP_AVATAR, 5);
+        \u0275\u0275contentQuery(dirIndex, MAT_CHIP_TRAILING_ICON, 5);
+        \u0275\u0275contentQuery(dirIndex, MAT_CHIP_EDIT, 5);
+        \u0275\u0275contentQuery(dirIndex, MAT_CHIP_REMOVE, 5);
+      }
+      if (rf & 2) {
+        let _t;
+        \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx.leadingIcon = _t.first);
+        \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx.editIcon = _t.first);
+        \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx.trailingIcon = _t.first);
+        \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx.removeIcon = _t.first);
+        \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx._allLeadingIcons = _t);
+        \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx._allTrailingIcons = _t);
+        \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx._allEditIcons = _t);
+        \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx._allRemoveIcons = _t);
+      }
+    },
+    viewQuery: function MatChip_Query(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275viewQuery(MatChipAction, 5);
+      }
+      if (rf & 2) {
+        let _t;
+        \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx.primaryAction = _t.first);
+      }
+    },
+    hostAttrs: [1, "mat-mdc-chip"],
+    hostVars: 31,
+    hostBindings: function MatChip_HostBindings(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275listener("keydown", function MatChip_keydown_HostBindingHandler($event) {
+          return ctx._handleKeydown($event);
+        });
+      }
+      if (rf & 2) {
+        \u0275\u0275domProperty("id", ctx.id);
+        \u0275\u0275attribute("role", ctx.role)("aria-label", ctx.ariaLabel);
+        \u0275\u0275classMap("mat-" + (ctx.color || "primary"));
+        \u0275\u0275classProp("mdc-evolution-chip", !ctx._isBasicChip)("mdc-evolution-chip--disabled", ctx.disabled)("mdc-evolution-chip--with-trailing-action", ctx._hasTrailingIcon())("mdc-evolution-chip--with-primary-graphic", ctx.leadingIcon)("mdc-evolution-chip--with-primary-icon", ctx.leadingIcon)("mdc-evolution-chip--with-avatar", ctx.leadingIcon)("mat-mdc-chip-with-avatar", ctx.leadingIcon)("mat-mdc-chip-highlighted", ctx.highlighted)("mat-mdc-chip-disabled", ctx.disabled)("mat-mdc-basic-chip", ctx._isBasicChip)("mat-mdc-standard-chip", !ctx._isBasicChip)("mat-mdc-chip-with-trailing-icon", ctx._hasTrailingIcon())("_mat-animation-noopable", ctx._animationsDisabled);
+      }
+    },
+    inputs: {
+      role: "role",
+      id: "id",
+      ariaLabel: [0, "aria-label", "ariaLabel"],
+      ariaDescription: [0, "aria-description", "ariaDescription"],
+      value: "value",
+      color: "color",
+      removable: [2, "removable", "removable", booleanAttribute],
+      highlighted: [2, "highlighted", "highlighted", booleanAttribute],
+      disableRipple: [2, "disableRipple", "disableRipple", booleanAttribute],
+      disabled: [2, "disabled", "disabled", booleanAttribute]
+    },
+    outputs: {
+      removed: "removed",
+      destroyed: "destroyed"
+    },
+    exportAs: ["matChip"],
+    features: [\u0275\u0275ProvidersFeature([{
+      provide: MAT_CHIP,
+      useExisting: _MatChip
+    }])],
+    ngContentSelectors: _c13,
+    decls: 8,
+    vars: 3,
+    consts: [[1, "mat-mdc-chip-focus-overlay"], [1, "mdc-evolution-chip__cell", "mdc-evolution-chip__cell--primary"], ["matChipAction", "", 3, "isInteractive"], [1, "mdc-evolution-chip__graphic", "mat-mdc-chip-graphic"], [1, "mdc-evolution-chip__text-label", "mat-mdc-chip-action-label"], [1, "mat-mdc-chip-primary-focus-indicator", "mat-focus-indicator"], [1, "mdc-evolution-chip__cell", "mdc-evolution-chip__cell--trailing"]],
+    template: function MatChip_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275projectionDef(_c03);
+        \u0275\u0275element(0, "span", 0);
+        \u0275\u0275elementStart(1, "span", 1)(2, "span", 2);
+        \u0275\u0275conditionalCreate(3, MatChip_Conditional_3_Template, 2, 0, "span", 3);
+        \u0275\u0275elementStart(4, "span", 4);
+        \u0275\u0275projection(5);
+        \u0275\u0275element(6, "span", 5);
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275conditionalCreate(7, MatChip_Conditional_7_Template, 2, 0, "span", 6);
+      }
+      if (rf & 2) {
+        \u0275\u0275advance(2);
+        \u0275\u0275property("isInteractive", false);
+        \u0275\u0275advance();
+        \u0275\u0275conditional(ctx.leadingIcon ? 3 : -1);
+        \u0275\u0275advance(4);
+        \u0275\u0275conditional(ctx._hasTrailingIcon() ? 7 : -1);
+      }
+    },
+    dependencies: [MatChipAction],
+    styles: ['.mdc-evolution-chip,.mdc-evolution-chip__cell,.mdc-evolution-chip__action{display:inline-flex;align-items:center}.mdc-evolution-chip{position:relative;max-width:100%}.mdc-evolution-chip__cell,.mdc-evolution-chip__action{height:100%}.mdc-evolution-chip__cell--primary{flex-basis:100%;overflow-x:hidden}.mdc-evolution-chip__cell--trailing{flex:1 0 auto}.mdc-evolution-chip__action{align-items:center;background:none;border:none;box-sizing:content-box;cursor:pointer;display:inline-flex;justify-content:center;outline:none;padding:0;text-decoration:none;color:inherit}.mdc-evolution-chip__action--presentational{cursor:auto}.mdc-evolution-chip--disabled,.mdc-evolution-chip__action:disabled{pointer-events:none}@media(forced-colors: active){.mdc-evolution-chip--disabled,.mdc-evolution-chip__action:disabled{forced-color-adjust:none}}.mdc-evolution-chip__action--primary{font:inherit;letter-spacing:inherit;white-space:inherit;overflow-x:hidden}.mat-mdc-standard-chip .mdc-evolution-chip__action--primary::before{border-width:var(--mat-chip-outline-width, 1px);border-radius:var(--mat-chip-container-shape-radius, 8px);box-sizing:border-box;content:"";height:100%;left:0;position:absolute;pointer-events:none;top:0;width:100%;z-index:1;border-style:solid}.mat-mdc-standard-chip .mdc-evolution-chip__action--primary{padding-left:12px;padding-right:12px}.mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__action--primary{padding-left:0;padding-right:12px}[dir=rtl] .mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__action--primary{padding-left:12px;padding-right:0}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__action--primary::before{border-color:var(--mat-chip-outline-color, var(--mat-sys-outline))}.mdc-evolution-chip__action--primary:not(.mdc-evolution-chip__action--presentational):not(.mdc-ripple-upgraded):focus::before{border-color:var(--mat-chip-focus-outline-color, var(--mat-sys-on-surface-variant))}.mat-mdc-standard-chip.mdc-evolution-chip--disabled .mdc-evolution-chip__action--primary::before{border-color:var(--mat-chip-disabled-outline-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-standard-chip.mdc-evolution-chip--selected .mdc-evolution-chip__action--primary::before{border-width:var(--mat-chip-flat-selected-outline-width, 0)}.mat-mdc-basic-chip .mdc-evolution-chip__action--primary{font:inherit}.mat-mdc-standard-chip.mdc-evolution-chip--with-leading-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:12px}[dir=rtl] .mat-mdc-standard-chip.mdc-evolution-chip--with-leading-action .mdc-evolution-chip__action--primary{padding-left:12px;padding-right:0}.mat-mdc-standard-chip.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:12px;padding-right:0}[dir=rtl] .mat-mdc-standard-chip.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:12px}.mat-mdc-standard-chip.mdc-evolution-chip--with-leading-action.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:0}.mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:0}[dir=rtl] .mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:0}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__action--primary{padding-left:0;padding-right:12px}[dir=rtl] .mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__action--primary{padding-left:12px;padding-right:0}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:0}[dir=rtl] .mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:0}.mdc-evolution-chip__action--secondary{position:relative;overflow:visible}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__action--secondary{color:var(--mat-chip-with-trailing-icon-trailing-icon-color, var(--mat-sys-on-surface-variant))}.mat-mdc-standard-chip.mdc-evolution-chip--disabled .mdc-evolution-chip__action--secondary{color:var(--mat-chip-with-trailing-icon-disabled-trailing-icon-color, var(--mat-sys-on-surface))}.mat-mdc-standard-chip.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--secondary{padding-left:8px;padding-right:8px}.mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--secondary{padding-left:8px;padding-right:8px}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--secondary{padding-left:8px;padding-right:8px}[dir=rtl] .mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--secondary{padding-left:8px;padding-right:8px}.mdc-evolution-chip__text-label{-webkit-user-select:none;user-select:none;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}.mat-mdc-standard-chip .mdc-evolution-chip__text-label{font-family:var(--mat-chip-label-text-font, var(--mat-sys-label-large-font));line-height:var(--mat-chip-label-text-line-height, var(--mat-sys-label-large-line-height));font-size:var(--mat-chip-label-text-size, var(--mat-sys-label-large-size));font-weight:var(--mat-chip-label-text-weight, var(--mat-sys-label-large-weight));letter-spacing:var(--mat-chip-label-text-tracking, var(--mat-sys-label-large-tracking))}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__text-label{color:var(--mat-chip-label-text-color, var(--mat-sys-on-surface-variant))}.mat-mdc-standard-chip.mdc-evolution-chip--selected:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__text-label{color:var(--mat-chip-selected-label-text-color, var(--mat-sys-on-secondary-container))}.mat-mdc-standard-chip.mdc-evolution-chip--disabled .mdc-evolution-chip__text-label,.mat-mdc-standard-chip.mdc-evolution-chip--selected.mdc-evolution-chip--disabled .mdc-evolution-chip__text-label{color:var(--mat-chip-disabled-label-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent))}.mdc-evolution-chip__graphic{align-items:center;display:inline-flex;justify-content:center;overflow:hidden;pointer-events:none;position:relative;flex:1 0 auto}.mat-mdc-standard-chip .mdc-evolution-chip__graphic{width:var(--mat-chip-with-avatar-avatar-size, 24px);height:var(--mat-chip-with-avatar-avatar-size, 24px);font-size:var(--mat-chip-with-avatar-avatar-size, 24px)}.mdc-evolution-chip--selecting .mdc-evolution-chip__graphic{transition:width 150ms 0ms cubic-bezier(0.4, 0, 0.2, 1)}.mdc-evolution-chip--selectable:not(.mdc-evolution-chip--selected):not(.mdc-evolution-chip--with-primary-icon) .mdc-evolution-chip__graphic{width:0}.mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__graphic{padding-left:6px;padding-right:6px}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__graphic{padding-left:4px;padding-right:8px}[dir=rtl] .mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__graphic{padding-left:8px;padding-right:4px}.mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__graphic{padding-left:6px;padding-right:6px}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__graphic{padding-left:4px;padding-right:8px}[dir=rtl] .mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__graphic{padding-left:8px;padding-right:4px}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-leading-action .mdc-evolution-chip__graphic{padding-left:0}.mdc-evolution-chip__checkmark{position:absolute;opacity:0;top:50%;left:50%;height:20px;width:20px}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__checkmark{color:var(--mat-chip-with-icon-selected-icon-color, var(--mat-sys-on-secondary-container))}.mat-mdc-standard-chip.mdc-evolution-chip--disabled .mdc-evolution-chip__checkmark{color:var(--mat-chip-with-icon-disabled-icon-color, var(--mat-sys-on-surface))}.mdc-evolution-chip--selecting .mdc-evolution-chip__checkmark{transition:transform 150ms 0ms cubic-bezier(0.4, 0, 0.2, 1);transform:translate(-75%, -50%)}.mdc-evolution-chip--selected .mdc-evolution-chip__checkmark{transform:translate(-50%, -50%);opacity:1}.mdc-evolution-chip__checkmark-svg{display:block}.mdc-evolution-chip__checkmark-path{stroke-width:2px;stroke-dasharray:29.7833385;stroke-dashoffset:29.7833385;stroke:currentColor}.mdc-evolution-chip--selecting .mdc-evolution-chip__checkmark-path{transition:stroke-dashoffset 150ms 45ms cubic-bezier(0.4, 0, 0.2, 1)}.mdc-evolution-chip--selected .mdc-evolution-chip__checkmark-path{stroke-dashoffset:0}@media(forced-colors: active){.mdc-evolution-chip__checkmark-path{stroke:CanvasText !important}}.mat-mdc-standard-chip .mdc-evolution-chip__icon--trailing{height:18px;width:18px;font-size:18px}.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--trailing.mat-mdc-chip-remove{opacity:calc(var(--mat-chip-trailing-action-opacity, 1)*var(--mat-chip-with-trailing-icon-disabled-trailing-icon-opacity, 0.38))}.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--trailing.mat-mdc-chip-remove:focus{opacity:calc(var(--mat-chip-trailing-action-focus-opacity, 1)*var(--mat-chip-with-trailing-icon-disabled-trailing-icon-opacity, 0.38))}.mat-mdc-standard-chip{border-radius:var(--mat-chip-container-shape-radius, 8px);height:var(--mat-chip-container-height, 32px)}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled){background-color:var(--mat-chip-elevated-container-color, transparent)}.mat-mdc-standard-chip.mdc-evolution-chip--disabled{background-color:var(--mat-chip-elevated-disabled-container-color)}.mat-mdc-standard-chip.mdc-evolution-chip--selected:not(.mdc-evolution-chip--disabled){background-color:var(--mat-chip-elevated-selected-container-color, var(--mat-sys-secondary-container))}.mat-mdc-standard-chip.mdc-evolution-chip--selected.mdc-evolution-chip--disabled{background-color:var(--mat-chip-flat-disabled-selected-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}@media(forced-colors: active){.mat-mdc-standard-chip{outline:solid 1px}}.mat-mdc-standard-chip .mdc-evolution-chip__icon--primary{border-radius:var(--mat-chip-with-avatar-avatar-shape-radius, 24px);width:var(--mat-chip-with-icon-icon-size, 18px);height:var(--mat-chip-with-icon-icon-size, 18px);font-size:var(--mat-chip-with-icon-icon-size, 18px)}.mdc-evolution-chip--selected .mdc-evolution-chip__icon--primary{opacity:0}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__icon--primary{color:var(--mat-chip-with-icon-icon-color, var(--mat-sys-on-surface-variant))}.mat-mdc-standard-chip.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--primary{color:var(--mat-chip-with-icon-disabled-icon-color, var(--mat-sys-on-surface))}.mat-mdc-chip-highlighted{--mat-chip-with-icon-icon-color: var(--mat-chip-with-icon-selected-icon-color, var(--mat-sys-on-secondary-container));--mat-chip-elevated-container-color: var(--mat-chip-elevated-selected-container-color, var(--mat-sys-secondary-container));--mat-chip-label-text-color: var(--mat-chip-selected-label-text-color, var(--mat-sys-on-secondary-container));--mat-chip-outline-width: var(--mat-chip-flat-selected-outline-width, 0)}.mat-mdc-chip-focus-overlay{background:var(--mat-chip-focus-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-chip-selected .mat-mdc-chip-focus-overlay,.mat-mdc-chip-highlighted .mat-mdc-chip-focus-overlay{background:var(--mat-chip-selected-focus-state-layer-color, var(--mat-sys-on-secondary-container))}.mat-mdc-chip:hover .mat-mdc-chip-focus-overlay{background:var(--mat-chip-hover-state-layer-color, var(--mat-sys-on-surface-variant));opacity:var(--mat-chip-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-chip-focus-overlay .mat-mdc-chip-selected:hover,.mat-mdc-chip-highlighted:hover .mat-mdc-chip-focus-overlay{background:var(--mat-chip-selected-hover-state-layer-color, var(--mat-sys-on-secondary-container));opacity:var(--mat-chip-selected-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-chip.cdk-focused .mat-mdc-chip-focus-overlay{background:var(--mat-chip-focus-state-layer-color, var(--mat-sys-on-surface-variant));opacity:var(--mat-chip-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-chip-selected.cdk-focused .mat-mdc-chip-focus-overlay,.mat-mdc-chip-highlighted.cdk-focused .mat-mdc-chip-focus-overlay{background:var(--mat-chip-selected-focus-state-layer-color, var(--mat-sys-on-secondary-container));opacity:var(--mat-chip-selected-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mdc-evolution-chip--disabled:not(.mdc-evolution-chip--selected) .mat-mdc-chip-avatar{opacity:var(--mat-chip-with-avatar-disabled-avatar-opacity, 0.38)}.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--trailing{opacity:var(--mat-chip-with-trailing-icon-disabled-trailing-icon-opacity, 0.38)}.mdc-evolution-chip--disabled.mdc-evolution-chip--selected .mdc-evolution-chip__checkmark{opacity:var(--mat-chip-with-icon-disabled-icon-opacity, 0.38)}.mat-mdc-standard-chip.mdc-evolution-chip--disabled{opacity:var(--mat-chip-disabled-container-opacity, 1)}.mat-mdc-standard-chip.mdc-evolution-chip--selected .mdc-evolution-chip__icon--trailing,.mat-mdc-standard-chip.mat-mdc-chip-highlighted .mdc-evolution-chip__icon--trailing{color:var(--mat-chip-selected-trailing-icon-color, var(--mat-sys-on-secondary-container))}.mat-mdc-standard-chip.mdc-evolution-chip--selected.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--trailing,.mat-mdc-standard-chip.mat-mdc-chip-highlighted.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--trailing{color:var(--mat-chip-selected-disabled-trailing-icon-color, var(--mat-sys-on-surface))}.mat-mdc-chip-edit,.mat-mdc-chip-remove{opacity:var(--mat-chip-trailing-action-opacity, 1)}.mat-mdc-chip-edit:focus,.mat-mdc-chip-remove:focus{opacity:var(--mat-chip-trailing-action-focus-opacity, 1)}.mat-mdc-chip-edit::after,.mat-mdc-chip-remove::after{background-color:var(--mat-chip-trailing-action-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-chip-edit:hover::after,.mat-mdc-chip-remove:hover::after{opacity:var(--mat-chip-trailing-action-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-chip-edit:focus::after,.mat-mdc-chip-remove:focus::after{opacity:var(--mat-chip-trailing-action-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-chip-selected .mat-mdc-chip-remove::after,.mat-mdc-chip-highlighted .mat-mdc-chip-remove::after{background-color:var(--mat-chip-selected-trailing-action-state-layer-color, var(--mat-sys-on-secondary-container))}.mat-mdc-standard-chip{-webkit-tap-highlight-color:rgba(0,0,0,0)}.mat-mdc-standard-chip .mdc-evolution-chip__cell--primary,.mat-mdc-standard-chip .mdc-evolution-chip__action--primary,.mat-mdc-standard-chip .mat-mdc-chip-action-label{overflow:visible}.mat-mdc-standard-chip .mat-mdc-chip-graphic,.mat-mdc-standard-chip .mat-mdc-chip-trailing-icon{box-sizing:content-box}.mat-mdc-standard-chip._mat-animation-noopable,.mat-mdc-standard-chip._mat-animation-noopable .mdc-evolution-chip__graphic,.mat-mdc-standard-chip._mat-animation-noopable .mdc-evolution-chip__checkmark,.mat-mdc-standard-chip._mat-animation-noopable .mdc-evolution-chip__checkmark-path{transition-duration:1ms;animation-duration:1ms}.mat-mdc-chip-focus-overlay{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;opacity:0;border-radius:inherit;transition:opacity 150ms linear}._mat-animation-noopable .mat-mdc-chip-focus-overlay{transition:none}.mat-mdc-basic-chip .mat-mdc-chip-focus-overlay{display:none}.mat-mdc-chip .mat-ripple.mat-mdc-chip-ripple{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;border-radius:inherit}.mat-mdc-chip-avatar{text-align:center;line-height:1;color:var(--mat-chip-with-icon-icon-color, currentColor)}.mat-mdc-chip{position:relative;z-index:0}.mat-mdc-chip-action-label{text-align:left;z-index:1}[dir=rtl] .mat-mdc-chip-action-label{text-align:right}.mat-mdc-chip.mdc-evolution-chip--with-trailing-action .mat-mdc-chip-action-label{position:relative}.mat-mdc-chip-action-label .mat-mdc-chip-primary-focus-indicator{position:absolute;top:0;right:0;bottom:0;left:0;pointer-events:none}.mat-mdc-chip-action-label .mat-focus-indicator::before{margin:calc(calc(var(--mat-focus-indicator-border-width, 3px) + 2px)*-1)}.mat-mdc-chip-edit::before,.mat-mdc-chip-remove::before{margin:calc(var(--mat-focus-indicator-border-width, 3px)*-1);left:8px;right:8px}.mat-mdc-chip-edit::after,.mat-mdc-chip-remove::after{content:"";display:block;opacity:0;position:absolute;top:-3px;bottom:-3px;left:5px;right:5px;border-radius:50%;box-sizing:border-box;padding:12px;margin:-12px;background-clip:content-box}.mat-mdc-chip-edit .mat-icon,.mat-mdc-chip-remove .mat-icon{width:18px;height:18px;font-size:18px;box-sizing:content-box}.mat-chip-edit-input{cursor:text;display:inline-block;color:inherit;outline:0}@media(forced-colors: active){.mat-mdc-chip-selected:not(.mat-mdc-chip-multiple){outline-width:3px}}.mat-mdc-chip-action:focus .mat-focus-indicator::before{content:""}.mdc-evolution-chip__icon,.mat-mdc-chip-edit .mat-icon,.mat-mdc-chip-remove .mat-icon{min-height:fit-content}\n'],
+    encapsulation: 2,
+    changeDetection: 0
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatChip, [{
+    type: Component,
+    args: [{
+      selector: "mat-basic-chip, [mat-basic-chip], mat-chip, [mat-chip]",
+      exportAs: "matChip",
+      host: {
+        "class": "mat-mdc-chip",
+        "[class]": '"mat-" + (color || "primary")',
+        "[class.mdc-evolution-chip]": "!_isBasicChip",
+        "[class.mdc-evolution-chip--disabled]": "disabled",
+        "[class.mdc-evolution-chip--with-trailing-action]": "_hasTrailingIcon()",
+        "[class.mdc-evolution-chip--with-primary-graphic]": "leadingIcon",
+        "[class.mdc-evolution-chip--with-primary-icon]": "leadingIcon",
+        "[class.mdc-evolution-chip--with-avatar]": "leadingIcon",
+        "[class.mat-mdc-chip-with-avatar]": "leadingIcon",
+        "[class.mat-mdc-chip-highlighted]": "highlighted",
+        "[class.mat-mdc-chip-disabled]": "disabled",
+        "[class.mat-mdc-basic-chip]": "_isBasicChip",
+        "[class.mat-mdc-standard-chip]": "!_isBasicChip",
+        "[class.mat-mdc-chip-with-trailing-icon]": "_hasTrailingIcon()",
+        "[class._mat-animation-noopable]": "_animationsDisabled",
+        "[id]": "id",
+        "[attr.role]": "role",
+        "[attr.aria-label]": "ariaLabel",
+        "(keydown)": "_handleKeydown($event)"
+      },
+      encapsulation: ViewEncapsulation.None,
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      providers: [{
+        provide: MAT_CHIP,
+        useExisting: MatChip
+      }],
+      imports: [MatChipAction],
+      template: '<span class="mat-mdc-chip-focus-overlay"></span>\n\n<span class="mdc-evolution-chip__cell mdc-evolution-chip__cell--primary">\n  <span matChipAction [isInteractive]="false">\n    @if (leadingIcon) {\n      <span class="mdc-evolution-chip__graphic mat-mdc-chip-graphic">\n        <ng-content select="mat-chip-avatar, [matChipAvatar]"></ng-content>\n      </span>\n    }\n    <span class="mdc-evolution-chip__text-label mat-mdc-chip-action-label">\n      <ng-content></ng-content>\n      <span class="mat-mdc-chip-primary-focus-indicator mat-focus-indicator"></span>\n    </span>\n  </span>\n</span>\n\n@if (_hasTrailingIcon()) {\n  <span class="mdc-evolution-chip__cell mdc-evolution-chip__cell--trailing">\n    <ng-content select="mat-chip-trailing-icon,[matChipRemove],[matChipTrailingIcon]"></ng-content>\n  </span>\n}\n',
+      styles: ['.mdc-evolution-chip,.mdc-evolution-chip__cell,.mdc-evolution-chip__action{display:inline-flex;align-items:center}.mdc-evolution-chip{position:relative;max-width:100%}.mdc-evolution-chip__cell,.mdc-evolution-chip__action{height:100%}.mdc-evolution-chip__cell--primary{flex-basis:100%;overflow-x:hidden}.mdc-evolution-chip__cell--trailing{flex:1 0 auto}.mdc-evolution-chip__action{align-items:center;background:none;border:none;box-sizing:content-box;cursor:pointer;display:inline-flex;justify-content:center;outline:none;padding:0;text-decoration:none;color:inherit}.mdc-evolution-chip__action--presentational{cursor:auto}.mdc-evolution-chip--disabled,.mdc-evolution-chip__action:disabled{pointer-events:none}@media(forced-colors: active){.mdc-evolution-chip--disabled,.mdc-evolution-chip__action:disabled{forced-color-adjust:none}}.mdc-evolution-chip__action--primary{font:inherit;letter-spacing:inherit;white-space:inherit;overflow-x:hidden}.mat-mdc-standard-chip .mdc-evolution-chip__action--primary::before{border-width:var(--mat-chip-outline-width, 1px);border-radius:var(--mat-chip-container-shape-radius, 8px);box-sizing:border-box;content:"";height:100%;left:0;position:absolute;pointer-events:none;top:0;width:100%;z-index:1;border-style:solid}.mat-mdc-standard-chip .mdc-evolution-chip__action--primary{padding-left:12px;padding-right:12px}.mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__action--primary{padding-left:0;padding-right:12px}[dir=rtl] .mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__action--primary{padding-left:12px;padding-right:0}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__action--primary::before{border-color:var(--mat-chip-outline-color, var(--mat-sys-outline))}.mdc-evolution-chip__action--primary:not(.mdc-evolution-chip__action--presentational):not(.mdc-ripple-upgraded):focus::before{border-color:var(--mat-chip-focus-outline-color, var(--mat-sys-on-surface-variant))}.mat-mdc-standard-chip.mdc-evolution-chip--disabled .mdc-evolution-chip__action--primary::before{border-color:var(--mat-chip-disabled-outline-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-standard-chip.mdc-evolution-chip--selected .mdc-evolution-chip__action--primary::before{border-width:var(--mat-chip-flat-selected-outline-width, 0)}.mat-mdc-basic-chip .mdc-evolution-chip__action--primary{font:inherit}.mat-mdc-standard-chip.mdc-evolution-chip--with-leading-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:12px}[dir=rtl] .mat-mdc-standard-chip.mdc-evolution-chip--with-leading-action .mdc-evolution-chip__action--primary{padding-left:12px;padding-right:0}.mat-mdc-standard-chip.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:12px;padding-right:0}[dir=rtl] .mat-mdc-standard-chip.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:12px}.mat-mdc-standard-chip.mdc-evolution-chip--with-leading-action.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:0}.mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:0}[dir=rtl] .mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:0}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__action--primary{padding-left:0;padding-right:12px}[dir=rtl] .mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__action--primary{padding-left:12px;padding-right:0}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:0}[dir=rtl] .mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:0}.mdc-evolution-chip__action--secondary{position:relative;overflow:visible}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__action--secondary{color:var(--mat-chip-with-trailing-icon-trailing-icon-color, var(--mat-sys-on-surface-variant))}.mat-mdc-standard-chip.mdc-evolution-chip--disabled .mdc-evolution-chip__action--secondary{color:var(--mat-chip-with-trailing-icon-disabled-trailing-icon-color, var(--mat-sys-on-surface))}.mat-mdc-standard-chip.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--secondary{padding-left:8px;padding-right:8px}.mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--secondary{padding-left:8px;padding-right:8px}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--secondary{padding-left:8px;padding-right:8px}[dir=rtl] .mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--secondary{padding-left:8px;padding-right:8px}.mdc-evolution-chip__text-label{-webkit-user-select:none;user-select:none;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}.mat-mdc-standard-chip .mdc-evolution-chip__text-label{font-family:var(--mat-chip-label-text-font, var(--mat-sys-label-large-font));line-height:var(--mat-chip-label-text-line-height, var(--mat-sys-label-large-line-height));font-size:var(--mat-chip-label-text-size, var(--mat-sys-label-large-size));font-weight:var(--mat-chip-label-text-weight, var(--mat-sys-label-large-weight));letter-spacing:var(--mat-chip-label-text-tracking, var(--mat-sys-label-large-tracking))}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__text-label{color:var(--mat-chip-label-text-color, var(--mat-sys-on-surface-variant))}.mat-mdc-standard-chip.mdc-evolution-chip--selected:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__text-label{color:var(--mat-chip-selected-label-text-color, var(--mat-sys-on-secondary-container))}.mat-mdc-standard-chip.mdc-evolution-chip--disabled .mdc-evolution-chip__text-label,.mat-mdc-standard-chip.mdc-evolution-chip--selected.mdc-evolution-chip--disabled .mdc-evolution-chip__text-label{color:var(--mat-chip-disabled-label-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent))}.mdc-evolution-chip__graphic{align-items:center;display:inline-flex;justify-content:center;overflow:hidden;pointer-events:none;position:relative;flex:1 0 auto}.mat-mdc-standard-chip .mdc-evolution-chip__graphic{width:var(--mat-chip-with-avatar-avatar-size, 24px);height:var(--mat-chip-with-avatar-avatar-size, 24px);font-size:var(--mat-chip-with-avatar-avatar-size, 24px)}.mdc-evolution-chip--selecting .mdc-evolution-chip__graphic{transition:width 150ms 0ms cubic-bezier(0.4, 0, 0.2, 1)}.mdc-evolution-chip--selectable:not(.mdc-evolution-chip--selected):not(.mdc-evolution-chip--with-primary-icon) .mdc-evolution-chip__graphic{width:0}.mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__graphic{padding-left:6px;padding-right:6px}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__graphic{padding-left:4px;padding-right:8px}[dir=rtl] .mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__graphic{padding-left:8px;padding-right:4px}.mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__graphic{padding-left:6px;padding-right:6px}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__graphic{padding-left:4px;padding-right:8px}[dir=rtl] .mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__graphic{padding-left:8px;padding-right:4px}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-leading-action .mdc-evolution-chip__graphic{padding-left:0}.mdc-evolution-chip__checkmark{position:absolute;opacity:0;top:50%;left:50%;height:20px;width:20px}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__checkmark{color:var(--mat-chip-with-icon-selected-icon-color, var(--mat-sys-on-secondary-container))}.mat-mdc-standard-chip.mdc-evolution-chip--disabled .mdc-evolution-chip__checkmark{color:var(--mat-chip-with-icon-disabled-icon-color, var(--mat-sys-on-surface))}.mdc-evolution-chip--selecting .mdc-evolution-chip__checkmark{transition:transform 150ms 0ms cubic-bezier(0.4, 0, 0.2, 1);transform:translate(-75%, -50%)}.mdc-evolution-chip--selected .mdc-evolution-chip__checkmark{transform:translate(-50%, -50%);opacity:1}.mdc-evolution-chip__checkmark-svg{display:block}.mdc-evolution-chip__checkmark-path{stroke-width:2px;stroke-dasharray:29.7833385;stroke-dashoffset:29.7833385;stroke:currentColor}.mdc-evolution-chip--selecting .mdc-evolution-chip__checkmark-path{transition:stroke-dashoffset 150ms 45ms cubic-bezier(0.4, 0, 0.2, 1)}.mdc-evolution-chip--selected .mdc-evolution-chip__checkmark-path{stroke-dashoffset:0}@media(forced-colors: active){.mdc-evolution-chip__checkmark-path{stroke:CanvasText !important}}.mat-mdc-standard-chip .mdc-evolution-chip__icon--trailing{height:18px;width:18px;font-size:18px}.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--trailing.mat-mdc-chip-remove{opacity:calc(var(--mat-chip-trailing-action-opacity, 1)*var(--mat-chip-with-trailing-icon-disabled-trailing-icon-opacity, 0.38))}.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--trailing.mat-mdc-chip-remove:focus{opacity:calc(var(--mat-chip-trailing-action-focus-opacity, 1)*var(--mat-chip-with-trailing-icon-disabled-trailing-icon-opacity, 0.38))}.mat-mdc-standard-chip{border-radius:var(--mat-chip-container-shape-radius, 8px);height:var(--mat-chip-container-height, 32px)}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled){background-color:var(--mat-chip-elevated-container-color, transparent)}.mat-mdc-standard-chip.mdc-evolution-chip--disabled{background-color:var(--mat-chip-elevated-disabled-container-color)}.mat-mdc-standard-chip.mdc-evolution-chip--selected:not(.mdc-evolution-chip--disabled){background-color:var(--mat-chip-elevated-selected-container-color, var(--mat-sys-secondary-container))}.mat-mdc-standard-chip.mdc-evolution-chip--selected.mdc-evolution-chip--disabled{background-color:var(--mat-chip-flat-disabled-selected-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}@media(forced-colors: active){.mat-mdc-standard-chip{outline:solid 1px}}.mat-mdc-standard-chip .mdc-evolution-chip__icon--primary{border-radius:var(--mat-chip-with-avatar-avatar-shape-radius, 24px);width:var(--mat-chip-with-icon-icon-size, 18px);height:var(--mat-chip-with-icon-icon-size, 18px);font-size:var(--mat-chip-with-icon-icon-size, 18px)}.mdc-evolution-chip--selected .mdc-evolution-chip__icon--primary{opacity:0}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__icon--primary{color:var(--mat-chip-with-icon-icon-color, var(--mat-sys-on-surface-variant))}.mat-mdc-standard-chip.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--primary{color:var(--mat-chip-with-icon-disabled-icon-color, var(--mat-sys-on-surface))}.mat-mdc-chip-highlighted{--mat-chip-with-icon-icon-color: var(--mat-chip-with-icon-selected-icon-color, var(--mat-sys-on-secondary-container));--mat-chip-elevated-container-color: var(--mat-chip-elevated-selected-container-color, var(--mat-sys-secondary-container));--mat-chip-label-text-color: var(--mat-chip-selected-label-text-color, var(--mat-sys-on-secondary-container));--mat-chip-outline-width: var(--mat-chip-flat-selected-outline-width, 0)}.mat-mdc-chip-focus-overlay{background:var(--mat-chip-focus-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-chip-selected .mat-mdc-chip-focus-overlay,.mat-mdc-chip-highlighted .mat-mdc-chip-focus-overlay{background:var(--mat-chip-selected-focus-state-layer-color, var(--mat-sys-on-secondary-container))}.mat-mdc-chip:hover .mat-mdc-chip-focus-overlay{background:var(--mat-chip-hover-state-layer-color, var(--mat-sys-on-surface-variant));opacity:var(--mat-chip-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-chip-focus-overlay .mat-mdc-chip-selected:hover,.mat-mdc-chip-highlighted:hover .mat-mdc-chip-focus-overlay{background:var(--mat-chip-selected-hover-state-layer-color, var(--mat-sys-on-secondary-container));opacity:var(--mat-chip-selected-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-chip.cdk-focused .mat-mdc-chip-focus-overlay{background:var(--mat-chip-focus-state-layer-color, var(--mat-sys-on-surface-variant));opacity:var(--mat-chip-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-chip-selected.cdk-focused .mat-mdc-chip-focus-overlay,.mat-mdc-chip-highlighted.cdk-focused .mat-mdc-chip-focus-overlay{background:var(--mat-chip-selected-focus-state-layer-color, var(--mat-sys-on-secondary-container));opacity:var(--mat-chip-selected-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mdc-evolution-chip--disabled:not(.mdc-evolution-chip--selected) .mat-mdc-chip-avatar{opacity:var(--mat-chip-with-avatar-disabled-avatar-opacity, 0.38)}.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--trailing{opacity:var(--mat-chip-with-trailing-icon-disabled-trailing-icon-opacity, 0.38)}.mdc-evolution-chip--disabled.mdc-evolution-chip--selected .mdc-evolution-chip__checkmark{opacity:var(--mat-chip-with-icon-disabled-icon-opacity, 0.38)}.mat-mdc-standard-chip.mdc-evolution-chip--disabled{opacity:var(--mat-chip-disabled-container-opacity, 1)}.mat-mdc-standard-chip.mdc-evolution-chip--selected .mdc-evolution-chip__icon--trailing,.mat-mdc-standard-chip.mat-mdc-chip-highlighted .mdc-evolution-chip__icon--trailing{color:var(--mat-chip-selected-trailing-icon-color, var(--mat-sys-on-secondary-container))}.mat-mdc-standard-chip.mdc-evolution-chip--selected.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--trailing,.mat-mdc-standard-chip.mat-mdc-chip-highlighted.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--trailing{color:var(--mat-chip-selected-disabled-trailing-icon-color, var(--mat-sys-on-surface))}.mat-mdc-chip-edit,.mat-mdc-chip-remove{opacity:var(--mat-chip-trailing-action-opacity, 1)}.mat-mdc-chip-edit:focus,.mat-mdc-chip-remove:focus{opacity:var(--mat-chip-trailing-action-focus-opacity, 1)}.mat-mdc-chip-edit::after,.mat-mdc-chip-remove::after{background-color:var(--mat-chip-trailing-action-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-chip-edit:hover::after,.mat-mdc-chip-remove:hover::after{opacity:var(--mat-chip-trailing-action-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-chip-edit:focus::after,.mat-mdc-chip-remove:focus::after{opacity:var(--mat-chip-trailing-action-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-chip-selected .mat-mdc-chip-remove::after,.mat-mdc-chip-highlighted .mat-mdc-chip-remove::after{background-color:var(--mat-chip-selected-trailing-action-state-layer-color, var(--mat-sys-on-secondary-container))}.mat-mdc-standard-chip{-webkit-tap-highlight-color:rgba(0,0,0,0)}.mat-mdc-standard-chip .mdc-evolution-chip__cell--primary,.mat-mdc-standard-chip .mdc-evolution-chip__action--primary,.mat-mdc-standard-chip .mat-mdc-chip-action-label{overflow:visible}.mat-mdc-standard-chip .mat-mdc-chip-graphic,.mat-mdc-standard-chip .mat-mdc-chip-trailing-icon{box-sizing:content-box}.mat-mdc-standard-chip._mat-animation-noopable,.mat-mdc-standard-chip._mat-animation-noopable .mdc-evolution-chip__graphic,.mat-mdc-standard-chip._mat-animation-noopable .mdc-evolution-chip__checkmark,.mat-mdc-standard-chip._mat-animation-noopable .mdc-evolution-chip__checkmark-path{transition-duration:1ms;animation-duration:1ms}.mat-mdc-chip-focus-overlay{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;opacity:0;border-radius:inherit;transition:opacity 150ms linear}._mat-animation-noopable .mat-mdc-chip-focus-overlay{transition:none}.mat-mdc-basic-chip .mat-mdc-chip-focus-overlay{display:none}.mat-mdc-chip .mat-ripple.mat-mdc-chip-ripple{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;border-radius:inherit}.mat-mdc-chip-avatar{text-align:center;line-height:1;color:var(--mat-chip-with-icon-icon-color, currentColor)}.mat-mdc-chip{position:relative;z-index:0}.mat-mdc-chip-action-label{text-align:left;z-index:1}[dir=rtl] .mat-mdc-chip-action-label{text-align:right}.mat-mdc-chip.mdc-evolution-chip--with-trailing-action .mat-mdc-chip-action-label{position:relative}.mat-mdc-chip-action-label .mat-mdc-chip-primary-focus-indicator{position:absolute;top:0;right:0;bottom:0;left:0;pointer-events:none}.mat-mdc-chip-action-label .mat-focus-indicator::before{margin:calc(calc(var(--mat-focus-indicator-border-width, 3px) + 2px)*-1)}.mat-mdc-chip-edit::before,.mat-mdc-chip-remove::before{margin:calc(var(--mat-focus-indicator-border-width, 3px)*-1);left:8px;right:8px}.mat-mdc-chip-edit::after,.mat-mdc-chip-remove::after{content:"";display:block;opacity:0;position:absolute;top:-3px;bottom:-3px;left:5px;right:5px;border-radius:50%;box-sizing:border-box;padding:12px;margin:-12px;background-clip:content-box}.mat-mdc-chip-edit .mat-icon,.mat-mdc-chip-remove .mat-icon{width:18px;height:18px;font-size:18px;box-sizing:content-box}.mat-chip-edit-input{cursor:text;display:inline-block;color:inherit;outline:0}@media(forced-colors: active){.mat-mdc-chip-selected:not(.mat-mdc-chip-multiple){outline-width:3px}}.mat-mdc-chip-action:focus .mat-focus-indicator::before{content:""}.mdc-evolution-chip__icon,.mat-mdc-chip-edit .mat-icon,.mat-mdc-chip-remove .mat-icon{min-height:fit-content}\n']
+    }]
+  }], () => [], {
+    role: [{
+      type: Input
+    }],
+    _allLeadingIcons: [{
+      type: ContentChildren,
+      args: [MAT_CHIP_AVATAR, {
+        descendants: true
+      }]
+    }],
+    _allTrailingIcons: [{
+      type: ContentChildren,
+      args: [MAT_CHIP_TRAILING_ICON, {
+        descendants: true
+      }]
+    }],
+    _allEditIcons: [{
+      type: ContentChildren,
+      args: [MAT_CHIP_EDIT, {
+        descendants: true
+      }]
+    }],
+    _allRemoveIcons: [{
+      type: ContentChildren,
+      args: [MAT_CHIP_REMOVE, {
+        descendants: true
+      }]
+    }],
+    id: [{
+      type: Input
+    }],
+    ariaLabel: [{
+      type: Input,
+      args: ["aria-label"]
+    }],
+    ariaDescription: [{
+      type: Input,
+      args: ["aria-description"]
+    }],
+    value: [{
+      type: Input
+    }],
+    color: [{
+      type: Input
+    }],
+    removable: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    highlighted: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    disableRipple: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    disabled: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    removed: [{
+      type: Output
+    }],
+    destroyed: [{
+      type: Output
+    }],
+    leadingIcon: [{
+      type: ContentChild,
+      args: [MAT_CHIP_AVATAR]
+    }],
+    editIcon: [{
+      type: ContentChild,
+      args: [MAT_CHIP_EDIT]
+    }],
+    trailingIcon: [{
+      type: ContentChild,
+      args: [MAT_CHIP_TRAILING_ICON]
+    }],
+    removeIcon: [{
+      type: ContentChild,
+      args: [MAT_CHIP_REMOVE]
+    }],
+    primaryAction: [{
+      type: ViewChild,
+      args: [MatChipAction]
+    }]
+  });
+})();
+var MatChipOption = class _MatChipOption extends MatChip {
+  /** Default chip options. */
+  _defaultOptions = inject2(MAT_CHIPS_DEFAULT_OPTIONS, {
+    optional: true
+  });
+  /** Whether the chip list is selectable. */
+  chipListSelectable = true;
+  /** Whether the chip list is in multi-selection mode. */
+  _chipListMultiple = false;
+  /** Whether the chip list hides single-selection indicator. */
+  _chipListHideSingleSelectionIndicator = this._defaultOptions?.hideSingleSelectionIndicator ?? false;
+  /**
+   * Whether or not the chip is selectable.
+   *
+   * When a chip is not selectable, changes to its selected state are always
+   * ignored. By default an option chip is selectable, and it becomes
+   * non-selectable if its parent chip list is not selectable.
+   */
+  get selectable() {
+    return this._selectable && this.chipListSelectable;
+  }
+  set selectable(value) {
+    this._selectable = value;
+    this._changeDetectorRef.markForCheck();
+  }
+  _selectable = true;
+  /** Whether the chip is selected. */
+  get selected() {
+    return this._selected;
+  }
+  set selected(value) {
+    this._setSelectedState(value, false, true);
+  }
+  _selected = false;
+  /**
+   * The ARIA selected applied to the chip. Conforms to WAI ARIA best practices for listbox
+   * interaction patterns.
+   *
+   * From [WAI ARIA Listbox authoring practices guide](
+   * https://www.w3.org/WAI/ARIA/apg/patterns/listbox/):
+   *  "If any options are selected, each selected option has either aria-selected or aria-checked
+   *  set to true. All options that are selectable but not selected have either aria-selected or
+   *  aria-checked set to false."
+   *
+   * Set `aria-selected="false"` on not-selected listbox options that are selectable to fix
+   * VoiceOver reading every option as "selected" (#25736).
+   */
+  get ariaSelected() {
+    return this.selectable ? this.selected.toString() : null;
+  }
+  /** The unstyled chip selector for this component. */
+  basicChipAttrName = "mat-basic-chip-option";
+  /** Emitted when the chip is selected or deselected. */
+  selectionChange = new EventEmitter();
+  ngOnInit() {
+    super.ngOnInit();
+    this.role = "presentation";
+  }
+  /** Selects the chip. */
+  select() {
+    this._setSelectedState(true, false, true);
+  }
+  /** Deselects the chip. */
+  deselect() {
+    this._setSelectedState(false, false, true);
+  }
+  /** Selects this chip and emits userInputSelection event */
+  selectViaInteraction() {
+    this._setSelectedState(true, true, true);
+  }
+  /** Toggles the current selected state of this chip. */
+  toggleSelected(isUserInput = false) {
+    this._setSelectedState(!this.selected, isUserInput, true);
+    return this.selected;
+  }
+  _handlePrimaryActionInteraction() {
+    if (!this.disabled) {
+      this.focus();
+      if (this.selectable) {
+        this.toggleSelected(true);
+      }
+    }
+  }
+  _hasLeadingGraphic() {
+    if (this.leadingIcon) {
+      return true;
+    }
+    return !this._chipListHideSingleSelectionIndicator || this._chipListMultiple;
+  }
+  _setSelectedState(isSelected, isUserInput, emitEvent) {
+    if (isSelected !== this.selected) {
+      this._selected = isSelected;
+      if (emitEvent) {
+        this.selectionChange.emit({
+          source: this,
+          isUserInput,
+          selected: this.selected
+        });
+      }
+      this._changeDetectorRef.markForCheck();
+    }
+  }
+  static \u0275fac = /* @__PURE__ */ (() => {
+    let \u0275MatChipOption_BaseFactory;
+    return function MatChipOption_Factory(__ngFactoryType__) {
+      return (\u0275MatChipOption_BaseFactory || (\u0275MatChipOption_BaseFactory = \u0275\u0275getInheritedFactory(_MatChipOption)))(__ngFactoryType__ || _MatChipOption);
+    };
+  })();
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+    type: _MatChipOption,
+    selectors: [["mat-basic-chip-option"], ["", "mat-basic-chip-option", ""], ["mat-chip-option"], ["", "mat-chip-option", ""]],
+    hostAttrs: [1, "mat-mdc-chip", "mat-mdc-chip-option"],
+    hostVars: 37,
+    hostBindings: function MatChipOption_HostBindings(rf, ctx) {
+      if (rf & 2) {
+        \u0275\u0275domProperty("id", ctx.id);
+        \u0275\u0275attribute("tabindex", null)("aria-label", null)("aria-description", null)("role", ctx.role);
+        \u0275\u0275classProp("mdc-evolution-chip", !ctx._isBasicChip)("mdc-evolution-chip--filter", !ctx._isBasicChip)("mdc-evolution-chip--selectable", !ctx._isBasicChip)("mat-mdc-chip-selected", ctx.selected)("mat-mdc-chip-multiple", ctx._chipListMultiple)("mat-mdc-chip-disabled", ctx.disabled)("mat-mdc-chip-with-avatar", ctx.leadingIcon)("mdc-evolution-chip--disabled", ctx.disabled)("mdc-evolution-chip--selected", ctx.selected)("mdc-evolution-chip--selecting", !ctx._animationsDisabled)("mdc-evolution-chip--with-trailing-action", ctx._hasTrailingIcon())("mdc-evolution-chip--with-primary-icon", ctx.leadingIcon)("mdc-evolution-chip--with-primary-graphic", ctx._hasLeadingGraphic())("mdc-evolution-chip--with-avatar", ctx.leadingIcon)("mat-mdc-chip-highlighted", ctx.highlighted)("mat-mdc-chip-with-trailing-icon", ctx._hasTrailingIcon());
+      }
+    },
+    inputs: {
+      selectable: [2, "selectable", "selectable", booleanAttribute],
+      selected: [2, "selected", "selected", booleanAttribute]
+    },
+    outputs: {
+      selectionChange: "selectionChange"
+    },
+    features: [\u0275\u0275ProvidersFeature([{
+      provide: MatChip,
+      useExisting: _MatChipOption
+    }, {
+      provide: MAT_CHIP,
+      useExisting: _MatChipOption
+    }]), \u0275\u0275InheritDefinitionFeature],
+    ngContentSelectors: _c13,
+    decls: 8,
+    vars: 6,
+    consts: [[1, "mat-mdc-chip-focus-overlay"], [1, "mdc-evolution-chip__cell", "mdc-evolution-chip__cell--primary"], ["matChipAction", "", "role", "option", 3, "_allowFocusWhenDisabled"], [1, "mdc-evolution-chip__graphic", "mat-mdc-chip-graphic"], [1, "mdc-evolution-chip__text-label", "mat-mdc-chip-action-label"], [1, "mat-mdc-chip-primary-focus-indicator", "mat-focus-indicator"], [1, "mdc-evolution-chip__cell", "mdc-evolution-chip__cell--trailing"], [1, "mdc-evolution-chip__checkmark"], ["viewBox", "-2 -3 30 30", "focusable", "false", "aria-hidden", "true", 1, "mdc-evolution-chip__checkmark-svg"], ["fill", "none", "stroke", "currentColor", "d", "M1.73,12.91 8.1,19.28 22.79,4.59", 1, "mdc-evolution-chip__checkmark-path"]],
+    template: function MatChipOption_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275projectionDef(_c03);
+        \u0275\u0275element(0, "span", 0);
+        \u0275\u0275elementStart(1, "span", 1)(2, "button", 2);
+        \u0275\u0275conditionalCreate(3, MatChipOption_Conditional_3_Template, 5, 0, "span", 3);
+        \u0275\u0275elementStart(4, "span", 4);
+        \u0275\u0275projection(5);
+        \u0275\u0275element(6, "span", 5);
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275conditionalCreate(7, MatChipOption_Conditional_7_Template, 2, 0, "span", 6);
+      }
+      if (rf & 2) {
+        \u0275\u0275advance(2);
+        \u0275\u0275property("_allowFocusWhenDisabled", true);
+        \u0275\u0275attribute("aria-description", ctx.ariaDescription)("aria-label", ctx.ariaLabel)("aria-selected", ctx.ariaSelected);
+        \u0275\u0275advance();
+        \u0275\u0275conditional(ctx._hasLeadingGraphic() ? 3 : -1);
+        \u0275\u0275advance(4);
+        \u0275\u0275conditional(ctx._hasTrailingIcon() ? 7 : -1);
+      }
+    },
+    dependencies: [MatChipAction],
+    styles: [_c23],
+    encapsulation: 2,
+    changeDetection: 0
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatChipOption, [{
+    type: Component,
+    args: [{
+      selector: "mat-basic-chip-option, [mat-basic-chip-option], mat-chip-option, [mat-chip-option]",
+      host: {
+        "class": "mat-mdc-chip mat-mdc-chip-option",
+        "[class.mdc-evolution-chip]": "!_isBasicChip",
+        "[class.mdc-evolution-chip--filter]": "!_isBasicChip",
+        "[class.mdc-evolution-chip--selectable]": "!_isBasicChip",
+        "[class.mat-mdc-chip-selected]": "selected",
+        "[class.mat-mdc-chip-multiple]": "_chipListMultiple",
+        "[class.mat-mdc-chip-disabled]": "disabled",
+        "[class.mat-mdc-chip-with-avatar]": "leadingIcon",
+        "[class.mdc-evolution-chip--disabled]": "disabled",
+        "[class.mdc-evolution-chip--selected]": "selected",
+        // This class enables the transition on the checkmark. Usually MDC adds it when selection
+        // starts and removes it once the animation is finished. We don't need to go through all
+        // the trouble, because we only care about the selection animation. MDC needs to do it,
+        // because they also have an exit animation that we don't care about.
+        "[class.mdc-evolution-chip--selecting]": "!_animationsDisabled",
+        "[class.mdc-evolution-chip--with-trailing-action]": "_hasTrailingIcon()",
+        "[class.mdc-evolution-chip--with-primary-icon]": "leadingIcon",
+        "[class.mdc-evolution-chip--with-primary-graphic]": "_hasLeadingGraphic()",
+        "[class.mdc-evolution-chip--with-avatar]": "leadingIcon",
+        "[class.mat-mdc-chip-highlighted]": "highlighted",
+        "[class.mat-mdc-chip-with-trailing-icon]": "_hasTrailingIcon()",
+        "[attr.tabindex]": "null",
+        "[attr.aria-label]": "null",
+        "[attr.aria-description]": "null",
+        "[attr.role]": "role",
+        "[id]": "id"
+      },
+      providers: [{
+        provide: MatChip,
+        useExisting: MatChipOption
+      }, {
+        provide: MAT_CHIP,
+        useExisting: MatChipOption
+      }],
+      encapsulation: ViewEncapsulation.None,
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      imports: [MatChipAction],
+      template: '<span class="mat-mdc-chip-focus-overlay"></span>\n\n<span class="mdc-evolution-chip__cell mdc-evolution-chip__cell--primary">\n  <button\n    matChipAction\n    [_allowFocusWhenDisabled]="true"\n    [attr.aria-description]="ariaDescription"\n    [attr.aria-label]="ariaLabel"\n    [attr.aria-selected]="ariaSelected"\n    role="option">\n    @if (_hasLeadingGraphic()) {\n      <span class="mdc-evolution-chip__graphic mat-mdc-chip-graphic">\n        <ng-content select="mat-chip-avatar, [matChipAvatar]"></ng-content>\n        <span class="mdc-evolution-chip__checkmark">\n          <svg\n            class="mdc-evolution-chip__checkmark-svg"\n            viewBox="-2 -3 30 30"\n            focusable="false"\n            aria-hidden="true">\n            <path class="mdc-evolution-chip__checkmark-path"\n                  fill="none" stroke="currentColor" d="M1.73,12.91 8.1,19.28 22.79,4.59" />\n          </svg>\n        </span>\n      </span>\n    }\n    <span class="mdc-evolution-chip__text-label mat-mdc-chip-action-label">\n      <ng-content></ng-content>\n      <span class="mat-mdc-chip-primary-focus-indicator mat-focus-indicator"></span>\n    </span>\n  </button>\n</span>\n\n@if (_hasTrailingIcon()) {\n  <span class="mdc-evolution-chip__cell mdc-evolution-chip__cell--trailing">\n    <ng-content select="mat-chip-trailing-icon,[matChipRemove],[matChipTrailingIcon]"></ng-content>\n  </span>\n}\n',
+      styles: ['.mdc-evolution-chip,.mdc-evolution-chip__cell,.mdc-evolution-chip__action{display:inline-flex;align-items:center}.mdc-evolution-chip{position:relative;max-width:100%}.mdc-evolution-chip__cell,.mdc-evolution-chip__action{height:100%}.mdc-evolution-chip__cell--primary{flex-basis:100%;overflow-x:hidden}.mdc-evolution-chip__cell--trailing{flex:1 0 auto}.mdc-evolution-chip__action{align-items:center;background:none;border:none;box-sizing:content-box;cursor:pointer;display:inline-flex;justify-content:center;outline:none;padding:0;text-decoration:none;color:inherit}.mdc-evolution-chip__action--presentational{cursor:auto}.mdc-evolution-chip--disabled,.mdc-evolution-chip__action:disabled{pointer-events:none}@media(forced-colors: active){.mdc-evolution-chip--disabled,.mdc-evolution-chip__action:disabled{forced-color-adjust:none}}.mdc-evolution-chip__action--primary{font:inherit;letter-spacing:inherit;white-space:inherit;overflow-x:hidden}.mat-mdc-standard-chip .mdc-evolution-chip__action--primary::before{border-width:var(--mat-chip-outline-width, 1px);border-radius:var(--mat-chip-container-shape-radius, 8px);box-sizing:border-box;content:"";height:100%;left:0;position:absolute;pointer-events:none;top:0;width:100%;z-index:1;border-style:solid}.mat-mdc-standard-chip .mdc-evolution-chip__action--primary{padding-left:12px;padding-right:12px}.mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__action--primary{padding-left:0;padding-right:12px}[dir=rtl] .mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__action--primary{padding-left:12px;padding-right:0}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__action--primary::before{border-color:var(--mat-chip-outline-color, var(--mat-sys-outline))}.mdc-evolution-chip__action--primary:not(.mdc-evolution-chip__action--presentational):not(.mdc-ripple-upgraded):focus::before{border-color:var(--mat-chip-focus-outline-color, var(--mat-sys-on-surface-variant))}.mat-mdc-standard-chip.mdc-evolution-chip--disabled .mdc-evolution-chip__action--primary::before{border-color:var(--mat-chip-disabled-outline-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-standard-chip.mdc-evolution-chip--selected .mdc-evolution-chip__action--primary::before{border-width:var(--mat-chip-flat-selected-outline-width, 0)}.mat-mdc-basic-chip .mdc-evolution-chip__action--primary{font:inherit}.mat-mdc-standard-chip.mdc-evolution-chip--with-leading-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:12px}[dir=rtl] .mat-mdc-standard-chip.mdc-evolution-chip--with-leading-action .mdc-evolution-chip__action--primary{padding-left:12px;padding-right:0}.mat-mdc-standard-chip.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:12px;padding-right:0}[dir=rtl] .mat-mdc-standard-chip.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:12px}.mat-mdc-standard-chip.mdc-evolution-chip--with-leading-action.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:0}.mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:0}[dir=rtl] .mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:0}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__action--primary{padding-left:0;padding-right:12px}[dir=rtl] .mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__action--primary{padding-left:12px;padding-right:0}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:0}[dir=rtl] .mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:0}.mdc-evolution-chip__action--secondary{position:relative;overflow:visible}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__action--secondary{color:var(--mat-chip-with-trailing-icon-trailing-icon-color, var(--mat-sys-on-surface-variant))}.mat-mdc-standard-chip.mdc-evolution-chip--disabled .mdc-evolution-chip__action--secondary{color:var(--mat-chip-with-trailing-icon-disabled-trailing-icon-color, var(--mat-sys-on-surface))}.mat-mdc-standard-chip.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--secondary{padding-left:8px;padding-right:8px}.mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--secondary{padding-left:8px;padding-right:8px}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--secondary{padding-left:8px;padding-right:8px}[dir=rtl] .mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--secondary{padding-left:8px;padding-right:8px}.mdc-evolution-chip__text-label{-webkit-user-select:none;user-select:none;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}.mat-mdc-standard-chip .mdc-evolution-chip__text-label{font-family:var(--mat-chip-label-text-font, var(--mat-sys-label-large-font));line-height:var(--mat-chip-label-text-line-height, var(--mat-sys-label-large-line-height));font-size:var(--mat-chip-label-text-size, var(--mat-sys-label-large-size));font-weight:var(--mat-chip-label-text-weight, var(--mat-sys-label-large-weight));letter-spacing:var(--mat-chip-label-text-tracking, var(--mat-sys-label-large-tracking))}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__text-label{color:var(--mat-chip-label-text-color, var(--mat-sys-on-surface-variant))}.mat-mdc-standard-chip.mdc-evolution-chip--selected:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__text-label{color:var(--mat-chip-selected-label-text-color, var(--mat-sys-on-secondary-container))}.mat-mdc-standard-chip.mdc-evolution-chip--disabled .mdc-evolution-chip__text-label,.mat-mdc-standard-chip.mdc-evolution-chip--selected.mdc-evolution-chip--disabled .mdc-evolution-chip__text-label{color:var(--mat-chip-disabled-label-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent))}.mdc-evolution-chip__graphic{align-items:center;display:inline-flex;justify-content:center;overflow:hidden;pointer-events:none;position:relative;flex:1 0 auto}.mat-mdc-standard-chip .mdc-evolution-chip__graphic{width:var(--mat-chip-with-avatar-avatar-size, 24px);height:var(--mat-chip-with-avatar-avatar-size, 24px);font-size:var(--mat-chip-with-avatar-avatar-size, 24px)}.mdc-evolution-chip--selecting .mdc-evolution-chip__graphic{transition:width 150ms 0ms cubic-bezier(0.4, 0, 0.2, 1)}.mdc-evolution-chip--selectable:not(.mdc-evolution-chip--selected):not(.mdc-evolution-chip--with-primary-icon) .mdc-evolution-chip__graphic{width:0}.mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__graphic{padding-left:6px;padding-right:6px}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__graphic{padding-left:4px;padding-right:8px}[dir=rtl] .mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__graphic{padding-left:8px;padding-right:4px}.mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__graphic{padding-left:6px;padding-right:6px}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__graphic{padding-left:4px;padding-right:8px}[dir=rtl] .mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__graphic{padding-left:8px;padding-right:4px}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-leading-action .mdc-evolution-chip__graphic{padding-left:0}.mdc-evolution-chip__checkmark{position:absolute;opacity:0;top:50%;left:50%;height:20px;width:20px}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__checkmark{color:var(--mat-chip-with-icon-selected-icon-color, var(--mat-sys-on-secondary-container))}.mat-mdc-standard-chip.mdc-evolution-chip--disabled .mdc-evolution-chip__checkmark{color:var(--mat-chip-with-icon-disabled-icon-color, var(--mat-sys-on-surface))}.mdc-evolution-chip--selecting .mdc-evolution-chip__checkmark{transition:transform 150ms 0ms cubic-bezier(0.4, 0, 0.2, 1);transform:translate(-75%, -50%)}.mdc-evolution-chip--selected .mdc-evolution-chip__checkmark{transform:translate(-50%, -50%);opacity:1}.mdc-evolution-chip__checkmark-svg{display:block}.mdc-evolution-chip__checkmark-path{stroke-width:2px;stroke-dasharray:29.7833385;stroke-dashoffset:29.7833385;stroke:currentColor}.mdc-evolution-chip--selecting .mdc-evolution-chip__checkmark-path{transition:stroke-dashoffset 150ms 45ms cubic-bezier(0.4, 0, 0.2, 1)}.mdc-evolution-chip--selected .mdc-evolution-chip__checkmark-path{stroke-dashoffset:0}@media(forced-colors: active){.mdc-evolution-chip__checkmark-path{stroke:CanvasText !important}}.mat-mdc-standard-chip .mdc-evolution-chip__icon--trailing{height:18px;width:18px;font-size:18px}.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--trailing.mat-mdc-chip-remove{opacity:calc(var(--mat-chip-trailing-action-opacity, 1)*var(--mat-chip-with-trailing-icon-disabled-trailing-icon-opacity, 0.38))}.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--trailing.mat-mdc-chip-remove:focus{opacity:calc(var(--mat-chip-trailing-action-focus-opacity, 1)*var(--mat-chip-with-trailing-icon-disabled-trailing-icon-opacity, 0.38))}.mat-mdc-standard-chip{border-radius:var(--mat-chip-container-shape-radius, 8px);height:var(--mat-chip-container-height, 32px)}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled){background-color:var(--mat-chip-elevated-container-color, transparent)}.mat-mdc-standard-chip.mdc-evolution-chip--disabled{background-color:var(--mat-chip-elevated-disabled-container-color)}.mat-mdc-standard-chip.mdc-evolution-chip--selected:not(.mdc-evolution-chip--disabled){background-color:var(--mat-chip-elevated-selected-container-color, var(--mat-sys-secondary-container))}.mat-mdc-standard-chip.mdc-evolution-chip--selected.mdc-evolution-chip--disabled{background-color:var(--mat-chip-flat-disabled-selected-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}@media(forced-colors: active){.mat-mdc-standard-chip{outline:solid 1px}}.mat-mdc-standard-chip .mdc-evolution-chip__icon--primary{border-radius:var(--mat-chip-with-avatar-avatar-shape-radius, 24px);width:var(--mat-chip-with-icon-icon-size, 18px);height:var(--mat-chip-with-icon-icon-size, 18px);font-size:var(--mat-chip-with-icon-icon-size, 18px)}.mdc-evolution-chip--selected .mdc-evolution-chip__icon--primary{opacity:0}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__icon--primary{color:var(--mat-chip-with-icon-icon-color, var(--mat-sys-on-surface-variant))}.mat-mdc-standard-chip.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--primary{color:var(--mat-chip-with-icon-disabled-icon-color, var(--mat-sys-on-surface))}.mat-mdc-chip-highlighted{--mat-chip-with-icon-icon-color: var(--mat-chip-with-icon-selected-icon-color, var(--mat-sys-on-secondary-container));--mat-chip-elevated-container-color: var(--mat-chip-elevated-selected-container-color, var(--mat-sys-secondary-container));--mat-chip-label-text-color: var(--mat-chip-selected-label-text-color, var(--mat-sys-on-secondary-container));--mat-chip-outline-width: var(--mat-chip-flat-selected-outline-width, 0)}.mat-mdc-chip-focus-overlay{background:var(--mat-chip-focus-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-chip-selected .mat-mdc-chip-focus-overlay,.mat-mdc-chip-highlighted .mat-mdc-chip-focus-overlay{background:var(--mat-chip-selected-focus-state-layer-color, var(--mat-sys-on-secondary-container))}.mat-mdc-chip:hover .mat-mdc-chip-focus-overlay{background:var(--mat-chip-hover-state-layer-color, var(--mat-sys-on-surface-variant));opacity:var(--mat-chip-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-chip-focus-overlay .mat-mdc-chip-selected:hover,.mat-mdc-chip-highlighted:hover .mat-mdc-chip-focus-overlay{background:var(--mat-chip-selected-hover-state-layer-color, var(--mat-sys-on-secondary-container));opacity:var(--mat-chip-selected-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-chip.cdk-focused .mat-mdc-chip-focus-overlay{background:var(--mat-chip-focus-state-layer-color, var(--mat-sys-on-surface-variant));opacity:var(--mat-chip-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-chip-selected.cdk-focused .mat-mdc-chip-focus-overlay,.mat-mdc-chip-highlighted.cdk-focused .mat-mdc-chip-focus-overlay{background:var(--mat-chip-selected-focus-state-layer-color, var(--mat-sys-on-secondary-container));opacity:var(--mat-chip-selected-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mdc-evolution-chip--disabled:not(.mdc-evolution-chip--selected) .mat-mdc-chip-avatar{opacity:var(--mat-chip-with-avatar-disabled-avatar-opacity, 0.38)}.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--trailing{opacity:var(--mat-chip-with-trailing-icon-disabled-trailing-icon-opacity, 0.38)}.mdc-evolution-chip--disabled.mdc-evolution-chip--selected .mdc-evolution-chip__checkmark{opacity:var(--mat-chip-with-icon-disabled-icon-opacity, 0.38)}.mat-mdc-standard-chip.mdc-evolution-chip--disabled{opacity:var(--mat-chip-disabled-container-opacity, 1)}.mat-mdc-standard-chip.mdc-evolution-chip--selected .mdc-evolution-chip__icon--trailing,.mat-mdc-standard-chip.mat-mdc-chip-highlighted .mdc-evolution-chip__icon--trailing{color:var(--mat-chip-selected-trailing-icon-color, var(--mat-sys-on-secondary-container))}.mat-mdc-standard-chip.mdc-evolution-chip--selected.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--trailing,.mat-mdc-standard-chip.mat-mdc-chip-highlighted.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--trailing{color:var(--mat-chip-selected-disabled-trailing-icon-color, var(--mat-sys-on-surface))}.mat-mdc-chip-edit,.mat-mdc-chip-remove{opacity:var(--mat-chip-trailing-action-opacity, 1)}.mat-mdc-chip-edit:focus,.mat-mdc-chip-remove:focus{opacity:var(--mat-chip-trailing-action-focus-opacity, 1)}.mat-mdc-chip-edit::after,.mat-mdc-chip-remove::after{background-color:var(--mat-chip-trailing-action-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-chip-edit:hover::after,.mat-mdc-chip-remove:hover::after{opacity:var(--mat-chip-trailing-action-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-chip-edit:focus::after,.mat-mdc-chip-remove:focus::after{opacity:var(--mat-chip-trailing-action-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-chip-selected .mat-mdc-chip-remove::after,.mat-mdc-chip-highlighted .mat-mdc-chip-remove::after{background-color:var(--mat-chip-selected-trailing-action-state-layer-color, var(--mat-sys-on-secondary-container))}.mat-mdc-standard-chip{-webkit-tap-highlight-color:rgba(0,0,0,0)}.mat-mdc-standard-chip .mdc-evolution-chip__cell--primary,.mat-mdc-standard-chip .mdc-evolution-chip__action--primary,.mat-mdc-standard-chip .mat-mdc-chip-action-label{overflow:visible}.mat-mdc-standard-chip .mat-mdc-chip-graphic,.mat-mdc-standard-chip .mat-mdc-chip-trailing-icon{box-sizing:content-box}.mat-mdc-standard-chip._mat-animation-noopable,.mat-mdc-standard-chip._mat-animation-noopable .mdc-evolution-chip__graphic,.mat-mdc-standard-chip._mat-animation-noopable .mdc-evolution-chip__checkmark,.mat-mdc-standard-chip._mat-animation-noopable .mdc-evolution-chip__checkmark-path{transition-duration:1ms;animation-duration:1ms}.mat-mdc-chip-focus-overlay{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;opacity:0;border-radius:inherit;transition:opacity 150ms linear}._mat-animation-noopable .mat-mdc-chip-focus-overlay{transition:none}.mat-mdc-basic-chip .mat-mdc-chip-focus-overlay{display:none}.mat-mdc-chip .mat-ripple.mat-mdc-chip-ripple{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;border-radius:inherit}.mat-mdc-chip-avatar{text-align:center;line-height:1;color:var(--mat-chip-with-icon-icon-color, currentColor)}.mat-mdc-chip{position:relative;z-index:0}.mat-mdc-chip-action-label{text-align:left;z-index:1}[dir=rtl] .mat-mdc-chip-action-label{text-align:right}.mat-mdc-chip.mdc-evolution-chip--with-trailing-action .mat-mdc-chip-action-label{position:relative}.mat-mdc-chip-action-label .mat-mdc-chip-primary-focus-indicator{position:absolute;top:0;right:0;bottom:0;left:0;pointer-events:none}.mat-mdc-chip-action-label .mat-focus-indicator::before{margin:calc(calc(var(--mat-focus-indicator-border-width, 3px) + 2px)*-1)}.mat-mdc-chip-edit::before,.mat-mdc-chip-remove::before{margin:calc(var(--mat-focus-indicator-border-width, 3px)*-1);left:8px;right:8px}.mat-mdc-chip-edit::after,.mat-mdc-chip-remove::after{content:"";display:block;opacity:0;position:absolute;top:-3px;bottom:-3px;left:5px;right:5px;border-radius:50%;box-sizing:border-box;padding:12px;margin:-12px;background-clip:content-box}.mat-mdc-chip-edit .mat-icon,.mat-mdc-chip-remove .mat-icon{width:18px;height:18px;font-size:18px;box-sizing:content-box}.mat-chip-edit-input{cursor:text;display:inline-block;color:inherit;outline:0}@media(forced-colors: active){.mat-mdc-chip-selected:not(.mat-mdc-chip-multiple){outline-width:3px}}.mat-mdc-chip-action:focus .mat-focus-indicator::before{content:""}.mdc-evolution-chip__icon,.mat-mdc-chip-edit .mat-icon,.mat-mdc-chip-remove .mat-icon{min-height:fit-content}\n']
+    }]
+  }], null, {
+    selectable: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    selected: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    selectionChange: [{
+      type: Output
+    }]
+  });
+})();
+var MatChipEditInput = class _MatChipEditInput {
+  _elementRef = inject2(ElementRef);
+  _document = inject2(DOCUMENT);
+  constructor() {
+  }
+  initialize(initialValue) {
+    this.getNativeElement().focus();
+    this.setValue(initialValue);
+  }
+  getNativeElement() {
+    return this._elementRef.nativeElement;
+  }
+  setValue(value) {
+    this.getNativeElement().textContent = value;
+    this._moveCursorToEndOfInput();
+  }
+  getValue() {
+    return this.getNativeElement().textContent || "";
+  }
+  _moveCursorToEndOfInput() {
+    const range = this._document.createRange();
+    range.selectNodeContents(this.getNativeElement());
+    range.collapse(false);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+  static \u0275fac = function MatChipEditInput_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatChipEditInput)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _MatChipEditInput,
+    selectors: [["span", "matChipEditInput", ""]],
+    hostAttrs: ["role", "textbox", "tabindex", "-1", "contenteditable", "true", 1, "mat-chip-edit-input"]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatChipEditInput, [{
+    type: Directive,
+    args: [{
+      selector: "span[matChipEditInput]",
+      host: {
+        "class": "mat-chip-edit-input",
+        "role": "textbox",
+        "tabindex": "-1",
+        "contenteditable": "true"
+      }
+    }]
+  }], () => [], null);
+})();
+var MatChipRow = class _MatChipRow extends MatChip {
+  basicChipAttrName = "mat-basic-chip-row";
+  /**
+   * The editing action has to be triggered in a timeout. While we're waiting on it, a blur
+   * event might occur which will interrupt the editing. This flag is used to avoid interruptions
+   * while the editing action is being initialized.
+   */
+  _editStartPending = false;
+  editable = false;
+  /** Emitted when the chip is edited. */
+  edited = new EventEmitter();
+  /** The default chip edit input that is used if none is projected into this chip row. */
+  defaultEditInput;
+  /** The projected chip edit input. */
+  contentEditInput;
+  /**
+   * Set on a mousedown when the chip is already focused via mouse or keyboard.
+   *
+   * This allows us to ensure chip is already focused when deciding whether to enter the
+   * edit mode on a subsequent click. Otherwise, the chip appears focused when handling the
+   * first click event.
+   */
+  _alreadyFocused = false;
+  _isEditing = false;
+  constructor() {
+    super();
+    this.role = "row";
+    this._onBlur.pipe(takeUntil(this.destroyed)).subscribe(() => {
+      if (this._isEditing && !this._editStartPending) {
+        this._onEditFinish();
+      }
+      this._alreadyFocused = false;
+    });
+  }
+  ngAfterViewInit() {
+    super.ngAfterViewInit();
+    this._ngZone.runOutsideAngular(() => {
+      this._elementRef.nativeElement.addEventListener("mousedown", () => this._alreadyFocused = this._hasFocus());
+    });
+  }
+  _hasLeadingActionIcon() {
+    return !this._isEditing && !!this.editIcon;
+  }
+  _hasTrailingIcon() {
+    return !this._isEditing && super._hasTrailingIcon();
+  }
+  /** Sends focus to the first gridcell when the user clicks anywhere inside the chip. */
+  _handleFocus() {
+    if (!this._isEditing && !this.disabled) {
+      this.focus();
+    }
+  }
+  _handleKeydown(event) {
+    if (event.keyCode === ENTER && !this.disabled) {
+      if (this._isEditing) {
+        event.preventDefault();
+        this._onEditFinish();
+      } else if (this.editable) {
+        this._startEditing(event);
+      }
+    } else if (this._isEditing) {
+      event.stopPropagation();
+    } else {
+      super._handleKeydown(event);
+    }
+  }
+  _handleClick(event) {
+    if (!this.disabled && this.editable && !this._isEditing && this._alreadyFocused) {
+      event.preventDefault();
+      event.stopPropagation();
+      this._startEditing(event);
+    }
+  }
+  _handleDoubleclick(event) {
+    if (!this.disabled && this.editable) {
+      this._startEditing(event);
+    }
+  }
+  _edit() {
+    this._changeDetectorRef.markForCheck();
+    this._startEditing();
+  }
+  _startEditing(event) {
+    if (!this.primaryAction || this.removeIcon && !!event && this._getSourceAction(event.target) === this.removeIcon) {
+      return;
+    }
+    const value = this.value;
+    this._isEditing = this._editStartPending = true;
+    afterNextRender(() => {
+      this._getEditInput().initialize(value);
+      setTimeout(() => this._ngZone.run(() => this._editStartPending = false));
+    }, {
+      injector: this._injector
+    });
+  }
+  _onEditFinish() {
+    this._isEditing = this._editStartPending = false;
+    this.edited.emit({
+      chip: this,
+      value: this._getEditInput().getValue()
+    });
+    if (this._document.activeElement === this._getEditInput().getNativeElement() || this._document.activeElement === this._document.body) {
+      this.primaryAction.focus();
+    }
+  }
+  _isRippleDisabled() {
+    return super._isRippleDisabled() || this._isEditing;
+  }
+  /**
+   * Gets the projected chip edit input, or the default input if none is projected in. One of these
+   * two values is guaranteed to be defined.
+   */
+  _getEditInput() {
+    return this.contentEditInput || this.defaultEditInput;
+  }
+  static \u0275fac = function MatChipRow_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatChipRow)();
+  };
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+    type: _MatChipRow,
+    selectors: [["mat-chip-row"], ["", "mat-chip-row", ""], ["mat-basic-chip-row"], ["", "mat-basic-chip-row", ""]],
+    contentQueries: function MatChipRow_ContentQueries(rf, ctx, dirIndex) {
+      if (rf & 1) {
+        \u0275\u0275contentQuery(dirIndex, MatChipEditInput, 5);
+      }
+      if (rf & 2) {
+        let _t;
+        \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx.contentEditInput = _t.first);
+      }
+    },
+    viewQuery: function MatChipRow_Query(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275viewQuery(MatChipEditInput, 5);
+      }
+      if (rf & 2) {
+        let _t;
+        \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx.defaultEditInput = _t.first);
+      }
+    },
+    hostAttrs: [1, "mat-mdc-chip", "mat-mdc-chip-row", "mdc-evolution-chip"],
+    hostVars: 29,
+    hostBindings: function MatChipRow_HostBindings(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275listener("focus", function MatChipRow_focus_HostBindingHandler() {
+          return ctx._handleFocus();
+        })("click", function MatChipRow_click_HostBindingHandler($event) {
+          return ctx._handleClick($event);
+        })("dblclick", function MatChipRow_dblclick_HostBindingHandler($event) {
+          return ctx._handleDoubleclick($event);
+        });
+      }
+      if (rf & 2) {
+        \u0275\u0275domProperty("id", ctx.id);
+        \u0275\u0275attribute("tabindex", ctx.disabled ? null : -1)("aria-label", null)("aria-description", null)("role", ctx.role);
+        \u0275\u0275classProp("mat-mdc-chip-with-avatar", ctx.leadingIcon)("mat-mdc-chip-disabled", ctx.disabled)("mat-mdc-chip-editing", ctx._isEditing)("mat-mdc-chip-editable", ctx.editable)("mdc-evolution-chip--disabled", ctx.disabled)("mdc-evolution-chip--with-leading-action", ctx._hasLeadingActionIcon())("mdc-evolution-chip--with-trailing-action", ctx._hasTrailingIcon())("mdc-evolution-chip--with-primary-graphic", ctx.leadingIcon)("mdc-evolution-chip--with-primary-icon", ctx.leadingIcon)("mdc-evolution-chip--with-avatar", ctx.leadingIcon)("mat-mdc-chip-highlighted", ctx.highlighted)("mat-mdc-chip-with-trailing-icon", ctx._hasTrailingIcon());
+      }
+    },
+    inputs: {
+      editable: "editable"
+    },
+    outputs: {
+      edited: "edited"
+    },
+    features: [\u0275\u0275ProvidersFeature([{
+      provide: MatChip,
+      useExisting: _MatChipRow
+    }, {
+      provide: MAT_CHIP,
+      useExisting: _MatChipRow
+    }]), \u0275\u0275InheritDefinitionFeature],
+    ngContentSelectors: _c43,
+    decls: 9,
+    vars: 8,
+    consts: [[1, "mat-mdc-chip-focus-overlay"], ["role", "gridcell", 1, "mdc-evolution-chip__cell", "mdc-evolution-chip__cell--leading"], ["role", "gridcell", "matChipAction", "", 1, "mdc-evolution-chip__cell", "mdc-evolution-chip__cell--primary", 3, "disabled"], [1, "mdc-evolution-chip__graphic", "mat-mdc-chip-graphic"], [1, "mdc-evolution-chip__text-label", "mat-mdc-chip-action-label"], ["aria-hidden", "true", 1, "mat-mdc-chip-primary-focus-indicator", "mat-focus-indicator"], ["role", "gridcell", 1, "mdc-evolution-chip__cell", "mdc-evolution-chip__cell--trailing"], ["matChipEditInput", ""]],
+    template: function MatChipRow_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275projectionDef(_c33);
+        \u0275\u0275conditionalCreate(0, MatChipRow_Conditional_0_Template, 1, 0, "span", 0);
+        \u0275\u0275conditionalCreate(1, MatChipRow_Conditional_1_Template, 2, 0, "span", 1);
+        \u0275\u0275elementStart(2, "span", 2);
+        \u0275\u0275conditionalCreate(3, MatChipRow_Conditional_3_Template, 2, 0, "span", 3);
+        \u0275\u0275elementStart(4, "span", 4);
+        \u0275\u0275conditionalCreate(5, MatChipRow_Conditional_5_Template, 2, 1)(6, MatChipRow_Conditional_6_Template, 1, 0);
+        \u0275\u0275element(7, "span", 5);
+        \u0275\u0275elementEnd()();
+        \u0275\u0275conditionalCreate(8, MatChipRow_Conditional_8_Template, 2, 0, "span", 6);
+      }
+      if (rf & 2) {
+        \u0275\u0275conditional(!ctx._isEditing ? 0 : -1);
+        \u0275\u0275advance();
+        \u0275\u0275conditional(ctx._hasLeadingActionIcon() ? 1 : -1);
+        \u0275\u0275advance();
+        \u0275\u0275property("disabled", ctx.disabled);
+        \u0275\u0275attribute("aria-description", ctx.ariaDescription)("aria-label", ctx.ariaLabel);
+        \u0275\u0275advance();
+        \u0275\u0275conditional(ctx.leadingIcon ? 3 : -1);
+        \u0275\u0275advance(2);
+        \u0275\u0275conditional(ctx._isEditing ? 5 : 6);
+        \u0275\u0275advance(3);
+        \u0275\u0275conditional(ctx._hasTrailingIcon() ? 8 : -1);
+      }
+    },
+    dependencies: [MatChipAction, MatChipEditInput],
+    styles: [_c23],
+    encapsulation: 2,
+    changeDetection: 0
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatChipRow, [{
+    type: Component,
+    args: [{
+      selector: "mat-chip-row, [mat-chip-row], mat-basic-chip-row, [mat-basic-chip-row]",
+      host: {
+        "class": "mat-mdc-chip mat-mdc-chip-row mdc-evolution-chip",
+        "[class.mat-mdc-chip-with-avatar]": "leadingIcon",
+        "[class.mat-mdc-chip-disabled]": "disabled",
+        "[class.mat-mdc-chip-editing]": "_isEditing",
+        "[class.mat-mdc-chip-editable]": "editable",
+        "[class.mdc-evolution-chip--disabled]": "disabled",
+        "[class.mdc-evolution-chip--with-leading-action]": "_hasLeadingActionIcon()",
+        "[class.mdc-evolution-chip--with-trailing-action]": "_hasTrailingIcon()",
+        "[class.mdc-evolution-chip--with-primary-graphic]": "leadingIcon",
+        "[class.mdc-evolution-chip--with-primary-icon]": "leadingIcon",
+        "[class.mdc-evolution-chip--with-avatar]": "leadingIcon",
+        "[class.mat-mdc-chip-highlighted]": "highlighted",
+        "[class.mat-mdc-chip-with-trailing-icon]": "_hasTrailingIcon()",
+        "[id]": "id",
+        // Has to have a negative tabindex in order to capture
+        // focus and redirect it to the primary action.
+        "[attr.tabindex]": "disabled ? null : -1",
+        "[attr.aria-label]": "null",
+        "[attr.aria-description]": "null",
+        "[attr.role]": "role",
+        "(focus)": "_handleFocus()",
+        "(click)": "_handleClick($event)",
+        "(dblclick)": "_handleDoubleclick($event)"
+      },
+      providers: [{
+        provide: MatChip,
+        useExisting: MatChipRow
+      }, {
+        provide: MAT_CHIP,
+        useExisting: MatChipRow
+      }],
+      encapsulation: ViewEncapsulation.None,
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      imports: [MatChipAction, MatChipEditInput],
+      template: '@if (!_isEditing) {\n  <span class="mat-mdc-chip-focus-overlay"></span>\n}\n\n@if (_hasLeadingActionIcon()) {\n  <span class="mdc-evolution-chip__cell mdc-evolution-chip__cell--leading" role="gridcell">\n    <ng-content select="[matChipEdit]"></ng-content>\n  </span>\n}\n<span class="mdc-evolution-chip__cell mdc-evolution-chip__cell--primary" role="gridcell"\n    matChipAction\n    [disabled]="disabled"\n    [attr.aria-description]="ariaDescription"\n    [attr.aria-label]="ariaLabel">\n  @if (leadingIcon) {\n    <span class="mdc-evolution-chip__graphic mat-mdc-chip-graphic">\n      <ng-content select="mat-chip-avatar, [matChipAvatar]"></ng-content>\n    </span>\n  }\n\n  <span class="mdc-evolution-chip__text-label mat-mdc-chip-action-label">\n    @if (_isEditing) {\n      @if (contentEditInput) {\n        <ng-content select="[matChipEditInput]"></ng-content>\n      } @else {\n        <span matChipEditInput></span>\n      }\n    } @else {\n      <ng-content></ng-content>\n    }\n\n    <span class="mat-mdc-chip-primary-focus-indicator mat-focus-indicator" aria-hidden="true"></span>\n  </span>\n</span>\n\n@if (_hasTrailingIcon()) {\n  <span\n    class="mdc-evolution-chip__cell mdc-evolution-chip__cell--trailing"\n    role="gridcell">\n    <ng-content select="mat-chip-trailing-icon,[matChipRemove],[matChipTrailingIcon]"></ng-content>\n  </span>\n}\n',
+      styles: ['.mdc-evolution-chip,.mdc-evolution-chip__cell,.mdc-evolution-chip__action{display:inline-flex;align-items:center}.mdc-evolution-chip{position:relative;max-width:100%}.mdc-evolution-chip__cell,.mdc-evolution-chip__action{height:100%}.mdc-evolution-chip__cell--primary{flex-basis:100%;overflow-x:hidden}.mdc-evolution-chip__cell--trailing{flex:1 0 auto}.mdc-evolution-chip__action{align-items:center;background:none;border:none;box-sizing:content-box;cursor:pointer;display:inline-flex;justify-content:center;outline:none;padding:0;text-decoration:none;color:inherit}.mdc-evolution-chip__action--presentational{cursor:auto}.mdc-evolution-chip--disabled,.mdc-evolution-chip__action:disabled{pointer-events:none}@media(forced-colors: active){.mdc-evolution-chip--disabled,.mdc-evolution-chip__action:disabled{forced-color-adjust:none}}.mdc-evolution-chip__action--primary{font:inherit;letter-spacing:inherit;white-space:inherit;overflow-x:hidden}.mat-mdc-standard-chip .mdc-evolution-chip__action--primary::before{border-width:var(--mat-chip-outline-width, 1px);border-radius:var(--mat-chip-container-shape-radius, 8px);box-sizing:border-box;content:"";height:100%;left:0;position:absolute;pointer-events:none;top:0;width:100%;z-index:1;border-style:solid}.mat-mdc-standard-chip .mdc-evolution-chip__action--primary{padding-left:12px;padding-right:12px}.mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__action--primary{padding-left:0;padding-right:12px}[dir=rtl] .mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__action--primary{padding-left:12px;padding-right:0}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__action--primary::before{border-color:var(--mat-chip-outline-color, var(--mat-sys-outline))}.mdc-evolution-chip__action--primary:not(.mdc-evolution-chip__action--presentational):not(.mdc-ripple-upgraded):focus::before{border-color:var(--mat-chip-focus-outline-color, var(--mat-sys-on-surface-variant))}.mat-mdc-standard-chip.mdc-evolution-chip--disabled .mdc-evolution-chip__action--primary::before{border-color:var(--mat-chip-disabled-outline-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-standard-chip.mdc-evolution-chip--selected .mdc-evolution-chip__action--primary::before{border-width:var(--mat-chip-flat-selected-outline-width, 0)}.mat-mdc-basic-chip .mdc-evolution-chip__action--primary{font:inherit}.mat-mdc-standard-chip.mdc-evolution-chip--with-leading-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:12px}[dir=rtl] .mat-mdc-standard-chip.mdc-evolution-chip--with-leading-action .mdc-evolution-chip__action--primary{padding-left:12px;padding-right:0}.mat-mdc-standard-chip.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:12px;padding-right:0}[dir=rtl] .mat-mdc-standard-chip.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:12px}.mat-mdc-standard-chip.mdc-evolution-chip--with-leading-action.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:0}.mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:0}[dir=rtl] .mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:0}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__action--primary{padding-left:0;padding-right:12px}[dir=rtl] .mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__action--primary{padding-left:12px;padding-right:0}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:0}[dir=rtl] .mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--primary{padding-left:0;padding-right:0}.mdc-evolution-chip__action--secondary{position:relative;overflow:visible}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__action--secondary{color:var(--mat-chip-with-trailing-icon-trailing-icon-color, var(--mat-sys-on-surface-variant))}.mat-mdc-standard-chip.mdc-evolution-chip--disabled .mdc-evolution-chip__action--secondary{color:var(--mat-chip-with-trailing-icon-disabled-trailing-icon-color, var(--mat-sys-on-surface))}.mat-mdc-standard-chip.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--secondary{padding-left:8px;padding-right:8px}.mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--secondary{padding-left:8px;padding-right:8px}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--secondary{padding-left:8px;padding-right:8px}[dir=rtl] .mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__action--secondary{padding-left:8px;padding-right:8px}.mdc-evolution-chip__text-label{-webkit-user-select:none;user-select:none;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}.mat-mdc-standard-chip .mdc-evolution-chip__text-label{font-family:var(--mat-chip-label-text-font, var(--mat-sys-label-large-font));line-height:var(--mat-chip-label-text-line-height, var(--mat-sys-label-large-line-height));font-size:var(--mat-chip-label-text-size, var(--mat-sys-label-large-size));font-weight:var(--mat-chip-label-text-weight, var(--mat-sys-label-large-weight));letter-spacing:var(--mat-chip-label-text-tracking, var(--mat-sys-label-large-tracking))}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__text-label{color:var(--mat-chip-label-text-color, var(--mat-sys-on-surface-variant))}.mat-mdc-standard-chip.mdc-evolution-chip--selected:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__text-label{color:var(--mat-chip-selected-label-text-color, var(--mat-sys-on-secondary-container))}.mat-mdc-standard-chip.mdc-evolution-chip--disabled .mdc-evolution-chip__text-label,.mat-mdc-standard-chip.mdc-evolution-chip--selected.mdc-evolution-chip--disabled .mdc-evolution-chip__text-label{color:var(--mat-chip-disabled-label-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent))}.mdc-evolution-chip__graphic{align-items:center;display:inline-flex;justify-content:center;overflow:hidden;pointer-events:none;position:relative;flex:1 0 auto}.mat-mdc-standard-chip .mdc-evolution-chip__graphic{width:var(--mat-chip-with-avatar-avatar-size, 24px);height:var(--mat-chip-with-avatar-avatar-size, 24px);font-size:var(--mat-chip-with-avatar-avatar-size, 24px)}.mdc-evolution-chip--selecting .mdc-evolution-chip__graphic{transition:width 150ms 0ms cubic-bezier(0.4, 0, 0.2, 1)}.mdc-evolution-chip--selectable:not(.mdc-evolution-chip--selected):not(.mdc-evolution-chip--with-primary-icon) .mdc-evolution-chip__graphic{width:0}.mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__graphic{padding-left:6px;padding-right:6px}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__graphic{padding-left:4px;padding-right:8px}[dir=rtl] .mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic .mdc-evolution-chip__graphic{padding-left:8px;padding-right:4px}.mat-mdc-standard-chip.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__graphic{padding-left:6px;padding-right:6px}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__graphic{padding-left:4px;padding-right:8px}[dir=rtl] .mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-trailing-action .mdc-evolution-chip__graphic{padding-left:8px;padding-right:4px}.mdc-evolution-chip--with-avatar.mdc-evolution-chip--with-primary-graphic.mdc-evolution-chip--with-leading-action .mdc-evolution-chip__graphic{padding-left:0}.mdc-evolution-chip__checkmark{position:absolute;opacity:0;top:50%;left:50%;height:20px;width:20px}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__checkmark{color:var(--mat-chip-with-icon-selected-icon-color, var(--mat-sys-on-secondary-container))}.mat-mdc-standard-chip.mdc-evolution-chip--disabled .mdc-evolution-chip__checkmark{color:var(--mat-chip-with-icon-disabled-icon-color, var(--mat-sys-on-surface))}.mdc-evolution-chip--selecting .mdc-evolution-chip__checkmark{transition:transform 150ms 0ms cubic-bezier(0.4, 0, 0.2, 1);transform:translate(-75%, -50%)}.mdc-evolution-chip--selected .mdc-evolution-chip__checkmark{transform:translate(-50%, -50%);opacity:1}.mdc-evolution-chip__checkmark-svg{display:block}.mdc-evolution-chip__checkmark-path{stroke-width:2px;stroke-dasharray:29.7833385;stroke-dashoffset:29.7833385;stroke:currentColor}.mdc-evolution-chip--selecting .mdc-evolution-chip__checkmark-path{transition:stroke-dashoffset 150ms 45ms cubic-bezier(0.4, 0, 0.2, 1)}.mdc-evolution-chip--selected .mdc-evolution-chip__checkmark-path{stroke-dashoffset:0}@media(forced-colors: active){.mdc-evolution-chip__checkmark-path{stroke:CanvasText !important}}.mat-mdc-standard-chip .mdc-evolution-chip__icon--trailing{height:18px;width:18px;font-size:18px}.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--trailing.mat-mdc-chip-remove{opacity:calc(var(--mat-chip-trailing-action-opacity, 1)*var(--mat-chip-with-trailing-icon-disabled-trailing-icon-opacity, 0.38))}.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--trailing.mat-mdc-chip-remove:focus{opacity:calc(var(--mat-chip-trailing-action-focus-opacity, 1)*var(--mat-chip-with-trailing-icon-disabled-trailing-icon-opacity, 0.38))}.mat-mdc-standard-chip{border-radius:var(--mat-chip-container-shape-radius, 8px);height:var(--mat-chip-container-height, 32px)}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled){background-color:var(--mat-chip-elevated-container-color, transparent)}.mat-mdc-standard-chip.mdc-evolution-chip--disabled{background-color:var(--mat-chip-elevated-disabled-container-color)}.mat-mdc-standard-chip.mdc-evolution-chip--selected:not(.mdc-evolution-chip--disabled){background-color:var(--mat-chip-elevated-selected-container-color, var(--mat-sys-secondary-container))}.mat-mdc-standard-chip.mdc-evolution-chip--selected.mdc-evolution-chip--disabled{background-color:var(--mat-chip-flat-disabled-selected-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}@media(forced-colors: active){.mat-mdc-standard-chip{outline:solid 1px}}.mat-mdc-standard-chip .mdc-evolution-chip__icon--primary{border-radius:var(--mat-chip-with-avatar-avatar-shape-radius, 24px);width:var(--mat-chip-with-icon-icon-size, 18px);height:var(--mat-chip-with-icon-icon-size, 18px);font-size:var(--mat-chip-with-icon-icon-size, 18px)}.mdc-evolution-chip--selected .mdc-evolution-chip__icon--primary{opacity:0}.mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__icon--primary{color:var(--mat-chip-with-icon-icon-color, var(--mat-sys-on-surface-variant))}.mat-mdc-standard-chip.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--primary{color:var(--mat-chip-with-icon-disabled-icon-color, var(--mat-sys-on-surface))}.mat-mdc-chip-highlighted{--mat-chip-with-icon-icon-color: var(--mat-chip-with-icon-selected-icon-color, var(--mat-sys-on-secondary-container));--mat-chip-elevated-container-color: var(--mat-chip-elevated-selected-container-color, var(--mat-sys-secondary-container));--mat-chip-label-text-color: var(--mat-chip-selected-label-text-color, var(--mat-sys-on-secondary-container));--mat-chip-outline-width: var(--mat-chip-flat-selected-outline-width, 0)}.mat-mdc-chip-focus-overlay{background:var(--mat-chip-focus-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-chip-selected .mat-mdc-chip-focus-overlay,.mat-mdc-chip-highlighted .mat-mdc-chip-focus-overlay{background:var(--mat-chip-selected-focus-state-layer-color, var(--mat-sys-on-secondary-container))}.mat-mdc-chip:hover .mat-mdc-chip-focus-overlay{background:var(--mat-chip-hover-state-layer-color, var(--mat-sys-on-surface-variant));opacity:var(--mat-chip-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-chip-focus-overlay .mat-mdc-chip-selected:hover,.mat-mdc-chip-highlighted:hover .mat-mdc-chip-focus-overlay{background:var(--mat-chip-selected-hover-state-layer-color, var(--mat-sys-on-secondary-container));opacity:var(--mat-chip-selected-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-chip.cdk-focused .mat-mdc-chip-focus-overlay{background:var(--mat-chip-focus-state-layer-color, var(--mat-sys-on-surface-variant));opacity:var(--mat-chip-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-chip-selected.cdk-focused .mat-mdc-chip-focus-overlay,.mat-mdc-chip-highlighted.cdk-focused .mat-mdc-chip-focus-overlay{background:var(--mat-chip-selected-focus-state-layer-color, var(--mat-sys-on-secondary-container));opacity:var(--mat-chip-selected-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mdc-evolution-chip--disabled:not(.mdc-evolution-chip--selected) .mat-mdc-chip-avatar{opacity:var(--mat-chip-with-avatar-disabled-avatar-opacity, 0.38)}.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--trailing{opacity:var(--mat-chip-with-trailing-icon-disabled-trailing-icon-opacity, 0.38)}.mdc-evolution-chip--disabled.mdc-evolution-chip--selected .mdc-evolution-chip__checkmark{opacity:var(--mat-chip-with-icon-disabled-icon-opacity, 0.38)}.mat-mdc-standard-chip.mdc-evolution-chip--disabled{opacity:var(--mat-chip-disabled-container-opacity, 1)}.mat-mdc-standard-chip.mdc-evolution-chip--selected .mdc-evolution-chip__icon--trailing,.mat-mdc-standard-chip.mat-mdc-chip-highlighted .mdc-evolution-chip__icon--trailing{color:var(--mat-chip-selected-trailing-icon-color, var(--mat-sys-on-secondary-container))}.mat-mdc-standard-chip.mdc-evolution-chip--selected.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--trailing,.mat-mdc-standard-chip.mat-mdc-chip-highlighted.mdc-evolution-chip--disabled .mdc-evolution-chip__icon--trailing{color:var(--mat-chip-selected-disabled-trailing-icon-color, var(--mat-sys-on-surface))}.mat-mdc-chip-edit,.mat-mdc-chip-remove{opacity:var(--mat-chip-trailing-action-opacity, 1)}.mat-mdc-chip-edit:focus,.mat-mdc-chip-remove:focus{opacity:var(--mat-chip-trailing-action-focus-opacity, 1)}.mat-mdc-chip-edit::after,.mat-mdc-chip-remove::after{background-color:var(--mat-chip-trailing-action-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-chip-edit:hover::after,.mat-mdc-chip-remove:hover::after{opacity:var(--mat-chip-trailing-action-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-chip-edit:focus::after,.mat-mdc-chip-remove:focus::after{opacity:var(--mat-chip-trailing-action-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-chip-selected .mat-mdc-chip-remove::after,.mat-mdc-chip-highlighted .mat-mdc-chip-remove::after{background-color:var(--mat-chip-selected-trailing-action-state-layer-color, var(--mat-sys-on-secondary-container))}.mat-mdc-standard-chip{-webkit-tap-highlight-color:rgba(0,0,0,0)}.mat-mdc-standard-chip .mdc-evolution-chip__cell--primary,.mat-mdc-standard-chip .mdc-evolution-chip__action--primary,.mat-mdc-standard-chip .mat-mdc-chip-action-label{overflow:visible}.mat-mdc-standard-chip .mat-mdc-chip-graphic,.mat-mdc-standard-chip .mat-mdc-chip-trailing-icon{box-sizing:content-box}.mat-mdc-standard-chip._mat-animation-noopable,.mat-mdc-standard-chip._mat-animation-noopable .mdc-evolution-chip__graphic,.mat-mdc-standard-chip._mat-animation-noopable .mdc-evolution-chip__checkmark,.mat-mdc-standard-chip._mat-animation-noopable .mdc-evolution-chip__checkmark-path{transition-duration:1ms;animation-duration:1ms}.mat-mdc-chip-focus-overlay{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;opacity:0;border-radius:inherit;transition:opacity 150ms linear}._mat-animation-noopable .mat-mdc-chip-focus-overlay{transition:none}.mat-mdc-basic-chip .mat-mdc-chip-focus-overlay{display:none}.mat-mdc-chip .mat-ripple.mat-mdc-chip-ripple{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;border-radius:inherit}.mat-mdc-chip-avatar{text-align:center;line-height:1;color:var(--mat-chip-with-icon-icon-color, currentColor)}.mat-mdc-chip{position:relative;z-index:0}.mat-mdc-chip-action-label{text-align:left;z-index:1}[dir=rtl] .mat-mdc-chip-action-label{text-align:right}.mat-mdc-chip.mdc-evolution-chip--with-trailing-action .mat-mdc-chip-action-label{position:relative}.mat-mdc-chip-action-label .mat-mdc-chip-primary-focus-indicator{position:absolute;top:0;right:0;bottom:0;left:0;pointer-events:none}.mat-mdc-chip-action-label .mat-focus-indicator::before{margin:calc(calc(var(--mat-focus-indicator-border-width, 3px) + 2px)*-1)}.mat-mdc-chip-edit::before,.mat-mdc-chip-remove::before{margin:calc(var(--mat-focus-indicator-border-width, 3px)*-1);left:8px;right:8px}.mat-mdc-chip-edit::after,.mat-mdc-chip-remove::after{content:"";display:block;opacity:0;position:absolute;top:-3px;bottom:-3px;left:5px;right:5px;border-radius:50%;box-sizing:border-box;padding:12px;margin:-12px;background-clip:content-box}.mat-mdc-chip-edit .mat-icon,.mat-mdc-chip-remove .mat-icon{width:18px;height:18px;font-size:18px;box-sizing:content-box}.mat-chip-edit-input{cursor:text;display:inline-block;color:inherit;outline:0}@media(forced-colors: active){.mat-mdc-chip-selected:not(.mat-mdc-chip-multiple){outline-width:3px}}.mat-mdc-chip-action:focus .mat-focus-indicator::before{content:""}.mdc-evolution-chip__icon,.mat-mdc-chip-edit .mat-icon,.mat-mdc-chip-remove .mat-icon{min-height:fit-content}\n']
+    }]
+  }], () => [], {
+    editable: [{
+      type: Input
+    }],
+    edited: [{
+      type: Output
+    }],
+    defaultEditInput: [{
+      type: ViewChild,
+      args: [MatChipEditInput]
+    }],
+    contentEditInput: [{
+      type: ContentChild,
+      args: [MatChipEditInput]
+    }]
+  });
+})();
+var MatChipSet = class _MatChipSet {
+  _elementRef = inject2(ElementRef);
+  _changeDetectorRef = inject2(ChangeDetectorRef);
+  _dir = inject2(Directionality, {
+    optional: true
+  });
+  /** Index of the last destroyed chip that had focus. */
+  _lastDestroyedFocusedChipIndex = null;
+  /** Used to manage focus within the chip list. */
+  _keyManager;
+  /** Subject that emits when the component has been destroyed. */
+  _destroyed = new Subject();
+  /** Role to use if it hasn't been overwritten by the user. */
+  _defaultRole = "presentation";
+  /** Combined stream of all of the child chips' focus events. */
+  get chipFocusChanges() {
+    return this._getChipStream((chip) => chip._onFocus);
+  }
+  /** Combined stream of all of the child chips' destroy events. */
+  get chipDestroyedChanges() {
+    return this._getChipStream((chip) => chip.destroyed);
+  }
+  /** Combined stream of all of the child chips' remove events. */
+  get chipRemovedChanges() {
+    return this._getChipStream((chip) => chip.removed);
+  }
+  /** Whether the chip set is disabled. */
+  get disabled() {
+    return this._disabled;
+  }
+  set disabled(value) {
+    this._disabled = value;
+    this._syncChipsState();
+  }
+  _disabled = false;
+  /** Whether the chip list contains chips or not. */
+  get empty() {
+    return !this._chips || this._chips.length === 0;
+  }
+  /** The ARIA role applied to the chip set. */
+  get role() {
+    if (this._explicitRole) {
+      return this._explicitRole;
+    }
+    return this.empty ? null : this._defaultRole;
+  }
+  /** Tabindex of the chip set. */
+  tabIndex = 0;
+  set role(value) {
+    this._explicitRole = value;
+  }
+  _explicitRole = null;
+  /** Whether any of the chips inside of this chip-set has focus. */
+  get focused() {
+    return this._hasFocusedChip();
+  }
+  /** The chips that are part of this chip set. */
+  _chips;
+  /** Flat list of all the actions contained within the chips. */
+  _chipActions = new QueryList();
+  constructor() {
+  }
+  ngAfterViewInit() {
+    this._setUpFocusManagement();
+    this._trackChipSetChanges();
+    this._trackDestroyedFocusedChip();
+  }
+  ngOnDestroy() {
+    this._keyManager?.destroy();
+    this._chipActions.destroy();
+    this._destroyed.next();
+    this._destroyed.complete();
+  }
+  /** Checks whether any of the chips is focused. */
+  _hasFocusedChip() {
+    return this._chips && this._chips.some((chip) => chip._hasFocus());
+  }
+  /** Syncs the chip-set's state with the individual chips. */
+  _syncChipsState() {
+    this._chips?.forEach((chip) => {
+      chip._chipListDisabled = this._disabled;
+      chip._changeDetectorRef.markForCheck();
+    });
+  }
+  /** Dummy method for subclasses to override. Base chip set cannot be focused. */
+  focus() {
+  }
+  /** Handles keyboard events on the chip set. */
+  _handleKeydown(event) {
+    if (this._originatesFromChip(event)) {
+      this._keyManager.onKeydown(event);
+    }
+  }
+  /**
+   * Utility to ensure all indexes are valid.
+   *
+   * @param index The index to be checked.
+   * @returns True if the index is valid for our list of chips.
+   */
+  _isValidIndex(index) {
+    return index >= 0 && index < this._chips.length;
+  }
+  /**
+   * Removes the `tabindex` from the chip set and resets it back afterwards, allowing the
+   * user to tab out of it. This prevents the set from capturing focus and redirecting
+   * it back to the first chip, creating a focus trap, if it user tries to tab away.
+   */
+  _allowFocusEscape() {
+    const previous = this._elementRef.nativeElement.tabIndex;
+    if (previous !== -1) {
+      this._elementRef.nativeElement.tabIndex = -1;
+      setTimeout(() => this._elementRef.nativeElement.tabIndex = previous);
+    }
+  }
+  /**
+   * Gets a stream of events from all the chips within the set.
+   * The stream will automatically incorporate any newly-added chips.
+   */
+  _getChipStream(mappingFunction) {
+    return this._chips.changes.pipe(startWith(null), switchMap(() => merge(...this._chips.map(mappingFunction))));
+  }
+  /** Checks whether an event comes from inside a chip element. */
+  _originatesFromChip(event) {
+    let currentElement = event.target;
+    while (currentElement && currentElement !== this._elementRef.nativeElement) {
+      if (currentElement.classList.contains("mat-mdc-chip")) {
+        return true;
+      }
+      currentElement = currentElement.parentElement;
+    }
+    return false;
+  }
+  /** Sets up the chip set's focus management logic. */
+  _setUpFocusManagement() {
+    this._chips.changes.pipe(startWith(this._chips)).subscribe((chips) => {
+      const actions = [];
+      chips.forEach((chip) => chip._getActions().forEach((action) => actions.push(action)));
+      this._chipActions.reset(actions);
+      this._chipActions.notifyOnChanges();
+    });
+    this._keyManager = new FocusKeyManager(this._chipActions).withVerticalOrientation().withHorizontalOrientation(this._dir ? this._dir.value : "ltr").withHomeAndEnd().skipPredicate((action) => this._skipPredicate(action));
+    this.chipFocusChanges.pipe(takeUntil(this._destroyed)).subscribe(({
+      chip
+    }) => {
+      const action = chip._getSourceAction(document.activeElement);
+      if (action) {
+        this._keyManager.updateActiveItem(action);
+      }
+    });
+    this._dir?.change.pipe(takeUntil(this._destroyed)).subscribe((direction) => this._keyManager.withHorizontalOrientation(direction));
+  }
+  /**
+   * Determines if key manager should avoid putting a given chip action in the tab index. Skip
+   * non-interactive and disabled actions since the user can't do anything with them.
+   */
+  _skipPredicate(action) {
+    return !action.isInteractive || action.disabled;
+  }
+  /** Listens to changes in the chip set and syncs up the state of the individual chips. */
+  _trackChipSetChanges() {
+    this._chips.changes.pipe(startWith(null), takeUntil(this._destroyed)).subscribe(() => {
+      if (this.disabled) {
+        Promise.resolve().then(() => this._syncChipsState());
+      }
+      this._redirectDestroyedChipFocus();
+    });
+  }
+  /** Starts tracking the destroyed chips in order to capture the focused one. */
+  _trackDestroyedFocusedChip() {
+    this.chipDestroyedChanges.pipe(takeUntil(this._destroyed)).subscribe((event) => {
+      const chipArray = this._chips.toArray();
+      const chipIndex = chipArray.indexOf(event.chip);
+      const hasFocus = event.chip._hasFocus();
+      const wasLastFocused = event.chip._hadFocusOnRemove && this._keyManager.activeItem && event.chip._getActions().includes(this._keyManager.activeItem);
+      const shouldMoveFocus = hasFocus || wasLastFocused;
+      if (this._isValidIndex(chipIndex) && shouldMoveFocus) {
+        this._lastDestroyedFocusedChipIndex = chipIndex;
+      }
+    });
+  }
+  /**
+   * Finds the next appropriate chip to move focus to,
+   * if the currently-focused chip is destroyed.
+   */
+  _redirectDestroyedChipFocus() {
+    if (this._lastDestroyedFocusedChipIndex == null) {
+      return;
+    }
+    if (this._chips.length) {
+      const newIndex = Math.min(this._lastDestroyedFocusedChipIndex, this._chips.length - 1);
+      const chipToFocus = this._chips.toArray()[newIndex];
+      if (chipToFocus.disabled) {
+        if (this._chips.length === 1) {
+          this.focus();
+        } else {
+          this._keyManager.setPreviousItemActive();
+        }
+      } else {
+        chipToFocus.focus();
+      }
+    } else {
+      this.focus();
+    }
+    this._lastDestroyedFocusedChipIndex = null;
+  }
+  static \u0275fac = function MatChipSet_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatChipSet)();
+  };
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+    type: _MatChipSet,
+    selectors: [["mat-chip-set"]],
+    contentQueries: function MatChipSet_ContentQueries(rf, ctx, dirIndex) {
+      if (rf & 1) {
+        \u0275\u0275contentQuery(dirIndex, MatChip, 5);
+      }
+      if (rf & 2) {
+        let _t;
+        \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx._chips = _t);
+      }
+    },
+    hostAttrs: [1, "mat-mdc-chip-set", "mdc-evolution-chip-set"],
+    hostVars: 1,
+    hostBindings: function MatChipSet_HostBindings(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275listener("keydown", function MatChipSet_keydown_HostBindingHandler($event) {
+          return ctx._handleKeydown($event);
+        });
+      }
+      if (rf & 2) {
+        \u0275\u0275attribute("role", ctx.role);
+      }
+    },
+    inputs: {
+      disabled: [2, "disabled", "disabled", booleanAttribute],
+      role: "role",
+      tabIndex: [2, "tabIndex", "tabIndex", (value) => value == null ? 0 : numberAttribute(value)]
+    },
+    ngContentSelectors: _c52,
+    decls: 2,
+    vars: 0,
+    consts: [["role", "presentation", 1, "mdc-evolution-chip-set__chips"]],
+    template: function MatChipSet_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275projectionDef();
+        \u0275\u0275domElementStart(0, "div", 0);
+        \u0275\u0275projection(1);
+        \u0275\u0275domElementEnd();
+      }
+    },
+    styles: [".mat-mdc-chip-set{display:flex}.mat-mdc-chip-set:focus{outline:none}.mat-mdc-chip-set .mdc-evolution-chip-set__chips{min-width:100%;margin-left:-8px;margin-right:0}.mat-mdc-chip-set .mdc-evolution-chip{margin:4px 0 4px 8px}[dir=rtl] .mat-mdc-chip-set .mdc-evolution-chip-set__chips{margin-left:0;margin-right:-8px}[dir=rtl] .mat-mdc-chip-set .mdc-evolution-chip{margin-left:0;margin-right:8px}.mdc-evolution-chip-set__chips{display:flex;flex-flow:wrap;min-width:0}.mat-mdc-chip-set-stacked{flex-direction:column;align-items:flex-start}.mat-mdc-chip-set-stacked .mat-mdc-chip{width:100%}.mat-mdc-chip-set-stacked .mdc-evolution-chip__graphic{flex-grow:0}.mat-mdc-chip-set-stacked .mdc-evolution-chip__action--primary{flex-basis:100%;justify-content:start}input.mat-mdc-chip-input{flex:1 0 150px;margin-left:8px}[dir=rtl] input.mat-mdc-chip-input{margin-left:0;margin-right:8px}.mat-mdc-form-field:not(.mat-form-field-hide-placeholder) input.mat-mdc-chip-input::placeholder{opacity:1}.mat-mdc-form-field:not(.mat-form-field-hide-placeholder) input.mat-mdc-chip-input::-moz-placeholder{opacity:1}.mat-mdc-form-field:not(.mat-form-field-hide-placeholder) input.mat-mdc-chip-input::-webkit-input-placeholder{opacity:1}.mat-mdc-form-field:not(.mat-form-field-hide-placeholder) input.mat-mdc-chip-input:-ms-input-placeholder{opacity:1}.mat-mdc-chip-set+input.mat-mdc-chip-input{margin-left:0;margin-right:0}\n"],
+    encapsulation: 2,
+    changeDetection: 0
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatChipSet, [{
+    type: Component,
+    args: [{
+      selector: "mat-chip-set",
+      template: `
+    <div class="mdc-evolution-chip-set__chips" role="presentation">
+      <ng-content></ng-content>
+    </div>
+  `,
+      host: {
+        "class": "mat-mdc-chip-set mdc-evolution-chip-set",
+        "(keydown)": "_handleKeydown($event)",
+        "[attr.role]": "role"
+      },
+      encapsulation: ViewEncapsulation.None,
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      styles: [".mat-mdc-chip-set{display:flex}.mat-mdc-chip-set:focus{outline:none}.mat-mdc-chip-set .mdc-evolution-chip-set__chips{min-width:100%;margin-left:-8px;margin-right:0}.mat-mdc-chip-set .mdc-evolution-chip{margin:4px 0 4px 8px}[dir=rtl] .mat-mdc-chip-set .mdc-evolution-chip-set__chips{margin-left:0;margin-right:-8px}[dir=rtl] .mat-mdc-chip-set .mdc-evolution-chip{margin-left:0;margin-right:8px}.mdc-evolution-chip-set__chips{display:flex;flex-flow:wrap;min-width:0}.mat-mdc-chip-set-stacked{flex-direction:column;align-items:flex-start}.mat-mdc-chip-set-stacked .mat-mdc-chip{width:100%}.mat-mdc-chip-set-stacked .mdc-evolution-chip__graphic{flex-grow:0}.mat-mdc-chip-set-stacked .mdc-evolution-chip__action--primary{flex-basis:100%;justify-content:start}input.mat-mdc-chip-input{flex:1 0 150px;margin-left:8px}[dir=rtl] input.mat-mdc-chip-input{margin-left:0;margin-right:8px}.mat-mdc-form-field:not(.mat-form-field-hide-placeholder) input.mat-mdc-chip-input::placeholder{opacity:1}.mat-mdc-form-field:not(.mat-form-field-hide-placeholder) input.mat-mdc-chip-input::-moz-placeholder{opacity:1}.mat-mdc-form-field:not(.mat-form-field-hide-placeholder) input.mat-mdc-chip-input::-webkit-input-placeholder{opacity:1}.mat-mdc-form-field:not(.mat-form-field-hide-placeholder) input.mat-mdc-chip-input:-ms-input-placeholder{opacity:1}.mat-mdc-chip-set+input.mat-mdc-chip-input{margin-left:0;margin-right:0}\n"]
+    }]
+  }], () => [], {
+    disabled: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    role: [{
+      type: Input
+    }],
+    tabIndex: [{
+      type: Input,
+      args: [{
+        transform: (value) => value == null ? 0 : numberAttribute(value)
+      }]
+    }],
+    _chips: [{
+      type: ContentChildren,
+      args: [MatChip, {
+        // We need to use `descendants: true`, because Ivy will no longer match
+        // indirect descendants if it's left as false.
+        descendants: true
+      }]
+    }]
+  });
+})();
+var MatChipListboxChange = class {
+  source;
+  value;
+  constructor(source, value) {
+    this.source = source;
+    this.value = value;
+  }
+};
+var MAT_CHIP_LISTBOX_CONTROL_VALUE_ACCESSOR = {
+  provide: NG_VALUE_ACCESSOR,
+  useExisting: forwardRef(() => MatChipListbox),
+  multi: true
+};
+var MatChipListbox = class _MatChipListbox extends MatChipSet {
+  /**
+   * Function when touched. Set as part of ControlValueAccessor implementation.
+   * @docs-private
+   */
+  _onTouched = () => {
+  };
+  /**
+   * Function when changed. Set as part of ControlValueAccessor implementation.
+   * @docs-private
+   */
+  _onChange = () => {
+  };
+  // TODO: MDC uses `grid` here
+  _defaultRole = "listbox";
+  /** Default chip options. */
+  _defaultOptions = inject2(MAT_CHIPS_DEFAULT_OPTIONS, {
+    optional: true
+  });
+  /** Whether the user should be allowed to select multiple chips. */
+  get multiple() {
+    return this._multiple;
+  }
+  set multiple(value) {
+    this._multiple = value;
+    this._syncListboxProperties();
+  }
+  _multiple = false;
+  /** The array of selected chips inside the chip listbox. */
+  get selected() {
+    const selectedChips = this._chips.toArray().filter((chip) => chip.selected);
+    return this.multiple ? selectedChips : selectedChips[0];
+  }
+  /** Orientation of the chip list. */
+  ariaOrientation = "horizontal";
+  /**
+   * Whether or not this chip listbox is selectable.
+   *
+   * When a chip listbox is not selectable, the selected states for all
+   * the chips inside the chip listbox are always ignored.
+   */
+  get selectable() {
+    return this._selectable;
+  }
+  set selectable(value) {
+    this._selectable = value;
+    this._syncListboxProperties();
+  }
+  _selectable = true;
+  /**
+   * A function to compare the option values with the selected values. The first argument
+   * is a value from an option. The second is a value from the selection. A boolean
+   * should be returned.
+   */
+  compareWith = (o1, o2) => o1 === o2;
+  /** Whether this chip listbox is required. */
+  required = false;
+  /** Whether checkmark indicator for single-selection options is hidden. */
+  get hideSingleSelectionIndicator() {
+    return this._hideSingleSelectionIndicator;
+  }
+  set hideSingleSelectionIndicator(value) {
+    this._hideSingleSelectionIndicator = value;
+    this._syncListboxProperties();
+  }
+  _hideSingleSelectionIndicator = this._defaultOptions?.hideSingleSelectionIndicator ?? false;
+  /** Combined stream of all of the child chips' selection change events. */
+  get chipSelectionChanges() {
+    return this._getChipStream((chip) => chip.selectionChange);
+  }
+  /** Combined stream of all of the child chips' blur events. */
+  get chipBlurChanges() {
+    return this._getChipStream((chip) => chip._onBlur);
+  }
+  /** The value of the listbox, which is the combined value of the selected chips. */
+  get value() {
+    return this._value;
+  }
+  set value(value) {
+    if (this._chips && this._chips.length) {
+      this._setSelectionByValue(value, false);
+    }
+    this._value = value;
+  }
+  _value;
+  /** Event emitted when the selected chip listbox value has been changed by the user. */
+  change = new EventEmitter();
+  _chips = void 0;
+  ngAfterContentInit() {
+    this._chips.changes.pipe(startWith(null), takeUntil(this._destroyed)).subscribe(() => {
+      if (this.value !== void 0) {
+        Promise.resolve().then(() => {
+          this._setSelectionByValue(this.value, false);
+        });
+      }
+      this._syncListboxProperties();
+    });
+    this.chipBlurChanges.pipe(takeUntil(this._destroyed)).subscribe(() => this._blur());
+    this.chipSelectionChanges.pipe(takeUntil(this._destroyed)).subscribe((event) => {
+      if (!this.multiple) {
+        this._chips.forEach((chip) => {
+          if (chip !== event.source) {
+            chip._setSelectedState(false, false, false);
+          }
+        });
+      }
+      if (event.isUserInput) {
+        this._propagateChanges();
+      }
+    });
+  }
+  /**
+   * Focuses the first selected chip in this chip listbox, or the first non-disabled chip when there
+   * are no selected chips.
+   */
+  focus() {
+    if (this.disabled) {
+      return;
+    }
+    const firstSelectedChip = this._getFirstSelectedChip();
+    if (firstSelectedChip && !firstSelectedChip.disabled) {
+      firstSelectedChip.focus();
+    } else if (this._chips.length > 0) {
+      this._keyManager.setFirstItemActive();
+    } else {
+      this._elementRef.nativeElement.focus();
+    }
+  }
+  /**
+   * Implemented as part of ControlValueAccessor.
+   * @docs-private
+   */
+  writeValue(value) {
+    if (value != null) {
+      this.value = value;
+    } else {
+      this.value = void 0;
+    }
+  }
+  /**
+   * Implemented as part of ControlValueAccessor.
+   * @docs-private
+   */
+  registerOnChange(fn) {
+    this._onChange = fn;
+  }
+  /**
+   * Implemented as part of ControlValueAccessor.
+   * @docs-private
+   */
+  registerOnTouched(fn) {
+    this._onTouched = fn;
+  }
+  /**
+   * Implemented as part of ControlValueAccessor.
+   * @docs-private
+   */
+  setDisabledState(isDisabled) {
+    this.disabled = isDisabled;
+  }
+  /** Selects all chips with value. */
+  _setSelectionByValue(value, isUserInput = true) {
+    this._clearSelection();
+    if (Array.isArray(value)) {
+      value.forEach((currentValue) => this._selectValue(currentValue, isUserInput));
+    } else {
+      this._selectValue(value, isUserInput);
+    }
+  }
+  /** When blurred, marks the field as touched when focus moved outside the chip listbox. */
+  _blur() {
+    if (!this.disabled) {
+      setTimeout(() => {
+        if (!this.focused) {
+          this._markAsTouched();
+        }
+      });
+    }
+  }
+  _keydown(event) {
+    if (event.keyCode === TAB) {
+      super._allowFocusEscape();
+    }
+  }
+  /** Marks the field as touched */
+  _markAsTouched() {
+    this._onTouched();
+    this._changeDetectorRef.markForCheck();
+  }
+  /** Emits change event to set the model value. */
+  _propagateChanges() {
+    let valueToEmit = null;
+    if (Array.isArray(this.selected)) {
+      valueToEmit = this.selected.map((chip) => chip.value);
+    } else {
+      valueToEmit = this.selected ? this.selected.value : void 0;
+    }
+    this._value = valueToEmit;
+    this.change.emit(new MatChipListboxChange(this, valueToEmit));
+    this._onChange(valueToEmit);
+    this._changeDetectorRef.markForCheck();
+  }
+  /**
+   * Deselects every chip in the listbox.
+   * @param skip Chip that should not be deselected.
+   */
+  _clearSelection(skip2) {
+    this._chips.forEach((chip) => {
+      if (chip !== skip2) {
+        chip.deselect();
+      }
+    });
+  }
+  /**
+   * Finds and selects the chip based on its value.
+   * @returns Chip that has the corresponding value.
+   */
+  _selectValue(value, isUserInput) {
+    const correspondingChip = this._chips.find((chip) => {
+      return chip.value != null && this.compareWith(chip.value, value);
+    });
+    if (correspondingChip) {
+      isUserInput ? correspondingChip.selectViaInteraction() : correspondingChip.select();
+    }
+    return correspondingChip;
+  }
+  /** Syncs the chip-listbox selection state with the individual chips. */
+  _syncListboxProperties() {
+    if (this._chips) {
+      Promise.resolve().then(() => {
+        this._chips.forEach((chip) => {
+          chip._chipListMultiple = this.multiple;
+          chip.chipListSelectable = this._selectable;
+          chip._chipListHideSingleSelectionIndicator = this.hideSingleSelectionIndicator;
+          chip._changeDetectorRef.markForCheck();
+        });
+      });
+    }
+  }
+  /** Returns the first selected chip in this listbox, or undefined if no chips are selected. */
+  _getFirstSelectedChip() {
+    if (Array.isArray(this.selected)) {
+      return this.selected.length ? this.selected[0] : void 0;
+    } else {
+      return this.selected;
+    }
+  }
+  /**
+   * Determines if key manager should avoid putting a given chip action in the tab index. Skip
+   * non-interactive actions since the user can't do anything with them.
+   */
+  _skipPredicate(action) {
+    return !action.isInteractive;
+  }
+  static \u0275fac = /* @__PURE__ */ (() => {
+    let \u0275MatChipListbox_BaseFactory;
+    return function MatChipListbox_Factory(__ngFactoryType__) {
+      return (\u0275MatChipListbox_BaseFactory || (\u0275MatChipListbox_BaseFactory = \u0275\u0275getInheritedFactory(_MatChipListbox)))(__ngFactoryType__ || _MatChipListbox);
+    };
+  })();
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+    type: _MatChipListbox,
+    selectors: [["mat-chip-listbox"]],
+    contentQueries: function MatChipListbox_ContentQueries(rf, ctx, dirIndex) {
+      if (rf & 1) {
+        \u0275\u0275contentQuery(dirIndex, MatChipOption, 5);
+      }
+      if (rf & 2) {
+        let _t;
+        \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx._chips = _t);
+      }
+    },
+    hostAttrs: [1, "mdc-evolution-chip-set", "mat-mdc-chip-listbox"],
+    hostVars: 10,
+    hostBindings: function MatChipListbox_HostBindings(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275listener("focus", function MatChipListbox_focus_HostBindingHandler() {
+          return ctx.focus();
+        })("blur", function MatChipListbox_blur_HostBindingHandler() {
+          return ctx._blur();
+        })("keydown", function MatChipListbox_keydown_HostBindingHandler($event) {
+          return ctx._keydown($event);
+        });
+      }
+      if (rf & 2) {
+        \u0275\u0275domProperty("tabIndex", ctx.disabled || ctx.empty ? -1 : ctx.tabIndex);
+        \u0275\u0275attribute("role", ctx.role)("aria-required", ctx.role ? ctx.required : null)("aria-disabled", ctx.disabled.toString())("aria-multiselectable", ctx.multiple)("aria-orientation", ctx.ariaOrientation);
+        \u0275\u0275classProp("mat-mdc-chip-list-disabled", ctx.disabled)("mat-mdc-chip-list-required", ctx.required);
+      }
+    },
+    inputs: {
+      multiple: [2, "multiple", "multiple", booleanAttribute],
+      ariaOrientation: [0, "aria-orientation", "ariaOrientation"],
+      selectable: [2, "selectable", "selectable", booleanAttribute],
+      compareWith: "compareWith",
+      required: [2, "required", "required", booleanAttribute],
+      hideSingleSelectionIndicator: [2, "hideSingleSelectionIndicator", "hideSingleSelectionIndicator", booleanAttribute],
+      value: "value"
+    },
+    outputs: {
+      change: "change"
+    },
+    features: [\u0275\u0275ProvidersFeature([MAT_CHIP_LISTBOX_CONTROL_VALUE_ACCESSOR]), \u0275\u0275InheritDefinitionFeature],
+    ngContentSelectors: _c52,
+    decls: 2,
+    vars: 0,
+    consts: [["role", "presentation", 1, "mdc-evolution-chip-set__chips"]],
+    template: function MatChipListbox_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275projectionDef();
+        \u0275\u0275domElementStart(0, "div", 0);
+        \u0275\u0275projection(1);
+        \u0275\u0275domElementEnd();
+      }
+    },
+    styles: [_c62],
+    encapsulation: 2,
+    changeDetection: 0
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatChipListbox, [{
+    type: Component,
+    args: [{
+      selector: "mat-chip-listbox",
+      template: `
+    <div class="mdc-evolution-chip-set__chips" role="presentation">
+      <ng-content></ng-content>
+    </div>
+  `,
+      host: {
+        "class": "mdc-evolution-chip-set mat-mdc-chip-listbox",
+        "[attr.role]": "role",
+        "[tabIndex]": "(disabled || empty) ? -1 : tabIndex",
+        "[attr.aria-required]": "role ? required : null",
+        "[attr.aria-disabled]": "disabled.toString()",
+        "[attr.aria-multiselectable]": "multiple",
+        "[attr.aria-orientation]": "ariaOrientation",
+        "[class.mat-mdc-chip-list-disabled]": "disabled",
+        "[class.mat-mdc-chip-list-required]": "required",
+        "(focus)": "focus()",
+        "(blur)": "_blur()",
+        "(keydown)": "_keydown($event)"
+      },
+      providers: [MAT_CHIP_LISTBOX_CONTROL_VALUE_ACCESSOR],
+      encapsulation: ViewEncapsulation.None,
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      styles: [".mat-mdc-chip-set{display:flex}.mat-mdc-chip-set:focus{outline:none}.mat-mdc-chip-set .mdc-evolution-chip-set__chips{min-width:100%;margin-left:-8px;margin-right:0}.mat-mdc-chip-set .mdc-evolution-chip{margin:4px 0 4px 8px}[dir=rtl] .mat-mdc-chip-set .mdc-evolution-chip-set__chips{margin-left:0;margin-right:-8px}[dir=rtl] .mat-mdc-chip-set .mdc-evolution-chip{margin-left:0;margin-right:8px}.mdc-evolution-chip-set__chips{display:flex;flex-flow:wrap;min-width:0}.mat-mdc-chip-set-stacked{flex-direction:column;align-items:flex-start}.mat-mdc-chip-set-stacked .mat-mdc-chip{width:100%}.mat-mdc-chip-set-stacked .mdc-evolution-chip__graphic{flex-grow:0}.mat-mdc-chip-set-stacked .mdc-evolution-chip__action--primary{flex-basis:100%;justify-content:start}input.mat-mdc-chip-input{flex:1 0 150px;margin-left:8px}[dir=rtl] input.mat-mdc-chip-input{margin-left:0;margin-right:8px}.mat-mdc-form-field:not(.mat-form-field-hide-placeholder) input.mat-mdc-chip-input::placeholder{opacity:1}.mat-mdc-form-field:not(.mat-form-field-hide-placeholder) input.mat-mdc-chip-input::-moz-placeholder{opacity:1}.mat-mdc-form-field:not(.mat-form-field-hide-placeholder) input.mat-mdc-chip-input::-webkit-input-placeholder{opacity:1}.mat-mdc-form-field:not(.mat-form-field-hide-placeholder) input.mat-mdc-chip-input:-ms-input-placeholder{opacity:1}.mat-mdc-chip-set+input.mat-mdc-chip-input{margin-left:0;margin-right:0}\n"]
+    }]
+  }], null, {
+    multiple: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    ariaOrientation: [{
+      type: Input,
+      args: ["aria-orientation"]
+    }],
+    selectable: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    compareWith: [{
+      type: Input
+    }],
+    required: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    hideSingleSelectionIndicator: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    value: [{
+      type: Input
+    }],
+    change: [{
+      type: Output
+    }],
+    _chips: [{
+      type: ContentChildren,
+      args: [MatChipOption, {
+        // We need to use `descendants: true`, because Ivy will no longer match
+        // indirect descendants if it's left as false.
+        descendants: true
+      }]
+    }]
+  });
+})();
+var MatChipGridChange = class {
+  source;
+  value;
+  constructor(source, value) {
+    this.source = source;
+    this.value = value;
+  }
+};
+var MatChipGrid = class _MatChipGrid extends MatChipSet {
+  ngControl = inject2(NgControl, {
+    optional: true,
+    self: true
+  });
+  /**
+   * Implemented as part of MatFormFieldControl.
+   * @docs-private
+   */
+  controlType = "mat-chip-grid";
+  /** The chip input to add more chips */
+  _chipInput;
+  _defaultRole = "grid";
+  _errorStateTracker;
+  /**
+   * List of element ids to propagate to the chipInput's aria-describedby attribute.
+   */
+  _ariaDescribedbyIds = [];
+  /**
+   * Function when touched. Set as part of ControlValueAccessor implementation.
+   * @docs-private
+   */
+  _onTouched = () => {
+  };
+  /**
+   * Function when changed. Set as part of ControlValueAccessor implementation.
+   * @docs-private
+   */
+  _onChange = () => {
+  };
+  /**
+   * Implemented as part of MatFormFieldControl.
+   * @docs-private
+   */
+  get disabled() {
+    return this.ngControl ? !!this.ngControl.disabled : this._disabled;
+  }
+  set disabled(value) {
+    this._disabled = value;
+    this._syncChipsState();
+    this.stateChanges.next();
+  }
+  /**
+   * Implemented as part of MatFormFieldControl.
+   * @docs-private
+   */
+  get id() {
+    return this._chipInput.id;
+  }
+  /**
+   * Implemented as part of MatFormFieldControl.
+   * @docs-private
+   */
+  get empty() {
+    return (!this._chipInput || this._chipInput.empty) && (!this._chips || this._chips.length === 0);
+  }
+  /**
+   * Implemented as part of MatFormFieldControl.
+   * @docs-private
+   */
+  get placeholder() {
+    return this._chipInput ? this._chipInput.placeholder : this._placeholder;
+  }
+  set placeholder(value) {
+    this._placeholder = value;
+    this.stateChanges.next();
+  }
+  _placeholder;
+  /** Whether any chips or the matChipInput inside of this chip-grid has focus. */
+  get focused() {
+    return this._chipInput.focused || this._hasFocusedChip();
+  }
+  /**
+   * Implemented as part of MatFormFieldControl.
+   * @docs-private
+   */
+  get required() {
+    return this._required ?? this.ngControl?.control?.hasValidator(Validators.required) ?? false;
+  }
+  set required(value) {
+    this._required = value;
+    this.stateChanges.next();
+  }
+  _required;
+  /**
+   * Implemented as part of MatFormFieldControl.
+   * @docs-private
+   */
+  get shouldLabelFloat() {
+    return !this.empty || this.focused;
+  }
+  /**
+   * Implemented as part of MatFormFieldControl.
+   * @docs-private
+   */
+  get value() {
+    return this._value;
+  }
+  set value(value) {
+    this._value = value;
+  }
+  _value = [];
+  /** An object used to control when error messages are shown. */
+  get errorStateMatcher() {
+    return this._errorStateTracker.matcher;
+  }
+  set errorStateMatcher(value) {
+    this._errorStateTracker.matcher = value;
+  }
+  /** Combined stream of all of the child chips' blur events. */
+  get chipBlurChanges() {
+    return this._getChipStream((chip) => chip._onBlur);
+  }
+  /** Emits when the chip grid value has been changed by the user. */
+  change = new EventEmitter();
+  /**
+   * Emits whenever the raw value of the chip-grid changes. This is here primarily
+   * to facilitate the two-way binding for the `value` input.
+   * @docs-private
+   */
+  valueChange = new EventEmitter();
+  _chips = void 0;
+  /**
+   * Emits whenever the component state changes and should cause the parent
+   * form-field to update. Implemented as part of `MatFormFieldControl`.
+   * @docs-private
+   */
+  stateChanges = new Subject();
+  /** Whether the chip grid is in an error state. */
+  get errorState() {
+    return this._errorStateTracker.errorState;
+  }
+  set errorState(value) {
+    this._errorStateTracker.errorState = value;
+  }
+  constructor() {
+    super();
+    const parentForm = inject2(NgForm, {
+      optional: true
+    });
+    const parentFormGroup = inject2(FormGroupDirective, {
+      optional: true
+    });
+    const defaultErrorStateMatcher = inject2(ErrorStateMatcher);
+    if (this.ngControl) {
+      this.ngControl.valueAccessor = this;
+    }
+    this._errorStateTracker = new _ErrorStateTracker(defaultErrorStateMatcher, this.ngControl, parentFormGroup, parentForm, this.stateChanges);
+  }
+  ngAfterContentInit() {
+    this.chipBlurChanges.pipe(takeUntil(this._destroyed)).subscribe(() => {
+      this._blur();
+      this.stateChanges.next();
+    });
+    merge(this.chipFocusChanges, this._chips.changes).pipe(takeUntil(this._destroyed)).subscribe(() => this.stateChanges.next());
+  }
+  ngAfterViewInit() {
+    super.ngAfterViewInit();
+    if (!this._chipInput && (typeof ngDevMode === "undefined" || ngDevMode)) {
+      throw Error("mat-chip-grid must be used in combination with matChipInputFor.");
+    }
+  }
+  ngDoCheck() {
+    if (this.ngControl) {
+      this.updateErrorState();
+    }
+  }
+  ngOnDestroy() {
+    super.ngOnDestroy();
+    this.stateChanges.complete();
+  }
+  /** Associates an HTML input element with this chip grid. */
+  registerInput(inputElement) {
+    this._chipInput = inputElement;
+    this._chipInput.setDescribedByIds(this._ariaDescribedbyIds);
+  }
+  /**
+   * Implemented as part of MatFormFieldControl.
+   * @docs-private
+   */
+  onContainerClick(event) {
+    if (!this.disabled && !this._originatesFromChip(event)) {
+      this.focus();
+    }
+  }
+  /**
+   * Focuses the first chip in this chip grid, or the associated input when there
+   * are no eligible chips.
+   */
+  focus() {
+    if (this.disabled || this._chipInput.focused) {
+      return;
+    }
+    if (!this._chips.length || this._chips.first.disabled) {
+      Promise.resolve().then(() => this._chipInput.focus());
+    } else {
+      const activeItem = this._keyManager.activeItem;
+      if (activeItem) {
+        activeItem.focus();
+      } else {
+        this._keyManager.setFirstItemActive();
+      }
+    }
+    this.stateChanges.next();
+  }
+  /**
+   * Implemented as part of MatFormFieldControl.
+   * @docs-private
+   */
+  get describedByIds() {
+    return this._chipInput?.describedByIds || [];
+  }
+  /**
+   * Implemented as part of MatFormFieldControl.
+   * @docs-private
+   */
+  setDescribedByIds(ids) {
+    this._ariaDescribedbyIds = ids;
+    this._chipInput?.setDescribedByIds(ids);
+  }
+  /**
+   * Implemented as part of ControlValueAccessor.
+   * @docs-private
+   */
+  writeValue(value) {
+    this._value = value;
+  }
+  /**
+   * Implemented as part of ControlValueAccessor.
+   * @docs-private
+   */
+  registerOnChange(fn) {
+    this._onChange = fn;
+  }
+  /**
+   * Implemented as part of ControlValueAccessor.
+   * @docs-private
+   */
+  registerOnTouched(fn) {
+    this._onTouched = fn;
+  }
+  /**
+   * Implemented as part of ControlValueAccessor.
+   * @docs-private
+   */
+  setDisabledState(isDisabled) {
+    this.disabled = isDisabled;
+    this.stateChanges.next();
+  }
+  /** Refreshes the error state of the chip grid. */
+  updateErrorState() {
+    this._errorStateTracker.updateErrorState();
+  }
+  /** When blurred, mark the field as touched when focus moved outside the chip grid. */
+  _blur() {
+    if (!this.disabled) {
+      setTimeout(() => {
+        if (!this.focused) {
+          this._propagateChanges();
+          this._markAsTouched();
+        }
+      });
+    }
+  }
+  /**
+   * Removes the `tabindex` from the chip grid and resets it back afterwards, allowing the
+   * user to tab out of it. This prevents the grid from capturing focus and redirecting
+   * it back to the first chip, creating a focus trap, if it user tries to tab away.
+   */
+  _allowFocusEscape() {
+    if (!this._chipInput.focused) {
+      super._allowFocusEscape();
+    }
+  }
+  /** Handles custom keyboard events. */
+  _handleKeydown(event) {
+    const keyCode = event.keyCode;
+    const activeItem = this._keyManager.activeItem;
+    if (keyCode === TAB) {
+      if (this._chipInput.focused && hasModifierKey(event, "shiftKey") && this._chips.length && !this._chips.last.disabled) {
+        event.preventDefault();
+        if (activeItem) {
+          this._keyManager.setActiveItem(activeItem);
+        } else {
+          this._focusLastChip();
+        }
+      } else {
+        super._allowFocusEscape();
+      }
+    } else if (!this._chipInput.focused) {
+      if ((keyCode === UP_ARROW || keyCode === DOWN_ARROW) && activeItem) {
+        const eligibleActions = this._chipActions.filter((action) => action._isPrimary === activeItem._isPrimary && !this._skipPredicate(action));
+        const currentIndex = eligibleActions.indexOf(activeItem);
+        const delta = event.keyCode === UP_ARROW ? -1 : 1;
+        event.preventDefault();
+        if (currentIndex > -1 && this._isValidIndex(currentIndex + delta)) {
+          this._keyManager.setActiveItem(eligibleActions[currentIndex + delta]);
+        }
+      } else {
+        super._handleKeydown(event);
+      }
+    }
+    this.stateChanges.next();
+  }
+  _focusLastChip() {
+    if (this._chips.length) {
+      this._chips.last.focus();
+    }
+  }
+  /** Emits change event to set the model value. */
+  _propagateChanges() {
+    const valueToEmit = this._chips.length ? this._chips.toArray().map((chip) => chip.value) : [];
+    this._value = valueToEmit;
+    this.change.emit(new MatChipGridChange(this, valueToEmit));
+    this.valueChange.emit(valueToEmit);
+    this._onChange(valueToEmit);
+    this._changeDetectorRef.markForCheck();
+  }
+  /** Mark the field as touched */
+  _markAsTouched() {
+    this._onTouched();
+    this._changeDetectorRef.markForCheck();
+    this.stateChanges.next();
+  }
+  static \u0275fac = function MatChipGrid_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatChipGrid)();
+  };
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+    type: _MatChipGrid,
+    selectors: [["mat-chip-grid"]],
+    contentQueries: function MatChipGrid_ContentQueries(rf, ctx, dirIndex) {
+      if (rf & 1) {
+        \u0275\u0275contentQuery(dirIndex, MatChipRow, 5);
+      }
+      if (rf & 2) {
+        let _t;
+        \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx._chips = _t);
+      }
+    },
+    hostAttrs: [1, "mat-mdc-chip-set", "mat-mdc-chip-grid", "mdc-evolution-chip-set"],
+    hostVars: 10,
+    hostBindings: function MatChipGrid_HostBindings(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275listener("focus", function MatChipGrid_focus_HostBindingHandler() {
+          return ctx.focus();
+        })("blur", function MatChipGrid_blur_HostBindingHandler() {
+          return ctx._blur();
+        });
+      }
+      if (rf & 2) {
+        \u0275\u0275attribute("role", ctx.role)("tabindex", ctx.disabled || ctx._chips && ctx._chips.length === 0 ? -1 : ctx.tabIndex)("aria-disabled", ctx.disabled.toString())("aria-invalid", ctx.errorState);
+        \u0275\u0275classProp("mat-mdc-chip-list-disabled", ctx.disabled)("mat-mdc-chip-list-invalid", ctx.errorState)("mat-mdc-chip-list-required", ctx.required);
+      }
+    },
+    inputs: {
+      disabled: [2, "disabled", "disabled", booleanAttribute],
+      placeholder: "placeholder",
+      required: [2, "required", "required", booleanAttribute],
+      value: "value",
+      errorStateMatcher: "errorStateMatcher"
+    },
+    outputs: {
+      change: "change",
+      valueChange: "valueChange"
+    },
+    features: [\u0275\u0275ProvidersFeature([{
+      provide: MatFormFieldControl,
+      useExisting: _MatChipGrid
+    }]), \u0275\u0275InheritDefinitionFeature],
+    ngContentSelectors: _c52,
+    decls: 2,
+    vars: 0,
+    consts: [["role", "presentation", 1, "mdc-evolution-chip-set__chips"]],
+    template: function MatChipGrid_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275projectionDef();
+        \u0275\u0275domElementStart(0, "div", 0);
+        \u0275\u0275projection(1);
+        \u0275\u0275domElementEnd();
+      }
+    },
+    styles: [_c62],
+    encapsulation: 2,
+    changeDetection: 0
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatChipGrid, [{
+    type: Component,
+    args: [{
+      selector: "mat-chip-grid",
+      template: `
+    <div class="mdc-evolution-chip-set__chips" role="presentation">
+      <ng-content></ng-content>
+    </div>
+  `,
+      host: {
+        "class": "mat-mdc-chip-set mat-mdc-chip-grid mdc-evolution-chip-set",
+        "[attr.role]": "role",
+        "[attr.tabindex]": "(disabled || (_chips && _chips.length === 0)) ? -1 : tabIndex",
+        "[attr.aria-disabled]": "disabled.toString()",
+        "[attr.aria-invalid]": "errorState",
+        "[class.mat-mdc-chip-list-disabled]": "disabled",
+        "[class.mat-mdc-chip-list-invalid]": "errorState",
+        "[class.mat-mdc-chip-list-required]": "required",
+        "(focus)": "focus()",
+        "(blur)": "_blur()"
+      },
+      providers: [{
+        provide: MatFormFieldControl,
+        useExisting: MatChipGrid
+      }],
+      encapsulation: ViewEncapsulation.None,
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      styles: [".mat-mdc-chip-set{display:flex}.mat-mdc-chip-set:focus{outline:none}.mat-mdc-chip-set .mdc-evolution-chip-set__chips{min-width:100%;margin-left:-8px;margin-right:0}.mat-mdc-chip-set .mdc-evolution-chip{margin:4px 0 4px 8px}[dir=rtl] .mat-mdc-chip-set .mdc-evolution-chip-set__chips{margin-left:0;margin-right:-8px}[dir=rtl] .mat-mdc-chip-set .mdc-evolution-chip{margin-left:0;margin-right:8px}.mdc-evolution-chip-set__chips{display:flex;flex-flow:wrap;min-width:0}.mat-mdc-chip-set-stacked{flex-direction:column;align-items:flex-start}.mat-mdc-chip-set-stacked .mat-mdc-chip{width:100%}.mat-mdc-chip-set-stacked .mdc-evolution-chip__graphic{flex-grow:0}.mat-mdc-chip-set-stacked .mdc-evolution-chip__action--primary{flex-basis:100%;justify-content:start}input.mat-mdc-chip-input{flex:1 0 150px;margin-left:8px}[dir=rtl] input.mat-mdc-chip-input{margin-left:0;margin-right:8px}.mat-mdc-form-field:not(.mat-form-field-hide-placeholder) input.mat-mdc-chip-input::placeholder{opacity:1}.mat-mdc-form-field:not(.mat-form-field-hide-placeholder) input.mat-mdc-chip-input::-moz-placeholder{opacity:1}.mat-mdc-form-field:not(.mat-form-field-hide-placeholder) input.mat-mdc-chip-input::-webkit-input-placeholder{opacity:1}.mat-mdc-form-field:not(.mat-form-field-hide-placeholder) input.mat-mdc-chip-input:-ms-input-placeholder{opacity:1}.mat-mdc-chip-set+input.mat-mdc-chip-input{margin-left:0;margin-right:0}\n"]
+    }]
+  }], () => [], {
+    disabled: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    placeholder: [{
+      type: Input
+    }],
+    required: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    value: [{
+      type: Input
+    }],
+    errorStateMatcher: [{
+      type: Input
+    }],
+    change: [{
+      type: Output
+    }],
+    valueChange: [{
+      type: Output
+    }],
+    _chips: [{
+      type: ContentChildren,
+      args: [MatChipRow, {
+        // We need to use `descendants: true`, because Ivy will no longer match
+        // indirect descendants if it's left as false.
+        descendants: true
+      }]
+    }]
+  });
+})();
+var MatChipInput = class _MatChipInput {
+  _elementRef = inject2(ElementRef);
+  /** Whether the control is focused. */
+  focused = false;
+  /** Register input for chip list */
+  get chipGrid() {
+    return this._chipGrid;
+  }
+  set chipGrid(value) {
+    if (value) {
+      this._chipGrid = value;
+      this._chipGrid.registerInput(this);
+    }
+  }
+  _chipGrid;
+  /**
+   * Whether or not the chipEnd event will be emitted when the input is blurred.
+   */
+  addOnBlur = false;
+  /**
+   * The list of key codes that will trigger a chipEnd event.
+   *
+   * Defaults to `[ENTER]`.
+   */
+  separatorKeyCodes;
+  /** Emitted when a chip is to be added. */
+  chipEnd = new EventEmitter();
+  /** The input's placeholder text. */
+  placeholder = "";
+  /** Unique id for the input. */
+  id = inject2(_IdGenerator).getId("mat-mdc-chip-list-input-");
+  /** Whether the input is disabled. */
+  get disabled() {
+    return this._disabled || this._chipGrid && this._chipGrid.disabled;
+  }
+  set disabled(value) {
+    this._disabled = value;
+  }
+  _disabled = false;
+  /** Whether the input is readonly. */
+  readonly = false;
+  /** Whether the input should remain interactive when it is disabled. */
+  disabledInteractive;
+  /** Whether the input is empty. */
+  get empty() {
+    return !this.inputElement.value;
+  }
+  /** The native input element to which this directive is attached. */
+  inputElement;
+  constructor() {
+    const defaultOptions = inject2(MAT_CHIPS_DEFAULT_OPTIONS);
+    const formField = inject2(MAT_FORM_FIELD, {
+      optional: true
+    });
+    this.inputElement = this._elementRef.nativeElement;
+    this.separatorKeyCodes = defaultOptions.separatorKeyCodes;
+    this.disabledInteractive = defaultOptions.inputDisabledInteractive ?? false;
+    if (formField) {
+      this.inputElement.classList.add("mat-mdc-form-field-input-control");
+    }
+  }
+  ngOnChanges() {
+    this._chipGrid.stateChanges.next();
+  }
+  ngOnDestroy() {
+    this.chipEnd.complete();
+  }
+  /** Utility method to make host definition/tests more clear. */
+  _keydown(event) {
+    if (this.empty && event.keyCode === BACKSPACE) {
+      if (!event.repeat) {
+        this._chipGrid._focusLastChip();
+      }
+      event.preventDefault();
+    } else {
+      this._emitChipEnd(event);
+    }
+  }
+  /** Checks to see if the blur should emit the (chipEnd) event. */
+  _blur() {
+    if (this.addOnBlur) {
+      this._emitChipEnd();
+    }
+    this.focused = false;
+    if (!this._chipGrid.focused) {
+      this._chipGrid._blur();
+    }
+    this._chipGrid.stateChanges.next();
+  }
+  _focus() {
+    this.focused = true;
+    this._chipGrid.stateChanges.next();
+  }
+  /** Checks to see if the (chipEnd) event needs to be emitted. */
+  _emitChipEnd(event) {
+    if (!event || this._isSeparatorKey(event) && !event.repeat) {
+      this.chipEnd.emit({
+        input: this.inputElement,
+        value: this.inputElement.value,
+        chipInput: this
+      });
+      event?.preventDefault();
+    }
+  }
+  _onInput() {
+    this._chipGrid.stateChanges.next();
+  }
+  /** Focuses the input. */
+  focus() {
+    this.inputElement.focus();
+  }
+  /** Clears the input */
+  clear() {
+    this.inputElement.value = "";
+  }
+  /**
+   * Implemented as part of MatChipTextControl.
+   * @docs-private
+   */
+  get describedByIds() {
+    const element = this._elementRef.nativeElement;
+    const existingDescribedBy = element.getAttribute("aria-describedby");
+    return existingDescribedBy?.split(" ") || [];
+  }
+  setDescribedByIds(ids) {
+    const element = this._elementRef.nativeElement;
+    if (ids.length) {
+      element.setAttribute("aria-describedby", ids.join(" "));
+    } else {
+      element.removeAttribute("aria-describedby");
+    }
+  }
+  /** Checks whether a keycode is one of the configured separators. */
+  _isSeparatorKey(event) {
+    return !hasModifierKey(event) && new Set(this.separatorKeyCodes).has(event.keyCode);
+  }
+  /** Gets the value to set on the `readonly` attribute. */
+  _getReadonlyAttribute() {
+    return this.readonly || this.disabled && this.disabledInteractive ? "true" : null;
+  }
+  static \u0275fac = function MatChipInput_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatChipInput)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _MatChipInput,
+    selectors: [["input", "matChipInputFor", ""]],
+    hostAttrs: [1, "mat-mdc-chip-input", "mat-mdc-input-element", "mdc-text-field__input", "mat-input-element"],
+    hostVars: 8,
+    hostBindings: function MatChipInput_HostBindings(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275listener("keydown", function MatChipInput_keydown_HostBindingHandler($event) {
+          return ctx._keydown($event);
+        })("blur", function MatChipInput_blur_HostBindingHandler() {
+          return ctx._blur();
+        })("focus", function MatChipInput_focus_HostBindingHandler() {
+          return ctx._focus();
+        })("input", function MatChipInput_input_HostBindingHandler() {
+          return ctx._onInput();
+        });
+      }
+      if (rf & 2) {
+        \u0275\u0275domProperty("id", ctx.id);
+        \u0275\u0275attribute("disabled", ctx.disabled && !ctx.disabledInteractive ? "" : null)("placeholder", ctx.placeholder || null)("aria-invalid", ctx._chipGrid && ctx._chipGrid.ngControl ? ctx._chipGrid.ngControl.invalid : null)("aria-required", ctx._chipGrid && ctx._chipGrid.required || null)("aria-disabled", ctx.disabled && ctx.disabledInteractive ? "true" : null)("readonly", ctx._getReadonlyAttribute())("required", ctx._chipGrid && ctx._chipGrid.required || null);
+      }
+    },
+    inputs: {
+      chipGrid: [0, "matChipInputFor", "chipGrid"],
+      addOnBlur: [2, "matChipInputAddOnBlur", "addOnBlur", booleanAttribute],
+      separatorKeyCodes: [0, "matChipInputSeparatorKeyCodes", "separatorKeyCodes"],
+      placeholder: "placeholder",
+      id: "id",
+      disabled: [2, "disabled", "disabled", booleanAttribute],
+      readonly: [2, "readonly", "readonly", booleanAttribute],
+      disabledInteractive: [2, "matChipInputDisabledInteractive", "disabledInteractive", booleanAttribute]
+    },
+    outputs: {
+      chipEnd: "matChipInputTokenEnd"
+    },
+    exportAs: ["matChipInput", "matChipInputFor"],
+    features: [\u0275\u0275NgOnChangesFeature]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatChipInput, [{
+    type: Directive,
+    args: [{
+      selector: "input[matChipInputFor]",
+      exportAs: "matChipInput, matChipInputFor",
+      host: {
+        // TODO: eventually we should remove `mat-input-element` from here since it comes from the
+        // non-MDC version of the input. It's currently being kept for backwards compatibility, because
+        // the MDC chips were landed initially with it.
+        "class": "mat-mdc-chip-input mat-mdc-input-element mdc-text-field__input mat-input-element",
+        "(keydown)": "_keydown($event)",
+        "(blur)": "_blur()",
+        "(focus)": "_focus()",
+        "(input)": "_onInput()",
+        "[id]": "id",
+        "[attr.disabled]": 'disabled && !disabledInteractive ? "" : null',
+        "[attr.placeholder]": "placeholder || null",
+        "[attr.aria-invalid]": "_chipGrid && _chipGrid.ngControl ? _chipGrid.ngControl.invalid : null",
+        "[attr.aria-required]": "_chipGrid && _chipGrid.required || null",
+        "[attr.aria-disabled]": 'disabled && disabledInteractive ? "true" : null',
+        "[attr.readonly]": "_getReadonlyAttribute()",
+        "[attr.required]": "_chipGrid && _chipGrid.required || null"
+      }
+    }]
+  }], () => [], {
+    chipGrid: [{
+      type: Input,
+      args: ["matChipInputFor"]
+    }],
+    addOnBlur: [{
+      type: Input,
+      args: [{
+        alias: "matChipInputAddOnBlur",
+        transform: booleanAttribute
+      }]
+    }],
+    separatorKeyCodes: [{
+      type: Input,
+      args: ["matChipInputSeparatorKeyCodes"]
+    }],
+    chipEnd: [{
+      type: Output,
+      args: ["matChipInputTokenEnd"]
+    }],
+    placeholder: [{
+      type: Input
+    }],
+    id: [{
+      type: Input
+    }],
+    disabled: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    readonly: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    disabledInteractive: [{
+      type: Input,
+      args: [{
+        alias: "matChipInputDisabledInteractive",
+        transform: booleanAttribute
+      }]
+    }]
+  });
+})();
+var CHIP_DECLARATIONS = [MatChip, MatChipAvatar, MatChipEdit, MatChipEditInput, MatChipGrid, MatChipInput, MatChipListbox, MatChipOption, MatChipRemove, MatChipRow, MatChipSet, MatChipTrailingIcon];
+var MatChipsModule = class _MatChipsModule {
+  static \u0275fac = function MatChipsModule_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatChipsModule)();
+  };
+  static \u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({
+    type: _MatChipsModule,
+    imports: [MatCommonModule, MatRippleModule, MatChipAction, MatChip, MatChipAvatar, MatChipEdit, MatChipEditInput, MatChipGrid, MatChipInput, MatChipListbox, MatChipOption, MatChipRemove, MatChipRow, MatChipSet, MatChipTrailingIcon],
+    exports: [MatCommonModule, MatChip, MatChipAvatar, MatChipEdit, MatChipEditInput, MatChipGrid, MatChipInput, MatChipListbox, MatChipOption, MatChipRemove, MatChipRow, MatChipSet, MatChipTrailingIcon]
+  });
+  static \u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({
+    providers: [ErrorStateMatcher, {
+      provide: MAT_CHIPS_DEFAULT_OPTIONS,
+      useValue: {
+        separatorKeyCodes: [ENTER]
+      }
+    }],
+    imports: [MatCommonModule, MatRippleModule, MatCommonModule]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatChipsModule, [{
+    type: NgModule,
+    args: [{
+      imports: [MatCommonModule, MatRippleModule, MatChipAction, CHIP_DECLARATIONS],
+      exports: [MatCommonModule, CHIP_DECLARATIONS],
+      providers: [ErrorStateMatcher, {
+        provide: MAT_CHIPS_DEFAULT_OPTIONS,
+        useValue: {
+          separatorKeyCodes: [ENTER]
+        }
+      }]
+    }]
+  }], null, null);
+})();
+
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/divider.mjs
+var MatDivider = class _MatDivider {
+  /** Whether the divider is vertically aligned. */
+  get vertical() {
+    return this._vertical;
+  }
+  set vertical(value) {
+    this._vertical = coerceBooleanProperty(value);
+  }
+  _vertical = false;
+  /** Whether the divider is an inset divider. */
+  get inset() {
+    return this._inset;
+  }
+  set inset(value) {
+    this._inset = coerceBooleanProperty(value);
+  }
+  _inset = false;
+  static \u0275fac = function MatDivider_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatDivider)();
+  };
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+    type: _MatDivider,
+    selectors: [["mat-divider"]],
+    hostAttrs: ["role", "separator", 1, "mat-divider"],
+    hostVars: 7,
+    hostBindings: function MatDivider_HostBindings(rf, ctx) {
+      if (rf & 2) {
+        \u0275\u0275attribute("aria-orientation", ctx.vertical ? "vertical" : "horizontal");
+        \u0275\u0275classProp("mat-divider-vertical", ctx.vertical)("mat-divider-horizontal", !ctx.vertical)("mat-divider-inset", ctx.inset);
+      }
+    },
+    inputs: {
+      vertical: "vertical",
+      inset: "inset"
+    },
+    decls: 0,
+    vars: 0,
+    template: function MatDivider_Template(rf, ctx) {
+    },
+    styles: [".mat-divider{display:block;margin:0;border-top-style:solid;border-top-color:var(--mat-divider-color, var(--mat-sys-outline-variant));border-top-width:var(--mat-divider-width, 1px)}.mat-divider.mat-divider-vertical{border-top:0;border-right-style:solid;border-right-color:var(--mat-divider-color, var(--mat-sys-outline-variant));border-right-width:var(--mat-divider-width, 1px)}.mat-divider.mat-divider-inset{margin-left:80px}[dir=rtl] .mat-divider.mat-divider-inset{margin-left:auto;margin-right:80px}\n"],
+    encapsulation: 2,
+    changeDetection: 0
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatDivider, [{
+    type: Component,
+    args: [{
+      selector: "mat-divider",
+      host: {
+        "role": "separator",
+        "[attr.aria-orientation]": 'vertical ? "vertical" : "horizontal"',
+        "[class.mat-divider-vertical]": "vertical",
+        "[class.mat-divider-horizontal]": "!vertical",
+        "[class.mat-divider-inset]": "inset",
+        "class": "mat-divider"
+      },
+      template: "",
+      encapsulation: ViewEncapsulation.None,
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      styles: [".mat-divider{display:block;margin:0;border-top-style:solid;border-top-color:var(--mat-divider-color, var(--mat-sys-outline-variant));border-top-width:var(--mat-divider-width, 1px)}.mat-divider.mat-divider-vertical{border-top:0;border-right-style:solid;border-right-color:var(--mat-divider-color, var(--mat-sys-outline-variant));border-right-width:var(--mat-divider-width, 1px)}.mat-divider.mat-divider-inset{margin-left:80px}[dir=rtl] .mat-divider.mat-divider-inset{margin-left:auto;margin-right:80px}\n"]
+    }]
+  }], null, {
+    vertical: [{
+      type: Input
+    }],
+    inset: [{
+      type: Input
+    }]
+  });
+})();
+var MatDividerModule = class _MatDividerModule {
+  static \u0275fac = function MatDividerModule_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatDividerModule)();
+  };
+  static \u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({
+    type: _MatDividerModule,
+    imports: [MatCommonModule, MatDivider],
+    exports: [MatDivider, MatCommonModule]
+  });
+  static \u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({
+    imports: [MatCommonModule, MatCommonModule]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatDividerModule, [{
+    type: NgModule,
+    args: [{
+      imports: [MatCommonModule, MatDivider],
+      exports: [MatDivider, MatCommonModule]
+    }]
+  }], null, null);
+})();
+
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/unique-selection-dispatcher.mjs
+var UniqueSelectionDispatcher = class _UniqueSelectionDispatcher {
+  _listeners = [];
+  /**
+   * Notify other items that selection for the given name has been set.
+   * @param id ID of the item.
+   * @param name Name of the item.
+   */
+  notify(id, name) {
+    for (let listener of this._listeners) {
+      listener(id, name);
+    }
+  }
+  /**
+   * Listen for future changes to item selection.
+   * @return Function used to deregister listener
+   */
+  listen(listener) {
+    this._listeners.push(listener);
+    return () => {
+      this._listeners = this._listeners.filter((registered) => {
+        return listener !== registered;
+      });
+    };
+  }
+  ngOnDestroy() {
+    this._listeners = [];
+  }
+  static \u0275fac = function UniqueSelectionDispatcher_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _UniqueSelectionDispatcher)();
+  };
+  static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
+    token: _UniqueSelectionDispatcher,
+    factory: _UniqueSelectionDispatcher.\u0275fac,
+    providedIn: "root"
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(UniqueSelectionDispatcher, [{
+    type: Injectable,
+    args: [{
+      providedIn: "root"
+    }]
+  }], null, null);
+})();
+
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/accordion.mjs
+var CDK_ACCORDION = new InjectionToken("CdkAccordion");
+var CdkAccordion = class _CdkAccordion {
+  /** Emits when the state of the accordion changes */
+  _stateChanges = new Subject();
+  /** Stream that emits true/false when openAll/closeAll is triggered. */
+  _openCloseAllActions = new Subject();
+  /** A readonly id value to use for unique selection coordination. */
+  id = inject2(_IdGenerator).getId("cdk-accordion-");
+  /** Whether the accordion should allow multiple expanded accordion items simultaneously. */
+  multi = false;
+  /** Opens all enabled accordion items in an accordion where multi is enabled. */
+  openAll() {
+    if (this.multi) {
+      this._openCloseAllActions.next(true);
+    }
+  }
+  /** Closes all enabled accordion items. */
+  closeAll() {
+    this._openCloseAllActions.next(false);
+  }
+  ngOnChanges(changes) {
+    this._stateChanges.next(changes);
+  }
+  ngOnDestroy() {
+    this._stateChanges.complete();
+    this._openCloseAllActions.complete();
+  }
+  static \u0275fac = function CdkAccordion_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _CdkAccordion)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _CdkAccordion,
+    selectors: [["cdk-accordion"], ["", "cdkAccordion", ""]],
+    inputs: {
+      multi: [2, "multi", "multi", booleanAttribute]
+    },
+    exportAs: ["cdkAccordion"],
+    features: [\u0275\u0275ProvidersFeature([{
+      provide: CDK_ACCORDION,
+      useExisting: _CdkAccordion
+    }]), \u0275\u0275NgOnChangesFeature]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(CdkAccordion, [{
+    type: Directive,
+    args: [{
+      selector: "cdk-accordion, [cdkAccordion]",
+      exportAs: "cdkAccordion",
+      providers: [{
+        provide: CDK_ACCORDION,
+        useExisting: CdkAccordion
+      }]
+    }]
+  }], null, {
+    multi: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }]
+  });
+})();
+var CdkAccordionItem = class _CdkAccordionItem {
+  accordion = inject2(CDK_ACCORDION, {
+    optional: true,
+    skipSelf: true
+  });
+  _changeDetectorRef = inject2(ChangeDetectorRef);
+  _expansionDispatcher = inject2(UniqueSelectionDispatcher);
+  /** Subscription to openAll/closeAll events. */
+  _openCloseAllSubscription = Subscription.EMPTY;
+  /** Event emitted every time the AccordionItem is closed. */
+  closed = new EventEmitter();
+  /** Event emitted every time the AccordionItem is opened. */
+  opened = new EventEmitter();
+  /** Event emitted when the AccordionItem is destroyed. */
+  destroyed = new EventEmitter();
+  /**
+   * Emits whenever the expanded state of the accordion changes.
+   * Primarily used to facilitate two-way binding.
+   * @docs-private
+   */
+  expandedChange = new EventEmitter();
+  /** The unique AccordionItem id. */
+  id = inject2(_IdGenerator).getId("cdk-accordion-child-");
+  /** Whether the AccordionItem is expanded. */
+  get expanded() {
+    return this._expanded;
+  }
+  set expanded(expanded) {
+    if (this._expanded !== expanded) {
+      this._expanded = expanded;
+      this.expandedChange.emit(expanded);
+      if (expanded) {
+        this.opened.emit();
+        const accordionId = this.accordion ? this.accordion.id : this.id;
+        this._expansionDispatcher.notify(this.id, accordionId);
+      } else {
+        this.closed.emit();
+      }
+      this._changeDetectorRef.markForCheck();
+    }
+  }
+  _expanded = false;
+  /** Whether the AccordionItem is disabled. */
+  get disabled() {
+    return this._disabled();
+  }
+  set disabled(value) {
+    this._disabled.set(value);
+  }
+  _disabled = signal(false, ...ngDevMode ? [{
+    debugName: "_disabled"
+  }] : []);
+  /** Unregister function for _expansionDispatcher. */
+  _removeUniqueSelectionListener = () => {
+  };
+  constructor() {
+  }
+  ngOnInit() {
+    this._removeUniqueSelectionListener = this._expansionDispatcher.listen((id, accordionId) => {
+      if (this.accordion && !this.accordion.multi && this.accordion.id === accordionId && this.id !== id) {
+        this.expanded = false;
+      }
+    });
+    if (this.accordion) {
+      this._openCloseAllSubscription = this._subscribeToOpenCloseAllActions();
+    }
+  }
+  /** Emits an event for the accordion item being destroyed. */
+  ngOnDestroy() {
+    this.opened.complete();
+    this.closed.complete();
+    this.destroyed.emit();
+    this.destroyed.complete();
+    this._removeUniqueSelectionListener();
+    this._openCloseAllSubscription.unsubscribe();
+  }
+  /** Toggles the expanded state of the accordion item. */
+  toggle() {
+    if (!this.disabled) {
+      this.expanded = !this.expanded;
+    }
+  }
+  /** Sets the expanded state of the accordion item to false. */
+  close() {
+    if (!this.disabled) {
+      this.expanded = false;
+    }
+  }
+  /** Sets the expanded state of the accordion item to true. */
+  open() {
+    if (!this.disabled) {
+      this.expanded = true;
+    }
+  }
+  _subscribeToOpenCloseAllActions() {
+    return this.accordion._openCloseAllActions.subscribe((expanded) => {
+      if (!this.disabled) {
+        this.expanded = expanded;
+      }
+    });
+  }
+  static \u0275fac = function CdkAccordionItem_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _CdkAccordionItem)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _CdkAccordionItem,
+    selectors: [["cdk-accordion-item"], ["", "cdkAccordionItem", ""]],
+    inputs: {
+      expanded: [2, "expanded", "expanded", booleanAttribute],
+      disabled: [2, "disabled", "disabled", booleanAttribute]
+    },
+    outputs: {
+      closed: "closed",
+      opened: "opened",
+      destroyed: "destroyed",
+      expandedChange: "expandedChange"
+    },
+    exportAs: ["cdkAccordionItem"],
+    features: [\u0275\u0275ProvidersFeature([
+      // Provide `CDK_ACCORDION` as undefined to prevent nested accordion items from
+      // registering to the same accordion.
+      {
+        provide: CDK_ACCORDION,
+        useValue: void 0
+      }
+    ])]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(CdkAccordionItem, [{
+    type: Directive,
+    args: [{
+      selector: "cdk-accordion-item, [cdkAccordionItem]",
+      exportAs: "cdkAccordionItem",
+      providers: [
+        // Provide `CDK_ACCORDION` as undefined to prevent nested accordion items from
+        // registering to the same accordion.
+        {
+          provide: CDK_ACCORDION,
+          useValue: void 0
+        }
+      ]
+    }]
+  }], () => [], {
+    closed: [{
+      type: Output
+    }],
+    opened: [{
+      type: Output
+    }],
+    destroyed: [{
+      type: Output
+    }],
+    expandedChange: [{
+      type: Output
+    }],
+    expanded: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    disabled: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }]
+  });
+})();
+var CdkAccordionModule = class _CdkAccordionModule {
+  static \u0275fac = function CdkAccordionModule_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _CdkAccordionModule)();
+  };
+  static \u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({
+    type: _CdkAccordionModule,
+    imports: [CdkAccordion, CdkAccordionItem],
+    exports: [CdkAccordion, CdkAccordionItem]
+  });
+  static \u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({});
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(CdkAccordionModule, [{
+    type: NgModule,
+    args: [{
+      imports: [CdkAccordion, CdkAccordionItem],
+      exports: [CdkAccordion, CdkAccordionItem]
+    }]
+  }], null, null);
+})();
+
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/portal.mjs
+function throwNullPortalError() {
+  throw Error("Must provide a portal to attach");
+}
+function throwPortalAlreadyAttachedError() {
+  throw Error("Host already has a portal attached");
+}
+function throwPortalOutletAlreadyDisposedError() {
+  throw Error("This PortalOutlet has already been disposed");
+}
+function throwUnknownPortalTypeError() {
+  throw Error("Attempting to attach an unknown Portal type. BasePortalOutlet accepts either a ComponentPortal or a TemplatePortal.");
+}
+function throwNullPortalOutletError() {
+  throw Error("Attempting to attach a portal to a null PortalOutlet");
+}
+function throwNoPortalAttachedError() {
+  throw Error("Attempting to detach a portal that is not attached to a host");
+}
+var Portal = class {
+  _attachedHost;
+  /** Attach this portal to a host. */
+  attach(host) {
+    if (typeof ngDevMode === "undefined" || ngDevMode) {
+      if (host == null) {
+        throwNullPortalOutletError();
+      }
+      if (host.hasAttached()) {
+        throwPortalAlreadyAttachedError();
+      }
+    }
+    this._attachedHost = host;
+    return host.attach(this);
+  }
+  /** Detach this portal from its host */
+  detach() {
+    let host = this._attachedHost;
+    if (host != null) {
+      this._attachedHost = null;
+      host.detach();
+    } else if (typeof ngDevMode === "undefined" || ngDevMode) {
+      throwNoPortalAttachedError();
+    }
+  }
+  /** Whether this portal is attached to a host. */
+  get isAttached() {
+    return this._attachedHost != null;
+  }
+  /**
+   * Sets the PortalOutlet reference without performing `attach()`. This is used directly by
+   * the PortalOutlet when it is performing an `attach()` or `detach()`.
+   */
+  setAttachedHost(host) {
+    this._attachedHost = host;
+  }
+};
+var ComponentPortal = class extends Portal {
+  /** The type of the component that will be instantiated for attachment. */
+  component;
+  /**
+   * Where the attached component should live in Angular's *logical* component tree.
+   * This is different from where the component *renders*, which is determined by the PortalOutlet.
+   * The origin is necessary when the host is outside of the Angular application context.
+   */
+  viewContainerRef;
+  /** Injector used for the instantiation of the component. */
+  injector;
+  /**
+   * List of DOM nodes that should be projected through `<ng-content>` of the attached component.
+   */
+  projectableNodes;
+  constructor(component, viewContainerRef, injector, projectableNodes) {
+    super();
+    this.component = component;
+    this.viewContainerRef = viewContainerRef;
+    this.injector = injector;
+    this.projectableNodes = projectableNodes;
+  }
+};
+var TemplatePortal = class extends Portal {
+  templateRef;
+  viewContainerRef;
+  context;
+  injector;
+  constructor(templateRef, viewContainerRef, context2, injector) {
+    super();
+    this.templateRef = templateRef;
+    this.viewContainerRef = viewContainerRef;
+    this.context = context2;
+    this.injector = injector;
+  }
+  get origin() {
+    return this.templateRef.elementRef;
+  }
+  /**
+   * Attach the portal to the provided `PortalOutlet`.
+   * When a context is provided it will override the `context` property of the `TemplatePortal`
+   * instance.
+   */
+  attach(host, context2 = this.context) {
+    this.context = context2;
+    return super.attach(host);
+  }
+  detach() {
+    this.context = void 0;
+    return super.detach();
+  }
+};
+var DomPortal = class extends Portal {
+  /** DOM node hosting the portal's content. */
+  element;
+  constructor(element) {
+    super();
+    this.element = element instanceof ElementRef ? element.nativeElement : element;
+  }
+};
+var BasePortalOutlet = class {
+  /** The portal currently attached to the host. */
+  _attachedPortal;
+  /** A function that will permanently dispose this host. */
+  _disposeFn;
+  /** Whether this host has already been permanently disposed. */
+  _isDisposed = false;
+  /** Whether this host has an attached portal. */
+  hasAttached() {
+    return !!this._attachedPortal;
+  }
+  /** Attaches a portal. */
+  attach(portal) {
+    if (typeof ngDevMode === "undefined" || ngDevMode) {
+      if (!portal) {
+        throwNullPortalError();
+      }
+      if (this.hasAttached()) {
+        throwPortalAlreadyAttachedError();
+      }
+      if (this._isDisposed) {
+        throwPortalOutletAlreadyDisposedError();
+      }
+    }
+    if (portal instanceof ComponentPortal) {
+      this._attachedPortal = portal;
+      return this.attachComponentPortal(portal);
+    } else if (portal instanceof TemplatePortal) {
+      this._attachedPortal = portal;
+      return this.attachTemplatePortal(portal);
+    } else if (this.attachDomPortal && portal instanceof DomPortal) {
+      this._attachedPortal = portal;
+      return this.attachDomPortal(portal);
+    }
+    if (typeof ngDevMode === "undefined" || ngDevMode) {
+      throwUnknownPortalTypeError();
+    }
+  }
+  // @breaking-change 10.0.0 `attachDomPortal` to become a required abstract method.
+  attachDomPortal = null;
+  /** Detaches a previously attached portal. */
+  detach() {
+    if (this._attachedPortal) {
+      this._attachedPortal.setAttachedHost(null);
+      this._attachedPortal = null;
+    }
+    this._invokeDisposeFn();
+  }
+  /** Permanently dispose of this portal host. */
+  dispose() {
+    if (this.hasAttached()) {
+      this.detach();
+    }
+    this._invokeDisposeFn();
+    this._isDisposed = true;
+  }
+  /** @docs-private */
+  setDisposeFn(fn) {
+    this._disposeFn = fn;
+  }
+  _invokeDisposeFn() {
+    if (this._disposeFn) {
+      this._disposeFn();
+      this._disposeFn = null;
+    }
+  }
+};
+var DomPortalOutlet = class extends BasePortalOutlet {
+  outletElement;
+  _appRef;
+  _defaultInjector;
+  /**
+   * @param outletElement Element into which the content is projected.
+   * @param _appRef Reference to the application. Only used in component portals when there
+   *   is no `ViewContainerRef` available.
+   * @param _defaultInjector Injector to use as a fallback when the portal being attached doesn't
+   *   have one. Only used for component portals.
+   */
+  constructor(outletElement, _appRef, _defaultInjector) {
+    super();
+    this.outletElement = outletElement;
+    this._appRef = _appRef;
+    this._defaultInjector = _defaultInjector;
+  }
+  /**
+   * Attach the given ComponentPortal to DOM element.
+   * @param portal Portal to be attached
+   * @returns Reference to the created component.
+   */
+  attachComponentPortal(portal) {
+    let componentRef;
+    if (portal.viewContainerRef) {
+      const injector = portal.injector || portal.viewContainerRef.injector;
+      const ngModuleRef = injector.get(NgModuleRef$1, null, {
+        optional: true
+      }) || void 0;
+      componentRef = portal.viewContainerRef.createComponent(portal.component, {
+        index: portal.viewContainerRef.length,
+        injector,
+        ngModuleRef,
+        projectableNodes: portal.projectableNodes || void 0
+      });
+      this.setDisposeFn(() => componentRef.destroy());
+    } else {
+      if ((typeof ngDevMode === "undefined" || ngDevMode) && !this._appRef) {
+        throw Error("Cannot attach component portal to outlet without an ApplicationRef.");
+      }
+      const appRef = this._appRef;
+      const elementInjector = portal.injector || this._defaultInjector || Injector.NULL;
+      const environmentInjector = elementInjector.get(EnvironmentInjector, appRef.injector);
+      componentRef = createComponent(portal.component, {
+        elementInjector,
+        environmentInjector,
+        projectableNodes: portal.projectableNodes || void 0
+      });
+      appRef.attachView(componentRef.hostView);
+      this.setDisposeFn(() => {
+        if (appRef.viewCount > 0) {
+          appRef.detachView(componentRef.hostView);
+        }
+        componentRef.destroy();
+      });
+    }
+    this.outletElement.appendChild(this._getComponentRootNode(componentRef));
+    this._attachedPortal = portal;
+    return componentRef;
+  }
+  /**
+   * Attaches a template portal to the DOM as an embedded view.
+   * @param portal Portal to be attached.
+   * @returns Reference to the created embedded view.
+   */
+  attachTemplatePortal(portal) {
+    let viewContainer = portal.viewContainerRef;
+    let viewRef = viewContainer.createEmbeddedView(portal.templateRef, portal.context, {
+      injector: portal.injector
+    });
+    viewRef.rootNodes.forEach((rootNode) => this.outletElement.appendChild(rootNode));
+    viewRef.detectChanges();
+    this.setDisposeFn(() => {
+      let index = viewContainer.indexOf(viewRef);
+      if (index !== -1) {
+        viewContainer.remove(index);
+      }
+    });
+    this._attachedPortal = portal;
+    return viewRef;
+  }
+  /**
+   * Attaches a DOM portal by transferring its content into the outlet.
+   * @param portal Portal to be attached.
+   * @deprecated To be turned into a method.
+   * @breaking-change 10.0.0
+   */
+  attachDomPortal = (portal) => {
+    const element = portal.element;
+    if (!element.parentNode && (typeof ngDevMode === "undefined" || ngDevMode)) {
+      throw Error("DOM portal content must be attached to a parent node.");
+    }
+    const anchorNode = this.outletElement.ownerDocument.createComment("dom-portal");
+    element.parentNode.insertBefore(anchorNode, element);
+    this.outletElement.appendChild(element);
+    this._attachedPortal = portal;
+    super.setDisposeFn(() => {
+      if (anchorNode.parentNode) {
+        anchorNode.parentNode.replaceChild(element, anchorNode);
+      }
+    });
+  };
+  /**
+   * Clears out a portal from the DOM.
+   */
+  dispose() {
+    super.dispose();
+    this.outletElement.remove();
+  }
+  /** Gets the root HTMLElement for an instantiated component. */
+  _getComponentRootNode(componentRef) {
+    return componentRef.hostView.rootNodes[0];
+  }
+};
+var CdkPortal = class _CdkPortal extends TemplatePortal {
+  constructor() {
+    const templateRef = inject2(TemplateRef);
+    const viewContainerRef = inject2(ViewContainerRef);
+    super(templateRef, viewContainerRef);
+  }
+  static \u0275fac = function CdkPortal_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _CdkPortal)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _CdkPortal,
+    selectors: [["", "cdkPortal", ""]],
+    exportAs: ["cdkPortal"],
+    features: [\u0275\u0275InheritDefinitionFeature]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(CdkPortal, [{
+    type: Directive,
+    args: [{
+      selector: "[cdkPortal]",
+      exportAs: "cdkPortal"
+    }]
+  }], () => [], null);
+})();
+var TemplatePortalDirective = class _TemplatePortalDirective extends CdkPortal {
+  static \u0275fac = /* @__PURE__ */ (() => {
+    let \u0275TemplatePortalDirective_BaseFactory;
+    return function TemplatePortalDirective_Factory(__ngFactoryType__) {
+      return (\u0275TemplatePortalDirective_BaseFactory || (\u0275TemplatePortalDirective_BaseFactory = \u0275\u0275getInheritedFactory(_TemplatePortalDirective)))(__ngFactoryType__ || _TemplatePortalDirective);
+    };
+  })();
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _TemplatePortalDirective,
+    selectors: [["", "cdk-portal", ""], ["", "portal", ""]],
+    exportAs: ["cdkPortal"],
+    features: [\u0275\u0275ProvidersFeature([{
+      provide: CdkPortal,
+      useExisting: _TemplatePortalDirective
+    }]), \u0275\u0275InheritDefinitionFeature]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(TemplatePortalDirective, [{
+    type: Directive,
+    args: [{
+      selector: "[cdk-portal], [portal]",
+      exportAs: "cdkPortal",
+      providers: [{
+        provide: CdkPortal,
+        useExisting: TemplatePortalDirective
+      }]
+    }]
+  }], null, null);
+})();
+var CdkPortalOutlet = class _CdkPortalOutlet extends BasePortalOutlet {
+  _moduleRef = inject2(NgModuleRef$1, {
+    optional: true
+  });
+  _document = inject2(DOCUMENT);
+  _viewContainerRef = inject2(ViewContainerRef);
+  /** Whether the portal component is initialized. */
+  _isInitialized = false;
+  /** Reference to the currently-attached component/view ref. */
+  _attachedRef;
+  constructor() {
+    super();
+  }
+  /** Portal associated with the Portal outlet. */
+  get portal() {
+    return this._attachedPortal;
+  }
+  set portal(portal) {
+    if (this.hasAttached() && !portal && !this._isInitialized) {
+      return;
+    }
+    if (this.hasAttached()) {
+      super.detach();
+    }
+    if (portal) {
+      super.attach(portal);
+    }
+    this._attachedPortal = portal || null;
+  }
+  /** Emits when a portal is attached to the outlet. */
+  attached = new EventEmitter();
+  /** Component or view reference that is attached to the portal. */
+  get attachedRef() {
+    return this._attachedRef;
+  }
+  ngOnInit() {
+    this._isInitialized = true;
+  }
+  ngOnDestroy() {
+    super.dispose();
+    this._attachedRef = this._attachedPortal = null;
+  }
+  /**
+   * Attach the given ComponentPortal to this PortalOutlet.
+   *
+   * @param portal Portal to be attached to the portal outlet.
+   * @returns Reference to the created component.
+   */
+  attachComponentPortal(portal) {
+    portal.setAttachedHost(this);
+    const viewContainerRef = portal.viewContainerRef != null ? portal.viewContainerRef : this._viewContainerRef;
+    const ref = viewContainerRef.createComponent(portal.component, {
+      index: viewContainerRef.length,
+      injector: portal.injector || viewContainerRef.injector,
+      projectableNodes: portal.projectableNodes || void 0,
+      ngModuleRef: this._moduleRef || void 0
+    });
+    if (viewContainerRef !== this._viewContainerRef) {
+      this._getRootNode().appendChild(ref.hostView.rootNodes[0]);
+    }
+    super.setDisposeFn(() => ref.destroy());
+    this._attachedPortal = portal;
+    this._attachedRef = ref;
+    this.attached.emit(ref);
+    return ref;
+  }
+  /**
+   * Attach the given TemplatePortal to this PortalHost as an embedded View.
+   * @param portal Portal to be attached.
+   * @returns Reference to the created embedded view.
+   */
+  attachTemplatePortal(portal) {
+    portal.setAttachedHost(this);
+    const viewRef = this._viewContainerRef.createEmbeddedView(portal.templateRef, portal.context, {
+      injector: portal.injector
+    });
+    super.setDisposeFn(() => this._viewContainerRef.clear());
+    this._attachedPortal = portal;
+    this._attachedRef = viewRef;
+    this.attached.emit(viewRef);
+    return viewRef;
+  }
+  /**
+   * Attaches the given DomPortal to this PortalHost by moving all of the portal content into it.
+   * @param portal Portal to be attached.
+   * @deprecated To be turned into a method.
+   * @breaking-change 10.0.0
+   */
+  attachDomPortal = (portal) => {
+    const element = portal.element;
+    if (!element.parentNode && (typeof ngDevMode === "undefined" || ngDevMode)) {
+      throw Error("DOM portal content must be attached to a parent node.");
+    }
+    const anchorNode = this._document.createComment("dom-portal");
+    portal.setAttachedHost(this);
+    element.parentNode.insertBefore(anchorNode, element);
+    this._getRootNode().appendChild(element);
+    this._attachedPortal = portal;
+    super.setDisposeFn(() => {
+      if (anchorNode.parentNode) {
+        anchorNode.parentNode.replaceChild(element, anchorNode);
+      }
+    });
+  };
+  /** Gets the root node of the portal outlet. */
+  _getRootNode() {
+    const nativeElement = this._viewContainerRef.element.nativeElement;
+    return nativeElement.nodeType === nativeElement.ELEMENT_NODE ? nativeElement : nativeElement.parentNode;
+  }
+  static \u0275fac = function CdkPortalOutlet_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _CdkPortalOutlet)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _CdkPortalOutlet,
+    selectors: [["", "cdkPortalOutlet", ""]],
+    inputs: {
+      portal: [0, "cdkPortalOutlet", "portal"]
+    },
+    outputs: {
+      attached: "attached"
+    },
+    exportAs: ["cdkPortalOutlet"],
+    features: [\u0275\u0275InheritDefinitionFeature]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(CdkPortalOutlet, [{
+    type: Directive,
+    args: [{
+      selector: "[cdkPortalOutlet]",
+      exportAs: "cdkPortalOutlet"
+    }]
+  }], () => [], {
+    portal: [{
+      type: Input,
+      args: ["cdkPortalOutlet"]
+    }],
+    attached: [{
+      type: Output
+    }]
+  });
+})();
+var PortalHostDirective = class _PortalHostDirective extends CdkPortalOutlet {
+  static \u0275fac = /* @__PURE__ */ (() => {
+    let \u0275PortalHostDirective_BaseFactory;
+    return function PortalHostDirective_Factory(__ngFactoryType__) {
+      return (\u0275PortalHostDirective_BaseFactory || (\u0275PortalHostDirective_BaseFactory = \u0275\u0275getInheritedFactory(_PortalHostDirective)))(__ngFactoryType__ || _PortalHostDirective);
+    };
+  })();
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _PortalHostDirective,
+    selectors: [["", "cdkPortalHost", ""], ["", "portalHost", ""]],
+    inputs: {
+      portal: [0, "cdkPortalHost", "portal"]
+    },
+    exportAs: ["cdkPortalHost"],
+    features: [\u0275\u0275ProvidersFeature([{
+      provide: CdkPortalOutlet,
+      useExisting: _PortalHostDirective
+    }]), \u0275\u0275InheritDefinitionFeature]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(PortalHostDirective, [{
+    type: Directive,
+    args: [{
+      selector: "[cdkPortalHost], [portalHost]",
+      exportAs: "cdkPortalHost",
+      inputs: [{
+        name: "portal",
+        alias: "cdkPortalHost"
+      }],
+      providers: [{
+        provide: CdkPortalOutlet,
+        useExisting: PortalHostDirective
+      }]
+    }]
+  }], null, null);
+})();
+var PortalModule = class _PortalModule {
+  static \u0275fac = function PortalModule_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _PortalModule)();
+  };
+  static \u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({
+    type: _PortalModule,
+    imports: [CdkPortal, CdkPortalOutlet, TemplatePortalDirective, PortalHostDirective],
+    exports: [CdkPortal, CdkPortalOutlet, TemplatePortalDirective, PortalHostDirective]
+  });
+  static \u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({});
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(PortalModule, [{
+    type: NgModule,
+    args: [{
+      imports: [CdkPortal, CdkPortalOutlet, TemplatePortalDirective, PortalHostDirective],
+      exports: [CdkPortal, CdkPortalOutlet, TemplatePortalDirective, PortalHostDirective]
+    }]
+  }], null, null);
+})();
+
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/data-source.mjs
+var DataSource = class {
+};
+function isDataSource(value) {
+  return value && typeof value.connect === "function" && !(value instanceof ConnectableObservable);
+}
+
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/recycle-view-repeater-strategy.mjs
+var ArrayDataSource = class extends DataSource {
+  _data;
+  constructor(_data) {
+    super();
+    this._data = _data;
+  }
+  connect() {
+    return isObservable(this._data) ? this._data : of(this._data);
+  }
+  disconnect() {
+  }
+};
+var _ViewRepeaterOperation;
+(function(_ViewRepeaterOperation2) {
+  _ViewRepeaterOperation2[_ViewRepeaterOperation2["REPLACED"] = 0] = "REPLACED";
+  _ViewRepeaterOperation2[_ViewRepeaterOperation2["INSERTED"] = 1] = "INSERTED";
+  _ViewRepeaterOperation2[_ViewRepeaterOperation2["MOVED"] = 2] = "MOVED";
+  _ViewRepeaterOperation2[_ViewRepeaterOperation2["REMOVED"] = 3] = "REMOVED";
+})(_ViewRepeaterOperation || (_ViewRepeaterOperation = {}));
+var _VIEW_REPEATER_STRATEGY = new InjectionToken("_ViewRepeater");
+var _RecycleViewRepeaterStrategy = class {
+  /**
+   * The size of the cache used to store unused views.
+   * Setting the cache size to `0` will disable caching. Defaults to 20 views.
+   */
+  viewCacheSize = 20;
+  /**
+   * View cache that stores embedded view instances that have been previously stamped out,
+   * but don't are not currently rendered. The view repeater will reuse these views rather than
+   * creating brand new ones.
+   *
+   * TODO(michaeljamesparsons) Investigate whether using a linked list would improve performance.
+   */
+  _viewCache = [];
+  /** Apply changes to the DOM. */
+  applyChanges(changes, viewContainerRef, itemContextFactory, itemValueResolver, itemViewChanged) {
+    changes.forEachOperation((record, adjustedPreviousIndex, currentIndex) => {
+      let view;
+      let operation;
+      if (record.previousIndex == null) {
+        const viewArgsFactory = () => itemContextFactory(record, adjustedPreviousIndex, currentIndex);
+        view = this._insertView(viewArgsFactory, currentIndex, viewContainerRef, itemValueResolver(record));
+        operation = view ? _ViewRepeaterOperation.INSERTED : _ViewRepeaterOperation.REPLACED;
+      } else if (currentIndex == null) {
+        this._detachAndCacheView(adjustedPreviousIndex, viewContainerRef);
+        operation = _ViewRepeaterOperation.REMOVED;
+      } else {
+        view = this._moveView(adjustedPreviousIndex, currentIndex, viewContainerRef, itemValueResolver(record));
+        operation = _ViewRepeaterOperation.MOVED;
+      }
+      if (itemViewChanged) {
+        itemViewChanged({
+          context: view?.context,
+          operation,
+          record
+        });
+      }
+    });
+  }
+  detach() {
+    for (const view of this._viewCache) {
+      view.destroy();
+    }
+    this._viewCache = [];
+  }
+  /**
+   * Inserts a view for a new item, either from the cache or by creating a new
+   * one. Returns `undefined` if the item was inserted into a cached view.
+   */
+  _insertView(viewArgsFactory, currentIndex, viewContainerRef, value) {
+    const cachedView = this._insertViewFromCache(currentIndex, viewContainerRef);
+    if (cachedView) {
+      cachedView.context.$implicit = value;
+      return void 0;
+    }
+    const viewArgs = viewArgsFactory();
+    return viewContainerRef.createEmbeddedView(viewArgs.templateRef, viewArgs.context, viewArgs.index);
+  }
+  /** Detaches the view at the given index and inserts into the view cache. */
+  _detachAndCacheView(index, viewContainerRef) {
+    const detachedView = viewContainerRef.detach(index);
+    this._maybeCacheView(detachedView, viewContainerRef);
+  }
+  /** Moves view at the previous index to the current index. */
+  _moveView(adjustedPreviousIndex, currentIndex, viewContainerRef, value) {
+    const view = viewContainerRef.get(adjustedPreviousIndex);
+    viewContainerRef.move(view, currentIndex);
+    view.context.$implicit = value;
+    return view;
+  }
+  /**
+   * Cache the given detached view. If the cache is full, the view will be
+   * destroyed.
+   */
+  _maybeCacheView(view, viewContainerRef) {
+    if (this._viewCache.length < this.viewCacheSize) {
+      this._viewCache.push(view);
+    } else {
+      const index = viewContainerRef.indexOf(view);
+      if (index === -1) {
+        view.destroy();
+      } else {
+        viewContainerRef.remove(index);
+      }
+    }
+  }
+  /** Inserts a recycled view from the cache at the given index. */
+  _insertViewFromCache(index, viewContainerRef) {
+    const cachedView = this._viewCache.pop();
+    if (cachedView) {
+      viewContainerRef.insert(cachedView, index);
+    }
+    return cachedView || null;
+  }
+};
+
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/selection-model.mjs
+var SelectionModel = class {
+  _multiple;
+  _emitChanges;
+  compareWith;
+  /** Currently-selected values. */
+  _selection = /* @__PURE__ */ new Set();
+  /** Keeps track of the deselected options that haven't been emitted by the change event. */
+  _deselectedToEmit = [];
+  /** Keeps track of the selected options that haven't been emitted by the change event. */
+  _selectedToEmit = [];
+  /** Cache for the array value of the selected items. */
+  _selected;
+  /** Selected values. */
+  get selected() {
+    if (!this._selected) {
+      this._selected = Array.from(this._selection.values());
+    }
+    return this._selected;
+  }
+  /** Event emitted when the value has changed. */
+  changed = new Subject();
+  constructor(_multiple = false, initiallySelectedValues, _emitChanges = true, compareWith) {
+    this._multiple = _multiple;
+    this._emitChanges = _emitChanges;
+    this.compareWith = compareWith;
+    if (initiallySelectedValues && initiallySelectedValues.length) {
+      if (_multiple) {
+        initiallySelectedValues.forEach((value) => this._markSelected(value));
+      } else {
+        this._markSelected(initiallySelectedValues[0]);
+      }
+      this._selectedToEmit.length = 0;
+    }
+  }
+  /**
+   * Selects a value or an array of values.
+   * @param values The values to select
+   * @return Whether the selection changed as a result of this call
+   */
+  select(...values) {
+    this._verifyValueAssignment(values);
+    values.forEach((value) => this._markSelected(value));
+    const changed = this._hasQueuedChanges();
+    this._emitChangeEvent();
+    return changed;
+  }
+  /**
+   * Deselects a value or an array of values.
+   * @param values The values to deselect
+   * @return Whether the selection changed as a result of this call
+   */
+  deselect(...values) {
+    this._verifyValueAssignment(values);
+    values.forEach((value) => this._unmarkSelected(value));
+    const changed = this._hasQueuedChanges();
+    this._emitChangeEvent();
+    return changed;
+  }
+  /**
+   * Sets the selected values
+   * @param values The new selected values
+   * @return Whether the selection changed as a result of this call
+   */
+  setSelection(...values) {
+    this._verifyValueAssignment(values);
+    const oldValues = this.selected;
+    const newSelectedSet = new Set(values.map((value) => this._getConcreteValue(value)));
+    values.forEach((value) => this._markSelected(value));
+    oldValues.filter((value) => !newSelectedSet.has(this._getConcreteValue(value, newSelectedSet))).forEach((value) => this._unmarkSelected(value));
+    const changed = this._hasQueuedChanges();
+    this._emitChangeEvent();
+    return changed;
+  }
+  /**
+   * Toggles a value between selected and deselected.
+   * @param value The value to toggle
+   * @return Whether the selection changed as a result of this call
+   */
+  toggle(value) {
+    return this.isSelected(value) ? this.deselect(value) : this.select(value);
+  }
+  /**
+   * Clears all of the selected values.
+   * @param flushEvent Whether to flush the changes in an event.
+   *   If false, the changes to the selection will be flushed along with the next event.
+   * @return Whether the selection changed as a result of this call
+   */
+  clear(flushEvent = true) {
+    this._unmarkAll();
+    const changed = this._hasQueuedChanges();
+    if (flushEvent) {
+      this._emitChangeEvent();
+    }
+    return changed;
+  }
+  /**
+   * Determines whether a value is selected.
+   */
+  isSelected(value) {
+    return this._selection.has(this._getConcreteValue(value));
+  }
+  /**
+   * Determines whether the model does not have a value.
+   */
+  isEmpty() {
+    return this._selection.size === 0;
+  }
+  /**
+   * Determines whether the model has a value.
+   */
+  hasValue() {
+    return !this.isEmpty();
+  }
+  /**
+   * Sorts the selected values based on a predicate function.
+   */
+  sort(predicate) {
+    if (this._multiple && this.selected) {
+      this._selected.sort(predicate);
+    }
+  }
+  /**
+   * Gets whether multiple values can be selected.
+   */
+  isMultipleSelection() {
+    return this._multiple;
+  }
+  /** Emits a change event and clears the records of selected and deselected values. */
+  _emitChangeEvent() {
+    this._selected = null;
+    if (this._selectedToEmit.length || this._deselectedToEmit.length) {
+      this.changed.next({
+        source: this,
+        added: this._selectedToEmit,
+        removed: this._deselectedToEmit
+      });
+      this._deselectedToEmit = [];
+      this._selectedToEmit = [];
+    }
+  }
+  /** Selects a value. */
+  _markSelected(value) {
+    value = this._getConcreteValue(value);
+    if (!this.isSelected(value)) {
+      if (!this._multiple) {
+        this._unmarkAll();
+      }
+      if (!this.isSelected(value)) {
+        this._selection.add(value);
+      }
+      if (this._emitChanges) {
+        this._selectedToEmit.push(value);
+      }
+    }
+  }
+  /** Deselects a value. */
+  _unmarkSelected(value) {
+    value = this._getConcreteValue(value);
+    if (this.isSelected(value)) {
+      this._selection.delete(value);
+      if (this._emitChanges) {
+        this._deselectedToEmit.push(value);
+      }
+    }
+  }
+  /** Clears out the selected values. */
+  _unmarkAll() {
+    if (!this.isEmpty()) {
+      this._selection.forEach((value) => this._unmarkSelected(value));
+    }
+  }
+  /**
+   * Verifies the value assignment and throws an error if the specified value array is
+   * including multiple values while the selection model is not supporting multiple values.
+   */
+  _verifyValueAssignment(values) {
+    if (values.length > 1 && !this._multiple && (typeof ngDevMode === "undefined" || ngDevMode)) {
+      throw getMultipleValuesInSingleSelectionError();
+    }
+  }
+  /** Whether there are queued up change to be emitted. */
+  _hasQueuedChanges() {
+    return !!(this._deselectedToEmit.length || this._selectedToEmit.length);
+  }
+  /** Returns a value that is comparable to inputValue by applying compareWith function, returns the same inputValue otherwise. */
+  _getConcreteValue(inputValue, selection) {
+    if (!this.compareWith) {
+      return inputValue;
+    } else {
+      selection = selection ?? this._selection;
+      for (let selectedValue of selection) {
+        if (this.compareWith(inputValue, selectedValue)) {
+          return selectedValue;
+        }
+      }
+      return inputValue;
+    }
+  }
+};
+function getMultipleValuesInSingleSelectionError() {
+  return Error("Cannot pass multiple values into SelectionModel with single-value mode.");
+}
+
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/expansion.mjs
+var _c04 = ["body"];
+var _c14 = ["bodyWrapper"];
+var _c24 = [[["mat-expansion-panel-header"]], "*", [["mat-action-row"]]];
+var _c34 = ["mat-expansion-panel-header", "*", "mat-action-row"];
+function MatExpansionPanel_ng_template_7_Template(rf, ctx) {
+}
+var _c44 = [[["mat-panel-title"]], [["mat-panel-description"]], "*"];
+var _c53 = ["mat-panel-title", "mat-panel-description", "*"];
+function MatExpansionPanelHeader_Conditional_4_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275domElementStart(0, "span", 1);
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275domElementStart(1, "svg", 2);
+    \u0275\u0275domElement(2, "path", 3);
+    \u0275\u0275domElementEnd()();
+  }
+}
+var MAT_ACCORDION = new InjectionToken("MAT_ACCORDION");
+var MAT_EXPANSION_PANEL = new InjectionToken("MAT_EXPANSION_PANEL");
+var MatExpansionPanelContent = class _MatExpansionPanelContent {
+  _template = inject2(TemplateRef);
+  _expansionPanel = inject2(MAT_EXPANSION_PANEL, {
+    optional: true
+  });
+  constructor() {
+  }
+  static \u0275fac = function MatExpansionPanelContent_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatExpansionPanelContent)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _MatExpansionPanelContent,
+    selectors: [["ng-template", "matExpansionPanelContent", ""]]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatExpansionPanelContent, [{
+    type: Directive,
+    args: [{
+      selector: "ng-template[matExpansionPanelContent]"
+    }]
+  }], () => [], null);
+})();
+var MAT_EXPANSION_PANEL_DEFAULT_OPTIONS = new InjectionToken("MAT_EXPANSION_PANEL_DEFAULT_OPTIONS");
+var MatExpansionPanel = class _MatExpansionPanel extends CdkAccordionItem {
+  _viewContainerRef = inject2(ViewContainerRef);
+  _animationsDisabled = _animationsDisabled();
+  _document = inject2(DOCUMENT);
+  _ngZone = inject2(NgZone);
+  _elementRef = inject2(ElementRef);
+  _renderer = inject2(Renderer2);
+  _cleanupTransitionEnd;
+  /** Whether the toggle indicator should be hidden. */
+  get hideToggle() {
+    return this._hideToggle || this.accordion && this.accordion.hideToggle;
+  }
+  set hideToggle(value) {
+    this._hideToggle = value;
+  }
+  _hideToggle = false;
+  /** The position of the expansion indicator. */
+  get togglePosition() {
+    return this._togglePosition || this.accordion && this.accordion.togglePosition;
+  }
+  set togglePosition(value) {
+    this._togglePosition = value;
+  }
+  _togglePosition;
+  /** An event emitted after the body's expansion animation happens. */
+  afterExpand = new EventEmitter();
+  /** An event emitted after the body's collapse animation happens. */
+  afterCollapse = new EventEmitter();
+  /** Stream that emits for changes in `@Input` properties. */
+  _inputChanges = new Subject();
+  /** Optionally defined accordion the expansion panel belongs to. */
+  accordion = inject2(MAT_ACCORDION, {
+    optional: true,
+    skipSelf: true
+  });
+  /** Content that will be rendered lazily. */
+  _lazyContent;
+  /** Element containing the panel's user-provided content. */
+  _body;
+  /** Element wrapping the panel body. */
+  _bodyWrapper;
+  /** Portal holding the user's content. */
+  _portal;
+  /** ID for the associated header element. Used for a11y labelling. */
+  _headerId = inject2(_IdGenerator).getId("mat-expansion-panel-header-");
+  constructor() {
+    super();
+    const defaultOptions = inject2(MAT_EXPANSION_PANEL_DEFAULT_OPTIONS, {
+      optional: true
+    });
+    this._expansionDispatcher = inject2(UniqueSelectionDispatcher);
+    if (defaultOptions) {
+      this.hideToggle = defaultOptions.hideToggle;
+    }
+  }
+  /** Determines whether the expansion panel should have spacing between it and its siblings. */
+  _hasSpacing() {
+    if (this.accordion) {
+      return this.expanded && this.accordion.displayMode === "default";
+    }
+    return false;
+  }
+  /** Gets the expanded state string. */
+  _getExpandedState() {
+    return this.expanded ? "expanded" : "collapsed";
+  }
+  /** Toggles the expanded state of the expansion panel. */
+  toggle() {
+    this.expanded = !this.expanded;
+  }
+  /** Sets the expanded state of the expansion panel to false. */
+  close() {
+    this.expanded = false;
+  }
+  /** Sets the expanded state of the expansion panel to true. */
+  open() {
+    this.expanded = true;
+  }
+  ngAfterContentInit() {
+    if (this._lazyContent && this._lazyContent._expansionPanel === this) {
+      this.opened.pipe(startWith(null), filter(() => this.expanded && !this._portal), take(1)).subscribe(() => {
+        this._portal = new TemplatePortal(this._lazyContent._template, this._viewContainerRef);
+      });
+    }
+    this._setupAnimationEvents();
+  }
+  ngOnChanges(changes) {
+    this._inputChanges.next(changes);
+  }
+  ngOnDestroy() {
+    super.ngOnDestroy();
+    this._cleanupTransitionEnd?.();
+    this._inputChanges.complete();
+  }
+  /** Checks whether the expansion panel's content contains the currently-focused element. */
+  _containsFocus() {
+    if (this._body) {
+      const focusedElement = this._document.activeElement;
+      const bodyElement = this._body.nativeElement;
+      return focusedElement === bodyElement || bodyElement.contains(focusedElement);
+    }
+    return false;
+  }
+  _transitionEndListener = ({
+    target,
+    propertyName
+  }) => {
+    if (target === this._bodyWrapper?.nativeElement && propertyName === "grid-template-rows") {
+      this._ngZone.run(() => {
+        if (this.expanded) {
+          this.afterExpand.emit();
+        } else {
+          this.afterCollapse.emit();
+        }
+      });
+    }
+  };
+  _setupAnimationEvents() {
+    this._ngZone.runOutsideAngular(() => {
+      if (this._animationsDisabled) {
+        this.opened.subscribe(() => this._ngZone.run(() => this.afterExpand.emit()));
+        this.closed.subscribe(() => this._ngZone.run(() => this.afterCollapse.emit()));
+      } else {
+        setTimeout(() => {
+          const element = this._elementRef.nativeElement;
+          this._cleanupTransitionEnd = this._renderer.listen(element, "transitionend", this._transitionEndListener);
+          element.classList.add("mat-expansion-panel-animations-enabled");
+        }, 200);
+      }
+    });
+  }
+  static \u0275fac = function MatExpansionPanel_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatExpansionPanel)();
+  };
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+    type: _MatExpansionPanel,
+    selectors: [["mat-expansion-panel"]],
+    contentQueries: function MatExpansionPanel_ContentQueries(rf, ctx, dirIndex) {
+      if (rf & 1) {
+        \u0275\u0275contentQuery(dirIndex, MatExpansionPanelContent, 5);
+      }
+      if (rf & 2) {
+        let _t;
+        \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx._lazyContent = _t.first);
+      }
+    },
+    viewQuery: function MatExpansionPanel_Query(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275viewQuery(_c04, 5);
+        \u0275\u0275viewQuery(_c14, 5);
+      }
+      if (rf & 2) {
+        let _t;
+        \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx._body = _t.first);
+        \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx._bodyWrapper = _t.first);
+      }
+    },
+    hostAttrs: [1, "mat-expansion-panel"],
+    hostVars: 4,
+    hostBindings: function MatExpansionPanel_HostBindings(rf, ctx) {
+      if (rf & 2) {
+        \u0275\u0275classProp("mat-expanded", ctx.expanded)("mat-expansion-panel-spacing", ctx._hasSpacing());
+      }
+    },
+    inputs: {
+      hideToggle: [2, "hideToggle", "hideToggle", booleanAttribute],
+      togglePosition: "togglePosition"
+    },
+    outputs: {
+      afterExpand: "afterExpand",
+      afterCollapse: "afterCollapse"
+    },
+    exportAs: ["matExpansionPanel"],
+    features: [\u0275\u0275ProvidersFeature([
+      // Provide MatAccordion as undefined to prevent nested expansion panels from registering
+      // to the same accordion.
+      {
+        provide: MAT_ACCORDION,
+        useValue: void 0
+      },
+      {
+        provide: MAT_EXPANSION_PANEL,
+        useExisting: _MatExpansionPanel
+      }
+    ]), \u0275\u0275InheritDefinitionFeature, \u0275\u0275NgOnChangesFeature],
+    ngContentSelectors: _c34,
+    decls: 9,
+    vars: 4,
+    consts: [["bodyWrapper", ""], ["body", ""], [1, "mat-expansion-panel-content-wrapper"], ["role", "region", 1, "mat-expansion-panel-content", 3, "id"], [1, "mat-expansion-panel-body"], [3, "cdkPortalOutlet"]],
+    template: function MatExpansionPanel_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275projectionDef(_c24);
+        \u0275\u0275projection(0);
+        \u0275\u0275elementStart(1, "div", 2, 0)(3, "div", 3, 1)(5, "div", 4);
+        \u0275\u0275projection(6, 1);
+        \u0275\u0275template(7, MatExpansionPanel_ng_template_7_Template, 0, 0, "ng-template", 5);
+        \u0275\u0275elementEnd();
+        \u0275\u0275projection(8, 2);
+        \u0275\u0275elementEnd()();
+      }
+      if (rf & 2) {
+        \u0275\u0275advance();
+        \u0275\u0275attribute("inert", ctx.expanded ? null : "");
+        \u0275\u0275advance(2);
+        \u0275\u0275property("id", ctx.id);
+        \u0275\u0275attribute("aria-labelledby", ctx._headerId);
+        \u0275\u0275advance(4);
+        \u0275\u0275property("cdkPortalOutlet", ctx._portal);
+      }
+    },
+    dependencies: [CdkPortalOutlet],
+    styles: [".mat-expansion-panel{box-sizing:content-box;display:block;margin:0;overflow:hidden;position:relative;background:var(--mat-expansion-container-background-color, var(--mat-sys-surface));color:var(--mat-expansion-container-text-color, var(--mat-sys-on-surface));border-radius:var(--mat-expansion-container-shape, 12px)}.mat-expansion-panel.mat-expansion-panel-animations-enabled{transition:margin 225ms cubic-bezier(0.4, 0, 0.2, 1),box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1)}.mat-expansion-panel:not([class*=mat-elevation-z]){box-shadow:var(--mat-expansion-container-elevation-shadow, 0px 3px 1px -2px rgba(0, 0, 0, 0.2), 0px 2px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 5px 0px rgba(0, 0, 0, 0.12))}.mat-accordion .mat-expansion-panel:not(.mat-expanded),.mat-accordion .mat-expansion-panel:not(.mat-expansion-panel-spacing){border-radius:0}.mat-accordion .mat-expansion-panel:first-of-type{border-top-right-radius:var(--mat-expansion-container-shape, 12px);border-top-left-radius:var(--mat-expansion-container-shape, 12px)}.mat-accordion .mat-expansion-panel:last-of-type{border-bottom-right-radius:var(--mat-expansion-container-shape, 12px);border-bottom-left-radius:var(--mat-expansion-container-shape, 12px)}@media(forced-colors: active){.mat-expansion-panel{outline:solid 1px}}.mat-expansion-panel-content-wrapper{display:grid;grid-template-rows:0fr;grid-template-columns:100%}.mat-expansion-panel-animations-enabled .mat-expansion-panel-content-wrapper{transition:grid-template-rows 225ms cubic-bezier(0.4, 0, 0.2, 1)}.mat-expansion-panel.mat-expanded>.mat-expansion-panel-content-wrapper{grid-template-rows:1fr}@supports not (grid-template-rows: 0fr){.mat-expansion-panel-content-wrapper{height:0}.mat-expansion-panel.mat-expanded>.mat-expansion-panel-content-wrapper{height:auto}}.mat-expansion-panel-content{display:flex;flex-direction:column;overflow:visible;min-height:0;visibility:hidden;font-family:var(--mat-expansion-container-text-font, var(--mat-sys-body-large-font));font-size:var(--mat-expansion-container-text-size, var(--mat-sys-body-large-size));font-weight:var(--mat-expansion-container-text-weight, var(--mat-sys-body-large-weight));line-height:var(--mat-expansion-container-text-line-height, var(--mat-sys-body-large-line-height));letter-spacing:var(--mat-expansion-container-text-tracking, var(--mat-sys-body-large-tracking))}.mat-expansion-panel-animations-enabled .mat-expansion-panel-content{transition:visibility 190ms linear}.mat-expansion-panel.mat-expanded>.mat-expansion-panel-content-wrapper>.mat-expansion-panel-content{visibility:visible}.mat-expansion-panel-body{padding:0 24px 16px}.mat-expansion-panel-spacing{margin:16px 0}.mat-accordion>.mat-expansion-panel-spacing:first-child,.mat-accordion>*:first-child:not(.mat-expansion-panel) .mat-expansion-panel-spacing{margin-top:0}.mat-accordion>.mat-expansion-panel-spacing:last-child,.mat-accordion>*:last-child:not(.mat-expansion-panel) .mat-expansion-panel-spacing{margin-bottom:0}.mat-action-row{border-top-style:solid;border-top-width:1px;display:flex;flex-direction:row;justify-content:flex-end;padding:16px 8px 16px 24px;border-top-color:var(--mat-expansion-actions-divider-color, var(--mat-sys-outline))}.mat-action-row .mat-button-base,.mat-action-row .mat-mdc-button-base{margin-left:8px}[dir=rtl] .mat-action-row .mat-button-base,[dir=rtl] .mat-action-row .mat-mdc-button-base{margin-left:0;margin-right:8px}\n"],
+    encapsulation: 2,
+    changeDetection: 0
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatExpansionPanel, [{
+    type: Component,
+    args: [{
+      selector: "mat-expansion-panel",
+      exportAs: "matExpansionPanel",
+      encapsulation: ViewEncapsulation.None,
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      providers: [
+        // Provide MatAccordion as undefined to prevent nested expansion panels from registering
+        // to the same accordion.
+        {
+          provide: MAT_ACCORDION,
+          useValue: void 0
+        },
+        {
+          provide: MAT_EXPANSION_PANEL,
+          useExisting: MatExpansionPanel
+        }
+      ],
+      host: {
+        "class": "mat-expansion-panel",
+        "[class.mat-expanded]": "expanded",
+        "[class.mat-expansion-panel-spacing]": "_hasSpacing()"
+      },
+      imports: [CdkPortalOutlet],
+      template: `<ng-content select="mat-expansion-panel-header"></ng-content>
+<div class="mat-expansion-panel-content-wrapper" [attr.inert]="expanded ? null : ''" #bodyWrapper>
+  <div class="mat-expansion-panel-content"
+       role="region"
+       [attr.aria-labelledby]="_headerId"
+       [id]="id"
+       #body>
+    <div class="mat-expansion-panel-body">
+      <ng-content></ng-content>
+      <ng-template [cdkPortalOutlet]="_portal"></ng-template>
+    </div>
+    <ng-content select="mat-action-row"></ng-content>
+  </div>
+</div>
+`,
+      styles: [".mat-expansion-panel{box-sizing:content-box;display:block;margin:0;overflow:hidden;position:relative;background:var(--mat-expansion-container-background-color, var(--mat-sys-surface));color:var(--mat-expansion-container-text-color, var(--mat-sys-on-surface));border-radius:var(--mat-expansion-container-shape, 12px)}.mat-expansion-panel.mat-expansion-panel-animations-enabled{transition:margin 225ms cubic-bezier(0.4, 0, 0.2, 1),box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1)}.mat-expansion-panel:not([class*=mat-elevation-z]){box-shadow:var(--mat-expansion-container-elevation-shadow, 0px 3px 1px -2px rgba(0, 0, 0, 0.2), 0px 2px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 5px 0px rgba(0, 0, 0, 0.12))}.mat-accordion .mat-expansion-panel:not(.mat-expanded),.mat-accordion .mat-expansion-panel:not(.mat-expansion-panel-spacing){border-radius:0}.mat-accordion .mat-expansion-panel:first-of-type{border-top-right-radius:var(--mat-expansion-container-shape, 12px);border-top-left-radius:var(--mat-expansion-container-shape, 12px)}.mat-accordion .mat-expansion-panel:last-of-type{border-bottom-right-radius:var(--mat-expansion-container-shape, 12px);border-bottom-left-radius:var(--mat-expansion-container-shape, 12px)}@media(forced-colors: active){.mat-expansion-panel{outline:solid 1px}}.mat-expansion-panel-content-wrapper{display:grid;grid-template-rows:0fr;grid-template-columns:100%}.mat-expansion-panel-animations-enabled .mat-expansion-panel-content-wrapper{transition:grid-template-rows 225ms cubic-bezier(0.4, 0, 0.2, 1)}.mat-expansion-panel.mat-expanded>.mat-expansion-panel-content-wrapper{grid-template-rows:1fr}@supports not (grid-template-rows: 0fr){.mat-expansion-panel-content-wrapper{height:0}.mat-expansion-panel.mat-expanded>.mat-expansion-panel-content-wrapper{height:auto}}.mat-expansion-panel-content{display:flex;flex-direction:column;overflow:visible;min-height:0;visibility:hidden;font-family:var(--mat-expansion-container-text-font, var(--mat-sys-body-large-font));font-size:var(--mat-expansion-container-text-size, var(--mat-sys-body-large-size));font-weight:var(--mat-expansion-container-text-weight, var(--mat-sys-body-large-weight));line-height:var(--mat-expansion-container-text-line-height, var(--mat-sys-body-large-line-height));letter-spacing:var(--mat-expansion-container-text-tracking, var(--mat-sys-body-large-tracking))}.mat-expansion-panel-animations-enabled .mat-expansion-panel-content{transition:visibility 190ms linear}.mat-expansion-panel.mat-expanded>.mat-expansion-panel-content-wrapper>.mat-expansion-panel-content{visibility:visible}.mat-expansion-panel-body{padding:0 24px 16px}.mat-expansion-panel-spacing{margin:16px 0}.mat-accordion>.mat-expansion-panel-spacing:first-child,.mat-accordion>*:first-child:not(.mat-expansion-panel) .mat-expansion-panel-spacing{margin-top:0}.mat-accordion>.mat-expansion-panel-spacing:last-child,.mat-accordion>*:last-child:not(.mat-expansion-panel) .mat-expansion-panel-spacing{margin-bottom:0}.mat-action-row{border-top-style:solid;border-top-width:1px;display:flex;flex-direction:row;justify-content:flex-end;padding:16px 8px 16px 24px;border-top-color:var(--mat-expansion-actions-divider-color, var(--mat-sys-outline))}.mat-action-row .mat-button-base,.mat-action-row .mat-mdc-button-base{margin-left:8px}[dir=rtl] .mat-action-row .mat-button-base,[dir=rtl] .mat-action-row .mat-mdc-button-base{margin-left:0;margin-right:8px}\n"]
+    }]
+  }], () => [], {
+    hideToggle: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    togglePosition: [{
+      type: Input
+    }],
+    afterExpand: [{
+      type: Output
+    }],
+    afterCollapse: [{
+      type: Output
+    }],
+    _lazyContent: [{
+      type: ContentChild,
+      args: [MatExpansionPanelContent]
+    }],
+    _body: [{
+      type: ViewChild,
+      args: ["body"]
+    }],
+    _bodyWrapper: [{
+      type: ViewChild,
+      args: ["bodyWrapper"]
+    }]
+  });
+})();
+var MatExpansionPanelActionRow = class _MatExpansionPanelActionRow {
+  static \u0275fac = function MatExpansionPanelActionRow_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatExpansionPanelActionRow)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _MatExpansionPanelActionRow,
+    selectors: [["mat-action-row"]],
+    hostAttrs: [1, "mat-action-row"]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatExpansionPanelActionRow, [{
+    type: Directive,
+    args: [{
+      selector: "mat-action-row",
+      host: {
+        class: "mat-action-row"
+      }
+    }]
+  }], null, null);
+})();
+var MatExpansionPanelHeader = class _MatExpansionPanelHeader {
+  panel = inject2(MatExpansionPanel, {
+    host: true
+  });
+  _element = inject2(ElementRef);
+  _focusMonitor = inject2(FocusMonitor);
+  _changeDetectorRef = inject2(ChangeDetectorRef);
+  _parentChangeSubscription = Subscription.EMPTY;
+  constructor() {
+    inject2(_CdkPrivateStyleLoader).load(_StructuralStylesLoader);
+    const panel = this.panel;
+    const defaultOptions = inject2(MAT_EXPANSION_PANEL_DEFAULT_OPTIONS, {
+      optional: true
+    });
+    const tabIndex = inject2(new HostAttributeToken("tabindex"), {
+      optional: true
+    });
+    const accordionHideToggleChange = panel.accordion ? panel.accordion._stateChanges.pipe(filter((changes) => !!(changes["hideToggle"] || changes["togglePosition"]))) : EMPTY;
+    this.tabIndex = parseInt(tabIndex || "") || 0;
+    this._parentChangeSubscription = merge(panel.opened, panel.closed, accordionHideToggleChange, panel._inputChanges.pipe(filter((changes) => {
+      return !!(changes["hideToggle"] || changes["disabled"] || changes["togglePosition"]);
+    }))).subscribe(() => this._changeDetectorRef.markForCheck());
+    panel.closed.pipe(filter(() => panel._containsFocus())).subscribe(() => this._focusMonitor.focusVia(this._element, "program"));
+    if (defaultOptions) {
+      this.expandedHeight = defaultOptions.expandedHeight;
+      this.collapsedHeight = defaultOptions.collapsedHeight;
+    }
+  }
+  /** Height of the header while the panel is expanded. */
+  expandedHeight;
+  /** Height of the header while the panel is collapsed. */
+  collapsedHeight;
+  /** Tab index of the header. */
+  tabIndex = 0;
+  /**
+   * Whether the associated panel is disabled. Implemented as a part of `FocusableOption`.
+   * @docs-private
+   */
+  get disabled() {
+    return this.panel.disabled;
+  }
+  /** Toggles the expanded state of the panel. */
+  _toggle() {
+    if (!this.disabled) {
+      this.panel.toggle();
+    }
+  }
+  /** Gets whether the panel is expanded. */
+  _isExpanded() {
+    return this.panel.expanded;
+  }
+  /** Gets the expanded state string of the panel. */
+  _getExpandedState() {
+    return this.panel._getExpandedState();
+  }
+  /** Gets the panel id. */
+  _getPanelId() {
+    return this.panel.id;
+  }
+  /** Gets the toggle position for the header. */
+  _getTogglePosition() {
+    return this.panel.togglePosition;
+  }
+  /** Gets whether the expand indicator should be shown. */
+  _showToggle() {
+    return !this.panel.hideToggle && !this.panel.disabled;
+  }
+  /**
+   * Gets the current height of the header. Null if no custom height has been
+   * specified, and if the default height from the stylesheet should be used.
+   */
+  _getHeaderHeight() {
+    const isExpanded = this._isExpanded();
+    if (isExpanded && this.expandedHeight) {
+      return this.expandedHeight;
+    } else if (!isExpanded && this.collapsedHeight) {
+      return this.collapsedHeight;
+    }
+    return null;
+  }
+  /** Handle keydown event calling to toggle() if appropriate. */
+  _keydown(event) {
+    switch (event.keyCode) {
+      // Toggle for space and enter keys.
+      case SPACE:
+      case ENTER:
+        if (!hasModifierKey(event)) {
+          event.preventDefault();
+          this._toggle();
+        }
+        break;
+      default:
+        if (this.panel.accordion) {
+          this.panel.accordion._handleHeaderKeydown(event);
+        }
+        return;
+    }
+  }
+  /**
+   * Focuses the panel header. Implemented as a part of `FocusableOption`.
+   * @param origin Origin of the action that triggered the focus.
+   * @docs-private
+   */
+  focus(origin, options) {
+    if (origin) {
+      this._focusMonitor.focusVia(this._element, origin, options);
+    } else {
+      this._element.nativeElement.focus(options);
+    }
+  }
+  ngAfterViewInit() {
+    this._focusMonitor.monitor(this._element).subscribe((origin) => {
+      if (origin && this.panel.accordion) {
+        this.panel.accordion._handleHeaderFocus(this);
+      }
+    });
+  }
+  ngOnDestroy() {
+    this._parentChangeSubscription.unsubscribe();
+    this._focusMonitor.stopMonitoring(this._element);
+  }
+  static \u0275fac = function MatExpansionPanelHeader_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatExpansionPanelHeader)();
+  };
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+    type: _MatExpansionPanelHeader,
+    selectors: [["mat-expansion-panel-header"]],
+    hostAttrs: ["role", "button", 1, "mat-expansion-panel-header", "mat-focus-indicator"],
+    hostVars: 13,
+    hostBindings: function MatExpansionPanelHeader_HostBindings(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275listener("click", function MatExpansionPanelHeader_click_HostBindingHandler() {
+          return ctx._toggle();
+        })("keydown", function MatExpansionPanelHeader_keydown_HostBindingHandler($event) {
+          return ctx._keydown($event);
+        });
+      }
+      if (rf & 2) {
+        \u0275\u0275attribute("id", ctx.panel._headerId)("tabindex", ctx.disabled ? -1 : ctx.tabIndex)("aria-controls", ctx._getPanelId())("aria-expanded", ctx._isExpanded())("aria-disabled", ctx.panel.disabled);
+        \u0275\u0275styleProp("height", ctx._getHeaderHeight());
+        \u0275\u0275classProp("mat-expanded", ctx._isExpanded())("mat-expansion-toggle-indicator-after", ctx._getTogglePosition() === "after")("mat-expansion-toggle-indicator-before", ctx._getTogglePosition() === "before");
+      }
+    },
+    inputs: {
+      expandedHeight: "expandedHeight",
+      collapsedHeight: "collapsedHeight",
+      tabIndex: [2, "tabIndex", "tabIndex", (value) => value == null ? 0 : numberAttribute(value)]
+    },
+    ngContentSelectors: _c53,
+    decls: 5,
+    vars: 3,
+    consts: [[1, "mat-content"], [1, "mat-expansion-indicator"], ["xmlns", "http://www.w3.org/2000/svg", "viewBox", "0 -960 960 960", "aria-hidden", "true", "focusable", "false"], ["d", "M480-345 240-585l56-56 184 184 184-184 56 56-240 240Z"]],
+    template: function MatExpansionPanelHeader_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275projectionDef(_c44);
+        \u0275\u0275domElementStart(0, "span", 0);
+        \u0275\u0275projection(1);
+        \u0275\u0275projection(2, 1);
+        \u0275\u0275projection(3, 2);
+        \u0275\u0275domElementEnd();
+        \u0275\u0275conditionalCreate(4, MatExpansionPanelHeader_Conditional_4_Template, 3, 0, "span", 1);
+      }
+      if (rf & 2) {
+        \u0275\u0275classProp("mat-content-hide-toggle", !ctx._showToggle());
+        \u0275\u0275advance(4);
+        \u0275\u0275conditional(ctx._showToggle() ? 4 : -1);
+      }
+    },
+    styles: ['.mat-expansion-panel-header{display:flex;flex-direction:row;align-items:center;padding:0 24px;border-radius:inherit;height:var(--mat-expansion-header-collapsed-state-height, 48px);font-family:var(--mat-expansion-header-text-font, var(--mat-sys-title-medium-font));font-size:var(--mat-expansion-header-text-size, var(--mat-sys-title-medium-size));font-weight:var(--mat-expansion-header-text-weight, var(--mat-sys-title-medium-weight));line-height:var(--mat-expansion-header-text-line-height, var(--mat-sys-title-medium-line-height));letter-spacing:var(--mat-expansion-header-text-tracking, var(--mat-sys-title-medium-tracking))}.mat-expansion-panel-animations-enabled .mat-expansion-panel-header{transition:height 225ms cubic-bezier(0.4, 0, 0.2, 1)}.mat-expansion-panel-header::before{border-radius:inherit}.mat-expansion-panel-header.mat-expanded{height:var(--mat-expansion-header-expanded-state-height, 64px)}.mat-expansion-panel-header[aria-disabled=true]{color:var(--mat-expansion-header-disabled-state-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent))}.mat-expansion-panel-header:not([aria-disabled=true]){cursor:pointer}.mat-expansion-panel:not(.mat-expanded) .mat-expansion-panel-header:not([aria-disabled=true]):hover{background:var(--mat-expansion-header-hover-state-layer-color, color-mix(in srgb, var(--mat-sys-on-surface) calc(var(--mat-sys-hover-state-layer-opacity) * 100%), transparent))}@media(hover: none){.mat-expansion-panel:not(.mat-expanded) .mat-expansion-panel-header:not([aria-disabled=true]):hover{background:var(--mat-expansion-container-background-color, var(--mat-sys-surface))}}.mat-expansion-panel .mat-expansion-panel-header:not([aria-disabled=true]).cdk-keyboard-focused,.mat-expansion-panel .mat-expansion-panel-header:not([aria-disabled=true]).cdk-program-focused{background:var(--mat-expansion-header-focus-state-layer-color, color-mix(in srgb, var(--mat-sys-on-surface) calc(var(--mat-sys-focus-state-layer-opacity) * 100%), transparent))}.mat-expansion-panel-header._mat-animation-noopable{transition:none}.mat-expansion-panel-header:focus,.mat-expansion-panel-header:hover{outline:none}.mat-expansion-panel-header.mat-expanded:focus,.mat-expansion-panel-header.mat-expanded:hover{background:inherit}.mat-expansion-panel-header.mat-expansion-toggle-indicator-before{flex-direction:row-reverse}.mat-expansion-panel-header.mat-expansion-toggle-indicator-before .mat-expansion-indicator{margin:0 16px 0 0}[dir=rtl] .mat-expansion-panel-header.mat-expansion-toggle-indicator-before .mat-expansion-indicator{margin:0 0 0 16px}.mat-content{display:flex;flex:1;flex-direction:row;overflow:hidden}.mat-content.mat-content-hide-toggle{margin-right:8px}[dir=rtl] .mat-content.mat-content-hide-toggle{margin-right:0;margin-left:8px}.mat-expansion-toggle-indicator-before .mat-content.mat-content-hide-toggle{margin-left:24px;margin-right:0}[dir=rtl] .mat-expansion-toggle-indicator-before .mat-content.mat-content-hide-toggle{margin-right:24px;margin-left:0}.mat-expansion-panel-header-title{color:var(--mat-expansion-header-text-color, var(--mat-sys-on-surface))}.mat-expansion-panel-header-title,.mat-expansion-panel-header-description{display:flex;flex-grow:1;flex-basis:0;margin-right:16px;align-items:center}[dir=rtl] .mat-expansion-panel-header-title,[dir=rtl] .mat-expansion-panel-header-description{margin-right:0;margin-left:16px}.mat-expansion-panel-header[aria-disabled=true] .mat-expansion-panel-header-title,.mat-expansion-panel-header[aria-disabled=true] .mat-expansion-panel-header-description{color:inherit}.mat-expansion-panel-header-description{flex-grow:2;color:var(--mat-expansion-header-description-color, var(--mat-sys-on-surface-variant))}.mat-expansion-panel-animations-enabled .mat-expansion-indicator{transition:transform 225ms cubic-bezier(0.4, 0, 0.2, 1)}.mat-expansion-panel-header.mat-expanded .mat-expansion-indicator{transform:rotate(180deg)}.mat-expansion-indicator::after{border-style:solid;border-width:0 2px 2px 0;content:"";padding:3px;transform:rotate(45deg);vertical-align:middle;color:var(--mat-expansion-header-indicator-color, var(--mat-sys-on-surface-variant));display:var(--mat-expansion-legacy-header-indicator-display, none)}.mat-expansion-indicator svg{width:24px;height:24px;margin:0 -8px;vertical-align:middle;fill:var(--mat-expansion-header-indicator-color, var(--mat-sys-on-surface-variant));display:var(--mat-expansion-header-indicator-display, inline-block)}@media(forced-colors: active){.mat-expansion-panel-content{border-top:1px solid;border-top-left-radius:0;border-top-right-radius:0}}\n'],
+    encapsulation: 2,
+    changeDetection: 0
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatExpansionPanelHeader, [{
+    type: Component,
+    args: [{
+      selector: "mat-expansion-panel-header",
+      encapsulation: ViewEncapsulation.None,
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      host: {
+        "class": "mat-expansion-panel-header mat-focus-indicator",
+        "role": "button",
+        "[attr.id]": "panel._headerId",
+        "[attr.tabindex]": "disabled ? -1 : tabIndex",
+        "[attr.aria-controls]": "_getPanelId()",
+        "[attr.aria-expanded]": "_isExpanded()",
+        "[attr.aria-disabled]": "panel.disabled",
+        "[class.mat-expanded]": "_isExpanded()",
+        "[class.mat-expansion-toggle-indicator-after]": `_getTogglePosition() === 'after'`,
+        "[class.mat-expansion-toggle-indicator-before]": `_getTogglePosition() === 'before'`,
+        "[style.height]": "_getHeaderHeight()",
+        "(click)": "_toggle()",
+        "(keydown)": "_keydown($event)"
+      },
+      template: '<span class="mat-content" [class.mat-content-hide-toggle]="!_showToggle()">\n  <ng-content select="mat-panel-title"></ng-content>\n  <ng-content select="mat-panel-description"></ng-content>\n  <ng-content></ng-content>\n</span>\n\n@if (_showToggle()) {\n  <span class="mat-expansion-indicator">\n    <svg\n      xmlns="http://www.w3.org/2000/svg"\n      viewBox="0 -960 960 960"\n      aria-hidden="true"\n      focusable="false">\n      <path d="M480-345 240-585l56-56 184 184 184-184 56 56-240 240Z"/>\n    </svg>\n  </span>\n}\n',
+      styles: ['.mat-expansion-panel-header{display:flex;flex-direction:row;align-items:center;padding:0 24px;border-radius:inherit;height:var(--mat-expansion-header-collapsed-state-height, 48px);font-family:var(--mat-expansion-header-text-font, var(--mat-sys-title-medium-font));font-size:var(--mat-expansion-header-text-size, var(--mat-sys-title-medium-size));font-weight:var(--mat-expansion-header-text-weight, var(--mat-sys-title-medium-weight));line-height:var(--mat-expansion-header-text-line-height, var(--mat-sys-title-medium-line-height));letter-spacing:var(--mat-expansion-header-text-tracking, var(--mat-sys-title-medium-tracking))}.mat-expansion-panel-animations-enabled .mat-expansion-panel-header{transition:height 225ms cubic-bezier(0.4, 0, 0.2, 1)}.mat-expansion-panel-header::before{border-radius:inherit}.mat-expansion-panel-header.mat-expanded{height:var(--mat-expansion-header-expanded-state-height, 64px)}.mat-expansion-panel-header[aria-disabled=true]{color:var(--mat-expansion-header-disabled-state-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent))}.mat-expansion-panel-header:not([aria-disabled=true]){cursor:pointer}.mat-expansion-panel:not(.mat-expanded) .mat-expansion-panel-header:not([aria-disabled=true]):hover{background:var(--mat-expansion-header-hover-state-layer-color, color-mix(in srgb, var(--mat-sys-on-surface) calc(var(--mat-sys-hover-state-layer-opacity) * 100%), transparent))}@media(hover: none){.mat-expansion-panel:not(.mat-expanded) .mat-expansion-panel-header:not([aria-disabled=true]):hover{background:var(--mat-expansion-container-background-color, var(--mat-sys-surface))}}.mat-expansion-panel .mat-expansion-panel-header:not([aria-disabled=true]).cdk-keyboard-focused,.mat-expansion-panel .mat-expansion-panel-header:not([aria-disabled=true]).cdk-program-focused{background:var(--mat-expansion-header-focus-state-layer-color, color-mix(in srgb, var(--mat-sys-on-surface) calc(var(--mat-sys-focus-state-layer-opacity) * 100%), transparent))}.mat-expansion-panel-header._mat-animation-noopable{transition:none}.mat-expansion-panel-header:focus,.mat-expansion-panel-header:hover{outline:none}.mat-expansion-panel-header.mat-expanded:focus,.mat-expansion-panel-header.mat-expanded:hover{background:inherit}.mat-expansion-panel-header.mat-expansion-toggle-indicator-before{flex-direction:row-reverse}.mat-expansion-panel-header.mat-expansion-toggle-indicator-before .mat-expansion-indicator{margin:0 16px 0 0}[dir=rtl] .mat-expansion-panel-header.mat-expansion-toggle-indicator-before .mat-expansion-indicator{margin:0 0 0 16px}.mat-content{display:flex;flex:1;flex-direction:row;overflow:hidden}.mat-content.mat-content-hide-toggle{margin-right:8px}[dir=rtl] .mat-content.mat-content-hide-toggle{margin-right:0;margin-left:8px}.mat-expansion-toggle-indicator-before .mat-content.mat-content-hide-toggle{margin-left:24px;margin-right:0}[dir=rtl] .mat-expansion-toggle-indicator-before .mat-content.mat-content-hide-toggle{margin-right:24px;margin-left:0}.mat-expansion-panel-header-title{color:var(--mat-expansion-header-text-color, var(--mat-sys-on-surface))}.mat-expansion-panel-header-title,.mat-expansion-panel-header-description{display:flex;flex-grow:1;flex-basis:0;margin-right:16px;align-items:center}[dir=rtl] .mat-expansion-panel-header-title,[dir=rtl] .mat-expansion-panel-header-description{margin-right:0;margin-left:16px}.mat-expansion-panel-header[aria-disabled=true] .mat-expansion-panel-header-title,.mat-expansion-panel-header[aria-disabled=true] .mat-expansion-panel-header-description{color:inherit}.mat-expansion-panel-header-description{flex-grow:2;color:var(--mat-expansion-header-description-color, var(--mat-sys-on-surface-variant))}.mat-expansion-panel-animations-enabled .mat-expansion-indicator{transition:transform 225ms cubic-bezier(0.4, 0, 0.2, 1)}.mat-expansion-panel-header.mat-expanded .mat-expansion-indicator{transform:rotate(180deg)}.mat-expansion-indicator::after{border-style:solid;border-width:0 2px 2px 0;content:"";padding:3px;transform:rotate(45deg);vertical-align:middle;color:var(--mat-expansion-header-indicator-color, var(--mat-sys-on-surface-variant));display:var(--mat-expansion-legacy-header-indicator-display, none)}.mat-expansion-indicator svg{width:24px;height:24px;margin:0 -8px;vertical-align:middle;fill:var(--mat-expansion-header-indicator-color, var(--mat-sys-on-surface-variant));display:var(--mat-expansion-header-indicator-display, inline-block)}@media(forced-colors: active){.mat-expansion-panel-content{border-top:1px solid;border-top-left-radius:0;border-top-right-radius:0}}\n']
+    }]
+  }], () => [], {
+    expandedHeight: [{
+      type: Input
+    }],
+    collapsedHeight: [{
+      type: Input
+    }],
+    tabIndex: [{
+      type: Input,
+      args: [{
+        transform: (value) => value == null ? 0 : numberAttribute(value)
+      }]
+    }]
+  });
+})();
+var MatExpansionPanelDescription = class _MatExpansionPanelDescription {
+  static \u0275fac = function MatExpansionPanelDescription_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatExpansionPanelDescription)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _MatExpansionPanelDescription,
+    selectors: [["mat-panel-description"]],
+    hostAttrs: [1, "mat-expansion-panel-header-description"]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatExpansionPanelDescription, [{
+    type: Directive,
+    args: [{
+      selector: "mat-panel-description",
+      host: {
+        class: "mat-expansion-panel-header-description"
+      }
+    }]
+  }], null, null);
+})();
+var MatExpansionPanelTitle = class _MatExpansionPanelTitle {
+  static \u0275fac = function MatExpansionPanelTitle_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatExpansionPanelTitle)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _MatExpansionPanelTitle,
+    selectors: [["mat-panel-title"]],
+    hostAttrs: [1, "mat-expansion-panel-header-title"]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatExpansionPanelTitle, [{
+    type: Directive,
+    args: [{
+      selector: "mat-panel-title",
+      host: {
+        class: "mat-expansion-panel-header-title"
+      }
+    }]
+  }], null, null);
+})();
+var MatAccordion = class _MatAccordion extends CdkAccordion {
+  _keyManager;
+  /** Headers belonging to this accordion. */
+  _ownHeaders = new QueryList();
+  /** All headers inside the accordion. Includes headers inside nested accordions. */
+  _headers;
+  /** Whether the expansion indicator should be hidden. */
+  hideToggle = false;
+  /**
+   * Display mode used for all expansion panels in the accordion. Currently two display
+   * modes exist:
+   *  default - a gutter-like spacing is placed around any expanded panel, placing the expanded
+   *     panel at a different elevation from the rest of the accordion.
+   *  flat - no spacing is placed around expanded panels, showing all panels at the same
+   *     elevation.
+   */
+  displayMode = "default";
+  /** The position of the expansion indicator. */
+  togglePosition = "after";
+  ngAfterContentInit() {
+    this._headers.changes.pipe(startWith(this._headers)).subscribe((headers) => {
+      this._ownHeaders.reset(headers.filter((header) => header.panel.accordion === this));
+      this._ownHeaders.notifyOnChanges();
+    });
+    this._keyManager = new FocusKeyManager(this._ownHeaders).withWrap().withHomeAndEnd();
+  }
+  /** Handles keyboard events coming in from the panel headers. */
+  _handleHeaderKeydown(event) {
+    this._keyManager.onKeydown(event);
+  }
+  _handleHeaderFocus(header) {
+    this._keyManager.updateActiveItem(header);
+  }
+  ngOnDestroy() {
+    super.ngOnDestroy();
+    this._keyManager?.destroy();
+    this._ownHeaders.destroy();
+  }
+  static \u0275fac = /* @__PURE__ */ (() => {
+    let \u0275MatAccordion_BaseFactory;
+    return function MatAccordion_Factory(__ngFactoryType__) {
+      return (\u0275MatAccordion_BaseFactory || (\u0275MatAccordion_BaseFactory = \u0275\u0275getInheritedFactory(_MatAccordion)))(__ngFactoryType__ || _MatAccordion);
+    };
+  })();
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _MatAccordion,
+    selectors: [["mat-accordion"]],
+    contentQueries: function MatAccordion_ContentQueries(rf, ctx, dirIndex) {
+      if (rf & 1) {
+        \u0275\u0275contentQuery(dirIndex, MatExpansionPanelHeader, 5);
+      }
+      if (rf & 2) {
+        let _t;
+        \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx._headers = _t);
+      }
+    },
+    hostAttrs: [1, "mat-accordion"],
+    hostVars: 2,
+    hostBindings: function MatAccordion_HostBindings(rf, ctx) {
+      if (rf & 2) {
+        \u0275\u0275classProp("mat-accordion-multi", ctx.multi);
+      }
+    },
+    inputs: {
+      hideToggle: [2, "hideToggle", "hideToggle", booleanAttribute],
+      displayMode: "displayMode",
+      togglePosition: "togglePosition"
+    },
+    exportAs: ["matAccordion"],
+    features: [\u0275\u0275ProvidersFeature([{
+      provide: MAT_ACCORDION,
+      useExisting: _MatAccordion
+    }]), \u0275\u0275InheritDefinitionFeature]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatAccordion, [{
+    type: Directive,
+    args: [{
+      selector: "mat-accordion",
+      exportAs: "matAccordion",
+      providers: [{
+        provide: MAT_ACCORDION,
+        useExisting: MatAccordion
+      }],
+      host: {
+        class: "mat-accordion",
+        // Class binding which is only used by the test harness as there is no other
+        // way for the harness to detect if multiple panel support is enabled.
+        "[class.mat-accordion-multi]": "this.multi"
+      }
+    }]
+  }], null, {
+    _headers: [{
+      type: ContentChildren,
+      args: [MatExpansionPanelHeader, {
+        descendants: true
+      }]
+    }],
+    hideToggle: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    displayMode: [{
+      type: Input
+    }],
+    togglePosition: [{
+      type: Input
+    }]
+  });
+})();
+var MatExpansionModule = class _MatExpansionModule {
+  static \u0275fac = function MatExpansionModule_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatExpansionModule)();
+  };
+  static \u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({
+    type: _MatExpansionModule,
+    imports: [MatCommonModule, CdkAccordionModule, PortalModule, MatAccordion, MatExpansionPanel, MatExpansionPanelActionRow, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription, MatExpansionPanelContent],
+    exports: [MatAccordion, MatExpansionPanel, MatExpansionPanelActionRow, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription, MatExpansionPanelContent]
+  });
+  static \u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({
+    imports: [MatCommonModule, CdkAccordionModule, PortalModule]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatExpansionModule, [{
+    type: NgModule,
+    args: [{
+      imports: [MatCommonModule, CdkAccordionModule, PortalModule, MatAccordion, MatExpansionPanel, MatExpansionPanelActionRow, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription, MatExpansionPanelContent],
+      exports: [MatAccordion, MatExpansionPanel, MatExpansionPanelActionRow, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription, MatExpansionPanelContent]
+    }]
+  }], null, null);
+})();
+
+// src/app/page/dashboard/dashboard-panel/dashboard-panel.ts
+var _c05 = [[["mat-card-header"]], [["mat-card-content"]]];
+var _c15 = ["mat-card-header", "mat-card-content"];
+var DashboardPanel = class _DashboardPanel {
+  static \u0275fac = function DashboardPanel_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _DashboardPanel)();
+  };
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DashboardPanel, selectors: [["app-dashboard-panel"]], ngContentSelectors: _c15, decls: 3, vars: 0, consts: [["appearance", "outlined"]], template: function DashboardPanel_Template(rf, ctx) {
+    if (rf & 1) {
+      \u0275\u0275projectionDef(_c05);
+      \u0275\u0275elementStart(0, "mat-card", 0);
+      \u0275\u0275projection(1);
+      \u0275\u0275projection(2, 1);
+      \u0275\u0275elementEnd();
+    }
+  }, dependencies: [MatCard], styles: ["\n\n[_nghost-%COMP%] {\n  overflow: hidden;\n  flex: 1;\n}\n[_nghost-%COMP%]   mat-card[_ngcontent-%COMP%] {\n  max-height: 100%;\n  gap: 12px;\n}\n/*# sourceMappingURL=dashboard-panel.css.map */"] });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(DashboardPanel, [{
+    type: Component,
+    args: [{ selector: "app-dashboard-panel", imports: [
+      MatCard
+    ], template: '<mat-card appearance="outlined">\n    <ng-content select="mat-card-header"></ng-content>\n    <ng-content select="mat-card-content"></ng-content>\n</mat-card>\n', styles: ["/* src/app/page/dashboard/dashboard-panel/dashboard-panel.scss */\n:host {\n  overflow: hidden;\n  flex: 1;\n}\n:host mat-card {\n  max-height: 100%;\n  gap: 12px;\n}\n/*# sourceMappingURL=dashboard-panel.css.map */\n"] }]
+  }], null, null);
+})();
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardPanel, { className: "DashboardPanel", filePath: "src/app/page/dashboard/dashboard-panel/dashboard-panel.ts", lineNumber: 12 });
+})();
+
+// src/app/page/dashboard/dashboard-error/dashboard-error.ts
+var _c06 = () => ({});
+var _c16 = () => [];
+var _forTrack0 = ($index, $item) => $item[0];
+function DashboardError_For_9_For_17_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "h6", 16);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(2, "code", 17);
+    \u0275\u0275text(3);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const header_r1 = ctx.$implicit;
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(header_r1[0]);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(header_r1[1]);
+  }
+}
+function DashboardError_For_9_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "mat-expansion-panel", 2)(1, "mat-expansion-panel-header")(2, "mat-panel-title");
+    \u0275\u0275text(3);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(4, "mat-panel-description", 3)(5, "mat-chip", 4);
+    \u0275\u0275text(6);
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275element(7, "mat-divider");
+    \u0275\u0275elementStart(8, "section", 13)(9, "mat-panel-title");
+    \u0275\u0275text(10, "\u5B8C\u6574\u7684\u8BF7\u6C42\u94FE\u63A5");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(11, "mat-panel-description")(12, "code", 14);
+    \u0275\u0275text(13);
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275element(14, "mat-divider");
+    \u0275\u0275elementStart(15, "section", 15);
+    \u0275\u0275repeaterCreate(16, DashboardError_For_9_For_17_Template, 4, 2, null, null, _forTrack0);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const key_r2 = ctx.$implicit;
+    \u0275\u0275nextContext();
+    const requests_r3 = \u0275\u0275readContextLet(6);
+    const url_r4 = (requests_r3[key_r2] == null ? null : requests_r3[key_r2].url()) ?? "no content";
+    \u0275\u0275advance(3);
+    \u0275\u0275textInterpolate(key_r2);
+    \u0275\u0275advance(3);
+    \u0275\u0275textInterpolate(requests_r3[key_r2] == null ? null : requests_r3[key_r2].method);
+    \u0275\u0275advance(7);
+    \u0275\u0275textInterpolate(url_r4);
+    \u0275\u0275advance(3);
+    \u0275\u0275repeater((requests_r3[key_r2] == null ? null : requests_r3[key_r2].headers == null ? null : requests_r3[key_r2].headers.entries()) ?? \u0275\u0275pureFunction0(3, _c16));
+  }
+}
+function DashboardError_For_43_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 12)(1, "div", 8);
+    \u0275\u0275element(2, "div", 9)(3, "div", 18);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(4, "pre", 10)(5, "code");
+    \u0275\u0275text(6);
+    \u0275\u0275elementEnd()()();
+  }
+  if (rf & 2) {
+    const causeMessage_r5 = ctx.$implicit;
+    \u0275\u0275advance(6);
+    \u0275\u0275textInterpolate(causeMessage_r5);
+  }
+}
+var DashboardError = class _DashboardError {
+  dashboardService = inject2(DashboardService);
+  dashboardHttpError$ = this.dashboardService.error$;
+  httpErrorResponse$ = this.dashboardHttpError$.pipe(map((error) => error?.cause));
+  apiResponse$ = this.httpErrorResponse$.pipe(map((error) => error?.error), filter((error) => !!error), map((error) => ApiResponse.deserialize(error)));
+  test = combineLatest([]).pipe();
+  clientRequest$ = this.httpErrorResponse$.pipe(filter((error) => !!error?.url), map((error) => [error, error.url]), withLatestFrom(this.dashboardHttpError$.pipe(filter((error) => !!error?.method), map((error) => error.method))), map(([[error, url], method]) => {
+    const parsedUrl = new URL(url);
+    const headers = /* @__PURE__ */ new Map();
+    error.headers.keys().forEach((key) => {
+      headers.set(key, error.headers.get(key) ?? "");
+    });
+    return new RequestSnapshot(method, parsedUrl.protocol, parsedUrl.host, parsedUrl.pathname + parsedUrl.search, headers);
+  }));
+  serverRequest$ = this.apiResponse$.pipe(map((response) => response.request));
+  requests$ = combineLatest([
+    this.clientRequest$,
+    this.serverRequest$
+  ]).pipe(map(([client, server]) => {
+    return {
+      "\u5BA2\u6237\u7AEF\u53D1\u51FA\u8BF7\u6C42": client,
+      "\u670D\u52A1\u7AEF\u6536\u5230\u8BF7\u6C42": server
+    };
+  }));
+  errorMessage$ = this.httpErrorResponse$.pipe(map((error) => error?.message ?? ""));
+  // response messages
+  mainMessage$ = this.apiResponse$.pipe(map((response) => response.messages[0] ?? ""), tap(console.log));
+  causeMessages$ = this.apiResponse$.pipe(map((response) => response.messages.slice(1)));
+  // ui
+  // clientRequestCollapsed = new BehaviorSubject<boolean>(true);
+  clientRequestCollapsed = model(false, ...ngDevMode ? [{ debugName: "clientRequestCollapsed" }] : []);
+  constructor() {
+    effect(() => {
+      console.log(this.clientRequestCollapsed());
+    });
+  }
+  afterCollapse() {
+    console.log("afterCollapse");
+    this.clientRequestCollapsed.set(true);
+  }
+  afterExpand() {
+    console.log("afterExpand");
+    this.clientRequestCollapsed.set(false);
+  }
+  Object = Object;
+  static \u0275fac = function DashboardError_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _DashboardError)();
+  };
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DashboardError, selectors: [["app-dashboard-error"]], inputs: { clientRequestCollapsed: [1, "clientRequestCollapsed"] }, outputs: { clientRequestCollapsed: "clientRequestCollapsedChange" }, decls: 45, vars: 18, consts: [[1, "scrollable"], ["multi", ""], ["expanded", "true"], [1, "error-status"], [1, "error-chip"], [1, "error-detail"], [1, "error-chain"], [1, "main-message"], [1, "left"], [1, "v-dash"], [1, "right"], [1, "h-dash", 2, "height", "1px", "margin-left", "28px"], [1, "cause-message"], [1, "url"], [1, "full-url"], [1, "headers"], [1, "name"], [1, "value", "right"], [1, "h-dash"]], template: function DashboardError_Template(rf, ctx) {
+    if (rf & 1) {
+      \u0275\u0275elementStart(0, "app-dashboard-panel")(1, "mat-card-header")(2, "mat-card-title");
+      \u0275\u0275text(3, "HTTP \u9519\u8BEF\u8BE6\u60C5");
+      \u0275\u0275elementEnd()();
+      \u0275\u0275elementStart(4, "mat-card-content", 0)(5, "mat-accordion", 1);
+      \u0275\u0275declareLet(6);
+      \u0275\u0275pipe(7, "async");
+      \u0275\u0275repeaterCreate(8, DashboardError_For_9_Template, 18, 4, "mat-expansion-panel", 2, \u0275\u0275repeaterTrackByIdentity);
+      \u0275\u0275elementStart(10, "mat-expansion-panel", 2)(11, "mat-expansion-panel-header")(12, "mat-panel-title");
+      \u0275\u0275text(13, "\u670D\u52A1\u7AEF\u8FD4\u56DE\u54CD\u5E94");
+      \u0275\u0275elementEnd();
+      \u0275\u0275elementStart(14, "mat-panel-description", 3)(15, "mat-chip", 4);
+      \u0275\u0275text(16);
+      \u0275\u0275pipe(17, "async");
+      \u0275\u0275elementEnd();
+      \u0275\u0275elementStart(18, "mat-chip", 4);
+      \u0275\u0275text(19);
+      \u0275\u0275pipe(20, "async");
+      \u0275\u0275elementEnd()()();
+      \u0275\u0275element(21, "mat-divider");
+      \u0275\u0275elementStart(22, "section", 5)(23, "mat-panel-title");
+      \u0275\u0275text(24, "\u9519\u8BEF\u8BE6\u60C5");
+      \u0275\u0275elementEnd();
+      \u0275\u0275elementStart(25, "mat-panel-description")(26, "pre")(27, "code");
+      \u0275\u0275text(28);
+      \u0275\u0275pipe(29, "async");
+      \u0275\u0275elementEnd()()()();
+      \u0275\u0275element(30, "mat-divider");
+      \u0275\u0275elementStart(31, "section", 6)(32, "div", 7)(33, "div", 8)(34, "h5");
+      \u0275\u0275text(35, "\u9519\u8BEF\u94FE");
+      \u0275\u0275elementEnd();
+      \u0275\u0275element(36, "div", 9);
+      \u0275\u0275elementEnd();
+      \u0275\u0275elementStart(37, "pre", 10)(38, "code");
+      \u0275\u0275text(39);
+      \u0275\u0275pipe(40, "async");
+      \u0275\u0275elementEnd()()();
+      \u0275\u0275element(41, "div", 11);
+      \u0275\u0275repeaterCreate(42, DashboardError_For_43_Template, 7, 1, "div", 12, \u0275\u0275repeaterTrackByIdentity);
+      \u0275\u0275pipe(44, "async");
+      \u0275\u0275elementEnd()()()()();
+    }
+    if (rf & 2) {
+      let tmp_2_0;
+      let tmp_3_0;
+      \u0275\u0275advance(6);
+      const requests_r6 = \u0275\u0275storeLet(\u0275\u0275pipeBind1(7, 4, ctx.requests$) ?? \u0275\u0275pureFunction0(17, _c06));
+      \u0275\u0275advance(2);
+      \u0275\u0275repeater(ctx.Object.keys(requests_r6));
+      \u0275\u0275advance(8);
+      \u0275\u0275textInterpolate((tmp_2_0 = \u0275\u0275pipeBind1(17, 7, ctx.httpErrorResponse$)) == null ? null : tmp_2_0.statusText);
+      \u0275\u0275advance(3);
+      \u0275\u0275textInterpolate((tmp_3_0 = \u0275\u0275pipeBind1(20, 9, ctx.httpErrorResponse$)) == null ? null : tmp_3_0.status);
+      \u0275\u0275advance(9);
+      \u0275\u0275textInterpolate(\u0275\u0275pipeBind1(29, 11, ctx.errorMessage$));
+      \u0275\u0275advance(11);
+      \u0275\u0275textInterpolate(\u0275\u0275pipeBind1(40, 13, ctx.mainMessage$));
+      \u0275\u0275advance(3);
+      \u0275\u0275repeater(\u0275\u0275pipeBind1(44, 15, ctx.causeMessages$));
+    }
+  }, dependencies: [
+    DashboardPanel,
+    MatCardHeader,
+    MatCardContent,
+    MatAccordion,
+    MatExpansionPanel,
+    MatExpansionPanelHeader,
+    MatExpansionPanelTitle,
+    MatExpansionPanelDescription,
+    MatDivider,
+    MatChip,
+    MatCardTitle,
+    AsyncPipe
+  ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  overflow: hidden;\n  flex-direction: column;\n  width: 100%;\n  gap: 12px;\n}\n[_nghost-%COMP%]   mat-panel-title[_ngcontent-%COMP%] {\n  flex-basis: unset;\n  flex-grow: unset;\n  flex-shrink: unset;\n}\n[_nghost-%COMP%]   mat-expansion-panel[_ngcontent-%COMP%] {\n  border: 1px solid var(--mat-sys-outline);\n}\n[_nghost-%COMP%]   mat-panel-description[_ngcontent-%COMP%] {\n  overflow: hidden;\n  flex: 1;\n}\n[_nghost-%COMP%]   mat-chip.error-chip[_ngcontent-%COMP%] {\n  --mat-chip-label-text-size: 10px;\n  --mat-chip-label-text-weight: 500;\n  --mat-chip-label-text-line-height: normal;\n  --mat-chip-label-text-color: var(--mat-sys-on-error);\n  --mat-chip-container-height: 18px;\n  --mat-chip-container-shape-radius: 4px;\n  background-color: var(--mat-sys-error);\n}\n[_nghost-%COMP%]     .mat-mdc-standard-chip .mdc-evolution-chip__action--primary {\n  padding-right: 8px;\n  padding-left: 8px;\n}\n[_nghost-%COMP%]   code[_ngcontent-%COMP%] {\n  font-size: 12px;\n  font-weight: 400;\n  line-height: normal;\n  overflow: hidden;\n  text-wrap: auto;\n  word-break: break-word;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: start;\n  flex-direction: row;\n  margin: 12px auto;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%]   mat-panel-title[_ngcontent-%COMP%] {\n  font-size: 12px;\n  font-weight: 400;\n  line-height: normal;\n  letter-spacing: normal;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%]   mat-panel-description[_ngcontent-%COMP%] {\n  font-size: 12px;\n  font-weight: 400;\n  line-height: normal;\n}\n[_nghost-%COMP%]   section.headers[_ngcontent-%COMP%] {\n  font-size: 12px;\n  font-weight: 500;\n  font-style: normal;\n  line-height: 18px;\n  display: grid;\n  grid-template-columns: max-content 1fr;\n  column-gap: 12px;\n  row-gap: 8px;\n}\n[_nghost-%COMP%]   section.headers[_ngcontent-%COMP%]   .name[_ngcontent-%COMP%] {\n  font-size: inherit;\n  font-weight: inherit;\n  font-style: inherit;\n  line-height: inherit;\n}\n[_nghost-%COMP%]   section.headers[_ngcontent-%COMP%]   .value[_ngcontent-%COMP%] {\n  font-size: inherit;\n  font-weight: inherit;\n  font-style: inherit;\n  line-height: inherit;\n  color: #727272;\n}\n[_nghost-%COMP%]   mat-panel-description.error-status[_ngcontent-%COMP%] {\n  justify-content: end;\n  gap: 8px;\n}\n[_nghost-%COMP%]   section.error-detail[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: row;\n}\n[_nghost-%COMP%]   section.error-detail[_ngcontent-%COMP%]   pre[_ngcontent-%COMP%] {\n  margin: 0;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%] {\n  flex-direction: column;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   pre[_ngcontent-%COMP%] {\n  margin: 0;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .left[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 56px;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .right[_ngcontent-%COMP%] {\n  flex: 1;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .v-dash[_ngcontent-%COMP%] {\n  background-image:\n    linear-gradient(\n      to bottom,\n      var(--mat-sys-error) 50%,\n      transparent 50%);\n  background-size: 1px 5px;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .h-dash[_ngcontent-%COMP%] {\n  background-image:\n    linear-gradient(\n      to right,\n      var(--mat-sys-error) 50%,\n      transparent 50%);\n  background-size: 5px 1px;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .main-message[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: row;\n  gap: 8px;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .main-message[_ngcontent-%COMP%]   .left[_ngcontent-%COMP%] {\n  flex-direction: column;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .main-message[_ngcontent-%COMP%]   .left[_ngcontent-%COMP%]   .v-dash[_ngcontent-%COMP%] {\n  flex: 1;\n  width: 1px;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .cause-message[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: row;\n  gap: 8px;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .cause-message[_ngcontent-%COMP%]   .left[_ngcontent-%COMP%] {\n  flex-direction: row;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .cause-message[_ngcontent-%COMP%]   .left[_ngcontent-%COMP%]   .v-dash[_ngcontent-%COMP%] {\n  width: 1px;\n  height: 100%;\n  margin-left: 50%;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .cause-message[_ngcontent-%COMP%]   .left[_ngcontent-%COMP%]   .h-dash[_ngcontent-%COMP%] {\n  flex: 1;\n  height: 1px;\n}\n/*# sourceMappingURL=dashboard-error.css.map */"], changeDetection: 0 });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(DashboardError, [{
+    type: Component,
+    args: [{ selector: "app-dashboard-error", imports: [
+      DashboardPanel,
+      MatCardHeader,
+      MatCardContent,
+      MatAccordion,
+      MatExpansionPanel,
+      MatExpansionPanelHeader,
+      MatExpansionPanelTitle,
+      MatExpansionPanelDescription,
+      AsyncPipe,
+      MatDivider,
+      MatChip,
+      MatCardTitle
+    ], changeDetection: ChangeDetectionStrategy.OnPush, template: '<app-dashboard-panel>\n    <mat-card-header>\n        <mat-card-title>HTTP \u9519\u8BEF\u8BE6\u60C5</mat-card-title>\n    </mat-card-header>\n    <mat-card-content class="scrollable">\n        <mat-accordion multi>\n            @let requests = (requests$ | async) ?? {};\n            @for (key of Object.keys(requests); track key) {\n                <mat-expansion-panel expanded="true">\n                    @let url = requests[key]?.url() ?? "no content";\n                    <mat-expansion-panel-header>\n                        <mat-panel-title>{{ key }}</mat-panel-title>\n                        <mat-panel-description class="error-status">\n                            <mat-chip class="error-chip">{{ requests[key]?.method }}</mat-chip>\n                        </mat-panel-description>\n                    </mat-expansion-panel-header>\n                    <mat-divider></mat-divider>\n                    <section class="url">\n                        <mat-panel-title>\u5B8C\u6574\u7684\u8BF7\u6C42\u94FE\u63A5</mat-panel-title>\n                        <mat-panel-description>\n                            <code class="full-url">{{ url }}</code>\n                        </mat-panel-description>\n                    </section>\n                    <mat-divider></mat-divider>\n                    <section class="headers">\n                        @for (header of requests[key]?.headers?.entries() ?? []; track header[0]) {\n                            <h6 class="name">{{ header[0] }}</h6>\n                            <code class="value right">{{ header[1] }}</code>\n                        }\n                    </section>\n                </mat-expansion-panel>\n            }\n\n            <mat-expansion-panel expanded="true">\n                <mat-expansion-panel-header>\n                    <mat-panel-title>\u670D\u52A1\u7AEF\u8FD4\u56DE\u54CD\u5E94</mat-panel-title>\n                    <mat-panel-description class="error-status">\n                        <mat-chip class="error-chip">{{ (httpErrorResponse$ | async)?.statusText }}</mat-chip>\n                        <mat-chip class="error-chip">{{ (httpErrorResponse$ | async)?.status }}</mat-chip>\n                    </mat-panel-description>\n                </mat-expansion-panel-header>\n                <mat-divider></mat-divider>\n                <section class="error-detail">\n                    <mat-panel-title>\u9519\u8BEF\u8BE6\u60C5</mat-panel-title>\n                    <mat-panel-description>\n                        <pre><code>{{ errorMessage$ | async }}</code></pre>\n                    </mat-panel-description>\n                </section>\n                <mat-divider></mat-divider>\n                <section class="error-chain">\n                    <div class="main-message">\n                        <div class="left">\n                            <h5>\u9519\u8BEF\u94FE</h5>\n                            <div class="v-dash"></div>\n                        </div>\n                        <pre class="right"><code>{{ mainMessage$ | async }}</code></pre>\n                    </div>\n                    <div class="h-dash" style="height: 1px; margin-left: 28px"></div>\n                    @for (causeMessage of (causeMessages$ | async); track causeMessage) {\n                        <div class="cause-message">\n                            <div class="left">\n                                <div class="v-dash"></div>\n                                <div class="h-dash"></div>\n                            </div>\n                            <pre class="right"><code>{{ causeMessage }}</code></pre>\n                        </div>\n                    }\n                </section>\n            </mat-expansion-panel>\n        </mat-accordion>\n    </mat-card-content>\n</app-dashboard-panel>\n', styles: ["/* src/app/page/dashboard/dashboard-error/dashboard-error.scss */\n:host {\n  display: flex;\n  overflow: hidden;\n  flex-direction: column;\n  width: 100%;\n  gap: 12px;\n}\n:host mat-panel-title {\n  flex-basis: unset;\n  flex-grow: unset;\n  flex-shrink: unset;\n}\n:host mat-expansion-panel {\n  border: 1px solid var(--mat-sys-outline);\n}\n:host mat-panel-description {\n  overflow: hidden;\n  flex: 1;\n}\n:host mat-chip.error-chip {\n  --mat-chip-label-text-size: 10px;\n  --mat-chip-label-text-weight: 500;\n  --mat-chip-label-text-line-height: normal;\n  --mat-chip-label-text-color: var(--mat-sys-on-error);\n  --mat-chip-container-height: 18px;\n  --mat-chip-container-shape-radius: 4px;\n  background-color: var(--mat-sys-error);\n}\n:host ::ng-deep .mat-mdc-standard-chip .mdc-evolution-chip__action--primary {\n  padding-right: 8px;\n  padding-left: 8px;\n}\n:host code {\n  font-size: 12px;\n  font-weight: 400;\n  line-height: normal;\n  overflow: hidden;\n  text-wrap: auto;\n  word-break: break-word;\n}\n:host section {\n  display: flex;\n  align-items: start;\n  flex-direction: row;\n  margin: 12px auto;\n}\n:host section mat-panel-title {\n  font-size: 12px;\n  font-weight: 400;\n  line-height: normal;\n  letter-spacing: normal;\n}\n:host section mat-panel-description {\n  font-size: 12px;\n  font-weight: 400;\n  line-height: normal;\n}\n:host section.headers {\n  font-size: 12px;\n  font-weight: 500;\n  font-style: normal;\n  line-height: 18px;\n  display: grid;\n  grid-template-columns: max-content 1fr;\n  column-gap: 12px;\n  row-gap: 8px;\n}\n:host section.headers .name {\n  font-size: inherit;\n  font-weight: inherit;\n  font-style: inherit;\n  line-height: inherit;\n}\n:host section.headers .value {\n  font-size: inherit;\n  font-weight: inherit;\n  font-style: inherit;\n  line-height: inherit;\n  color: #727272;\n}\n:host mat-panel-description.error-status {\n  justify-content: end;\n  gap: 8px;\n}\n:host section.error-detail {\n  display: flex;\n  flex-direction: row;\n}\n:host section.error-detail pre {\n  margin: 0;\n}\n:host section.error-chain {\n  flex-direction: column;\n}\n:host section.error-chain pre {\n  margin: 0;\n}\n:host section.error-chain .left {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 56px;\n}\n:host section.error-chain .right {\n  flex: 1;\n}\n:host section.error-chain .v-dash {\n  background-image:\n    linear-gradient(\n      to bottom,\n      var(--mat-sys-error) 50%,\n      transparent 50%);\n  background-size: 1px 5px;\n}\n:host section.error-chain .h-dash {\n  background-image:\n    linear-gradient(\n      to right,\n      var(--mat-sys-error) 50%,\n      transparent 50%);\n  background-size: 5px 1px;\n}\n:host section.error-chain .main-message {\n  display: flex;\n  flex-direction: row;\n  gap: 8px;\n}\n:host section.error-chain .main-message .left {\n  flex-direction: column;\n}\n:host section.error-chain .main-message .left .v-dash {\n  flex: 1;\n  width: 1px;\n}\n:host section.error-chain .cause-message {\n  display: flex;\n  flex-direction: row;\n  gap: 8px;\n}\n:host section.error-chain .cause-message .left {\n  flex-direction: row;\n}\n:host section.error-chain .cause-message .left .v-dash {\n  width: 1px;\n  height: 100%;\n  margin-left: 50%;\n}\n:host section.error-chain .cause-message .left .h-dash {\n  flex: 1;\n  height: 1px;\n}\n/*# sourceMappingURL=dashboard-error.css.map */\n"] }]
+  }], () => [], null);
+})();
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardError, { className: "DashboardError", filePath: "src/app/page/dashboard/dashboard-error/dashboard-error.ts", lineNumber: 41 });
+})();
+
+// node_modules/.pnpm/@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs@7.8.2/node_modules/@angular/core/fesm2022/rxjs-interop.mjs
+function takeUntilDestroyed(destroyRef) {
+  if (!destroyRef) {
+    ngDevMode && assertInInjectionContext(takeUntilDestroyed);
+    destroyRef = inject2(DestroyRef);
+  }
+  const destroyed$ = new Observable((subscriber) => {
+    if (destroyRef.destroyed) {
+      subscriber.next();
+      return;
+    }
+    const unregisterFn = destroyRef.onDestroy(subscriber.next.bind(subscriber));
+    return unregisterFn;
+  });
+  return (source) => {
+    return source.pipe(takeUntil(destroyed$));
+  };
+}
+
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/icon-button.mjs
+var _c07 = ["mat-icon-button", ""];
+var _c17 = ["*"];
+var MAT_BUTTON_CONFIG = new InjectionToken("MAT_BUTTON_CONFIG");
+function transformTabIndex(value) {
+  return value == null ? void 0 : numberAttribute(value);
+}
+var MatButtonBase = class _MatButtonBase {
+  _elementRef = inject2(ElementRef);
+  _ngZone = inject2(NgZone);
+  _animationsDisabled = _animationsDisabled();
+  _config = inject2(MAT_BUTTON_CONFIG, {
+    optional: true
+  });
+  _focusMonitor = inject2(FocusMonitor);
+  _cleanupClick;
+  _renderer = inject2(Renderer2);
+  /**
+   * Handles the lazy creation of the MatButton ripple.
+   * Used to improve initial load time of large applications.
+   */
+  _rippleLoader = inject2(MatRippleLoader);
+  /** Whether the button is set on an anchor node. */
+  _isAnchor;
+  /** Whether this button is a FAB. Used to apply the correct class on the ripple. */
+  _isFab = false;
+  /**
+   * Theme color of the button. This API is supported in M2 themes only, it has
+   * no effect in M3 themes. For color customization in M3, see https://material.angular.dev/components/button/styling.
+   *
+   * For information on applying color variants in M3, see
+   * https://material.angular.dev/guide/material-2-theming#optional-add-backwards-compatibility-styles-for-color-variants
+   */
+  color;
+  /** Whether the ripple effect is disabled or not. */
+  get disableRipple() {
+    return this._disableRipple;
+  }
+  set disableRipple(value) {
+    this._disableRipple = value;
+    this._updateRippleDisabled();
+  }
+  _disableRipple = false;
+  /** Whether the button is disabled. */
+  get disabled() {
+    return this._disabled;
+  }
+  set disabled(value) {
+    this._disabled = value;
+    this._updateRippleDisabled();
+  }
+  _disabled = false;
+  /** `aria-disabled` value of the button. */
+  ariaDisabled;
+  /**
+   * Natively disabled buttons prevent focus and any pointer events from reaching the button.
+   * In some scenarios this might not be desirable, because it can prevent users from finding out
+   * why the button is disabled (e.g. via tooltip). This is also useful for buttons that may
+   * become disabled when activated, which would cause focus to be transferred to the document
+   * body instead of remaining on the button.
+   *
+   * Enabling this input will change the button so that it is styled to be disabled and will be
+   * marked as `aria-disabled`, but it will allow the button to receive events and focus.
+   *
+   * Note that by enabling this, you need to set the `tabindex` yourself if the button isn't
+   * meant to be tabbable and you have to prevent the button action (e.g. form submissions).
+   */
+  disabledInteractive;
+  /** Tab index for the button. */
+  tabIndex;
+  /**
+   * Backwards-compatibility input that handles pre-existing `[tabindex]` bindings.
+   * @docs-private
+   */
+  set _tabindex(value) {
+    this.tabIndex = value;
+  }
+  constructor() {
+    inject2(_CdkPrivateStyleLoader).load(_StructuralStylesLoader);
+    const element = this._elementRef.nativeElement;
+    this._isAnchor = element.tagName === "A";
+    this.disabledInteractive = this._config?.disabledInteractive ?? false;
+    this.color = this._config?.color ?? null;
+    this._rippleLoader?.configureRipple(element, {
+      className: "mat-mdc-button-ripple"
+    });
+  }
+  ngAfterViewInit() {
+    this._focusMonitor.monitor(this._elementRef, true);
+    if (this._isAnchor) {
+      this._setupAsAnchor();
+    }
+  }
+  ngOnDestroy() {
+    this._cleanupClick?.();
+    this._focusMonitor.stopMonitoring(this._elementRef);
+    this._rippleLoader?.destroyRipple(this._elementRef.nativeElement);
+  }
+  /** Focuses the button. */
+  focus(origin = "program", options) {
+    if (origin) {
+      this._focusMonitor.focusVia(this._elementRef.nativeElement, origin, options);
+    } else {
+      this._elementRef.nativeElement.focus(options);
+    }
+  }
+  _getAriaDisabled() {
+    if (this.ariaDisabled != null) {
+      return this.ariaDisabled;
+    }
+    if (this._isAnchor) {
+      return this.disabled || null;
+    }
+    return this.disabled && this.disabledInteractive ? true : null;
+  }
+  _getDisabledAttribute() {
+    return this.disabledInteractive || !this.disabled ? null : true;
+  }
+  _updateRippleDisabled() {
+    this._rippleLoader?.setDisabled(this._elementRef.nativeElement, this.disableRipple || this.disabled);
+  }
+  _getTabIndex() {
+    if (this._isAnchor) {
+      return this.disabled && !this.disabledInteractive ? -1 : this.tabIndex;
+    }
+    return this.tabIndex;
+  }
+  _setupAsAnchor() {
+    this._cleanupClick = this._ngZone.runOutsideAngular(() => this._renderer.listen(this._elementRef.nativeElement, "click", (event) => {
+      if (this.disabled) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+    }));
+  }
+  static \u0275fac = function MatButtonBase_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatButtonBase)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _MatButtonBase,
+    hostAttrs: [1, "mat-mdc-button-base"],
+    hostVars: 13,
+    hostBindings: function MatButtonBase_HostBindings(rf, ctx) {
+      if (rf & 2) {
+        \u0275\u0275attribute("disabled", ctx._getDisabledAttribute())("aria-disabled", ctx._getAriaDisabled())("tabindex", ctx._getTabIndex());
+        \u0275\u0275classMap(ctx.color ? "mat-" + ctx.color : "");
+        \u0275\u0275classProp("mat-mdc-button-disabled", ctx.disabled)("mat-mdc-button-disabled-interactive", ctx.disabledInteractive)("mat-unthemed", !ctx.color)("_mat-animation-noopable", ctx._animationsDisabled);
+      }
+    },
+    inputs: {
+      color: "color",
+      disableRipple: [2, "disableRipple", "disableRipple", booleanAttribute],
+      disabled: [2, "disabled", "disabled", booleanAttribute],
+      ariaDisabled: [2, "aria-disabled", "ariaDisabled", booleanAttribute],
+      disabledInteractive: [2, "disabledInteractive", "disabledInteractive", booleanAttribute],
+      tabIndex: [2, "tabIndex", "tabIndex", transformTabIndex],
+      _tabindex: [2, "tabindex", "_tabindex", transformTabIndex]
+    }
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatButtonBase, [{
+    type: Directive,
+    args: [{
+      host: {
+        // Add a class that applies to all buttons. This makes it easier to target if somebody
+        // wants to target all Material buttons.
+        "class": "mat-mdc-button-base",
+        "[class]": 'color ? "mat-" + color : ""',
+        "[attr.disabled]": "_getDisabledAttribute()",
+        "[attr.aria-disabled]": "_getAriaDisabled()",
+        "[attr.tabindex]": "_getTabIndex()",
+        "[class.mat-mdc-button-disabled]": "disabled",
+        "[class.mat-mdc-button-disabled-interactive]": "disabledInteractive",
+        "[class.mat-unthemed]": "!color",
+        "[class._mat-animation-noopable]": "_animationsDisabled"
+      }
+    }]
+  }], () => [], {
+    color: [{
+      type: Input
+    }],
+    disableRipple: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    disabled: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    ariaDisabled: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute,
+        alias: "aria-disabled"
+      }]
+    }],
+    disabledInteractive: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    tabIndex: [{
+      type: Input,
+      args: [{
+        transform: transformTabIndex
+      }]
+    }],
+    _tabindex: [{
+      type: Input,
+      args: [{
+        alias: "tabindex",
+        transform: transformTabIndex
+      }]
+    }]
+  });
+})();
+var MatIconButton = class _MatIconButton extends MatButtonBase {
+  constructor() {
+    super();
+    this._rippleLoader.configureRipple(this._elementRef.nativeElement, {
+      centered: true
+    });
+  }
+  static \u0275fac = function MatIconButton_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatIconButton)();
+  };
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+    type: _MatIconButton,
+    selectors: [["button", "mat-icon-button", ""], ["a", "mat-icon-button", ""], ["button", "matIconButton", ""], ["a", "matIconButton", ""]],
+    hostAttrs: [1, "mdc-icon-button", "mat-mdc-icon-button"],
+    exportAs: ["matButton", "matAnchor"],
+    features: [\u0275\u0275InheritDefinitionFeature],
+    attrs: _c07,
+    ngContentSelectors: _c17,
+    decls: 4,
+    vars: 0,
+    consts: [[1, "mat-mdc-button-persistent-ripple", "mdc-icon-button__ripple"], [1, "mat-focus-indicator"], [1, "mat-mdc-button-touch-target"]],
+    template: function MatIconButton_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275projectionDef();
+        \u0275\u0275domElement(0, "span", 0);
+        \u0275\u0275projection(1);
+        \u0275\u0275domElement(2, "span", 1)(3, "span", 2);
+      }
+    },
+    styles: ['.mat-mdc-icon-button{-webkit-user-select:none;user-select:none;display:inline-block;position:relative;box-sizing:border-box;border:none;outline:none;background-color:rgba(0,0,0,0);fill:currentColor;text-decoration:none;cursor:pointer;z-index:0;overflow:visible;border-radius:var(--mat-icon-button-container-shape, var(--mat-sys-corner-full, 50%));flex-shrink:0;text-align:center;width:var(--mat-icon-button-state-layer-size, 40px);height:var(--mat-icon-button-state-layer-size, 40px);padding:calc(calc(var(--mat-icon-button-state-layer-size, 40px) - var(--mat-icon-button-icon-size, 24px)) / 2);font-size:var(--mat-icon-button-icon-size, 24px);color:var(--mat-icon-button-icon-color, var(--mat-sys-on-surface-variant));-webkit-tap-highlight-color:rgba(0,0,0,0)}.mat-mdc-icon-button .mat-mdc-button-ripple,.mat-mdc-icon-button .mat-mdc-button-persistent-ripple,.mat-mdc-icon-button .mat-mdc-button-persistent-ripple::before{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;border-radius:inherit}.mat-mdc-icon-button .mat-mdc-button-ripple{overflow:hidden}.mat-mdc-icon-button .mat-mdc-button-persistent-ripple::before{content:"";opacity:0}.mat-mdc-icon-button .mdc-button__label,.mat-mdc-icon-button .mat-icon{z-index:1;position:relative}.mat-mdc-icon-button .mat-focus-indicator{top:0;left:0;right:0;bottom:0;position:absolute;border-radius:inherit}.mat-mdc-icon-button:focus>.mat-focus-indicator::before{content:"";border-radius:inherit}.mat-mdc-icon-button .mat-ripple-element{background-color:var(--mat-icon-button-ripple-color, color-mix(in srgb, var(--mat-sys-on-surface-variant) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-icon-button .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-icon-button-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-icon-button.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-icon-button-disabled-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-icon-button:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-icon-button-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-icon-button.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-icon-button.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-icon-button.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-icon-button-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-icon-button:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-icon-button-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-icon-button .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-icon-button-touch-target-size, 48px);display:var(--mat-icon-button-touch-target-display, block);left:50%;width:var(--mat-icon-button-touch-target-size, 48px);transform:translate(-50%, -50%)}.mat-mdc-icon-button._mat-animation-noopable{transition:none !important;animation:none !important}.mat-mdc-icon-button[disabled],.mat-mdc-icon-button.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-icon-button-disabled-icon-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent))}.mat-mdc-icon-button.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-icon-button img,.mat-mdc-icon-button svg{width:var(--mat-icon-button-icon-size, 24px);height:var(--mat-icon-button-icon-size, 24px);vertical-align:baseline}.mat-mdc-icon-button .mat-mdc-button-persistent-ripple{border-radius:var(--mat-icon-button-container-shape, var(--mat-sys-corner-full, 50%))}.mat-mdc-icon-button[hidden]{display:none}.mat-mdc-icon-button.mat-unthemed:not(.mdc-ripple-upgraded):focus::before,.mat-mdc-icon-button.mat-primary:not(.mdc-ripple-upgraded):focus::before,.mat-mdc-icon-button.mat-accent:not(.mdc-ripple-upgraded):focus::before,.mat-mdc-icon-button.mat-warn:not(.mdc-ripple-upgraded):focus::before{background:rgba(0,0,0,0);opacity:1}\n', "@media(forced-colors: active){.mat-mdc-button:not(.mdc-button--outlined),.mat-mdc-unelevated-button:not(.mdc-button--outlined),.mat-mdc-raised-button:not(.mdc-button--outlined),.mat-mdc-outlined-button:not(.mdc-button--outlined),.mat-mdc-button-base.mat-tonal-button,.mat-mdc-icon-button.mat-mdc-icon-button,.mat-mdc-outlined-button .mdc-button__ripple{outline:solid 1px}}\n"],
+    encapsulation: 2,
+    changeDetection: 0
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatIconButton, [{
+    type: Component,
+    args: [{
+      selector: `button[mat-icon-button], a[mat-icon-button], button[matIconButton], a[matIconButton]`,
+      host: {
+        "class": "mdc-icon-button mat-mdc-icon-button"
+      },
+      exportAs: "matButton, matAnchor",
+      encapsulation: ViewEncapsulation.None,
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      template: `<span class="mat-mdc-button-persistent-ripple mdc-icon-button__ripple"></span>
+
+<ng-content></ng-content>
+
+<!--
+  The indicator can't be directly on the button, because MDC uses ::before for high contrast
+  indication and it can't be on the ripple, because it has a border radius and overflow: hidden.
+-->
+<span class="mat-focus-indicator"></span>
+
+<span class="mat-mdc-button-touch-target"></span>
+`,
+      styles: ['.mat-mdc-icon-button{-webkit-user-select:none;user-select:none;display:inline-block;position:relative;box-sizing:border-box;border:none;outline:none;background-color:rgba(0,0,0,0);fill:currentColor;text-decoration:none;cursor:pointer;z-index:0;overflow:visible;border-radius:var(--mat-icon-button-container-shape, var(--mat-sys-corner-full, 50%));flex-shrink:0;text-align:center;width:var(--mat-icon-button-state-layer-size, 40px);height:var(--mat-icon-button-state-layer-size, 40px);padding:calc(calc(var(--mat-icon-button-state-layer-size, 40px) - var(--mat-icon-button-icon-size, 24px)) / 2);font-size:var(--mat-icon-button-icon-size, 24px);color:var(--mat-icon-button-icon-color, var(--mat-sys-on-surface-variant));-webkit-tap-highlight-color:rgba(0,0,0,0)}.mat-mdc-icon-button .mat-mdc-button-ripple,.mat-mdc-icon-button .mat-mdc-button-persistent-ripple,.mat-mdc-icon-button .mat-mdc-button-persistent-ripple::before{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;border-radius:inherit}.mat-mdc-icon-button .mat-mdc-button-ripple{overflow:hidden}.mat-mdc-icon-button .mat-mdc-button-persistent-ripple::before{content:"";opacity:0}.mat-mdc-icon-button .mdc-button__label,.mat-mdc-icon-button .mat-icon{z-index:1;position:relative}.mat-mdc-icon-button .mat-focus-indicator{top:0;left:0;right:0;bottom:0;position:absolute;border-radius:inherit}.mat-mdc-icon-button:focus>.mat-focus-indicator::before{content:"";border-radius:inherit}.mat-mdc-icon-button .mat-ripple-element{background-color:var(--mat-icon-button-ripple-color, color-mix(in srgb, var(--mat-sys-on-surface-variant) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-icon-button .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-icon-button-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-icon-button.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-icon-button-disabled-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-icon-button:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-icon-button-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-icon-button.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-icon-button.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-icon-button.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-icon-button-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-icon-button:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-icon-button-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-icon-button .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-icon-button-touch-target-size, 48px);display:var(--mat-icon-button-touch-target-display, block);left:50%;width:var(--mat-icon-button-touch-target-size, 48px);transform:translate(-50%, -50%)}.mat-mdc-icon-button._mat-animation-noopable{transition:none !important;animation:none !important}.mat-mdc-icon-button[disabled],.mat-mdc-icon-button.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-icon-button-disabled-icon-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent))}.mat-mdc-icon-button.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-icon-button img,.mat-mdc-icon-button svg{width:var(--mat-icon-button-icon-size, 24px);height:var(--mat-icon-button-icon-size, 24px);vertical-align:baseline}.mat-mdc-icon-button .mat-mdc-button-persistent-ripple{border-radius:var(--mat-icon-button-container-shape, var(--mat-sys-corner-full, 50%))}.mat-mdc-icon-button[hidden]{display:none}.mat-mdc-icon-button.mat-unthemed:not(.mdc-ripple-upgraded):focus::before,.mat-mdc-icon-button.mat-primary:not(.mdc-ripple-upgraded):focus::before,.mat-mdc-icon-button.mat-accent:not(.mdc-ripple-upgraded):focus::before,.mat-mdc-icon-button.mat-warn:not(.mdc-ripple-upgraded):focus::before{background:rgba(0,0,0,0);opacity:1}\n', "@media(forced-colors: active){.mat-mdc-button:not(.mdc-button--outlined),.mat-mdc-unelevated-button:not(.mdc-button--outlined),.mat-mdc-raised-button:not(.mdc-button--outlined),.mat-mdc-outlined-button:not(.mdc-button--outlined),.mat-mdc-button-base.mat-tonal-button,.mat-mdc-icon-button.mat-mdc-icon-button,.mat-mdc-outlined-button .mdc-button__ripple{outline:solid 1px}}\n"]
+    }]
+  }], () => [], null);
+})();
+
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/button.mjs
+var _c08 = ["matButton", ""];
+var _c18 = [[["", 8, "material-icons", 3, "iconPositionEnd", ""], ["mat-icon", 3, "iconPositionEnd", ""], ["", "matButtonIcon", "", 3, "iconPositionEnd", ""]], "*", [["", "iconPositionEnd", "", 8, "material-icons"], ["mat-icon", "iconPositionEnd", ""], ["", "matButtonIcon", "", "iconPositionEnd", ""]]];
+var _c25 = [".material-icons:not([iconPositionEnd]), mat-icon:not([iconPositionEnd]), [matButtonIcon]:not([iconPositionEnd])", "*", ".material-icons[iconPositionEnd], mat-icon[iconPositionEnd], [matButtonIcon][iconPositionEnd]"];
+var _c35 = ["mat-fab", ""];
+var _c45 = ["mat-mini-fab", ""];
+var _c54 = '.mat-mdc-fab-base{-webkit-user-select:none;user-select:none;position:relative;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:56px;height:56px;padding:0;border:none;fill:currentColor;text-decoration:none;cursor:pointer;-moz-appearance:none;-webkit-appearance:none;overflow:visible;transition:box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1),opacity 15ms linear 30ms,transform 270ms 0ms cubic-bezier(0, 0, 0.2, 1);flex-shrink:0;-webkit-tap-highlight-color:rgba(0,0,0,0)}.mat-mdc-fab-base .mat-mdc-button-ripple,.mat-mdc-fab-base .mat-mdc-button-persistent-ripple,.mat-mdc-fab-base .mat-mdc-button-persistent-ripple::before{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;border-radius:inherit}.mat-mdc-fab-base .mat-mdc-button-ripple{overflow:hidden}.mat-mdc-fab-base .mat-mdc-button-persistent-ripple::before{content:"";opacity:0}.mat-mdc-fab-base .mdc-button__label,.mat-mdc-fab-base .mat-icon{z-index:1;position:relative}.mat-mdc-fab-base .mat-focus-indicator{top:0;left:0;right:0;bottom:0;position:absolute}.mat-mdc-fab-base:focus>.mat-focus-indicator::before{content:""}.mat-mdc-fab-base._mat-animation-noopable{transition:none !important;animation:none !important}.mat-mdc-fab-base::before{position:absolute;box-sizing:border-box;width:100%;height:100%;top:0;left:0;border:1px solid rgba(0,0,0,0);border-radius:inherit;content:"";pointer-events:none}.mat-mdc-fab-base[hidden]{display:none}.mat-mdc-fab-base::-moz-focus-inner{padding:0;border:0}.mat-mdc-fab-base:active,.mat-mdc-fab-base:focus{outline:none}.mat-mdc-fab-base:hover{cursor:pointer}.mat-mdc-fab-base>svg{width:100%}.mat-mdc-fab-base .mat-icon,.mat-mdc-fab-base .material-icons{transition:transform 180ms 90ms cubic-bezier(0, 0, 0.2, 1);fill:currentColor;will-change:transform}.mat-mdc-fab-base .mat-focus-indicator::before{margin:calc(calc(var(--mat-focus-indicator-border-width, 3px) + 2px)*-1)}.mat-mdc-fab-base[disabled],.mat-mdc-fab-base.mat-mdc-button-disabled{cursor:default;pointer-events:none}.mat-mdc-fab-base[disabled],.mat-mdc-fab-base[disabled]:focus,.mat-mdc-fab-base.mat-mdc-button-disabled,.mat-mdc-fab-base.mat-mdc-button-disabled:focus{box-shadow:none}.mat-mdc-fab-base.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-fab{background-color:var(--mat-fab-container-color, var(--mat-sys-primary-container));border-radius:var(--mat-fab-container-shape, var(--mat-sys-corner-large));color:var(--mat-fab-foreground-color, var(--mat-sys-on-primary-container, inherit));box-shadow:var(--mat-fab-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-fab:hover{box-shadow:var(--mat-fab-hover-container-elevation-shadow, var(--mat-sys-level4))}.mat-mdc-fab:focus{box-shadow:var(--mat-fab-focus-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-fab:active,.mat-mdc-fab:focus:active{box-shadow:var(--mat-fab-pressed-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-fab[disabled],.mat-mdc-fab.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-fab-disabled-state-foreground-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-fab-disabled-state-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-fab.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-fab .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-fab-touch-target-size, 48px);display:var(--mat-fab-touch-target-display, block);left:50%;width:var(--mat-fab-touch-target-size, 48px);transform:translate(-50%, -50%)}.mat-mdc-fab .mat-ripple-element{background-color:var(--mat-fab-ripple-color, color-mix(in srgb, var(--mat-sys-on-primary-container) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-fab .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-state-layer-color, var(--mat-sys-on-primary-container))}.mat-mdc-fab.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-disabled-state-layer-color)}.mat-mdc-fab:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-fab.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-fab.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-fab.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-fab:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-mini-fab{width:40px;height:40px;background-color:var(--mat-fab-small-container-color, var(--mat-sys-primary-container));border-radius:var(--mat-fab-small-container-shape, var(--mat-sys-corner-medium));color:var(--mat-fab-small-foreground-color, var(--mat-sys-on-primary-container, inherit));box-shadow:var(--mat-fab-small-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-mini-fab:hover{box-shadow:var(--mat-fab-small-hover-container-elevation-shadow, var(--mat-sys-level4))}.mat-mdc-mini-fab:focus{box-shadow:var(--mat-fab-small-focus-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-mini-fab:active,.mat-mdc-mini-fab:focus:active{box-shadow:var(--mat-fab-small-pressed-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-mini-fab[disabled],.mat-mdc-mini-fab.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-fab-small-disabled-state-foreground-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-fab-small-disabled-state-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-mini-fab.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-mini-fab .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-fab-small-touch-target-size, 48px);display:var(--mat-fab-small-touch-target-display);left:50%;width:var(--mat-fab-small-touch-target-size, 48px);transform:translate(-50%, -50%)}.mat-mdc-mini-fab .mat-ripple-element{background-color:var(--mat-fab-small-ripple-color, color-mix(in srgb, var(--mat-sys-on-primary-container) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-mini-fab .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-small-state-layer-color, var(--mat-sys-on-primary-container))}.mat-mdc-mini-fab.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-small-disabled-state-layer-color)}.mat-mdc-mini-fab:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-small-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-mini-fab.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-mini-fab.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-mini-fab.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-small-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-mini-fab:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-small-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-extended-fab{-moz-osx-font-smoothing:grayscale;-webkit-font-smoothing:antialiased;padding-left:20px;padding-right:20px;width:auto;max-width:100%;line-height:normal;box-shadow:var(--mat-fab-extended-container-elevation-shadow, var(--mat-sys-level3));height:var(--mat-fab-extended-container-height, 56px);border-radius:var(--mat-fab-extended-container-shape, var(--mat-sys-corner-large));font-family:var(--mat-fab-extended-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-fab-extended-label-text-size, var(--mat-sys-label-large-size));font-weight:var(--mat-fab-extended-label-text-weight, var(--mat-sys-label-large-weight));letter-spacing:var(--mat-fab-extended-label-text-tracking, var(--mat-sys-label-large-tracking))}.mat-mdc-extended-fab:hover{box-shadow:var(--mat-fab-extended-hover-container-elevation-shadow, var(--mat-sys-level4))}.mat-mdc-extended-fab:focus{box-shadow:var(--mat-fab-extended-focus-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-extended-fab:active,.mat-mdc-extended-fab:focus:active{box-shadow:var(--mat-fab-extended-pressed-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-extended-fab[disabled],.mat-mdc-extended-fab.mat-mdc-button-disabled{cursor:default;pointer-events:none}.mat-mdc-extended-fab[disabled],.mat-mdc-extended-fab[disabled]:focus,.mat-mdc-extended-fab.mat-mdc-button-disabled,.mat-mdc-extended-fab.mat-mdc-button-disabled:focus{box-shadow:none}.mat-mdc-extended-fab.mat-mdc-button-disabled-interactive{pointer-events:auto}[dir=rtl] .mat-mdc-extended-fab .mdc-button__label+.mat-icon,[dir=rtl] .mat-mdc-extended-fab .mdc-button__label+.material-icons,.mat-mdc-extended-fab>.mat-icon,.mat-mdc-extended-fab>.material-icons{margin-left:-8px;margin-right:12px}.mat-mdc-extended-fab .mdc-button__label+.mat-icon,.mat-mdc-extended-fab .mdc-button__label+.material-icons,[dir=rtl] .mat-mdc-extended-fab>.mat-icon,[dir=rtl] .mat-mdc-extended-fab>.material-icons{margin-left:12px;margin-right:-8px}.mat-mdc-extended-fab .mat-mdc-button-touch-target{width:100%}\n';
+var APPEARANCE_CLASSES = /* @__PURE__ */ new Map([["text", ["mat-mdc-button"]], ["filled", ["mdc-button--unelevated", "mat-mdc-unelevated-button"]], ["elevated", ["mdc-button--raised", "mat-mdc-raised-button"]], ["outlined", ["mdc-button--outlined", "mat-mdc-outlined-button"]], ["tonal", ["mat-tonal-button"]]]);
+var MatButton = class _MatButton extends MatButtonBase {
+  /** Appearance of the button. */
+  get appearance() {
+    return this._appearance;
+  }
+  set appearance(value) {
+    this.setAppearance(value || this._config?.defaultAppearance || "text");
+  }
+  _appearance = null;
+  constructor() {
+    super();
+    const inferredAppearance = _inferAppearance(this._elementRef.nativeElement);
+    if (inferredAppearance) {
+      this.setAppearance(inferredAppearance);
+    }
+  }
+  /** Programmatically sets the appearance of the button. */
+  setAppearance(appearance) {
+    if (appearance === this._appearance) {
+      return;
+    }
+    const classList = this._elementRef.nativeElement.classList;
+    const previousClasses = this._appearance ? APPEARANCE_CLASSES.get(this._appearance) : null;
+    const newClasses = APPEARANCE_CLASSES.get(appearance);
+    if ((typeof ngDevMode === "undefined" || ngDevMode) && !newClasses) {
+      throw new Error(`Unsupported MatButton appearance "${appearance}"`);
+    }
+    if (previousClasses) {
+      classList.remove(...previousClasses);
+    }
+    classList.add(...newClasses);
+    this._appearance = appearance;
+  }
+  static \u0275fac = function MatButton_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatButton)();
+  };
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+    type: _MatButton,
+    selectors: [["button", "matButton", ""], ["a", "matButton", ""], ["button", "mat-button", ""], ["button", "mat-raised-button", ""], ["button", "mat-flat-button", ""], ["button", "mat-stroked-button", ""], ["a", "mat-button", ""], ["a", "mat-raised-button", ""], ["a", "mat-flat-button", ""], ["a", "mat-stroked-button", ""]],
+    hostAttrs: [1, "mdc-button"],
+    inputs: {
+      appearance: [0, "matButton", "appearance"]
+    },
+    exportAs: ["matButton", "matAnchor"],
+    features: [\u0275\u0275InheritDefinitionFeature],
+    attrs: _c08,
+    ngContentSelectors: _c25,
+    decls: 7,
+    vars: 4,
+    consts: [[1, "mat-mdc-button-persistent-ripple"], [1, "mdc-button__label"], [1, "mat-focus-indicator"], [1, "mat-mdc-button-touch-target"]],
+    template: function MatButton_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275projectionDef(_c18);
+        \u0275\u0275domElement(0, "span", 0);
+        \u0275\u0275projection(1);
+        \u0275\u0275domElementStart(2, "span", 1);
+        \u0275\u0275projection(3, 1);
+        \u0275\u0275domElementEnd();
+        \u0275\u0275projection(4, 2);
+        \u0275\u0275domElement(5, "span", 2)(6, "span", 3);
+      }
+      if (rf & 2) {
+        \u0275\u0275classProp("mdc-button__ripple", !ctx._isFab)("mdc-fab__ripple", ctx._isFab);
+      }
+    },
+    styles: ['.mat-mdc-button-base{text-decoration:none}.mat-mdc-button-base .mat-icon{min-height:fit-content;flex-shrink:0}.mdc-button{-webkit-user-select:none;user-select:none;position:relative;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:64px;border:none;outline:none;line-height:inherit;-webkit-appearance:none;overflow:visible;vertical-align:middle;background:rgba(0,0,0,0);padding:0 8px}.mdc-button::-moz-focus-inner{padding:0;border:0}.mdc-button:active{outline:none}.mdc-button:hover{cursor:pointer}.mdc-button:disabled{cursor:default;pointer-events:none}.mdc-button[hidden]{display:none}.mdc-button .mdc-button__label{position:relative}.mat-mdc-button{padding:0 var(--mat-button-text-horizontal-padding, 12px);height:var(--mat-button-text-container-height, 40px);font-family:var(--mat-button-text-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-button-text-label-text-size, var(--mat-sys-label-large-size));letter-spacing:var(--mat-button-text-label-text-tracking, var(--mat-sys-label-large-tracking));text-transform:var(--mat-button-text-label-text-transform);font-weight:var(--mat-button-text-label-text-weight, var(--mat-sys-label-large-weight))}.mat-mdc-button,.mat-mdc-button .mdc-button__ripple{border-radius:var(--mat-button-text-container-shape, var(--mat-sys-corner-full))}.mat-mdc-button:not(:disabled){color:var(--mat-button-text-label-text-color, var(--mat-sys-primary))}.mat-mdc-button[disabled],.mat-mdc-button.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-button-text-disabled-label-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent))}.mat-mdc-button.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-button:has(.material-icons,mat-icon,[matButtonIcon]){padding:0 var(--mat-button-text-with-icon-horizontal-padding, 16px)}.mat-mdc-button>.mat-icon{margin-right:var(--mat-button-text-icon-spacing, 8px);margin-left:var(--mat-button-text-icon-offset, -4px)}[dir=rtl] .mat-mdc-button>.mat-icon{margin-right:var(--mat-button-text-icon-offset, -4px);margin-left:var(--mat-button-text-icon-spacing, 8px)}.mat-mdc-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-text-icon-offset, -4px);margin-left:var(--mat-button-text-icon-spacing, 8px)}[dir=rtl] .mat-mdc-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-text-icon-spacing, 8px);margin-left:var(--mat-button-text-icon-offset, -4px)}.mat-mdc-button .mat-ripple-element{background-color:var(--mat-button-text-ripple-color, color-mix(in srgb, var(--mat-sys-primary) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-button .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-text-state-layer-color, var(--mat-sys-primary))}.mat-mdc-button.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-text-disabled-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-button:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-text-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-button.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-button.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-button.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-text-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-button:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-text-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-button .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-button-text-touch-target-size, 48px);display:var(--mat-button-text-touch-target-display, block);left:0;right:0;transform:translateY(-50%)}.mat-mdc-unelevated-button{transition:box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1);height:var(--mat-button-filled-container-height, 40px);font-family:var(--mat-button-filled-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-button-filled-label-text-size, var(--mat-sys-label-large-size));letter-spacing:var(--mat-button-filled-label-text-tracking, var(--mat-sys-label-large-tracking));text-transform:var(--mat-button-filled-label-text-transform);font-weight:var(--mat-button-filled-label-text-weight, var(--mat-sys-label-large-weight));padding:0 var(--mat-button-filled-horizontal-padding, 24px)}.mat-mdc-unelevated-button>.mat-icon{margin-right:var(--mat-button-filled-icon-spacing, 8px);margin-left:var(--mat-button-filled-icon-offset, -8px)}[dir=rtl] .mat-mdc-unelevated-button>.mat-icon{margin-right:var(--mat-button-filled-icon-offset, -8px);margin-left:var(--mat-button-filled-icon-spacing, 8px)}.mat-mdc-unelevated-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-filled-icon-offset, -8px);margin-left:var(--mat-button-filled-icon-spacing, 8px)}[dir=rtl] .mat-mdc-unelevated-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-filled-icon-spacing, 8px);margin-left:var(--mat-button-filled-icon-offset, -8px)}.mat-mdc-unelevated-button .mat-ripple-element{background-color:var(--mat-button-filled-ripple-color, color-mix(in srgb, var(--mat-sys-on-primary) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-unelevated-button .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-filled-state-layer-color, var(--mat-sys-on-primary))}.mat-mdc-unelevated-button.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-filled-disabled-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-unelevated-button:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-filled-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-unelevated-button.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-unelevated-button.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-unelevated-button.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-filled-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-unelevated-button:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-filled-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-unelevated-button .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-button-filled-touch-target-size, 48px);display:var(--mat-button-filled-touch-target-display, block);left:0;right:0;transform:translateY(-50%)}.mat-mdc-unelevated-button:not(:disabled){color:var(--mat-button-filled-label-text-color, var(--mat-sys-on-primary));background-color:var(--mat-button-filled-container-color, var(--mat-sys-primary))}.mat-mdc-unelevated-button,.mat-mdc-unelevated-button .mdc-button__ripple{border-radius:var(--mat-button-filled-container-shape, var(--mat-sys-corner-full))}.mat-mdc-unelevated-button[disabled],.mat-mdc-unelevated-button.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-button-filled-disabled-label-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-button-filled-disabled-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-unelevated-button.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-raised-button{transition:box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1);box-shadow:var(--mat-button-protected-container-elevation-shadow, var(--mat-sys-level1));height:var(--mat-button-protected-container-height, 40px);font-family:var(--mat-button-protected-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-button-protected-label-text-size, var(--mat-sys-label-large-size));letter-spacing:var(--mat-button-protected-label-text-tracking, var(--mat-sys-label-large-tracking));text-transform:var(--mat-button-protected-label-text-transform);font-weight:var(--mat-button-protected-label-text-weight, var(--mat-sys-label-large-weight));padding:0 var(--mat-button-protected-horizontal-padding, 24px)}.mat-mdc-raised-button>.mat-icon{margin-right:var(--mat-button-protected-icon-spacing, 8px);margin-left:var(--mat-button-protected-icon-offset, -8px)}[dir=rtl] .mat-mdc-raised-button>.mat-icon{margin-right:var(--mat-button-protected-icon-offset, -8px);margin-left:var(--mat-button-protected-icon-spacing, 8px)}.mat-mdc-raised-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-protected-icon-offset, -8px);margin-left:var(--mat-button-protected-icon-spacing, 8px)}[dir=rtl] .mat-mdc-raised-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-protected-icon-spacing, 8px);margin-left:var(--mat-button-protected-icon-offset, -8px)}.mat-mdc-raised-button .mat-ripple-element{background-color:var(--mat-button-protected-ripple-color, color-mix(in srgb, var(--mat-sys-primary) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-raised-button .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-protected-state-layer-color, var(--mat-sys-primary))}.mat-mdc-raised-button.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-protected-disabled-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-raised-button:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-protected-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-raised-button.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-raised-button.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-raised-button.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-protected-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-raised-button:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-protected-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-raised-button .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-button-protected-touch-target-size, 48px);display:var(--mat-button-protected-touch-target-display, block);left:0;right:0;transform:translateY(-50%)}.mat-mdc-raised-button:not(:disabled){color:var(--mat-button-protected-label-text-color, var(--mat-sys-primary));background-color:var(--mat-button-protected-container-color, var(--mat-sys-surface))}.mat-mdc-raised-button,.mat-mdc-raised-button .mdc-button__ripple{border-radius:var(--mat-button-protected-container-shape, var(--mat-sys-corner-full))}.mat-mdc-raised-button:hover{box-shadow:var(--mat-button-protected-hover-container-elevation-shadow, var(--mat-sys-level2))}.mat-mdc-raised-button:focus{box-shadow:var(--mat-button-protected-focus-container-elevation-shadow, var(--mat-sys-level1))}.mat-mdc-raised-button:active,.mat-mdc-raised-button:focus:active{box-shadow:var(--mat-button-protected-pressed-container-elevation-shadow, var(--mat-sys-level1))}.mat-mdc-raised-button[disabled],.mat-mdc-raised-button.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-button-protected-disabled-label-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-button-protected-disabled-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-raised-button[disabled].mat-mdc-button-disabled,.mat-mdc-raised-button.mat-mdc-button-disabled.mat-mdc-button-disabled{box-shadow:var(--mat-button-protected-disabled-container-elevation-shadow, var(--mat-sys-level0))}.mat-mdc-raised-button.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-outlined-button{border-style:solid;transition:border 280ms cubic-bezier(0.4, 0, 0.2, 1);height:var(--mat-button-outlined-container-height, 40px);font-family:var(--mat-button-outlined-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-button-outlined-label-text-size, var(--mat-sys-label-large-size));letter-spacing:var(--mat-button-outlined-label-text-tracking, var(--mat-sys-label-large-tracking));text-transform:var(--mat-button-outlined-label-text-transform);font-weight:var(--mat-button-outlined-label-text-weight, var(--mat-sys-label-large-weight));border-radius:var(--mat-button-outlined-container-shape, var(--mat-sys-corner-full));border-width:var(--mat-button-outlined-outline-width, 1px);padding:0 var(--mat-button-outlined-horizontal-padding, 24px)}.mat-mdc-outlined-button>.mat-icon{margin-right:var(--mat-button-outlined-icon-spacing, 8px);margin-left:var(--mat-button-outlined-icon-offset, -8px)}[dir=rtl] .mat-mdc-outlined-button>.mat-icon{margin-right:var(--mat-button-outlined-icon-offset, -8px);margin-left:var(--mat-button-outlined-icon-spacing, 8px)}.mat-mdc-outlined-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-outlined-icon-offset, -8px);margin-left:var(--mat-button-outlined-icon-spacing, 8px)}[dir=rtl] .mat-mdc-outlined-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-outlined-icon-spacing, 8px);margin-left:var(--mat-button-outlined-icon-offset, -8px)}.mat-mdc-outlined-button .mat-ripple-element{background-color:var(--mat-button-outlined-ripple-color, color-mix(in srgb, var(--mat-sys-primary) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-outlined-button .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-outlined-state-layer-color, var(--mat-sys-primary))}.mat-mdc-outlined-button.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-outlined-disabled-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-outlined-button:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-outlined-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-outlined-button.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-outlined-button.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-outlined-button.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-outlined-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-outlined-button:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-outlined-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-outlined-button .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-button-outlined-touch-target-size, 48px);display:var(--mat-button-outlined-touch-target-display, block);left:0;right:0;transform:translateY(-50%)}.mat-mdc-outlined-button:not(:disabled){color:var(--mat-button-outlined-label-text-color, var(--mat-sys-primary));border-color:var(--mat-button-outlined-outline-color, var(--mat-sys-outline))}.mat-mdc-outlined-button[disabled],.mat-mdc-outlined-button.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-button-outlined-disabled-label-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));border-color:var(--mat-button-outlined-disabled-outline-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-outlined-button.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-tonal-button{transition:box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1);height:var(--mat-button-tonal-container-height, 40px);font-family:var(--mat-button-tonal-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-button-tonal-label-text-size, var(--mat-sys-label-large-size));letter-spacing:var(--mat-button-tonal-label-text-tracking, var(--mat-sys-label-large-tracking));text-transform:var(--mat-button-tonal-label-text-transform);font-weight:var(--mat-button-tonal-label-text-weight, var(--mat-sys-label-large-weight));padding:0 var(--mat-button-tonal-horizontal-padding, 24px)}.mat-tonal-button:not(:disabled){color:var(--mat-button-tonal-label-text-color, var(--mat-sys-on-secondary-container));background-color:var(--mat-button-tonal-container-color, var(--mat-sys-secondary-container))}.mat-tonal-button,.mat-tonal-button .mdc-button__ripple{border-radius:var(--mat-button-tonal-container-shape, var(--mat-sys-corner-full))}.mat-tonal-button[disabled],.mat-tonal-button.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-button-tonal-disabled-label-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-button-tonal-disabled-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-tonal-button.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-tonal-button>.mat-icon{margin-right:var(--mat-button-tonal-icon-spacing, 8px);margin-left:var(--mat-button-tonal-icon-offset, -8px)}[dir=rtl] .mat-tonal-button>.mat-icon{margin-right:var(--mat-button-tonal-icon-offset, -8px);margin-left:var(--mat-button-tonal-icon-spacing, 8px)}.mat-tonal-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-tonal-icon-offset, -8px);margin-left:var(--mat-button-tonal-icon-spacing, 8px)}[dir=rtl] .mat-tonal-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-tonal-icon-spacing, 8px);margin-left:var(--mat-button-tonal-icon-offset, -8px)}.mat-tonal-button .mat-ripple-element{background-color:var(--mat-button-tonal-ripple-color, color-mix(in srgb, var(--mat-sys-on-secondary-container) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-tonal-button .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-tonal-state-layer-color, var(--mat-sys-on-secondary-container))}.mat-tonal-button.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-tonal-disabled-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-tonal-button:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-tonal-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-tonal-button.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-tonal-button.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-tonal-button.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-tonal-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-tonal-button:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-tonal-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-tonal-button .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-button-tonal-touch-target-size, 48px);display:var(--mat-button-tonal-touch-target-display, block);left:0;right:0;transform:translateY(-50%)}.mat-mdc-button,.mat-mdc-unelevated-button,.mat-mdc-raised-button,.mat-mdc-outlined-button,.mat-tonal-button{-webkit-tap-highlight-color:rgba(0,0,0,0)}.mat-mdc-button .mat-mdc-button-ripple,.mat-mdc-button .mat-mdc-button-persistent-ripple,.mat-mdc-button .mat-mdc-button-persistent-ripple::before,.mat-mdc-unelevated-button .mat-mdc-button-ripple,.mat-mdc-unelevated-button .mat-mdc-button-persistent-ripple,.mat-mdc-unelevated-button .mat-mdc-button-persistent-ripple::before,.mat-mdc-raised-button .mat-mdc-button-ripple,.mat-mdc-raised-button .mat-mdc-button-persistent-ripple,.mat-mdc-raised-button .mat-mdc-button-persistent-ripple::before,.mat-mdc-outlined-button .mat-mdc-button-ripple,.mat-mdc-outlined-button .mat-mdc-button-persistent-ripple,.mat-mdc-outlined-button .mat-mdc-button-persistent-ripple::before,.mat-tonal-button .mat-mdc-button-ripple,.mat-tonal-button .mat-mdc-button-persistent-ripple,.mat-tonal-button .mat-mdc-button-persistent-ripple::before{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;border-radius:inherit}.mat-mdc-button .mat-mdc-button-ripple,.mat-mdc-unelevated-button .mat-mdc-button-ripple,.mat-mdc-raised-button .mat-mdc-button-ripple,.mat-mdc-outlined-button .mat-mdc-button-ripple,.mat-tonal-button .mat-mdc-button-ripple{overflow:hidden}.mat-mdc-button .mat-mdc-button-persistent-ripple::before,.mat-mdc-unelevated-button .mat-mdc-button-persistent-ripple::before,.mat-mdc-raised-button .mat-mdc-button-persistent-ripple::before,.mat-mdc-outlined-button .mat-mdc-button-persistent-ripple::before,.mat-tonal-button .mat-mdc-button-persistent-ripple::before{content:"";opacity:0}.mat-mdc-button .mdc-button__label,.mat-mdc-button .mat-icon,.mat-mdc-unelevated-button .mdc-button__label,.mat-mdc-unelevated-button .mat-icon,.mat-mdc-raised-button .mdc-button__label,.mat-mdc-raised-button .mat-icon,.mat-mdc-outlined-button .mdc-button__label,.mat-mdc-outlined-button .mat-icon,.mat-tonal-button .mdc-button__label,.mat-tonal-button .mat-icon{z-index:1;position:relative}.mat-mdc-button .mat-focus-indicator,.mat-mdc-unelevated-button .mat-focus-indicator,.mat-mdc-raised-button .mat-focus-indicator,.mat-mdc-outlined-button .mat-focus-indicator,.mat-tonal-button .mat-focus-indicator{top:0;left:0;right:0;bottom:0;position:absolute;border-radius:inherit}.mat-mdc-button:focus>.mat-focus-indicator::before,.mat-mdc-unelevated-button:focus>.mat-focus-indicator::before,.mat-mdc-raised-button:focus>.mat-focus-indicator::before,.mat-mdc-outlined-button:focus>.mat-focus-indicator::before,.mat-tonal-button:focus>.mat-focus-indicator::before{content:"";border-radius:inherit}.mat-mdc-button._mat-animation-noopable,.mat-mdc-unelevated-button._mat-animation-noopable,.mat-mdc-raised-button._mat-animation-noopable,.mat-mdc-outlined-button._mat-animation-noopable,.mat-tonal-button._mat-animation-noopable{transition:none !important;animation:none !important}.mat-mdc-button>.mat-icon,.mat-mdc-unelevated-button>.mat-icon,.mat-mdc-raised-button>.mat-icon,.mat-mdc-outlined-button>.mat-icon,.mat-tonal-button>.mat-icon{display:inline-block;position:relative;vertical-align:top;font-size:1.125rem;height:1.125rem;width:1.125rem}.mat-mdc-outlined-button .mat-mdc-button-ripple,.mat-mdc-outlined-button .mdc-button__ripple{top:-1px;left:-1px;bottom:-1px;right:-1px}.mat-mdc-unelevated-button .mat-focus-indicator::before,.mat-tonal-button .mat-focus-indicator::before,.mat-mdc-raised-button .mat-focus-indicator::before{margin:calc(calc(var(--mat-focus-indicator-border-width, 3px) + 2px)*-1)}.mat-mdc-outlined-button .mat-focus-indicator::before{margin:calc(calc(var(--mat-focus-indicator-border-width, 3px) + 3px)*-1)}\n', "@media(forced-colors: active){.mat-mdc-button:not(.mdc-button--outlined),.mat-mdc-unelevated-button:not(.mdc-button--outlined),.mat-mdc-raised-button:not(.mdc-button--outlined),.mat-mdc-outlined-button:not(.mdc-button--outlined),.mat-mdc-button-base.mat-tonal-button,.mat-mdc-icon-button.mat-mdc-icon-button,.mat-mdc-outlined-button .mdc-button__ripple{outline:solid 1px}}\n"],
+    encapsulation: 2,
+    changeDetection: 0
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatButton, [{
+    type: Component,
+    args: [{
+      selector: `
+    button[matButton], a[matButton], button[mat-button], button[mat-raised-button],
+    button[mat-flat-button], button[mat-stroked-button], a[mat-button], a[mat-raised-button],
+    a[mat-flat-button], a[mat-stroked-button]
+  `,
+      host: {
+        "class": "mdc-button"
+      },
+      exportAs: "matButton, matAnchor",
+      encapsulation: ViewEncapsulation.None,
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      template: `<span
+    class="mat-mdc-button-persistent-ripple"
+    [class.mdc-button__ripple]="!_isFab"
+    [class.mdc-fab__ripple]="_isFab"></span>
+
+<ng-content select=".material-icons:not([iconPositionEnd]), mat-icon:not([iconPositionEnd]), [matButtonIcon]:not([iconPositionEnd])">
+</ng-content>
+
+<span class="mdc-button__label"><ng-content></ng-content></span>
+
+<ng-content select=".material-icons[iconPositionEnd], mat-icon[iconPositionEnd], [matButtonIcon][iconPositionEnd]">
+</ng-content>
+
+<!--
+  The indicator can't be directly on the button, because MDC uses ::before for high contrast
+  indication and it can't be on the ripple, because it has a border radius and overflow: hidden.
+-->
+<span class="mat-focus-indicator"></span>
+
+<span class="mat-mdc-button-touch-target"></span>
+`,
+      styles: ['.mat-mdc-button-base{text-decoration:none}.mat-mdc-button-base .mat-icon{min-height:fit-content;flex-shrink:0}.mdc-button{-webkit-user-select:none;user-select:none;position:relative;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:64px;border:none;outline:none;line-height:inherit;-webkit-appearance:none;overflow:visible;vertical-align:middle;background:rgba(0,0,0,0);padding:0 8px}.mdc-button::-moz-focus-inner{padding:0;border:0}.mdc-button:active{outline:none}.mdc-button:hover{cursor:pointer}.mdc-button:disabled{cursor:default;pointer-events:none}.mdc-button[hidden]{display:none}.mdc-button .mdc-button__label{position:relative}.mat-mdc-button{padding:0 var(--mat-button-text-horizontal-padding, 12px);height:var(--mat-button-text-container-height, 40px);font-family:var(--mat-button-text-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-button-text-label-text-size, var(--mat-sys-label-large-size));letter-spacing:var(--mat-button-text-label-text-tracking, var(--mat-sys-label-large-tracking));text-transform:var(--mat-button-text-label-text-transform);font-weight:var(--mat-button-text-label-text-weight, var(--mat-sys-label-large-weight))}.mat-mdc-button,.mat-mdc-button .mdc-button__ripple{border-radius:var(--mat-button-text-container-shape, var(--mat-sys-corner-full))}.mat-mdc-button:not(:disabled){color:var(--mat-button-text-label-text-color, var(--mat-sys-primary))}.mat-mdc-button[disabled],.mat-mdc-button.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-button-text-disabled-label-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent))}.mat-mdc-button.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-button:has(.material-icons,mat-icon,[matButtonIcon]){padding:0 var(--mat-button-text-with-icon-horizontal-padding, 16px)}.mat-mdc-button>.mat-icon{margin-right:var(--mat-button-text-icon-spacing, 8px);margin-left:var(--mat-button-text-icon-offset, -4px)}[dir=rtl] .mat-mdc-button>.mat-icon{margin-right:var(--mat-button-text-icon-offset, -4px);margin-left:var(--mat-button-text-icon-spacing, 8px)}.mat-mdc-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-text-icon-offset, -4px);margin-left:var(--mat-button-text-icon-spacing, 8px)}[dir=rtl] .mat-mdc-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-text-icon-spacing, 8px);margin-left:var(--mat-button-text-icon-offset, -4px)}.mat-mdc-button .mat-ripple-element{background-color:var(--mat-button-text-ripple-color, color-mix(in srgb, var(--mat-sys-primary) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-button .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-text-state-layer-color, var(--mat-sys-primary))}.mat-mdc-button.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-text-disabled-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-button:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-text-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-button.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-button.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-button.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-text-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-button:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-text-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-button .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-button-text-touch-target-size, 48px);display:var(--mat-button-text-touch-target-display, block);left:0;right:0;transform:translateY(-50%)}.mat-mdc-unelevated-button{transition:box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1);height:var(--mat-button-filled-container-height, 40px);font-family:var(--mat-button-filled-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-button-filled-label-text-size, var(--mat-sys-label-large-size));letter-spacing:var(--mat-button-filled-label-text-tracking, var(--mat-sys-label-large-tracking));text-transform:var(--mat-button-filled-label-text-transform);font-weight:var(--mat-button-filled-label-text-weight, var(--mat-sys-label-large-weight));padding:0 var(--mat-button-filled-horizontal-padding, 24px)}.mat-mdc-unelevated-button>.mat-icon{margin-right:var(--mat-button-filled-icon-spacing, 8px);margin-left:var(--mat-button-filled-icon-offset, -8px)}[dir=rtl] .mat-mdc-unelevated-button>.mat-icon{margin-right:var(--mat-button-filled-icon-offset, -8px);margin-left:var(--mat-button-filled-icon-spacing, 8px)}.mat-mdc-unelevated-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-filled-icon-offset, -8px);margin-left:var(--mat-button-filled-icon-spacing, 8px)}[dir=rtl] .mat-mdc-unelevated-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-filled-icon-spacing, 8px);margin-left:var(--mat-button-filled-icon-offset, -8px)}.mat-mdc-unelevated-button .mat-ripple-element{background-color:var(--mat-button-filled-ripple-color, color-mix(in srgb, var(--mat-sys-on-primary) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-unelevated-button .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-filled-state-layer-color, var(--mat-sys-on-primary))}.mat-mdc-unelevated-button.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-filled-disabled-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-unelevated-button:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-filled-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-unelevated-button.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-unelevated-button.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-unelevated-button.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-filled-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-unelevated-button:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-filled-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-unelevated-button .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-button-filled-touch-target-size, 48px);display:var(--mat-button-filled-touch-target-display, block);left:0;right:0;transform:translateY(-50%)}.mat-mdc-unelevated-button:not(:disabled){color:var(--mat-button-filled-label-text-color, var(--mat-sys-on-primary));background-color:var(--mat-button-filled-container-color, var(--mat-sys-primary))}.mat-mdc-unelevated-button,.mat-mdc-unelevated-button .mdc-button__ripple{border-radius:var(--mat-button-filled-container-shape, var(--mat-sys-corner-full))}.mat-mdc-unelevated-button[disabled],.mat-mdc-unelevated-button.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-button-filled-disabled-label-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-button-filled-disabled-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-unelevated-button.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-raised-button{transition:box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1);box-shadow:var(--mat-button-protected-container-elevation-shadow, var(--mat-sys-level1));height:var(--mat-button-protected-container-height, 40px);font-family:var(--mat-button-protected-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-button-protected-label-text-size, var(--mat-sys-label-large-size));letter-spacing:var(--mat-button-protected-label-text-tracking, var(--mat-sys-label-large-tracking));text-transform:var(--mat-button-protected-label-text-transform);font-weight:var(--mat-button-protected-label-text-weight, var(--mat-sys-label-large-weight));padding:0 var(--mat-button-protected-horizontal-padding, 24px)}.mat-mdc-raised-button>.mat-icon{margin-right:var(--mat-button-protected-icon-spacing, 8px);margin-left:var(--mat-button-protected-icon-offset, -8px)}[dir=rtl] .mat-mdc-raised-button>.mat-icon{margin-right:var(--mat-button-protected-icon-offset, -8px);margin-left:var(--mat-button-protected-icon-spacing, 8px)}.mat-mdc-raised-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-protected-icon-offset, -8px);margin-left:var(--mat-button-protected-icon-spacing, 8px)}[dir=rtl] .mat-mdc-raised-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-protected-icon-spacing, 8px);margin-left:var(--mat-button-protected-icon-offset, -8px)}.mat-mdc-raised-button .mat-ripple-element{background-color:var(--mat-button-protected-ripple-color, color-mix(in srgb, var(--mat-sys-primary) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-raised-button .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-protected-state-layer-color, var(--mat-sys-primary))}.mat-mdc-raised-button.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-protected-disabled-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-raised-button:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-protected-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-raised-button.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-raised-button.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-raised-button.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-protected-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-raised-button:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-protected-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-raised-button .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-button-protected-touch-target-size, 48px);display:var(--mat-button-protected-touch-target-display, block);left:0;right:0;transform:translateY(-50%)}.mat-mdc-raised-button:not(:disabled){color:var(--mat-button-protected-label-text-color, var(--mat-sys-primary));background-color:var(--mat-button-protected-container-color, var(--mat-sys-surface))}.mat-mdc-raised-button,.mat-mdc-raised-button .mdc-button__ripple{border-radius:var(--mat-button-protected-container-shape, var(--mat-sys-corner-full))}.mat-mdc-raised-button:hover{box-shadow:var(--mat-button-protected-hover-container-elevation-shadow, var(--mat-sys-level2))}.mat-mdc-raised-button:focus{box-shadow:var(--mat-button-protected-focus-container-elevation-shadow, var(--mat-sys-level1))}.mat-mdc-raised-button:active,.mat-mdc-raised-button:focus:active{box-shadow:var(--mat-button-protected-pressed-container-elevation-shadow, var(--mat-sys-level1))}.mat-mdc-raised-button[disabled],.mat-mdc-raised-button.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-button-protected-disabled-label-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-button-protected-disabled-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-raised-button[disabled].mat-mdc-button-disabled,.mat-mdc-raised-button.mat-mdc-button-disabled.mat-mdc-button-disabled{box-shadow:var(--mat-button-protected-disabled-container-elevation-shadow, var(--mat-sys-level0))}.mat-mdc-raised-button.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-outlined-button{border-style:solid;transition:border 280ms cubic-bezier(0.4, 0, 0.2, 1);height:var(--mat-button-outlined-container-height, 40px);font-family:var(--mat-button-outlined-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-button-outlined-label-text-size, var(--mat-sys-label-large-size));letter-spacing:var(--mat-button-outlined-label-text-tracking, var(--mat-sys-label-large-tracking));text-transform:var(--mat-button-outlined-label-text-transform);font-weight:var(--mat-button-outlined-label-text-weight, var(--mat-sys-label-large-weight));border-radius:var(--mat-button-outlined-container-shape, var(--mat-sys-corner-full));border-width:var(--mat-button-outlined-outline-width, 1px);padding:0 var(--mat-button-outlined-horizontal-padding, 24px)}.mat-mdc-outlined-button>.mat-icon{margin-right:var(--mat-button-outlined-icon-spacing, 8px);margin-left:var(--mat-button-outlined-icon-offset, -8px)}[dir=rtl] .mat-mdc-outlined-button>.mat-icon{margin-right:var(--mat-button-outlined-icon-offset, -8px);margin-left:var(--mat-button-outlined-icon-spacing, 8px)}.mat-mdc-outlined-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-outlined-icon-offset, -8px);margin-left:var(--mat-button-outlined-icon-spacing, 8px)}[dir=rtl] .mat-mdc-outlined-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-outlined-icon-spacing, 8px);margin-left:var(--mat-button-outlined-icon-offset, -8px)}.mat-mdc-outlined-button .mat-ripple-element{background-color:var(--mat-button-outlined-ripple-color, color-mix(in srgb, var(--mat-sys-primary) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-outlined-button .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-outlined-state-layer-color, var(--mat-sys-primary))}.mat-mdc-outlined-button.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-outlined-disabled-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-mdc-outlined-button:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-outlined-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-outlined-button.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-outlined-button.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-outlined-button.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-outlined-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-outlined-button:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-outlined-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-outlined-button .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-button-outlined-touch-target-size, 48px);display:var(--mat-button-outlined-touch-target-display, block);left:0;right:0;transform:translateY(-50%)}.mat-mdc-outlined-button:not(:disabled){color:var(--mat-button-outlined-label-text-color, var(--mat-sys-primary));border-color:var(--mat-button-outlined-outline-color, var(--mat-sys-outline))}.mat-mdc-outlined-button[disabled],.mat-mdc-outlined-button.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-button-outlined-disabled-label-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));border-color:var(--mat-button-outlined-disabled-outline-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-outlined-button.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-tonal-button{transition:box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1);height:var(--mat-button-tonal-container-height, 40px);font-family:var(--mat-button-tonal-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-button-tonal-label-text-size, var(--mat-sys-label-large-size));letter-spacing:var(--mat-button-tonal-label-text-tracking, var(--mat-sys-label-large-tracking));text-transform:var(--mat-button-tonal-label-text-transform);font-weight:var(--mat-button-tonal-label-text-weight, var(--mat-sys-label-large-weight));padding:0 var(--mat-button-tonal-horizontal-padding, 24px)}.mat-tonal-button:not(:disabled){color:var(--mat-button-tonal-label-text-color, var(--mat-sys-on-secondary-container));background-color:var(--mat-button-tonal-container-color, var(--mat-sys-secondary-container))}.mat-tonal-button,.mat-tonal-button .mdc-button__ripple{border-radius:var(--mat-button-tonal-container-shape, var(--mat-sys-corner-full))}.mat-tonal-button[disabled],.mat-tonal-button.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-button-tonal-disabled-label-text-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-button-tonal-disabled-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-tonal-button.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-tonal-button>.mat-icon{margin-right:var(--mat-button-tonal-icon-spacing, 8px);margin-left:var(--mat-button-tonal-icon-offset, -8px)}[dir=rtl] .mat-tonal-button>.mat-icon{margin-right:var(--mat-button-tonal-icon-offset, -8px);margin-left:var(--mat-button-tonal-icon-spacing, 8px)}.mat-tonal-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-tonal-icon-offset, -8px);margin-left:var(--mat-button-tonal-icon-spacing, 8px)}[dir=rtl] .mat-tonal-button .mdc-button__label+.mat-icon{margin-right:var(--mat-button-tonal-icon-spacing, 8px);margin-left:var(--mat-button-tonal-icon-offset, -8px)}.mat-tonal-button .mat-ripple-element{background-color:var(--mat-button-tonal-ripple-color, color-mix(in srgb, var(--mat-sys-on-secondary-container) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-tonal-button .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-tonal-state-layer-color, var(--mat-sys-on-secondary-container))}.mat-tonal-button.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-button-tonal-disabled-state-layer-color, var(--mat-sys-on-surface-variant))}.mat-tonal-button:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-tonal-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-tonal-button.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-tonal-button.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-tonal-button.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-tonal-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-tonal-button:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-button-tonal-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-tonal-button .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-button-tonal-touch-target-size, 48px);display:var(--mat-button-tonal-touch-target-display, block);left:0;right:0;transform:translateY(-50%)}.mat-mdc-button,.mat-mdc-unelevated-button,.mat-mdc-raised-button,.mat-mdc-outlined-button,.mat-tonal-button{-webkit-tap-highlight-color:rgba(0,0,0,0)}.mat-mdc-button .mat-mdc-button-ripple,.mat-mdc-button .mat-mdc-button-persistent-ripple,.mat-mdc-button .mat-mdc-button-persistent-ripple::before,.mat-mdc-unelevated-button .mat-mdc-button-ripple,.mat-mdc-unelevated-button .mat-mdc-button-persistent-ripple,.mat-mdc-unelevated-button .mat-mdc-button-persistent-ripple::before,.mat-mdc-raised-button .mat-mdc-button-ripple,.mat-mdc-raised-button .mat-mdc-button-persistent-ripple,.mat-mdc-raised-button .mat-mdc-button-persistent-ripple::before,.mat-mdc-outlined-button .mat-mdc-button-ripple,.mat-mdc-outlined-button .mat-mdc-button-persistent-ripple,.mat-mdc-outlined-button .mat-mdc-button-persistent-ripple::before,.mat-tonal-button .mat-mdc-button-ripple,.mat-tonal-button .mat-mdc-button-persistent-ripple,.mat-tonal-button .mat-mdc-button-persistent-ripple::before{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;border-radius:inherit}.mat-mdc-button .mat-mdc-button-ripple,.mat-mdc-unelevated-button .mat-mdc-button-ripple,.mat-mdc-raised-button .mat-mdc-button-ripple,.mat-mdc-outlined-button .mat-mdc-button-ripple,.mat-tonal-button .mat-mdc-button-ripple{overflow:hidden}.mat-mdc-button .mat-mdc-button-persistent-ripple::before,.mat-mdc-unelevated-button .mat-mdc-button-persistent-ripple::before,.mat-mdc-raised-button .mat-mdc-button-persistent-ripple::before,.mat-mdc-outlined-button .mat-mdc-button-persistent-ripple::before,.mat-tonal-button .mat-mdc-button-persistent-ripple::before{content:"";opacity:0}.mat-mdc-button .mdc-button__label,.mat-mdc-button .mat-icon,.mat-mdc-unelevated-button .mdc-button__label,.mat-mdc-unelevated-button .mat-icon,.mat-mdc-raised-button .mdc-button__label,.mat-mdc-raised-button .mat-icon,.mat-mdc-outlined-button .mdc-button__label,.mat-mdc-outlined-button .mat-icon,.mat-tonal-button .mdc-button__label,.mat-tonal-button .mat-icon{z-index:1;position:relative}.mat-mdc-button .mat-focus-indicator,.mat-mdc-unelevated-button .mat-focus-indicator,.mat-mdc-raised-button .mat-focus-indicator,.mat-mdc-outlined-button .mat-focus-indicator,.mat-tonal-button .mat-focus-indicator{top:0;left:0;right:0;bottom:0;position:absolute;border-radius:inherit}.mat-mdc-button:focus>.mat-focus-indicator::before,.mat-mdc-unelevated-button:focus>.mat-focus-indicator::before,.mat-mdc-raised-button:focus>.mat-focus-indicator::before,.mat-mdc-outlined-button:focus>.mat-focus-indicator::before,.mat-tonal-button:focus>.mat-focus-indicator::before{content:"";border-radius:inherit}.mat-mdc-button._mat-animation-noopable,.mat-mdc-unelevated-button._mat-animation-noopable,.mat-mdc-raised-button._mat-animation-noopable,.mat-mdc-outlined-button._mat-animation-noopable,.mat-tonal-button._mat-animation-noopable{transition:none !important;animation:none !important}.mat-mdc-button>.mat-icon,.mat-mdc-unelevated-button>.mat-icon,.mat-mdc-raised-button>.mat-icon,.mat-mdc-outlined-button>.mat-icon,.mat-tonal-button>.mat-icon{display:inline-block;position:relative;vertical-align:top;font-size:1.125rem;height:1.125rem;width:1.125rem}.mat-mdc-outlined-button .mat-mdc-button-ripple,.mat-mdc-outlined-button .mdc-button__ripple{top:-1px;left:-1px;bottom:-1px;right:-1px}.mat-mdc-unelevated-button .mat-focus-indicator::before,.mat-tonal-button .mat-focus-indicator::before,.mat-mdc-raised-button .mat-focus-indicator::before{margin:calc(calc(var(--mat-focus-indicator-border-width, 3px) + 2px)*-1)}.mat-mdc-outlined-button .mat-focus-indicator::before{margin:calc(calc(var(--mat-focus-indicator-border-width, 3px) + 3px)*-1)}\n', "@media(forced-colors: active){.mat-mdc-button:not(.mdc-button--outlined),.mat-mdc-unelevated-button:not(.mdc-button--outlined),.mat-mdc-raised-button:not(.mdc-button--outlined),.mat-mdc-outlined-button:not(.mdc-button--outlined),.mat-mdc-button-base.mat-tonal-button,.mat-mdc-icon-button.mat-mdc-icon-button,.mat-mdc-outlined-button .mdc-button__ripple{outline:solid 1px}}\n"]
+    }]
+  }], () => [], {
+    appearance: [{
+      type: Input,
+      args: ["matButton"]
+    }]
+  });
+})();
+function _inferAppearance(button) {
+  if (button.hasAttribute("mat-raised-button")) {
+    return "elevated";
+  }
+  if (button.hasAttribute("mat-stroked-button")) {
+    return "outlined";
+  }
+  if (button.hasAttribute("mat-flat-button")) {
+    return "filled";
+  }
+  if (button.hasAttribute("mat-button")) {
+    return "text";
+  }
+  return null;
+}
+var MAT_FAB_DEFAULT_OPTIONS = new InjectionToken("mat-mdc-fab-default-options", {
+  providedIn: "root",
+  factory: MAT_FAB_DEFAULT_OPTIONS_FACTORY
+});
+function MAT_FAB_DEFAULT_OPTIONS_FACTORY() {
+  return {
+    // The FAB by default has its color set to accent.
+    color: "accent"
+  };
+}
+var defaults = MAT_FAB_DEFAULT_OPTIONS_FACTORY();
+var MatFabButton = class _MatFabButton extends MatButtonBase {
+  _options = inject2(MAT_FAB_DEFAULT_OPTIONS, {
+    optional: true
+  });
+  _isFab = true;
+  extended;
+  constructor() {
+    super();
+    this._options = this._options || defaults;
+    this.color = this._options.color || defaults.color;
+  }
+  static \u0275fac = function MatFabButton_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatFabButton)();
+  };
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+    type: _MatFabButton,
+    selectors: [["button", "mat-fab", ""], ["a", "mat-fab", ""], ["button", "matFab", ""], ["a", "matFab", ""]],
+    hostAttrs: [1, "mdc-fab", "mat-mdc-fab-base", "mat-mdc-fab"],
+    hostVars: 4,
+    hostBindings: function MatFabButton_HostBindings(rf, ctx) {
+      if (rf & 2) {
+        \u0275\u0275classProp("mdc-fab--extended", ctx.extended)("mat-mdc-extended-fab", ctx.extended);
+      }
+    },
+    inputs: {
+      extended: [2, "extended", "extended", booleanAttribute]
+    },
+    exportAs: ["matButton", "matAnchor"],
+    features: [\u0275\u0275InheritDefinitionFeature],
+    attrs: _c35,
+    ngContentSelectors: _c25,
+    decls: 7,
+    vars: 4,
+    consts: [[1, "mat-mdc-button-persistent-ripple"], [1, "mdc-button__label"], [1, "mat-focus-indicator"], [1, "mat-mdc-button-touch-target"]],
+    template: function MatFabButton_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275projectionDef(_c18);
+        \u0275\u0275domElement(0, "span", 0);
+        \u0275\u0275projection(1);
+        \u0275\u0275domElementStart(2, "span", 1);
+        \u0275\u0275projection(3, 1);
+        \u0275\u0275domElementEnd();
+        \u0275\u0275projection(4, 2);
+        \u0275\u0275domElement(5, "span", 2)(6, "span", 3);
+      }
+      if (rf & 2) {
+        \u0275\u0275classProp("mdc-button__ripple", !ctx._isFab)("mdc-fab__ripple", ctx._isFab);
+      }
+    },
+    styles: ['.mat-mdc-fab-base{-webkit-user-select:none;user-select:none;position:relative;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:56px;height:56px;padding:0;border:none;fill:currentColor;text-decoration:none;cursor:pointer;-moz-appearance:none;-webkit-appearance:none;overflow:visible;transition:box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1),opacity 15ms linear 30ms,transform 270ms 0ms cubic-bezier(0, 0, 0.2, 1);flex-shrink:0;-webkit-tap-highlight-color:rgba(0,0,0,0)}.mat-mdc-fab-base .mat-mdc-button-ripple,.mat-mdc-fab-base .mat-mdc-button-persistent-ripple,.mat-mdc-fab-base .mat-mdc-button-persistent-ripple::before{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;border-radius:inherit}.mat-mdc-fab-base .mat-mdc-button-ripple{overflow:hidden}.mat-mdc-fab-base .mat-mdc-button-persistent-ripple::before{content:"";opacity:0}.mat-mdc-fab-base .mdc-button__label,.mat-mdc-fab-base .mat-icon{z-index:1;position:relative}.mat-mdc-fab-base .mat-focus-indicator{top:0;left:0;right:0;bottom:0;position:absolute}.mat-mdc-fab-base:focus>.mat-focus-indicator::before{content:""}.mat-mdc-fab-base._mat-animation-noopable{transition:none !important;animation:none !important}.mat-mdc-fab-base::before{position:absolute;box-sizing:border-box;width:100%;height:100%;top:0;left:0;border:1px solid rgba(0,0,0,0);border-radius:inherit;content:"";pointer-events:none}.mat-mdc-fab-base[hidden]{display:none}.mat-mdc-fab-base::-moz-focus-inner{padding:0;border:0}.mat-mdc-fab-base:active,.mat-mdc-fab-base:focus{outline:none}.mat-mdc-fab-base:hover{cursor:pointer}.mat-mdc-fab-base>svg{width:100%}.mat-mdc-fab-base .mat-icon,.mat-mdc-fab-base .material-icons{transition:transform 180ms 90ms cubic-bezier(0, 0, 0.2, 1);fill:currentColor;will-change:transform}.mat-mdc-fab-base .mat-focus-indicator::before{margin:calc(calc(var(--mat-focus-indicator-border-width, 3px) + 2px)*-1)}.mat-mdc-fab-base[disabled],.mat-mdc-fab-base.mat-mdc-button-disabled{cursor:default;pointer-events:none}.mat-mdc-fab-base[disabled],.mat-mdc-fab-base[disabled]:focus,.mat-mdc-fab-base.mat-mdc-button-disabled,.mat-mdc-fab-base.mat-mdc-button-disabled:focus{box-shadow:none}.mat-mdc-fab-base.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-fab{background-color:var(--mat-fab-container-color, var(--mat-sys-primary-container));border-radius:var(--mat-fab-container-shape, var(--mat-sys-corner-large));color:var(--mat-fab-foreground-color, var(--mat-sys-on-primary-container, inherit));box-shadow:var(--mat-fab-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-fab:hover{box-shadow:var(--mat-fab-hover-container-elevation-shadow, var(--mat-sys-level4))}.mat-mdc-fab:focus{box-shadow:var(--mat-fab-focus-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-fab:active,.mat-mdc-fab:focus:active{box-shadow:var(--mat-fab-pressed-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-fab[disabled],.mat-mdc-fab.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-fab-disabled-state-foreground-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-fab-disabled-state-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-fab.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-fab .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-fab-touch-target-size, 48px);display:var(--mat-fab-touch-target-display, block);left:50%;width:var(--mat-fab-touch-target-size, 48px);transform:translate(-50%, -50%)}.mat-mdc-fab .mat-ripple-element{background-color:var(--mat-fab-ripple-color, color-mix(in srgb, var(--mat-sys-on-primary-container) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-fab .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-state-layer-color, var(--mat-sys-on-primary-container))}.mat-mdc-fab.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-disabled-state-layer-color)}.mat-mdc-fab:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-fab.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-fab.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-fab.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-fab:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-mini-fab{width:40px;height:40px;background-color:var(--mat-fab-small-container-color, var(--mat-sys-primary-container));border-radius:var(--mat-fab-small-container-shape, var(--mat-sys-corner-medium));color:var(--mat-fab-small-foreground-color, var(--mat-sys-on-primary-container, inherit));box-shadow:var(--mat-fab-small-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-mini-fab:hover{box-shadow:var(--mat-fab-small-hover-container-elevation-shadow, var(--mat-sys-level4))}.mat-mdc-mini-fab:focus{box-shadow:var(--mat-fab-small-focus-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-mini-fab:active,.mat-mdc-mini-fab:focus:active{box-shadow:var(--mat-fab-small-pressed-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-mini-fab[disabled],.mat-mdc-mini-fab.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-fab-small-disabled-state-foreground-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-fab-small-disabled-state-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-mini-fab.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-mini-fab .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-fab-small-touch-target-size, 48px);display:var(--mat-fab-small-touch-target-display);left:50%;width:var(--mat-fab-small-touch-target-size, 48px);transform:translate(-50%, -50%)}.mat-mdc-mini-fab .mat-ripple-element{background-color:var(--mat-fab-small-ripple-color, color-mix(in srgb, var(--mat-sys-on-primary-container) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-mini-fab .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-small-state-layer-color, var(--mat-sys-on-primary-container))}.mat-mdc-mini-fab.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-small-disabled-state-layer-color)}.mat-mdc-mini-fab:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-small-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-mini-fab.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-mini-fab.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-mini-fab.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-small-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-mini-fab:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-small-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-extended-fab{-moz-osx-font-smoothing:grayscale;-webkit-font-smoothing:antialiased;padding-left:20px;padding-right:20px;width:auto;max-width:100%;line-height:normal;box-shadow:var(--mat-fab-extended-container-elevation-shadow, var(--mat-sys-level3));height:var(--mat-fab-extended-container-height, 56px);border-radius:var(--mat-fab-extended-container-shape, var(--mat-sys-corner-large));font-family:var(--mat-fab-extended-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-fab-extended-label-text-size, var(--mat-sys-label-large-size));font-weight:var(--mat-fab-extended-label-text-weight, var(--mat-sys-label-large-weight));letter-spacing:var(--mat-fab-extended-label-text-tracking, var(--mat-sys-label-large-tracking))}.mat-mdc-extended-fab:hover{box-shadow:var(--mat-fab-extended-hover-container-elevation-shadow, var(--mat-sys-level4))}.mat-mdc-extended-fab:focus{box-shadow:var(--mat-fab-extended-focus-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-extended-fab:active,.mat-mdc-extended-fab:focus:active{box-shadow:var(--mat-fab-extended-pressed-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-extended-fab[disabled],.mat-mdc-extended-fab.mat-mdc-button-disabled{cursor:default;pointer-events:none}.mat-mdc-extended-fab[disabled],.mat-mdc-extended-fab[disabled]:focus,.mat-mdc-extended-fab.mat-mdc-button-disabled,.mat-mdc-extended-fab.mat-mdc-button-disabled:focus{box-shadow:none}.mat-mdc-extended-fab.mat-mdc-button-disabled-interactive{pointer-events:auto}[dir=rtl] .mat-mdc-extended-fab .mdc-button__label+.mat-icon,[dir=rtl] .mat-mdc-extended-fab .mdc-button__label+.material-icons,.mat-mdc-extended-fab>.mat-icon,.mat-mdc-extended-fab>.material-icons{margin-left:-8px;margin-right:12px}.mat-mdc-extended-fab .mdc-button__label+.mat-icon,.mat-mdc-extended-fab .mdc-button__label+.material-icons,[dir=rtl] .mat-mdc-extended-fab>.mat-icon,[dir=rtl] .mat-mdc-extended-fab>.material-icons{margin-left:12px;margin-right:-8px}.mat-mdc-extended-fab .mat-mdc-button-touch-target{width:100%}\n'],
+    encapsulation: 2,
+    changeDetection: 0
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatFabButton, [{
+    type: Component,
+    args: [{
+      selector: `button[mat-fab], a[mat-fab], button[matFab], a[matFab]`,
+      host: {
+        "class": "mdc-fab mat-mdc-fab-base mat-mdc-fab",
+        "[class.mdc-fab--extended]": "extended",
+        "[class.mat-mdc-extended-fab]": "extended"
+      },
+      exportAs: "matButton, matAnchor",
+      encapsulation: ViewEncapsulation.None,
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      template: `<span
+    class="mat-mdc-button-persistent-ripple"
+    [class.mdc-button__ripple]="!_isFab"
+    [class.mdc-fab__ripple]="_isFab"></span>
+
+<ng-content select=".material-icons:not([iconPositionEnd]), mat-icon:not([iconPositionEnd]), [matButtonIcon]:not([iconPositionEnd])">
+</ng-content>
+
+<span class="mdc-button__label"><ng-content></ng-content></span>
+
+<ng-content select=".material-icons[iconPositionEnd], mat-icon[iconPositionEnd], [matButtonIcon][iconPositionEnd]">
+</ng-content>
+
+<!--
+  The indicator can't be directly on the button, because MDC uses ::before for high contrast
+  indication and it can't be on the ripple, because it has a border radius and overflow: hidden.
+-->
+<span class="mat-focus-indicator"></span>
+
+<span class="mat-mdc-button-touch-target"></span>
+`,
+      styles: ['.mat-mdc-fab-base{-webkit-user-select:none;user-select:none;position:relative;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:56px;height:56px;padding:0;border:none;fill:currentColor;text-decoration:none;cursor:pointer;-moz-appearance:none;-webkit-appearance:none;overflow:visible;transition:box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1),opacity 15ms linear 30ms,transform 270ms 0ms cubic-bezier(0, 0, 0.2, 1);flex-shrink:0;-webkit-tap-highlight-color:rgba(0,0,0,0)}.mat-mdc-fab-base .mat-mdc-button-ripple,.mat-mdc-fab-base .mat-mdc-button-persistent-ripple,.mat-mdc-fab-base .mat-mdc-button-persistent-ripple::before{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;border-radius:inherit}.mat-mdc-fab-base .mat-mdc-button-ripple{overflow:hidden}.mat-mdc-fab-base .mat-mdc-button-persistent-ripple::before{content:"";opacity:0}.mat-mdc-fab-base .mdc-button__label,.mat-mdc-fab-base .mat-icon{z-index:1;position:relative}.mat-mdc-fab-base .mat-focus-indicator{top:0;left:0;right:0;bottom:0;position:absolute}.mat-mdc-fab-base:focus>.mat-focus-indicator::before{content:""}.mat-mdc-fab-base._mat-animation-noopable{transition:none !important;animation:none !important}.mat-mdc-fab-base::before{position:absolute;box-sizing:border-box;width:100%;height:100%;top:0;left:0;border:1px solid rgba(0,0,0,0);border-radius:inherit;content:"";pointer-events:none}.mat-mdc-fab-base[hidden]{display:none}.mat-mdc-fab-base::-moz-focus-inner{padding:0;border:0}.mat-mdc-fab-base:active,.mat-mdc-fab-base:focus{outline:none}.mat-mdc-fab-base:hover{cursor:pointer}.mat-mdc-fab-base>svg{width:100%}.mat-mdc-fab-base .mat-icon,.mat-mdc-fab-base .material-icons{transition:transform 180ms 90ms cubic-bezier(0, 0, 0.2, 1);fill:currentColor;will-change:transform}.mat-mdc-fab-base .mat-focus-indicator::before{margin:calc(calc(var(--mat-focus-indicator-border-width, 3px) + 2px)*-1)}.mat-mdc-fab-base[disabled],.mat-mdc-fab-base.mat-mdc-button-disabled{cursor:default;pointer-events:none}.mat-mdc-fab-base[disabled],.mat-mdc-fab-base[disabled]:focus,.mat-mdc-fab-base.mat-mdc-button-disabled,.mat-mdc-fab-base.mat-mdc-button-disabled:focus{box-shadow:none}.mat-mdc-fab-base.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-fab{background-color:var(--mat-fab-container-color, var(--mat-sys-primary-container));border-radius:var(--mat-fab-container-shape, var(--mat-sys-corner-large));color:var(--mat-fab-foreground-color, var(--mat-sys-on-primary-container, inherit));box-shadow:var(--mat-fab-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-fab:hover{box-shadow:var(--mat-fab-hover-container-elevation-shadow, var(--mat-sys-level4))}.mat-mdc-fab:focus{box-shadow:var(--mat-fab-focus-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-fab:active,.mat-mdc-fab:focus:active{box-shadow:var(--mat-fab-pressed-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-fab[disabled],.mat-mdc-fab.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-fab-disabled-state-foreground-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-fab-disabled-state-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-fab.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-fab .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-fab-touch-target-size, 48px);display:var(--mat-fab-touch-target-display, block);left:50%;width:var(--mat-fab-touch-target-size, 48px);transform:translate(-50%, -50%)}.mat-mdc-fab .mat-ripple-element{background-color:var(--mat-fab-ripple-color, color-mix(in srgb, var(--mat-sys-on-primary-container) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-fab .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-state-layer-color, var(--mat-sys-on-primary-container))}.mat-mdc-fab.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-disabled-state-layer-color)}.mat-mdc-fab:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-fab.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-fab.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-fab.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-fab:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-mini-fab{width:40px;height:40px;background-color:var(--mat-fab-small-container-color, var(--mat-sys-primary-container));border-radius:var(--mat-fab-small-container-shape, var(--mat-sys-corner-medium));color:var(--mat-fab-small-foreground-color, var(--mat-sys-on-primary-container, inherit));box-shadow:var(--mat-fab-small-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-mini-fab:hover{box-shadow:var(--mat-fab-small-hover-container-elevation-shadow, var(--mat-sys-level4))}.mat-mdc-mini-fab:focus{box-shadow:var(--mat-fab-small-focus-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-mini-fab:active,.mat-mdc-mini-fab:focus:active{box-shadow:var(--mat-fab-small-pressed-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-mini-fab[disabled],.mat-mdc-mini-fab.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-fab-small-disabled-state-foreground-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-fab-small-disabled-state-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-mini-fab.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-mini-fab .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-fab-small-touch-target-size, 48px);display:var(--mat-fab-small-touch-target-display);left:50%;width:var(--mat-fab-small-touch-target-size, 48px);transform:translate(-50%, -50%)}.mat-mdc-mini-fab .mat-ripple-element{background-color:var(--mat-fab-small-ripple-color, color-mix(in srgb, var(--mat-sys-on-primary-container) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-mini-fab .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-small-state-layer-color, var(--mat-sys-on-primary-container))}.mat-mdc-mini-fab.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-small-disabled-state-layer-color)}.mat-mdc-mini-fab:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-small-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-mini-fab.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-mini-fab.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-mini-fab.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-small-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-mini-fab:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-small-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-extended-fab{-moz-osx-font-smoothing:grayscale;-webkit-font-smoothing:antialiased;padding-left:20px;padding-right:20px;width:auto;max-width:100%;line-height:normal;box-shadow:var(--mat-fab-extended-container-elevation-shadow, var(--mat-sys-level3));height:var(--mat-fab-extended-container-height, 56px);border-radius:var(--mat-fab-extended-container-shape, var(--mat-sys-corner-large));font-family:var(--mat-fab-extended-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-fab-extended-label-text-size, var(--mat-sys-label-large-size));font-weight:var(--mat-fab-extended-label-text-weight, var(--mat-sys-label-large-weight));letter-spacing:var(--mat-fab-extended-label-text-tracking, var(--mat-sys-label-large-tracking))}.mat-mdc-extended-fab:hover{box-shadow:var(--mat-fab-extended-hover-container-elevation-shadow, var(--mat-sys-level4))}.mat-mdc-extended-fab:focus{box-shadow:var(--mat-fab-extended-focus-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-extended-fab:active,.mat-mdc-extended-fab:focus:active{box-shadow:var(--mat-fab-extended-pressed-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-extended-fab[disabled],.mat-mdc-extended-fab.mat-mdc-button-disabled{cursor:default;pointer-events:none}.mat-mdc-extended-fab[disabled],.mat-mdc-extended-fab[disabled]:focus,.mat-mdc-extended-fab.mat-mdc-button-disabled,.mat-mdc-extended-fab.mat-mdc-button-disabled:focus{box-shadow:none}.mat-mdc-extended-fab.mat-mdc-button-disabled-interactive{pointer-events:auto}[dir=rtl] .mat-mdc-extended-fab .mdc-button__label+.mat-icon,[dir=rtl] .mat-mdc-extended-fab .mdc-button__label+.material-icons,.mat-mdc-extended-fab>.mat-icon,.mat-mdc-extended-fab>.material-icons{margin-left:-8px;margin-right:12px}.mat-mdc-extended-fab .mdc-button__label+.mat-icon,.mat-mdc-extended-fab .mdc-button__label+.material-icons,[dir=rtl] .mat-mdc-extended-fab>.mat-icon,[dir=rtl] .mat-mdc-extended-fab>.material-icons{margin-left:12px;margin-right:-8px}.mat-mdc-extended-fab .mat-mdc-button-touch-target{width:100%}\n']
+    }]
+  }], () => [], {
+    extended: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }]
+  });
+})();
+var MatMiniFabButton = class _MatMiniFabButton extends MatButtonBase {
+  _options = inject2(MAT_FAB_DEFAULT_OPTIONS, {
+    optional: true
+  });
+  _isFab = true;
+  constructor() {
+    super();
+    this._options = this._options || defaults;
+    this.color = this._options.color || defaults.color;
+  }
+  static \u0275fac = function MatMiniFabButton_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatMiniFabButton)();
+  };
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+    type: _MatMiniFabButton,
+    selectors: [["button", "mat-mini-fab", ""], ["a", "mat-mini-fab", ""], ["button", "matMiniFab", ""], ["a", "matMiniFab", ""]],
+    hostAttrs: [1, "mdc-fab", "mat-mdc-fab-base", "mdc-fab--mini", "mat-mdc-mini-fab"],
+    exportAs: ["matButton", "matAnchor"],
+    features: [\u0275\u0275InheritDefinitionFeature],
+    attrs: _c45,
+    ngContentSelectors: _c25,
+    decls: 7,
+    vars: 4,
+    consts: [[1, "mat-mdc-button-persistent-ripple"], [1, "mdc-button__label"], [1, "mat-focus-indicator"], [1, "mat-mdc-button-touch-target"]],
+    template: function MatMiniFabButton_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275projectionDef(_c18);
+        \u0275\u0275domElement(0, "span", 0);
+        \u0275\u0275projection(1);
+        \u0275\u0275domElementStart(2, "span", 1);
+        \u0275\u0275projection(3, 1);
+        \u0275\u0275domElementEnd();
+        \u0275\u0275projection(4, 2);
+        \u0275\u0275domElement(5, "span", 2)(6, "span", 3);
+      }
+      if (rf & 2) {
+        \u0275\u0275classProp("mdc-button__ripple", !ctx._isFab)("mdc-fab__ripple", ctx._isFab);
+      }
+    },
+    styles: [_c54],
+    encapsulation: 2,
+    changeDetection: 0
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatMiniFabButton, [{
+    type: Component,
+    args: [{
+      selector: `button[mat-mini-fab], a[mat-mini-fab], button[matMiniFab], a[matMiniFab]`,
+      host: {
+        "class": "mdc-fab mat-mdc-fab-base mdc-fab--mini mat-mdc-mini-fab"
+      },
+      exportAs: "matButton, matAnchor",
+      encapsulation: ViewEncapsulation.None,
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      template: `<span
+    class="mat-mdc-button-persistent-ripple"
+    [class.mdc-button__ripple]="!_isFab"
+    [class.mdc-fab__ripple]="_isFab"></span>
+
+<ng-content select=".material-icons:not([iconPositionEnd]), mat-icon:not([iconPositionEnd]), [matButtonIcon]:not([iconPositionEnd])">
+</ng-content>
+
+<span class="mdc-button__label"><ng-content></ng-content></span>
+
+<ng-content select=".material-icons[iconPositionEnd], mat-icon[iconPositionEnd], [matButtonIcon][iconPositionEnd]">
+</ng-content>
+
+<!--
+  The indicator can't be directly on the button, because MDC uses ::before for high contrast
+  indication and it can't be on the ripple, because it has a border radius and overflow: hidden.
+-->
+<span class="mat-focus-indicator"></span>
+
+<span class="mat-mdc-button-touch-target"></span>
+`,
+      styles: ['.mat-mdc-fab-base{-webkit-user-select:none;user-select:none;position:relative;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:56px;height:56px;padding:0;border:none;fill:currentColor;text-decoration:none;cursor:pointer;-moz-appearance:none;-webkit-appearance:none;overflow:visible;transition:box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1),opacity 15ms linear 30ms,transform 270ms 0ms cubic-bezier(0, 0, 0.2, 1);flex-shrink:0;-webkit-tap-highlight-color:rgba(0,0,0,0)}.mat-mdc-fab-base .mat-mdc-button-ripple,.mat-mdc-fab-base .mat-mdc-button-persistent-ripple,.mat-mdc-fab-base .mat-mdc-button-persistent-ripple::before{top:0;left:0;right:0;bottom:0;position:absolute;pointer-events:none;border-radius:inherit}.mat-mdc-fab-base .mat-mdc-button-ripple{overflow:hidden}.mat-mdc-fab-base .mat-mdc-button-persistent-ripple::before{content:"";opacity:0}.mat-mdc-fab-base .mdc-button__label,.mat-mdc-fab-base .mat-icon{z-index:1;position:relative}.mat-mdc-fab-base .mat-focus-indicator{top:0;left:0;right:0;bottom:0;position:absolute}.mat-mdc-fab-base:focus>.mat-focus-indicator::before{content:""}.mat-mdc-fab-base._mat-animation-noopable{transition:none !important;animation:none !important}.mat-mdc-fab-base::before{position:absolute;box-sizing:border-box;width:100%;height:100%;top:0;left:0;border:1px solid rgba(0,0,0,0);border-radius:inherit;content:"";pointer-events:none}.mat-mdc-fab-base[hidden]{display:none}.mat-mdc-fab-base::-moz-focus-inner{padding:0;border:0}.mat-mdc-fab-base:active,.mat-mdc-fab-base:focus{outline:none}.mat-mdc-fab-base:hover{cursor:pointer}.mat-mdc-fab-base>svg{width:100%}.mat-mdc-fab-base .mat-icon,.mat-mdc-fab-base .material-icons{transition:transform 180ms 90ms cubic-bezier(0, 0, 0.2, 1);fill:currentColor;will-change:transform}.mat-mdc-fab-base .mat-focus-indicator::before{margin:calc(calc(var(--mat-focus-indicator-border-width, 3px) + 2px)*-1)}.mat-mdc-fab-base[disabled],.mat-mdc-fab-base.mat-mdc-button-disabled{cursor:default;pointer-events:none}.mat-mdc-fab-base[disabled],.mat-mdc-fab-base[disabled]:focus,.mat-mdc-fab-base.mat-mdc-button-disabled,.mat-mdc-fab-base.mat-mdc-button-disabled:focus{box-shadow:none}.mat-mdc-fab-base.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-fab{background-color:var(--mat-fab-container-color, var(--mat-sys-primary-container));border-radius:var(--mat-fab-container-shape, var(--mat-sys-corner-large));color:var(--mat-fab-foreground-color, var(--mat-sys-on-primary-container, inherit));box-shadow:var(--mat-fab-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-fab:hover{box-shadow:var(--mat-fab-hover-container-elevation-shadow, var(--mat-sys-level4))}.mat-mdc-fab:focus{box-shadow:var(--mat-fab-focus-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-fab:active,.mat-mdc-fab:focus:active{box-shadow:var(--mat-fab-pressed-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-fab[disabled],.mat-mdc-fab.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-fab-disabled-state-foreground-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-fab-disabled-state-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-fab.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-fab .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-fab-touch-target-size, 48px);display:var(--mat-fab-touch-target-display, block);left:50%;width:var(--mat-fab-touch-target-size, 48px);transform:translate(-50%, -50%)}.mat-mdc-fab .mat-ripple-element{background-color:var(--mat-fab-ripple-color, color-mix(in srgb, var(--mat-sys-on-primary-container) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-fab .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-state-layer-color, var(--mat-sys-on-primary-container))}.mat-mdc-fab.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-disabled-state-layer-color)}.mat-mdc-fab:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-fab.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-fab.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-fab.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-fab:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-mini-fab{width:40px;height:40px;background-color:var(--mat-fab-small-container-color, var(--mat-sys-primary-container));border-radius:var(--mat-fab-small-container-shape, var(--mat-sys-corner-medium));color:var(--mat-fab-small-foreground-color, var(--mat-sys-on-primary-container, inherit));box-shadow:var(--mat-fab-small-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-mini-fab:hover{box-shadow:var(--mat-fab-small-hover-container-elevation-shadow, var(--mat-sys-level4))}.mat-mdc-mini-fab:focus{box-shadow:var(--mat-fab-small-focus-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-mini-fab:active,.mat-mdc-mini-fab:focus:active{box-shadow:var(--mat-fab-small-pressed-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-mini-fab[disabled],.mat-mdc-mini-fab.mat-mdc-button-disabled{cursor:default;pointer-events:none;color:var(--mat-fab-small-disabled-state-foreground-color, color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent));background-color:var(--mat-fab-small-disabled-state-container-color, color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent))}.mat-mdc-mini-fab.mat-mdc-button-disabled-interactive{pointer-events:auto}.mat-mdc-mini-fab .mat-mdc-button-touch-target{position:absolute;top:50%;height:var(--mat-fab-small-touch-target-size, 48px);display:var(--mat-fab-small-touch-target-display);left:50%;width:var(--mat-fab-small-touch-target-size, 48px);transform:translate(-50%, -50%)}.mat-mdc-mini-fab .mat-ripple-element{background-color:var(--mat-fab-small-ripple-color, color-mix(in srgb, var(--mat-sys-on-primary-container) calc(var(--mat-sys-pressed-state-layer-opacity) * 100%), transparent))}.mat-mdc-mini-fab .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-small-state-layer-color, var(--mat-sys-on-primary-container))}.mat-mdc-mini-fab.mat-mdc-button-disabled .mat-mdc-button-persistent-ripple::before{background-color:var(--mat-fab-small-disabled-state-layer-color)}.mat-mdc-mini-fab:hover>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-small-hover-state-layer-opacity, var(--mat-sys-hover-state-layer-opacity))}.mat-mdc-mini-fab.cdk-program-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-mini-fab.cdk-keyboard-focused>.mat-mdc-button-persistent-ripple::before,.mat-mdc-mini-fab.mat-mdc-button-disabled-interactive:focus>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-small-focus-state-layer-opacity, var(--mat-sys-focus-state-layer-opacity))}.mat-mdc-mini-fab:active>.mat-mdc-button-persistent-ripple::before{opacity:var(--mat-fab-small-pressed-state-layer-opacity, var(--mat-sys-pressed-state-layer-opacity))}.mat-mdc-extended-fab{-moz-osx-font-smoothing:grayscale;-webkit-font-smoothing:antialiased;padding-left:20px;padding-right:20px;width:auto;max-width:100%;line-height:normal;box-shadow:var(--mat-fab-extended-container-elevation-shadow, var(--mat-sys-level3));height:var(--mat-fab-extended-container-height, 56px);border-radius:var(--mat-fab-extended-container-shape, var(--mat-sys-corner-large));font-family:var(--mat-fab-extended-label-text-font, var(--mat-sys-label-large-font));font-size:var(--mat-fab-extended-label-text-size, var(--mat-sys-label-large-size));font-weight:var(--mat-fab-extended-label-text-weight, var(--mat-sys-label-large-weight));letter-spacing:var(--mat-fab-extended-label-text-tracking, var(--mat-sys-label-large-tracking))}.mat-mdc-extended-fab:hover{box-shadow:var(--mat-fab-extended-hover-container-elevation-shadow, var(--mat-sys-level4))}.mat-mdc-extended-fab:focus{box-shadow:var(--mat-fab-extended-focus-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-extended-fab:active,.mat-mdc-extended-fab:focus:active{box-shadow:var(--mat-fab-extended-pressed-container-elevation-shadow, var(--mat-sys-level3))}.mat-mdc-extended-fab[disabled],.mat-mdc-extended-fab.mat-mdc-button-disabled{cursor:default;pointer-events:none}.mat-mdc-extended-fab[disabled],.mat-mdc-extended-fab[disabled]:focus,.mat-mdc-extended-fab.mat-mdc-button-disabled,.mat-mdc-extended-fab.mat-mdc-button-disabled:focus{box-shadow:none}.mat-mdc-extended-fab.mat-mdc-button-disabled-interactive{pointer-events:auto}[dir=rtl] .mat-mdc-extended-fab .mdc-button__label+.mat-icon,[dir=rtl] .mat-mdc-extended-fab .mdc-button__label+.material-icons,.mat-mdc-extended-fab>.mat-icon,.mat-mdc-extended-fab>.material-icons{margin-left:-8px;margin-right:12px}.mat-mdc-extended-fab .mdc-button__label+.mat-icon,.mat-mdc-extended-fab .mdc-button__label+.material-icons,[dir=rtl] .mat-mdc-extended-fab>.mat-icon,[dir=rtl] .mat-mdc-extended-fab>.material-icons{margin-left:12px;margin-right:-8px}.mat-mdc-extended-fab .mat-mdc-button-touch-target{width:100%}\n']
+    }]
+  }], () => [], null);
+})();
+var MatButtonModule = class _MatButtonModule {
+  static \u0275fac = function MatButtonModule_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatButtonModule)();
+  };
+  static \u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({
+    type: _MatButtonModule,
+    imports: [MatCommonModule, MatRippleModule, MatButton, MatMiniFabButton, MatIconButton, MatFabButton],
+    exports: [MatCommonModule, MatButton, MatMiniFabButton, MatIconButton, MatFabButton]
+  });
+  static \u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({
+    imports: [MatCommonModule, MatRippleModule, MatCommonModule]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatButtonModule, [{
+    type: NgModule,
+    args: [{
+      imports: [MatCommonModule, MatRippleModule, MatButton, MatMiniFabButton, MatIconButton, MatFabButton],
+      exports: [MatCommonModule, MatButton, MatMiniFabButton, MatIconButton, MatFabButton]
+    }]
+  }], null, null);
+})();
+
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/form-field-module.mjs
 var MatFormFieldModule = class _MatFormFieldModule {
   static \u0275fac = function MatFormFieldModule_Factory(__ngFactoryType__) {
     return new (__ngFactoryType__ || _MatFormFieldModule)();
@@ -48480,7 +53477,7 @@ var MatFormFieldModule = class _MatFormFieldModule {
   }], null, null);
 })();
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/text-field.mjs
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/text-field.mjs
 var _CdkTextFieldStyleLoader = class __CdkTextFieldStyleLoader {
   static \u0275fac = function _CdkTextFieldStyleLoader_Factory(__ngFactoryType__) {
     return new (__ngFactoryType__ || __CdkTextFieldStyleLoader)();
@@ -48940,82 +53937,10 @@ var TextFieldModule = class _TextFieldModule {
   }], null, null);
 })();
 
-// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@ang_awrsjmhxfn5unao7dg6glqdxaq/node_modules/@angular/material/fesm2022/input-value-accessor.mjs
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/input-value-accessor.mjs
 var MAT_INPUT_VALUE_ACCESSOR = new InjectionToken("MAT_INPUT_VALUE_ACCESSOR");
 
-// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@ang_awrsjmhxfn5unao7dg6glqdxaq/node_modules/@angular/material/fesm2022/error-options.mjs
-var ShowOnDirtyErrorStateMatcher = class _ShowOnDirtyErrorStateMatcher {
-  isErrorState(control, form) {
-    return !!(control && control.invalid && (control.dirty || form && form.submitted));
-  }
-  static \u0275fac = function ShowOnDirtyErrorStateMatcher_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _ShowOnDirtyErrorStateMatcher)();
-  };
-  static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
-    token: _ShowOnDirtyErrorStateMatcher,
-    factory: _ShowOnDirtyErrorStateMatcher.\u0275fac
-  });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(ShowOnDirtyErrorStateMatcher, [{
-    type: Injectable
-  }], null, null);
-})();
-var ErrorStateMatcher = class _ErrorStateMatcher {
-  isErrorState(control, form) {
-    return !!(control && control.invalid && (control.touched || form && form.submitted));
-  }
-  static \u0275fac = function ErrorStateMatcher_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _ErrorStateMatcher)();
-  };
-  static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
-    token: _ErrorStateMatcher,
-    factory: _ErrorStateMatcher.\u0275fac,
-    providedIn: "root"
-  });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(ErrorStateMatcher, [{
-    type: Injectable,
-    args: [{
-      providedIn: "root"
-    }]
-  }], null, null);
-})();
-
-// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@ang_awrsjmhxfn5unao7dg6glqdxaq/node_modules/@angular/material/fesm2022/error-state.mjs
-var _ErrorStateTracker = class {
-  _defaultMatcher;
-  ngControl;
-  _parentFormGroup;
-  _parentForm;
-  _stateChanges;
-  /** Whether the tracker is currently in an error state. */
-  errorState = false;
-  /** User-defined matcher for the error state. */
-  matcher;
-  constructor(_defaultMatcher, ngControl, _parentFormGroup, _parentForm, _stateChanges) {
-    this._defaultMatcher = _defaultMatcher;
-    this.ngControl = ngControl;
-    this._parentFormGroup = _parentFormGroup;
-    this._parentForm = _parentForm;
-    this._stateChanges = _stateChanges;
-  }
-  /** Updates the error state based on the provided error state matcher. */
-  updateErrorState() {
-    const oldState = this.errorState;
-    const parent = this._parentFormGroup || this._parentForm;
-    const matcher = this.matcher || this._defaultMatcher;
-    const control = this.ngControl ? this.ngControl.control : null;
-    const newState = matcher?.isErrorState(control, parent) ?? false;
-    if (newState !== oldState) {
-      this.errorState = newState;
-      this._stateChanges.next();
-    }
-  }
-};
-
-// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@ang_awrsjmhxfn5unao7dg6glqdxaq/node_modules/@angular/material/fesm2022/input.mjs
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/input.mjs
 function getMatInputUnsupportedTypeError(type) {
   return Error(`Input type "${type}" isn't supported by matInput.`);
 }
@@ -49540,7 +54465,7 @@ var MatInputModule = class _MatInputModule {
   }], null, null);
 })();
 
-// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@ang_awrsjmhxfn5unao7dg6glqdxaq/node_modules/@angular/material/fesm2022/pseudo-checkbox.mjs
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/pseudo-checkbox.mjs
 var MatPseudoCheckbox = class _MatPseudoCheckbox {
   _animationsDisabled = _animationsDisabled();
   /** Display state of the checkbox. */
@@ -49613,12 +54538,12 @@ var MatPseudoCheckbox = class _MatPseudoCheckbox {
   });
 })();
 
-// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@ang_awrsjmhxfn5unao7dg6glqdxaq/node_modules/@angular/material/fesm2022/option.mjs
-var _c06 = ["*", [["mat-option"], ["ng-container"]]];
-var _c14 = ["*", "mat-option, ng-container"];
-var _c23 = ["text"];
-var _c33 = [[["mat-icon"]], "*"];
-var _c43 = ["mat-icon", "*"];
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/option.mjs
+var _c09 = ["*", [["mat-option"], ["ng-container"]]];
+var _c19 = ["*", "mat-option, ng-container"];
+var _c26 = ["text"];
+var _c36 = [[["mat-icon"]], "*"];
+var _c46 = ["mat-icon", "*"];
 function MatOption_Conditional_0_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275element(0, "mat-pseudo-checkbox", 1);
@@ -49688,13 +54613,13 @@ var MatOptgroup = class _MatOptgroup {
       provide: MAT_OPTGROUP,
       useExisting: _MatOptgroup
     }])],
-    ngContentSelectors: _c14,
+    ngContentSelectors: _c19,
     decls: 5,
     vars: 4,
     consts: [["role", "presentation", 1, "mat-mdc-optgroup-label", 3, "id"], [1, "mdc-list-item__primary-text"]],
     template: function MatOptgroup_Template(rf, ctx) {
       if (rf & 1) {
-        \u0275\u0275projectionDef(_c06);
+        \u0275\u0275projectionDef(_c09);
         \u0275\u0275domElementStart(0, "span", 0)(1, "span", 1);
         \u0275\u0275text(2);
         \u0275\u0275projection(3);
@@ -49934,7 +54859,7 @@ var MatOption = class _MatOption {
     selectors: [["mat-option"]],
     viewQuery: function MatOption_Query(rf, ctx) {
       if (rf & 1) {
-        \u0275\u0275viewQuery(_c23, 7);
+        \u0275\u0275viewQuery(_c26, 7);
       }
       if (rf & 2) {
         let _t;
@@ -49966,13 +54891,13 @@ var MatOption = class _MatOption {
       onSelectionChange: "onSelectionChange"
     },
     exportAs: ["matOption"],
-    ngContentSelectors: _c43,
+    ngContentSelectors: _c46,
     decls: 8,
     vars: 5,
     consts: [["text", ""], ["aria-hidden", "true", 1, "mat-mdc-option-pseudo-checkbox", 3, "disabled", "state"], [1, "mdc-list-item__primary-text"], ["state", "checked", "aria-hidden", "true", "appearance", "minimal", 1, "mat-mdc-option-pseudo-checkbox", 3, "disabled"], [1, "cdk-visually-hidden"], ["aria-hidden", "true", "mat-ripple", "", 1, "mat-mdc-option-ripple", "mat-focus-indicator", 3, "matRippleTrigger", "matRippleDisabled"]],
     template: function MatOption_Template(rf, ctx) {
       if (rf & 1) {
-        \u0275\u0275projectionDef(_c33);
+        \u0275\u0275projectionDef(_c36);
         \u0275\u0275conditionalCreate(0, MatOption_Conditional_0_Template, 1, 2, "mat-pseudo-checkbox", 1);
         \u0275\u0275projection(1);
         \u0275\u0275elementStart(2, "span", 2, 0);
@@ -50114,133 +55039,9 @@ function _getOptionScrollPosition(optionOffset, optionHeight, currentScrollPosit
   return currentScrollPosition;
 }
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/data-source.mjs
-var DataSource = class {
-};
-function isDataSource(value) {
-  return value && typeof value.connect === "function" && !(value instanceof ConnectableObservable);
-}
-
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/recycle-view-repeater-strategy.mjs
-var ArrayDataSource = class extends DataSource {
-  _data;
-  constructor(_data) {
-    super();
-    this._data = _data;
-  }
-  connect() {
-    return isObservable(this._data) ? this._data : of(this._data);
-  }
-  disconnect() {
-  }
-};
-var _ViewRepeaterOperation;
-(function(_ViewRepeaterOperation2) {
-  _ViewRepeaterOperation2[_ViewRepeaterOperation2["REPLACED"] = 0] = "REPLACED";
-  _ViewRepeaterOperation2[_ViewRepeaterOperation2["INSERTED"] = 1] = "INSERTED";
-  _ViewRepeaterOperation2[_ViewRepeaterOperation2["MOVED"] = 2] = "MOVED";
-  _ViewRepeaterOperation2[_ViewRepeaterOperation2["REMOVED"] = 3] = "REMOVED";
-})(_ViewRepeaterOperation || (_ViewRepeaterOperation = {}));
-var _VIEW_REPEATER_STRATEGY = new InjectionToken("_ViewRepeater");
-var _RecycleViewRepeaterStrategy = class {
-  /**
-   * The size of the cache used to store unused views.
-   * Setting the cache size to `0` will disable caching. Defaults to 20 views.
-   */
-  viewCacheSize = 20;
-  /**
-   * View cache that stores embedded view instances that have been previously stamped out,
-   * but don't are not currently rendered. The view repeater will reuse these views rather than
-   * creating brand new ones.
-   *
-   * TODO(michaeljamesparsons) Investigate whether using a linked list would improve performance.
-   */
-  _viewCache = [];
-  /** Apply changes to the DOM. */
-  applyChanges(changes, viewContainerRef, itemContextFactory, itemValueResolver, itemViewChanged) {
-    changes.forEachOperation((record, adjustedPreviousIndex, currentIndex) => {
-      let view;
-      let operation;
-      if (record.previousIndex == null) {
-        const viewArgsFactory = () => itemContextFactory(record, adjustedPreviousIndex, currentIndex);
-        view = this._insertView(viewArgsFactory, currentIndex, viewContainerRef, itemValueResolver(record));
-        operation = view ? _ViewRepeaterOperation.INSERTED : _ViewRepeaterOperation.REPLACED;
-      } else if (currentIndex == null) {
-        this._detachAndCacheView(adjustedPreviousIndex, viewContainerRef);
-        operation = _ViewRepeaterOperation.REMOVED;
-      } else {
-        view = this._moveView(adjustedPreviousIndex, currentIndex, viewContainerRef, itemValueResolver(record));
-        operation = _ViewRepeaterOperation.MOVED;
-      }
-      if (itemViewChanged) {
-        itemViewChanged({
-          context: view?.context,
-          operation,
-          record
-        });
-      }
-    });
-  }
-  detach() {
-    for (const view of this._viewCache) {
-      view.destroy();
-    }
-    this._viewCache = [];
-  }
-  /**
-   * Inserts a view for a new item, either from the cache or by creating a new
-   * one. Returns `undefined` if the item was inserted into a cached view.
-   */
-  _insertView(viewArgsFactory, currentIndex, viewContainerRef, value) {
-    const cachedView = this._insertViewFromCache(currentIndex, viewContainerRef);
-    if (cachedView) {
-      cachedView.context.$implicit = value;
-      return void 0;
-    }
-    const viewArgs = viewArgsFactory();
-    return viewContainerRef.createEmbeddedView(viewArgs.templateRef, viewArgs.context, viewArgs.index);
-  }
-  /** Detaches the view at the given index and inserts into the view cache. */
-  _detachAndCacheView(index, viewContainerRef) {
-    const detachedView = viewContainerRef.detach(index);
-    this._maybeCacheView(detachedView, viewContainerRef);
-  }
-  /** Moves view at the previous index to the current index. */
-  _moveView(adjustedPreviousIndex, currentIndex, viewContainerRef, value) {
-    const view = viewContainerRef.get(adjustedPreviousIndex);
-    viewContainerRef.move(view, currentIndex);
-    view.context.$implicit = value;
-    return view;
-  }
-  /**
-   * Cache the given detached view. If the cache is full, the view will be
-   * destroyed.
-   */
-  _maybeCacheView(view, viewContainerRef) {
-    if (this._viewCache.length < this.viewCacheSize) {
-      this._viewCache.push(view);
-    } else {
-      const index = viewContainerRef.indexOf(view);
-      if (index === -1) {
-        view.destroy();
-      } else {
-        viewContainerRef.remove(index);
-      }
-    }
-  }
-  /** Inserts a recycled view from the cache at the given index. */
-  _insertViewFromCache(index, viewContainerRef) {
-    const cachedView = this._viewCache.pop();
-    if (cachedView) {
-      viewContainerRef.insert(cachedView, index);
-    }
-    return cachedView || null;
-  }
-};
-
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/scrolling.mjs
-var _c07 = ["contentWrapper"];
-var _c15 = ["*"];
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/scrolling.mjs
+var _c010 = ["contentWrapper"];
+var _c110 = ["*"];
 var VIRTUAL_SCROLL_STRATEGY = new InjectionToken("VIRTUAL_SCROLL_STRATEGY");
 var FixedSizeVirtualScrollStrategy = class {
   _scrolledIndexChange = new Subject();
@@ -51241,7 +56042,7 @@ var CdkVirtualScrollViewport = class _CdkVirtualScrollViewport extends CdkVirtua
     selectors: [["cdk-virtual-scroll-viewport"]],
     viewQuery: function CdkVirtualScrollViewport_Query(rf, ctx) {
       if (rf & 1) {
-        \u0275\u0275viewQuery(_c07, 7);
+        \u0275\u0275viewQuery(_c010, 7);
       }
       if (rf & 2) {
         let _t;
@@ -51267,7 +56068,7 @@ var CdkVirtualScrollViewport = class _CdkVirtualScrollViewport extends CdkVirtua
       useFactory: (virtualScrollable, viewport) => virtualScrollable || viewport,
       deps: [[new Optional(), new Inject(VIRTUAL_SCROLLABLE)], _CdkVirtualScrollViewport]
     }]), \u0275\u0275InheritDefinitionFeature],
-    ngContentSelectors: _c15,
+    ngContentSelectors: _c110,
     decls: 4,
     vars: 4,
     consts: [["contentWrapper", ""], [1, "cdk-virtual-scroll-content-wrapper"], [1, "cdk-virtual-scroll-spacer"]],
@@ -51718,559 +56519,7 @@ var ScrollingModule = class _ScrollingModule {
   }], null, null);
 })();
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/portal.mjs
-function throwNullPortalError() {
-  throw Error("Must provide a portal to attach");
-}
-function throwPortalAlreadyAttachedError() {
-  throw Error("Host already has a portal attached");
-}
-function throwPortalOutletAlreadyDisposedError() {
-  throw Error("This PortalOutlet has already been disposed");
-}
-function throwUnknownPortalTypeError() {
-  throw Error("Attempting to attach an unknown Portal type. BasePortalOutlet accepts either a ComponentPortal or a TemplatePortal.");
-}
-function throwNullPortalOutletError() {
-  throw Error("Attempting to attach a portal to a null PortalOutlet");
-}
-function throwNoPortalAttachedError() {
-  throw Error("Attempting to detach a portal that is not attached to a host");
-}
-var Portal = class {
-  _attachedHost;
-  /** Attach this portal to a host. */
-  attach(host) {
-    if (typeof ngDevMode === "undefined" || ngDevMode) {
-      if (host == null) {
-        throwNullPortalOutletError();
-      }
-      if (host.hasAttached()) {
-        throwPortalAlreadyAttachedError();
-      }
-    }
-    this._attachedHost = host;
-    return host.attach(this);
-  }
-  /** Detach this portal from its host */
-  detach() {
-    let host = this._attachedHost;
-    if (host != null) {
-      this._attachedHost = null;
-      host.detach();
-    } else if (typeof ngDevMode === "undefined" || ngDevMode) {
-      throwNoPortalAttachedError();
-    }
-  }
-  /** Whether this portal is attached to a host. */
-  get isAttached() {
-    return this._attachedHost != null;
-  }
-  /**
-   * Sets the PortalOutlet reference without performing `attach()`. This is used directly by
-   * the PortalOutlet when it is performing an `attach()` or `detach()`.
-   */
-  setAttachedHost(host) {
-    this._attachedHost = host;
-  }
-};
-var ComponentPortal = class extends Portal {
-  /** The type of the component that will be instantiated for attachment. */
-  component;
-  /**
-   * Where the attached component should live in Angular's *logical* component tree.
-   * This is different from where the component *renders*, which is determined by the PortalOutlet.
-   * The origin is necessary when the host is outside of the Angular application context.
-   */
-  viewContainerRef;
-  /** Injector used for the instantiation of the component. */
-  injector;
-  /**
-   * List of DOM nodes that should be projected through `<ng-content>` of the attached component.
-   */
-  projectableNodes;
-  constructor(component, viewContainerRef, injector, projectableNodes) {
-    super();
-    this.component = component;
-    this.viewContainerRef = viewContainerRef;
-    this.injector = injector;
-    this.projectableNodes = projectableNodes;
-  }
-};
-var TemplatePortal = class extends Portal {
-  templateRef;
-  viewContainerRef;
-  context;
-  injector;
-  constructor(templateRef, viewContainerRef, context2, injector) {
-    super();
-    this.templateRef = templateRef;
-    this.viewContainerRef = viewContainerRef;
-    this.context = context2;
-    this.injector = injector;
-  }
-  get origin() {
-    return this.templateRef.elementRef;
-  }
-  /**
-   * Attach the portal to the provided `PortalOutlet`.
-   * When a context is provided it will override the `context` property of the `TemplatePortal`
-   * instance.
-   */
-  attach(host, context2 = this.context) {
-    this.context = context2;
-    return super.attach(host);
-  }
-  detach() {
-    this.context = void 0;
-    return super.detach();
-  }
-};
-var DomPortal = class extends Portal {
-  /** DOM node hosting the portal's content. */
-  element;
-  constructor(element) {
-    super();
-    this.element = element instanceof ElementRef ? element.nativeElement : element;
-  }
-};
-var BasePortalOutlet = class {
-  /** The portal currently attached to the host. */
-  _attachedPortal;
-  /** A function that will permanently dispose this host. */
-  _disposeFn;
-  /** Whether this host has already been permanently disposed. */
-  _isDisposed = false;
-  /** Whether this host has an attached portal. */
-  hasAttached() {
-    return !!this._attachedPortal;
-  }
-  /** Attaches a portal. */
-  attach(portal) {
-    if (typeof ngDevMode === "undefined" || ngDevMode) {
-      if (!portal) {
-        throwNullPortalError();
-      }
-      if (this.hasAttached()) {
-        throwPortalAlreadyAttachedError();
-      }
-      if (this._isDisposed) {
-        throwPortalOutletAlreadyDisposedError();
-      }
-    }
-    if (portal instanceof ComponentPortal) {
-      this._attachedPortal = portal;
-      return this.attachComponentPortal(portal);
-    } else if (portal instanceof TemplatePortal) {
-      this._attachedPortal = portal;
-      return this.attachTemplatePortal(portal);
-    } else if (this.attachDomPortal && portal instanceof DomPortal) {
-      this._attachedPortal = portal;
-      return this.attachDomPortal(portal);
-    }
-    if (typeof ngDevMode === "undefined" || ngDevMode) {
-      throwUnknownPortalTypeError();
-    }
-  }
-  // @breaking-change 10.0.0 `attachDomPortal` to become a required abstract method.
-  attachDomPortal = null;
-  /** Detaches a previously attached portal. */
-  detach() {
-    if (this._attachedPortal) {
-      this._attachedPortal.setAttachedHost(null);
-      this._attachedPortal = null;
-    }
-    this._invokeDisposeFn();
-  }
-  /** Permanently dispose of this portal host. */
-  dispose() {
-    if (this.hasAttached()) {
-      this.detach();
-    }
-    this._invokeDisposeFn();
-    this._isDisposed = true;
-  }
-  /** @docs-private */
-  setDisposeFn(fn) {
-    this._disposeFn = fn;
-  }
-  _invokeDisposeFn() {
-    if (this._disposeFn) {
-      this._disposeFn();
-      this._disposeFn = null;
-    }
-  }
-};
-var DomPortalOutlet = class extends BasePortalOutlet {
-  outletElement;
-  _appRef;
-  _defaultInjector;
-  /**
-   * @param outletElement Element into which the content is projected.
-   * @param _appRef Reference to the application. Only used in component portals when there
-   *   is no `ViewContainerRef` available.
-   * @param _defaultInjector Injector to use as a fallback when the portal being attached doesn't
-   *   have one. Only used for component portals.
-   */
-  constructor(outletElement, _appRef, _defaultInjector) {
-    super();
-    this.outletElement = outletElement;
-    this._appRef = _appRef;
-    this._defaultInjector = _defaultInjector;
-  }
-  /**
-   * Attach the given ComponentPortal to DOM element.
-   * @param portal Portal to be attached
-   * @returns Reference to the created component.
-   */
-  attachComponentPortal(portal) {
-    let componentRef;
-    if (portal.viewContainerRef) {
-      const injector = portal.injector || portal.viewContainerRef.injector;
-      const ngModuleRef = injector.get(NgModuleRef$1, null, {
-        optional: true
-      }) || void 0;
-      componentRef = portal.viewContainerRef.createComponent(portal.component, {
-        index: portal.viewContainerRef.length,
-        injector,
-        ngModuleRef,
-        projectableNodes: portal.projectableNodes || void 0
-      });
-      this.setDisposeFn(() => componentRef.destroy());
-    } else {
-      if ((typeof ngDevMode === "undefined" || ngDevMode) && !this._appRef) {
-        throw Error("Cannot attach component portal to outlet without an ApplicationRef.");
-      }
-      const appRef = this._appRef;
-      const elementInjector = portal.injector || this._defaultInjector || Injector.NULL;
-      const environmentInjector = elementInjector.get(EnvironmentInjector, appRef.injector);
-      componentRef = createComponent(portal.component, {
-        elementInjector,
-        environmentInjector,
-        projectableNodes: portal.projectableNodes || void 0
-      });
-      appRef.attachView(componentRef.hostView);
-      this.setDisposeFn(() => {
-        if (appRef.viewCount > 0) {
-          appRef.detachView(componentRef.hostView);
-        }
-        componentRef.destroy();
-      });
-    }
-    this.outletElement.appendChild(this._getComponentRootNode(componentRef));
-    this._attachedPortal = portal;
-    return componentRef;
-  }
-  /**
-   * Attaches a template portal to the DOM as an embedded view.
-   * @param portal Portal to be attached.
-   * @returns Reference to the created embedded view.
-   */
-  attachTemplatePortal(portal) {
-    let viewContainer = portal.viewContainerRef;
-    let viewRef = viewContainer.createEmbeddedView(portal.templateRef, portal.context, {
-      injector: portal.injector
-    });
-    viewRef.rootNodes.forEach((rootNode) => this.outletElement.appendChild(rootNode));
-    viewRef.detectChanges();
-    this.setDisposeFn(() => {
-      let index = viewContainer.indexOf(viewRef);
-      if (index !== -1) {
-        viewContainer.remove(index);
-      }
-    });
-    this._attachedPortal = portal;
-    return viewRef;
-  }
-  /**
-   * Attaches a DOM portal by transferring its content into the outlet.
-   * @param portal Portal to be attached.
-   * @deprecated To be turned into a method.
-   * @breaking-change 10.0.0
-   */
-  attachDomPortal = (portal) => {
-    const element = portal.element;
-    if (!element.parentNode && (typeof ngDevMode === "undefined" || ngDevMode)) {
-      throw Error("DOM portal content must be attached to a parent node.");
-    }
-    const anchorNode = this.outletElement.ownerDocument.createComment("dom-portal");
-    element.parentNode.insertBefore(anchorNode, element);
-    this.outletElement.appendChild(element);
-    this._attachedPortal = portal;
-    super.setDisposeFn(() => {
-      if (anchorNode.parentNode) {
-        anchorNode.parentNode.replaceChild(element, anchorNode);
-      }
-    });
-  };
-  /**
-   * Clears out a portal from the DOM.
-   */
-  dispose() {
-    super.dispose();
-    this.outletElement.remove();
-  }
-  /** Gets the root HTMLElement for an instantiated component. */
-  _getComponentRootNode(componentRef) {
-    return componentRef.hostView.rootNodes[0];
-  }
-};
-var CdkPortal = class _CdkPortal extends TemplatePortal {
-  constructor() {
-    const templateRef = inject2(TemplateRef);
-    const viewContainerRef = inject2(ViewContainerRef);
-    super(templateRef, viewContainerRef);
-  }
-  static \u0275fac = function CdkPortal_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _CdkPortal)();
-  };
-  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
-    type: _CdkPortal,
-    selectors: [["", "cdkPortal", ""]],
-    exportAs: ["cdkPortal"],
-    features: [\u0275\u0275InheritDefinitionFeature]
-  });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(CdkPortal, [{
-    type: Directive,
-    args: [{
-      selector: "[cdkPortal]",
-      exportAs: "cdkPortal"
-    }]
-  }], () => [], null);
-})();
-var TemplatePortalDirective = class _TemplatePortalDirective extends CdkPortal {
-  static \u0275fac = /* @__PURE__ */ (() => {
-    let \u0275TemplatePortalDirective_BaseFactory;
-    return function TemplatePortalDirective_Factory(__ngFactoryType__) {
-      return (\u0275TemplatePortalDirective_BaseFactory || (\u0275TemplatePortalDirective_BaseFactory = \u0275\u0275getInheritedFactory(_TemplatePortalDirective)))(__ngFactoryType__ || _TemplatePortalDirective);
-    };
-  })();
-  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
-    type: _TemplatePortalDirective,
-    selectors: [["", "cdk-portal", ""], ["", "portal", ""]],
-    exportAs: ["cdkPortal"],
-    features: [\u0275\u0275ProvidersFeature([{
-      provide: CdkPortal,
-      useExisting: _TemplatePortalDirective
-    }]), \u0275\u0275InheritDefinitionFeature]
-  });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(TemplatePortalDirective, [{
-    type: Directive,
-    args: [{
-      selector: "[cdk-portal], [portal]",
-      exportAs: "cdkPortal",
-      providers: [{
-        provide: CdkPortal,
-        useExisting: TemplatePortalDirective
-      }]
-    }]
-  }], null, null);
-})();
-var CdkPortalOutlet = class _CdkPortalOutlet extends BasePortalOutlet {
-  _moduleRef = inject2(NgModuleRef$1, {
-    optional: true
-  });
-  _document = inject2(DOCUMENT);
-  _viewContainerRef = inject2(ViewContainerRef);
-  /** Whether the portal component is initialized. */
-  _isInitialized = false;
-  /** Reference to the currently-attached component/view ref. */
-  _attachedRef;
-  constructor() {
-    super();
-  }
-  /** Portal associated with the Portal outlet. */
-  get portal() {
-    return this._attachedPortal;
-  }
-  set portal(portal) {
-    if (this.hasAttached() && !portal && !this._isInitialized) {
-      return;
-    }
-    if (this.hasAttached()) {
-      super.detach();
-    }
-    if (portal) {
-      super.attach(portal);
-    }
-    this._attachedPortal = portal || null;
-  }
-  /** Emits when a portal is attached to the outlet. */
-  attached = new EventEmitter();
-  /** Component or view reference that is attached to the portal. */
-  get attachedRef() {
-    return this._attachedRef;
-  }
-  ngOnInit() {
-    this._isInitialized = true;
-  }
-  ngOnDestroy() {
-    super.dispose();
-    this._attachedRef = this._attachedPortal = null;
-  }
-  /**
-   * Attach the given ComponentPortal to this PortalOutlet.
-   *
-   * @param portal Portal to be attached to the portal outlet.
-   * @returns Reference to the created component.
-   */
-  attachComponentPortal(portal) {
-    portal.setAttachedHost(this);
-    const viewContainerRef = portal.viewContainerRef != null ? portal.viewContainerRef : this._viewContainerRef;
-    const ref = viewContainerRef.createComponent(portal.component, {
-      index: viewContainerRef.length,
-      injector: portal.injector || viewContainerRef.injector,
-      projectableNodes: portal.projectableNodes || void 0,
-      ngModuleRef: this._moduleRef || void 0
-    });
-    if (viewContainerRef !== this._viewContainerRef) {
-      this._getRootNode().appendChild(ref.hostView.rootNodes[0]);
-    }
-    super.setDisposeFn(() => ref.destroy());
-    this._attachedPortal = portal;
-    this._attachedRef = ref;
-    this.attached.emit(ref);
-    return ref;
-  }
-  /**
-   * Attach the given TemplatePortal to this PortalHost as an embedded View.
-   * @param portal Portal to be attached.
-   * @returns Reference to the created embedded view.
-   */
-  attachTemplatePortal(portal) {
-    portal.setAttachedHost(this);
-    const viewRef = this._viewContainerRef.createEmbeddedView(portal.templateRef, portal.context, {
-      injector: portal.injector
-    });
-    super.setDisposeFn(() => this._viewContainerRef.clear());
-    this._attachedPortal = portal;
-    this._attachedRef = viewRef;
-    this.attached.emit(viewRef);
-    return viewRef;
-  }
-  /**
-   * Attaches the given DomPortal to this PortalHost by moving all of the portal content into it.
-   * @param portal Portal to be attached.
-   * @deprecated To be turned into a method.
-   * @breaking-change 10.0.0
-   */
-  attachDomPortal = (portal) => {
-    const element = portal.element;
-    if (!element.parentNode && (typeof ngDevMode === "undefined" || ngDevMode)) {
-      throw Error("DOM portal content must be attached to a parent node.");
-    }
-    const anchorNode = this._document.createComment("dom-portal");
-    portal.setAttachedHost(this);
-    element.parentNode.insertBefore(anchorNode, element);
-    this._getRootNode().appendChild(element);
-    this._attachedPortal = portal;
-    super.setDisposeFn(() => {
-      if (anchorNode.parentNode) {
-        anchorNode.parentNode.replaceChild(element, anchorNode);
-      }
-    });
-  };
-  /** Gets the root node of the portal outlet. */
-  _getRootNode() {
-    const nativeElement = this._viewContainerRef.element.nativeElement;
-    return nativeElement.nodeType === nativeElement.ELEMENT_NODE ? nativeElement : nativeElement.parentNode;
-  }
-  static \u0275fac = function CdkPortalOutlet_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _CdkPortalOutlet)();
-  };
-  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
-    type: _CdkPortalOutlet,
-    selectors: [["", "cdkPortalOutlet", ""]],
-    inputs: {
-      portal: [0, "cdkPortalOutlet", "portal"]
-    },
-    outputs: {
-      attached: "attached"
-    },
-    exportAs: ["cdkPortalOutlet"],
-    features: [\u0275\u0275InheritDefinitionFeature]
-  });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(CdkPortalOutlet, [{
-    type: Directive,
-    args: [{
-      selector: "[cdkPortalOutlet]",
-      exportAs: "cdkPortalOutlet"
-    }]
-  }], () => [], {
-    portal: [{
-      type: Input,
-      args: ["cdkPortalOutlet"]
-    }],
-    attached: [{
-      type: Output
-    }]
-  });
-})();
-var PortalHostDirective = class _PortalHostDirective extends CdkPortalOutlet {
-  static \u0275fac = /* @__PURE__ */ (() => {
-    let \u0275PortalHostDirective_BaseFactory;
-    return function PortalHostDirective_Factory(__ngFactoryType__) {
-      return (\u0275PortalHostDirective_BaseFactory || (\u0275PortalHostDirective_BaseFactory = \u0275\u0275getInheritedFactory(_PortalHostDirective)))(__ngFactoryType__ || _PortalHostDirective);
-    };
-  })();
-  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
-    type: _PortalHostDirective,
-    selectors: [["", "cdkPortalHost", ""], ["", "portalHost", ""]],
-    inputs: {
-      portal: [0, "cdkPortalHost", "portal"]
-    },
-    exportAs: ["cdkPortalHost"],
-    features: [\u0275\u0275ProvidersFeature([{
-      provide: CdkPortalOutlet,
-      useExisting: _PortalHostDirective
-    }]), \u0275\u0275InheritDefinitionFeature]
-  });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(PortalHostDirective, [{
-    type: Directive,
-    args: [{
-      selector: "[cdkPortalHost], [portalHost]",
-      exportAs: "cdkPortalHost",
-      inputs: [{
-        name: "portal",
-        alias: "cdkPortalHost"
-      }],
-      providers: [{
-        provide: CdkPortalOutlet,
-        useExisting: PortalHostDirective
-      }]
-    }]
-  }], null, null);
-})();
-var PortalModule = class _PortalModule {
-  static \u0275fac = function PortalModule_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _PortalModule)();
-  };
-  static \u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({
-    type: _PortalModule,
-    imports: [CdkPortal, CdkPortalOutlet, TemplatePortalDirective, PortalHostDirective],
-    exports: [CdkPortal, CdkPortalOutlet, TemplatePortalDirective, PortalHostDirective]
-  });
-  static \u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({});
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(PortalModule, [{
-    type: NgModule,
-    args: [{
-      imports: [CdkPortal, CdkPortalOutlet, TemplatePortalDirective, PortalHostDirective],
-      exports: [CdkPortal, CdkPortalOutlet, TemplatePortalDirective, PortalHostDirective]
-    }]
-  }], null, null);
-})();
-
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/overlay-module.mjs
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/overlay-module.mjs
 var scrollBehaviorSupported2 = supportsScrollBehavior();
 function createBlockScrollStrategy(injector) {
   return new BlockScrollStrategy(injector.get(ViewportRuler), injector.get(DOCUMENT));
@@ -55000,7 +59249,7 @@ var OverlayModule = class _OverlayModule {
   }], null, null);
 })();
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/overlay.mjs
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/overlay.mjs
 var FullscreenOverlayContainer = class _FullscreenOverlayContainer extends OverlayContainer {
   _renderer = inject2(RendererFactory2).createRenderer(null, null);
   _fullScreenEventName;
@@ -55071,211 +59320,7 @@ var FullscreenOverlayContainer = class _FullscreenOverlayContainer extends Overl
   }], () => [], null);
 })();
 
-// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2.1_rxjs_qx22inmt366ywyurkjqhycevyu/node_modules/@angular/cdk/fesm2022/selection-model.mjs
-var SelectionModel = class {
-  _multiple;
-  _emitChanges;
-  compareWith;
-  /** Currently-selected values. */
-  _selection = /* @__PURE__ */ new Set();
-  /** Keeps track of the deselected options that haven't been emitted by the change event. */
-  _deselectedToEmit = [];
-  /** Keeps track of the selected options that haven't been emitted by the change event. */
-  _selectedToEmit = [];
-  /** Cache for the array value of the selected items. */
-  _selected;
-  /** Selected values. */
-  get selected() {
-    if (!this._selected) {
-      this._selected = Array.from(this._selection.values());
-    }
-    return this._selected;
-  }
-  /** Event emitted when the value has changed. */
-  changed = new Subject();
-  constructor(_multiple = false, initiallySelectedValues, _emitChanges = true, compareWith) {
-    this._multiple = _multiple;
-    this._emitChanges = _emitChanges;
-    this.compareWith = compareWith;
-    if (initiallySelectedValues && initiallySelectedValues.length) {
-      if (_multiple) {
-        initiallySelectedValues.forEach((value) => this._markSelected(value));
-      } else {
-        this._markSelected(initiallySelectedValues[0]);
-      }
-      this._selectedToEmit.length = 0;
-    }
-  }
-  /**
-   * Selects a value or an array of values.
-   * @param values The values to select
-   * @return Whether the selection changed as a result of this call
-   */
-  select(...values) {
-    this._verifyValueAssignment(values);
-    values.forEach((value) => this._markSelected(value));
-    const changed = this._hasQueuedChanges();
-    this._emitChangeEvent();
-    return changed;
-  }
-  /**
-   * Deselects a value or an array of values.
-   * @param values The values to deselect
-   * @return Whether the selection changed as a result of this call
-   */
-  deselect(...values) {
-    this._verifyValueAssignment(values);
-    values.forEach((value) => this._unmarkSelected(value));
-    const changed = this._hasQueuedChanges();
-    this._emitChangeEvent();
-    return changed;
-  }
-  /**
-   * Sets the selected values
-   * @param values The new selected values
-   * @return Whether the selection changed as a result of this call
-   */
-  setSelection(...values) {
-    this._verifyValueAssignment(values);
-    const oldValues = this.selected;
-    const newSelectedSet = new Set(values.map((value) => this._getConcreteValue(value)));
-    values.forEach((value) => this._markSelected(value));
-    oldValues.filter((value) => !newSelectedSet.has(this._getConcreteValue(value, newSelectedSet))).forEach((value) => this._unmarkSelected(value));
-    const changed = this._hasQueuedChanges();
-    this._emitChangeEvent();
-    return changed;
-  }
-  /**
-   * Toggles a value between selected and deselected.
-   * @param value The value to toggle
-   * @return Whether the selection changed as a result of this call
-   */
-  toggle(value) {
-    return this.isSelected(value) ? this.deselect(value) : this.select(value);
-  }
-  /**
-   * Clears all of the selected values.
-   * @param flushEvent Whether to flush the changes in an event.
-   *   If false, the changes to the selection will be flushed along with the next event.
-   * @return Whether the selection changed as a result of this call
-   */
-  clear(flushEvent = true) {
-    this._unmarkAll();
-    const changed = this._hasQueuedChanges();
-    if (flushEvent) {
-      this._emitChangeEvent();
-    }
-    return changed;
-  }
-  /**
-   * Determines whether a value is selected.
-   */
-  isSelected(value) {
-    return this._selection.has(this._getConcreteValue(value));
-  }
-  /**
-   * Determines whether the model does not have a value.
-   */
-  isEmpty() {
-    return this._selection.size === 0;
-  }
-  /**
-   * Determines whether the model has a value.
-   */
-  hasValue() {
-    return !this.isEmpty();
-  }
-  /**
-   * Sorts the selected values based on a predicate function.
-   */
-  sort(predicate) {
-    if (this._multiple && this.selected) {
-      this._selected.sort(predicate);
-    }
-  }
-  /**
-   * Gets whether multiple values can be selected.
-   */
-  isMultipleSelection() {
-    return this._multiple;
-  }
-  /** Emits a change event and clears the records of selected and deselected values. */
-  _emitChangeEvent() {
-    this._selected = null;
-    if (this._selectedToEmit.length || this._deselectedToEmit.length) {
-      this.changed.next({
-        source: this,
-        added: this._selectedToEmit,
-        removed: this._deselectedToEmit
-      });
-      this._deselectedToEmit = [];
-      this._selectedToEmit = [];
-    }
-  }
-  /** Selects a value. */
-  _markSelected(value) {
-    value = this._getConcreteValue(value);
-    if (!this.isSelected(value)) {
-      if (!this._multiple) {
-        this._unmarkAll();
-      }
-      if (!this.isSelected(value)) {
-        this._selection.add(value);
-      }
-      if (this._emitChanges) {
-        this._selectedToEmit.push(value);
-      }
-    }
-  }
-  /** Deselects a value. */
-  _unmarkSelected(value) {
-    value = this._getConcreteValue(value);
-    if (this.isSelected(value)) {
-      this._selection.delete(value);
-      if (this._emitChanges) {
-        this._deselectedToEmit.push(value);
-      }
-    }
-  }
-  /** Clears out the selected values. */
-  _unmarkAll() {
-    if (!this.isEmpty()) {
-      this._selection.forEach((value) => this._unmarkSelected(value));
-    }
-  }
-  /**
-   * Verifies the value assignment and throws an error if the specified value array is
-   * including multiple values while the selection model is not supporting multiple values.
-   */
-  _verifyValueAssignment(values) {
-    if (values.length > 1 && !this._multiple && (typeof ngDevMode === "undefined" || ngDevMode)) {
-      throw getMultipleValuesInSingleSelectionError();
-    }
-  }
-  /** Whether there are queued up change to be emitted. */
-  _hasQueuedChanges() {
-    return !!(this._deselectedToEmit.length || this._selectedToEmit.length);
-  }
-  /** Returns a value that is comparable to inputValue by applying compareWith function, returns the same inputValue otherwise. */
-  _getConcreteValue(inputValue, selection) {
-    if (!this.compareWith) {
-      return inputValue;
-    } else {
-      selection = selection ?? this._selection;
-      for (let selectedValue of selection) {
-        if (this.compareWith(inputValue, selectedValue)) {
-          return selectedValue;
-        }
-      }
-      return inputValue;
-    }
-  }
-};
-function getMultipleValuesInSingleSelectionError() {
-  return Error("Cannot pass multiple values into SelectionModel with single-value mode.");
-}
-
-// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@ang_awrsjmhxfn5unao7dg6glqdxaq/node_modules/@angular/material/fesm2022/pseudo-checkbox-module.mjs
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/pseudo-checkbox-module.mjs
 var MatPseudoCheckboxModule = class _MatPseudoCheckboxModule {
   static \u0275fac = function MatPseudoCheckboxModule_Factory(__ngFactoryType__) {
     return new (__ngFactoryType__ || _MatPseudoCheckboxModule)();
@@ -55299,7 +59344,7 @@ var MatPseudoCheckboxModule = class _MatPseudoCheckboxModule {
   }], null, null);
 })();
 
-// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@ang_awrsjmhxfn5unao7dg6glqdxaq/node_modules/@angular/material/fesm2022/option-module.mjs
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/option-module.mjs
 var MatOptionModule = class _MatOptionModule {
   static \u0275fac = function MatOptionModule_Factory(__ngFactoryType__) {
     return new (__ngFactoryType__ || _MatOptionModule)();
@@ -55323,11 +59368,11 @@ var MatOptionModule = class _MatOptionModule {
   }], null, null);
 })();
 
-// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@ang_awrsjmhxfn5unao7dg6glqdxaq/node_modules/@angular/material/fesm2022/select-module.mjs
-var _c08 = ["trigger"];
-var _c16 = ["panel"];
-var _c24 = [[["mat-select-trigger"]], "*"];
-var _c34 = ["mat-select-trigger", "*"];
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/select-module.mjs
+var _c011 = ["trigger"];
+var _c111 = ["panel"];
+var _c27 = [[["mat-select-trigger"]], "*"];
+var _c37 = ["mat-select-trigger", "*"];
 function MatSelect_Conditional_4_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "span", 4);
@@ -56385,8 +60430,8 @@ var MatSelect = class _MatSelect {
     },
     viewQuery: function MatSelect_Query(rf, ctx) {
       if (rf & 1) {
-        \u0275\u0275viewQuery(_c08, 5);
-        \u0275\u0275viewQuery(_c16, 5);
+        \u0275\u0275viewQuery(_c011, 5);
+        \u0275\u0275viewQuery(_c111, 5);
         \u0275\u0275viewQuery(CdkConnectedOverlay, 5);
       }
       if (rf & 2) {
@@ -56450,14 +60495,14 @@ var MatSelect = class _MatSelect {
       provide: MAT_OPTION_PARENT_COMPONENT,
       useExisting: _MatSelect
     }]), \u0275\u0275NgOnChangesFeature],
-    ngContentSelectors: _c34,
+    ngContentSelectors: _c37,
     decls: 11,
     vars: 9,
     consts: [["fallbackOverlayOrigin", "cdkOverlayOrigin", "trigger", ""], ["panel", ""], ["cdk-overlay-origin", "", 1, "mat-mdc-select-trigger", 3, "click"], [1, "mat-mdc-select-value"], [1, "mat-mdc-select-placeholder", "mat-mdc-select-min-line"], [1, "mat-mdc-select-value-text"], [1, "mat-mdc-select-arrow-wrapper"], [1, "mat-mdc-select-arrow"], ["viewBox", "0 0 24 24", "width", "24px", "height", "24px", "focusable", "false", "aria-hidden", "true"], ["d", "M7 10l5 5 5-5z"], ["cdk-connected-overlay", "", "cdkConnectedOverlayLockPosition", "", "cdkConnectedOverlayHasBackdrop", "", "cdkConnectedOverlayBackdropClass", "cdk-overlay-transparent-backdrop", 3, "detach", "backdropClick", "overlayKeydown", "cdkConnectedOverlayDisableClose", "cdkConnectedOverlayPanelClass", "cdkConnectedOverlayScrollStrategy", "cdkConnectedOverlayOrigin", "cdkConnectedOverlayPositions", "cdkConnectedOverlayWidth", "cdkConnectedOverlayFlexibleDimensions"], [1, "mat-mdc-select-min-line"], ["role", "listbox", "tabindex", "-1", 3, "keydown", "ngClass"]],
     template: function MatSelect_Template(rf, ctx) {
       if (rf & 1) {
         const _r1 = \u0275\u0275getCurrentView();
-        \u0275\u0275projectionDef(_c24);
+        \u0275\u0275projectionDef(_c27);
         \u0275\u0275elementStart(0, "div", 2, 0);
         \u0275\u0275listener("click", function MatSelect_Template_div_click_0_listener() {
           \u0275\u0275restoreView(_r1);
@@ -56788,9 +60833,9 @@ var MatSelectModule = class _MatSelectModule {
   }], null, null);
 })();
 
-// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@ang_awrsjmhxfn5unao7dg6glqdxaq/node_modules/@angular/material/fesm2022/internal-form-field.mjs
-var _c09 = ["mat-internal-form-field", ""];
-var _c17 = ["*"];
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/internal-form-field.mjs
+var _c012 = ["mat-internal-form-field", ""];
+var _c112 = ["*"];
 var _MatInternalFormField = class __MatInternalFormField {
   /** Position of the label relative to the content. */
   labelPosition;
@@ -56810,8 +60855,8 @@ var _MatInternalFormField = class __MatInternalFormField {
     inputs: {
       labelPosition: "labelPosition"
     },
-    attrs: _c09,
-    ngContentSelectors: _c17,
+    attrs: _c012,
+    ngContentSelectors: _c112,
     decls: 1,
     vars: 0,
     template: function _MatInternalFormField_Template(rf, ctx) {
@@ -56849,9 +60894,9 @@ var _MatInternalFormField = class __MatInternalFormField {
   });
 })();
 
-// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@ang_awrsjmhxfn5unao7dg6glqdxaq/node_modules/@angular/material/fesm2022/slide-toggle.mjs
-var _c010 = ["switch"];
-var _c18 = ["*"];
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/slide-toggle.mjs
+var _c013 = ["switch"];
+var _c113 = ["*"];
 function MatSlideToggle_Conditional_11_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "span", 11);
@@ -57065,7 +61110,7 @@ var MatSlideToggle = class _MatSlideToggle {
     selectors: [["mat-slide-toggle"]],
     viewQuery: function MatSlideToggle_Query(rf, ctx) {
       if (rf & 1) {
-        \u0275\u0275viewQuery(_c010, 5);
+        \u0275\u0275viewQuery(_c013, 5);
       }
       if (rf & 2) {
         let _t;
@@ -57112,7 +61157,7 @@ var MatSlideToggle = class _MatSlideToggle {
       useExisting: _MatSlideToggle,
       multi: true
     }]), \u0275\u0275NgOnChangesFeature],
-    ngContentSelectors: _c18,
+    ngContentSelectors: _c113,
     decls: 14,
     vars: 27,
     consts: [["switch", ""], ["mat-internal-form-field", "", 3, "labelPosition"], ["role", "switch", "type", "button", 1, "mdc-switch", 3, "click", "tabIndex", "disabled"], [1, "mat-mdc-slide-toggle-touch-target"], [1, "mdc-switch__track"], [1, "mdc-switch__handle-track"], [1, "mdc-switch__handle"], [1, "mdc-switch__shadow"], [1, "mdc-elevation-overlay"], [1, "mdc-switch__ripple"], ["mat-ripple", "", 1, "mat-mdc-slide-toggle-ripple", "mat-focus-indicator", 3, "matRippleTrigger", "matRippleDisabled", "matRippleCentered"], [1, "mdc-switch__icons"], [1, "mdc-label", 3, "click", "for"], ["viewBox", "0 0 24 24", "aria-hidden", "true", 1, "mdc-switch__icon", "mdc-switch__icon--on"], ["d", "M19.69,5.23L8.96,15.96l-4.23-4.23L2.96,13.5l6,6L21.46,7L19.69,5.23z"], ["viewBox", "0 0 24 24", "aria-hidden", "true", 1, "mdc-switch__icon", "mdc-switch__icon--off"], ["d", "M20 13H4v-2h16v2z"]],
@@ -57363,7 +61408,7 @@ var MatSlideToggleModule = class _MatSlideToggleModule {
   }], null, null);
 })();
 
-// node_modules/.pnpm/@ngx-pwa+local-storage@20.0.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@2_7cifzpi2rg3xtnrgsbwt423hlu/node_modules/@ngx-pwa/local-storage/fesm2022/ngx-pwa-local-storage.mjs
+// node_modules/.pnpm/@ngx-pwa+local-storage@20.0.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+comp_5596898234c3ac9a36f599f24a0f4803/node_modules/@ngx-pwa/local-storage/fesm2022/ngx-pwa-local-storage.mjs
 var IDB_BROKEN_ERROR = "indexedDB is not working";
 var IDBBrokenError = class extends Error {
   message = IDB_BROKEN_ERROR;
@@ -58553,473 +62598,6 @@ var ProxyClient;
   ProxyClient2["Surge"] = "Surge";
   ProxyClient2["Clash"] = "Clash";
 })(ProxyClient || (ProxyClient = {}));
-var SubProvider;
-(function(SubProvider2) {
-  SubProvider2["BosLife"] = "Boslife";
-})(SubProvider || (SubProvider = {}));
-
-// src/app/common/model/policy.ts
-var Policy = class _Policy {
-  name;
-  is_subscription;
-  option;
-  constructor(name, is_subscription, option) {
-    this.name = name;
-    this.is_subscription = is_subscription;
-    this.option = option;
-  }
-  static deserialize(policy3) {
-    return new _Policy(policy3.name, policy3.is_subscription, policy3.option);
-  }
-  clone() {
-    return new _Policy(this.name, this.is_subscription, this.option);
-  }
-  equals(other) {
-    if (!other)
-      return false;
-    return this.name === other.name && this.is_subscription === other.is_subscription && this.option === other.option;
-  }
-  serialize() {
-    return {
-      name: this.name,
-      is_subscription: this.is_subscription,
-      option: this.option
-    };
-  }
-};
-
-// src/app/common/model/convertor_url.ts
-var ConvertorUrl = class _ConvertorUrl {
-  type;
-  server;
-  desc;
-  path;
-  query;
-  url;
-  constructor(type, server, desc, path, query) {
-    this.type = type;
-    this.server = server;
-    this.desc = desc;
-    this.path = path;
-    this.query = query;
-    if (server.length > 0) {
-      this.url = new URL(server);
-    }
-    const url = this.url;
-    if (url) {
-      if (!!path && path.length > 0 && !!query && query.length > 0) {
-        url.pathname = path;
-        url.search = query;
-      }
-    }
-  }
-  clone() {
-    return new _ConvertorUrl(this.type.clone(), this.server, this.desc, this.path, this.query);
-  }
-  equals(other) {
-    if (!other)
-      return false;
-    return this.type.equals(other.type) && this.server === other.server && this.desc === other.desc && this.path === other.path;
-  }
-  serialize() {
-    return {
-      type: this.type.serialize(),
-      server: this.server,
-      desc: this.desc,
-      path: this.path,
-      query: this.query
-    };
-  }
-  static deserialize(url) {
-    return new _ConvertorUrl(UrlType.deserialize(url.type), url.server, url.desc, url.path, url.query);
-  }
-};
-var UrlType = class _UrlType {
-  name;
-  policy;
-  constructor(name, policy3) {
-    this.name = name;
-    this.policy = policy3;
-  }
-  clone() {
-    return new _UrlType(this.name, this.policy?.clone());
-  }
-  equals(other) {
-    if (!other)
-      return false;
-    return this.name === other?.name && (this.policy?.equals(other?.policy) ?? false);
-  }
-  serialize() {
-    return {
-      name: this.name,
-      policy: this.policy
-    };
-  }
-  static deserialize(type) {
-    if (typeof type === "string") {
-      return new _UrlType(type);
-    } else {
-      const name = Object.keys(type)[0];
-      const policy3 = !!type[name] ? Policy.deserialize(type[name]) : void 0;
-      return new _UrlType(name, policy3);
-    }
-  }
-};
-
-// src/app/common/model/url_result.ts
-var UrlResult = class _UrlResult {
-  raw_url;
-  raw_profile_url;
-  profile_url;
-  rule_providers_url;
-  constructor(raw_url, raw_profile_url, profile_url, rule_providers_url) {
-    this.raw_url = raw_url;
-    this.raw_profile_url = raw_profile_url;
-    this.profile_url = profile_url;
-    this.rule_providers_url = rule_providers_url;
-  }
-  static deserialize(result) {
-    return new _UrlResult(ConvertorUrl.deserialize(result.raw_url), ConvertorUrl.deserialize(result.raw_profile_url), ConvertorUrl.deserialize(result.profile_url), result.rule_providers_url.map(ConvertorUrl.deserialize));
-  }
-  clone() {
-    return new _UrlResult(this.raw_url.clone(), this.raw_profile_url.clone(), this.profile_url.clone(), this.rule_providers_url.map((rp) => rp.clone()));
-  }
-  equals(other) {
-    if (!other)
-      return false;
-    return this.raw_url.equals(other.raw_url) && this.raw_profile_url.equals(other.raw_profile_url) && this.profile_url.equals(other.profile_url) && this.rule_providers_url.length === other.rule_providers_url.length && this.rule_providers_url.every((rp, index) => rp.equals(other.rule_providers_url[index]));
-  }
-  serialize() {
-    return {
-      raw_url: this.raw_url.serialize(),
-      raw_profile_url: this.raw_profile_url.serialize(),
-      profile_url: this.profile_url.serialize(),
-      rule_providers_url: this.rule_providers_url.map((rp) => rp.serialize())
-    };
-  }
-};
-
-// src/app/common/response/status.ts
-var ApiStatus = class _ApiStatus {
-  code;
-  message;
-  constructor(code, message) {
-    this.code = code;
-    this.message = message;
-  }
-  static deserialize(json) {
-    return new _ApiStatus(json.code, json.message);
-  }
-  isOk() {
-    return this.code === 0;
-  }
-  isError() {
-    return this.code === -1;
-  }
-};
-
-// src/app/common/response/response.ts
-var ApiResponse = class _ApiResponse {
-  status;
-  data;
-  constructor(status, data) {
-    this.status = status;
-    this.data = data;
-  }
-  static deserialize(json, ctor) {
-    return new _ApiResponse(ApiStatus.deserialize(json.status), ctor?.deserialize(json.data) ?? json.data);
-  }
-};
-
-// src/app/service/latency/latency-types.ts
-var ResponseStatus;
-(function(ResponseStatus2) {
-  ResponseStatus2["OK"] = "OK";
-  ResponseStatus2["TIMEOUT"] = "TIMEOUT";
-  ResponseStatus2["ERROR"] = "ERROR";
-})(ResponseStatus || (ResponseStatus = {}));
-
-// src/app/service/latency/latency-utils.ts
-function toEpochMs(highResMs) {
-  return Math.round(performance.timeOrigin + highResMs);
-}
-function nowEpochMs() {
-  return toEpochMs(performance.now());
-}
-function nextFrame() {
-  return new Promise((resolve) => {
-    if (typeof requestAnimationFrame === "function") {
-      requestAnimationFrame(() => resolve());
-    } else {
-      setTimeout(() => resolve(), 0);
-    }
-  });
-}
-function addRtid(url, rtid, paramName) {
-  const u2 = typeof url === "string" ? new URL(url, location.href) : new URL(url.toString());
-  u2.searchParams.set(paramName, rtid);
-  return u2.toString();
-}
-function parseServerTimingHeader(value) {
-  if (!value)
-    return void 0;
-  const out = {};
-  for (const part of value.split(",")) {
-    const token = part.trim();
-    if (!token)
-      continue;
-    const name = token.split(";")[0]?.trim();
-    const durMatch = token.match(/dur=([\d.]+)/i);
-    if (name && durMatch) {
-      const n = Number(durMatch[1]);
-      if (Number.isFinite(n))
-        out[name] = n;
-    }
-  }
-  return Object.keys(out).length ? out : void 0;
-}
-function isAbortError(err) {
-  return !!(err && typeof err === "object" && err.name === "AbortError");
-}
-function getExactResourceTimingByName(url) {
-  const list = performance.getEntriesByName(url, "resource");
-  if (!Array.isArray(list) || list.length === 0)
-    return void 0;
-  const hit = list.find((e) => e.initiatorType === "fetch" || e.initiatorType === "xmlhttprequest");
-  return hit ?? list[0];
-}
-function buildPhases(e) {
-  const between = (a, b) => Number.isFinite(a) && Number.isFinite(b) && a > 0 && b > 0 ? Math.max(0, Math.round(b - a)) : 0;
-  const redirectMs = between(e.redirectStart, e.redirectEnd);
-  const dnsMs = between(e.domainLookupStart, e.domainLookupEnd);
-  const connectMs = between(e.connectStart, e.connectEnd);
-  const tlsMs = Number.isFinite(e.secureConnectionStart) && e.secureConnectionStart > 0 ? between(e.secureConnectionStart, e.connectEnd) : 0;
-  const requestMs = between(e.requestStart, e.responseStart);
-  const contentDownloadMs = between(e.responseStart, e.responseEnd);
-  return {
-    redirectMs: redirectMs || void 0,
-    dnsMs: dnsMs || void 0,
-    connectMs: connectMs || void 0,
-    tlsMs: tlsMs || void 0,
-    requestMs: requestMs || void 0,
-    ttfbMs: requestMs || void 0,
-    contentDownloadMs: contentDownloadMs || void 0,
-    transferSize: e.transferSize || void 0,
-    encodedBodySize: e.encodedBodySize || void 0,
-    decodedBodySize: e.decodedBodySize || void 0
-  };
-}
-
-// src/app/service/latency/latency-service.ts
-var LatencyService = class _LatencyService {
-  /**
-   * 发起 JSON 请求并测量延迟，自动注入 rtid，用 Performance 覆盖自测
-   */
-  async fetchWithLatency(input2, options = {}) {
-    const method = (options.method ?? "GET").toUpperCase();
-    const rtid = crypto.randomUUID();
-    const rtidParam = options.rtidParam ?? "rtid";
-    const url = addRtid(input2, rtid, rtidParam);
-    const ac = new AbortController();
-    const userSignal = options.signal;
-    if (userSignal?.aborted)
-      ac.abort();
-    else if (userSignal)
-      userSignal.addEventListener("abort", () => ac.abort(), { once: true });
-    let timeoutId;
-    if (typeof options.timeoutMs === "number" && options.timeoutMs > 0) {
-      timeoutId = window.setTimeout(() => ac.abort(), options.timeoutMs);
-    }
-    let startedAt = nowEpochMs();
-    let headersAt = startedAt;
-    let endedAt = startedAt;
-    let httpStatus = 0;
-    let httpOk = false;
-    let serverTiming;
-    let responseObj;
-    let status = ResponseStatus.ERROR;
-    let errorMessage;
-    try {
-      const resp = await fetch(url, __spreadProps(__spreadValues({}, options), {
-        signal: ac.signal
-      }));
-      headersAt = nowEpochMs();
-      httpStatus = resp.status;
-      httpOk = resp.ok;
-      serverTiming = parseServerTimingHeader(resp.headers.get("server-timing"));
-      const raw = await resp.json();
-      responseObj = ApiResponse.deserialize(raw);
-      endedAt = nowEpochMs();
-      let ttfbMs = Math.max(0, headersAt - startedAt);
-      let totalMs = Math.max(0, endedAt - startedAt);
-      await nextFrame();
-      const entry = getExactResourceTimingByName(url);
-      if (entry) {
-        const pStart = toEpochMs(entry.startTime);
-        const pHeaders = toEpochMs(entry.responseStart);
-        const pEnd = toEpochMs(entry.responseEnd);
-        startedAt = pStart;
-        headersAt = pHeaders;
-        endedAt = pEnd;
-        totalMs = Math.max(0, Math.round(entry.duration));
-        if (Number.isFinite(entry.requestStart) && Number.isFinite(entry.responseStart)) {
-          ttfbMs = Math.max(0, Math.round(entry.responseStart - entry.requestStart));
-        }
-        const phases = buildPhases(entry);
-        return {
-          url,
-          method,
-          status: ResponseStatus.OK,
-          httpStatus,
-          httpOk,
-          startedAt,
-          headersAt,
-          endedAt,
-          ttfbMs,
-          totalMs,
-          serverTiming,
-          phases,
-          response: responseObj,
-          rtid
-        };
-      }
-      status = ResponseStatus.OK;
-      return {
-        url,
-        method,
-        status,
-        httpStatus,
-        httpOk,
-        startedAt,
-        headersAt,
-        endedAt,
-        ttfbMs,
-        totalMs,
-        serverTiming,
-        response: responseObj,
-        rtid
-      };
-    } catch (err) {
-      endedAt = nowEpochMs();
-      if (isAbortError(err)) {
-        status = ResponseStatus.TIMEOUT;
-        errorMessage = "Request timed out or aborted";
-      } else {
-        status = ResponseStatus.ERROR;
-        errorMessage = err?.message ?? String(err);
-      }
-      try {
-        await nextFrame();
-        const entry = getExactResourceTimingByName(url);
-        if (entry) {
-          const pStart = toEpochMs(entry.startTime);
-          const pHeaders = toEpochMs(entry.responseStart);
-          const pEnd = toEpochMs(entry.responseEnd);
-          startedAt = pStart;
-          headersAt = Number.isFinite(entry.responseStart) ? pHeaders : startedAt;
-          endedAt = Number.isFinite(entry.responseEnd) ? pEnd : endedAt;
-        }
-      } catch {
-      }
-      const ttfbMs = Math.max(0, headersAt - startedAt);
-      const totalMs = Math.max(0, endedAt - startedAt);
-      return {
-        url,
-        method,
-        status,
-        httpStatus,
-        httpOk,
-        startedAt,
-        headersAt,
-        endedAt,
-        ttfbMs,
-        totalMs,
-        serverTiming,
-        response: responseObj,
-        errorMessage,
-        rtid
-      };
-    } finally {
-      if (timeoutId !== void 0) {
-        clearTimeout(timeoutId);
-      }
-    }
-  }
-  /**
-   * RxJS 封装：取消订阅（unsubscribe）将触发 fetch 的 Abort
-   */
-  fetchWithLatency$(input2, options = {}) {
-    return new Observable((subscriber) => {
-      const ctrl = new AbortController();
-      const opts = __spreadProps(__spreadValues({}, options), { signal: ctrl.signal });
-      subscriber.add(() => {
-        try {
-          ctrl.abort();
-        } catch {
-        }
-      });
-      this.fetchWithLatency(input2, opts).then((res) => {
-        if (subscriber.closed)
-          return;
-        subscriber.next(res);
-        subscriber.complete();
-      }).catch((err) => {
-        if (subscriber.closed)
-          return;
-        subscriber.error(err);
-      });
-    });
-  }
-  static \u0275fac = function LatencyService_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _LatencyService)();
-  };
-  static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _LatencyService, factory: _LatencyService.\u0275fac, providedIn: "root" });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(LatencyService, [{
-    type: Injectable,
-    args: [{ providedIn: "root" }]
-  }], null, null);
-})();
-
-// src/app/service/dashboard.service.ts
-var DashboardService = class _DashboardService {
-  http;
-  latencyService;
-  static HEALTH_ENDPOINT = `/actuator/healthy`;
-  static REDIS_ENDPOINT = `/actuator/redis`;
-  constructor(http, latencyService) {
-    this.http = http;
-    this.latencyService = latencyService;
-  }
-  healthCheck() {
-    return this.http.get(_DashboardService.HEALTH_ENDPOINT).pipe(map((response) => ApiResponse.deserialize(response)));
-  }
-  async healthLatency() {
-    return await this.latencyService.fetchWithLatency(_DashboardService.HEALTH_ENDPOINT);
-  }
-  redisCheck() {
-    return this.http.get(_DashboardService.REDIS_ENDPOINT).pipe(map((response) => ApiResponse.deserialize(response)));
-  }
-  async redisLatency() {
-    return await this.latencyService.fetchWithLatency(_DashboardService.REDIS_ENDPOINT);
-  }
-  getSubscription(query) {
-    return this.http.get(query.subscriptionPath()).pipe(tap(console.log), map((response) => ApiResponse.deserialize(response, UrlResult)));
-  }
-  static \u0275fac = function DashboardService_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _DashboardService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(LatencyService));
-  };
-  static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _DashboardService, factory: _DashboardService.\u0275fac, providedIn: "root" });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(DashboardService, [{
-    type: Injectable,
-    args: [{
-      providedIn: "root"
-    }]
-  }], () => [{ type: HttpClient }, { type: LatencyService }], null);
-})();
 
 // src/app/common/model/convertor_query.ts
 var ConvertorQuery = class _ConvertorQuery {
@@ -59876,9 +63454,8 @@ var UrlService = class _UrlService {
   }], () => [{ type: Crypto_xchachaService }], null);
 })();
 
-// src/app/page/dashboard/dashboard-sub/dashboard-sub.ts
-var _forTrack0 = ($index, $item) => $item.desc;
-function DashboardSub_For_13_Template(rf, ctx) {
+// src/app/page/dashboard/dashboard-param/dashboard-param.ts
+function DashboardParam_For_16_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "mat-option", 5);
     \u0275\u0275text(1);
@@ -59891,43 +63468,27 @@ function DashboardSub_For_13_Template(rf, ctx) {
     \u0275\u0275textInterpolate(c_r1);
   }
 }
-function DashboardSub_For_19_Template(rf, ctx) {
+function DashboardParam_Conditional_28_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "mat-option", 5);
-    \u0275\u0275text(1);
+    const _r2 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 11);
+    \u0275\u0275listener("click", function DashboardParam_Conditional_28_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r2);
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.onCancel());
+    });
+    \u0275\u0275text(1, "Cancel");
     \u0275\u0275elementEnd();
   }
-  if (rf & 2) {
-    const p_r2 = ctx.$implicit;
-    \u0275\u0275property("value", \u0275\u0275interpolate(p_r2.toLowerCase()));
-    \u0275\u0275advance();
-    \u0275\u0275textInterpolate(p_r2);
-  }
 }
-function DashboardSub_For_35_Template(rf, ctx) {
+function DashboardParam_Conditional_30_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 12)(1, "div", 13)(2, "h5");
-    \u0275\u0275text(3);
+    \u0275\u0275elementStart(0, "button", 10);
+    \u0275\u0275text(1, "Gen");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(4, "app-icon-button", 14);
-    \u0275\u0275text(5, "content_copy");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(6, "div", 15)(7, "code");
-    \u0275\u0275text(8);
-    \u0275\u0275elementEnd()()();
-  }
-  if (rf & 2) {
-    const url_r3 = ctx.$implicit;
-    \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate(url_r3.desc);
-    \u0275\u0275advance();
-    \u0275\u0275property("cdkCopyToClipboard", \u0275\u0275interpolate(url_r3.url));
-    \u0275\u0275advance(4);
-    \u0275\u0275textInterpolate1(" ", url_r3.url, " ");
   }
 }
-var DashboardSub = class _DashboardSub {
-  providers = Object.values(SubProvider);
+var DashboardParam = class _DashboardParam {
   clients = Object.values(ProxyClient);
   destroyRef = inject2(DestroyRef);
   urlService = inject2(UrlService);
@@ -59948,23 +63509,26 @@ var DashboardSub = class _DashboardSub {
       updateOn: "blur"
     }),
     client: new FormControl(ProxyClient.Surge.toLowerCase(), { nonNullable: true }),
-    provider: new FormControl(SubProvider.BosLife.toLowerCase(), { nonNullable: true }),
     strict: new FormControl(true, { nonNullable: true })
   });
-  urlResult = new BehaviorSubject(void 0);
-  urls$ = this.urlResult.pipe(filter((v) => !!v), map((result) => [
-    result.raw_url,
-    result.raw_profile_url,
-    result.profile_url,
-    ...result.rule_providers_url
-  ]));
-  loading = new BehaviorSubject(false);
-  submit$ = new Subject();
-  cancel$ = new Subject();
-  error$ = new Subject();
+  // urlResult = new BehaviorSubject<UrlResult | undefined>(undefined);
+  // urls$: Observable<ConvertorUrl[]> = this.urlResult.pipe(
+  //     map((result?: UrlResult) => {
+  //         if (!result) {
+  //             return [];
+  //         }
+  //         return [
+  //             result.raw_url,
+  //             result.raw_profile_url,
+  //             result.profile_url,
+  //             ...result.rule_providers_url,
+  //         ];
+  //     }),
+  // );
+  submit = new Subject();
+  cancel = new Subject();
   params$ = this.subscriptionForm.valueChanges.pipe(debounceTime(300), map(() => this.subscriptionForm.getRawValue()), distinctUntilChanged(this.deepEqual), filter(() => this.subscriptionForm.valid), map((payload) => this.toUrlParams(payload)), shareReplay({ bufferSize: 1, refCount: true }));
-  formRestoreSub = merge(this.storage.get("url").pipe(map((value) => typeof value === "string" ? value : void 0), map((value) => ({ url: value, secret: void 0 }))), this.storage.get("secret").pipe(map((value) => typeof value === "string" ? value : void 0), map((value) => ({ url: void 0, secret: value })))).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
-    console.log(value);
+  paramRestoreSub = merge(this.storage.get("url").pipe(map((value) => typeof value === "string" ? value : void 0), map((value) => ({ url: value, secret: void 0 }))), this.storage.get("secret").pipe(map((value) => typeof value === "string" ? value : void 0), map((value) => ({ url: void 0, secret: value })))).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
     if (!value.url) {
       delete value.url;
     }
@@ -59973,11 +63537,11 @@ var DashboardSub = class _DashboardSub {
     }
     this.subscriptionForm.patchValue(value, { emitEvent: false });
   });
-  storageSub = merge(
+  paramStoreSub = merge(
     // 监听表单变化，debounce后保存
     this.subscriptionForm.valueChanges.pipe(debounceTime(300), map(() => this.subscriptionForm.getRawValue())),
     // 手动提交时立即保存
-    this.submit$.pipe(map(() => this.subscriptionForm.getRawValue()))
+    this.submit.pipe(map(() => this.subscriptionForm.getRawValue()))
   ).pipe(switchMap((formValue) => {
     const saveOperations = [];
     if (formValue.url && formValue.url.trim()) {
@@ -59994,46 +63558,38 @@ var DashboardSub = class _DashboardSub {
   requestSub = merge(
     this.params$,
     // 手动：点击提交时直接抓取当前 rawValue（不依赖 params$ 是否已发过值）
-    this.submit$.pipe(map(() => this.subscriptionForm.getRawValue()), filter(() => this.subscriptionForm.valid), map((payload) => this.toUrlParams(payload)))
+    this.submit.pipe(map(() => this.subscriptionForm.getRawValue()), filter(() => this.subscriptionForm.valid), map((payload) => this.toUrlParams(payload)))
   ).pipe(exhaustMap((urlParams) => {
     return defer(() => {
       this.subscriptionForm.disable({ emitEvent: false });
-      this.loading.next(true);
       const query = this.urlService.buildSubscriptionQuery(urlParams);
       return this.dashboardService.getSubscription(query).pipe(
         // 主动取消当前请求
-        takeUntil(this.cancel$),
-        // 错误只在 HTTP 内部处理，吞掉，不打断主流
-        catchError((err) => {
-          console.error(err);
+        takeUntil(this.cancel),
+        catchError(() => {
+          console.log("dashboard-param requestSub catchError:");
           return EMPTY;
         }),
-        // 结束（成功/失败/取消）：解锁 & 关 loading
+        // 结束（成功/失败/取消）：解锁
         finalize(() => {
+          console.log("dashboard-param requestSub finalize:");
           this.subscriptionForm.enable({ emitEvent: false });
-          this.loading.next(false);
+          return EMPTY;
         })
       );
     });
-  }), takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
-    console.log(value);
-    if (value.status.isOk()) {
-      this.urlResult.next(value.data);
-    } else {
-    }
-  });
-  submit() {
-    this.submit$.next();
+  }), takeUntilDestroyed(this.destroyRef)).subscribe();
+  onSubmit() {
+    this.submit.next();
   }
-  cancel() {
-    this.cancel$.next();
+  onCancel() {
+    this.cancel.next();
   }
   toUrlParams(payload) {
     return {
       secret: payload.secret,
       url: payload.url,
       client: payload.client,
-      provider: payload.provider,
       interval: payload.interval,
       strict: payload.strict
     };
@@ -60041,75 +63597,56 @@ var DashboardSub = class _DashboardSub {
   deepEqual(a, b) {
     return JSON.stringify(a) === JSON.stringify(b);
   }
-  static \u0275fac = function DashboardSub_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _DashboardSub)();
+  static \u0275fac = function DashboardParam_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _DashboardParam)();
   };
-  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DashboardSub, selectors: [["app-dashboard-sub"]], decls: 37, vars: 3, consts: [[3, "submit", "formGroup"], [1, "form-row"], ["appearance", "outline", "subscriptSizing", "dynamic"], ["formControlName", "secret", "matInput", ""], ["formControlName", "client", "panelClass", "my-mat-option"], [3, "value"], ["formControlName", "provider", "panelClass", "my-mat-option"], ["formControlName", "interval", "matInput", "", "type", "number"], ["formControlName", "strict", "labelPosition", "before", 1, "form-suffix"], ["formControlName", "url", "matInput", ""], ["matButton", "filled", 1, "form-suffix"], [1, "scroll-area"], [1, "convertor-url"], [1, "convertor-url-label"], [3, "cdkCopyToClipboard"], [1, "convertor-url-link"]], template: function DashboardSub_Template(rf, ctx) {
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DashboardParam, selectors: [["app-dashboard-param"]], decls: 31, vars: 4, consts: [[3, "submit", "formGroup"], [1, "form-row"], ["appearance", "outline", "subscriptSizing", "dynamic"], ["formControlName", "secret", "matInput", ""], ["formControlName", "client", "panelClass", "my-mat-option"], [3, "value"], ["formControlName", "interval", "matInput", "", "type", "number"], ["formControlName", "strict", "labelPosition", "before", 1, "form-suffix"], ["formControlName", "url", "matInput", ""], ["matButton", "filled", "type", "button", 1, "form-suffix", "error"], ["matButton", "filled", 1, "form-suffix"], ["matButton", "filled", "type", "button", 1, "form-suffix", "error", 3, "click"]], template: function DashboardParam_Template(rf, ctx) {
     if (rf & 1) {
-      \u0275\u0275elementStart(0, "h2");
-      \u0275\u0275text(1, "\u8BA2\u9605\u94FE\u63A5");
-      \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(2, "form", 0);
-      \u0275\u0275listener("submit", function DashboardSub_Template_form_submit_2_listener() {
-        return ctx.submit();
+      \u0275\u0275elementStart(0, "app-dashboard-panel")(1, "mat-card-header")(2, "mat-card-title");
+      \u0275\u0275text(3, "\u8BA2\u9605\u53C2\u6570");
+      \u0275\u0275elementEnd()();
+      \u0275\u0275elementStart(4, "mat-card-content")(5, "form", 0);
+      \u0275\u0275listener("submit", function DashboardParam_Template_form_submit_5_listener() {
+        return ctx.onSubmit();
       });
-      \u0275\u0275elementStart(3, "div", 1)(4, "mat-form-field", 2)(5, "mat-label");
-      \u0275\u0275text(6, "Secret");
+      \u0275\u0275elementStart(6, "div", 1)(7, "mat-form-field", 2)(8, "mat-label");
+      \u0275\u0275text(9, "Secret");
       \u0275\u0275elementEnd();
-      \u0275\u0275element(7, "input", 3);
+      \u0275\u0275element(10, "input", 3);
       \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(8, "mat-form-field", 2)(9, "mat-label");
-      \u0275\u0275text(10, "Client");
+      \u0275\u0275elementStart(11, "mat-form-field", 2)(12, "mat-label");
+      \u0275\u0275text(13, "Client");
       \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(11, "mat-select", 4);
-      \u0275\u0275repeaterCreate(12, DashboardSub_For_13_Template, 2, 3, "mat-option", 5, \u0275\u0275repeaterTrackByIdentity);
+      \u0275\u0275elementStart(14, "mat-select", 4);
+      \u0275\u0275repeaterCreate(15, DashboardParam_For_16_Template, 2, 3, "mat-option", 5, \u0275\u0275repeaterTrackByIdentity);
       \u0275\u0275elementEnd()();
-      \u0275\u0275elementStart(14, "mat-form-field", 2)(15, "mat-label");
-      \u0275\u0275text(16, "Provider");
+      \u0275\u0275elementStart(17, "mat-form-field", 2)(18, "mat-label");
+      \u0275\u0275text(19, "Interval");
       \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(17, "mat-select", 6);
-      \u0275\u0275repeaterCreate(18, DashboardSub_For_19_Template, 2, 3, "mat-option", 5, \u0275\u0275repeaterTrackByIdentity);
+      \u0275\u0275element(20, "input", 6);
+      \u0275\u0275elementEnd();
+      \u0275\u0275elementStart(21, "mat-slide-toggle", 7);
+      \u0275\u0275text(22, "Strict");
       \u0275\u0275elementEnd()();
-      \u0275\u0275elementStart(20, "mat-form-field", 2)(21, "mat-label");
-      \u0275\u0275text(22, "Interval");
+      \u0275\u0275elementStart(23, "div", 1)(24, "mat-form-field", 2)(25, "mat-label");
+      \u0275\u0275text(26, "Subscription URL");
       \u0275\u0275elementEnd();
-      \u0275\u0275element(23, "input", 7);
+      \u0275\u0275element(27, "input", 8);
       \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(24, "mat-slide-toggle", 8);
-      \u0275\u0275text(25, "Strict");
-      \u0275\u0275elementEnd()();
-      \u0275\u0275elementStart(26, "div", 1)(27, "mat-form-field", 2)(28, "mat-label");
-      \u0275\u0275text(29, "Raw Subscription URL");
-      \u0275\u0275elementEnd();
-      \u0275\u0275element(30, "input", 9);
-      \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(31, "button", 10);
-      \u0275\u0275text(32, "Gen");
-      \u0275\u0275elementEnd()()();
-      \u0275\u0275elementStart(33, "section", 11);
-      \u0275\u0275repeaterCreate(34, DashboardSub_For_35_Template, 9, 4, "div", 12, _forTrack0);
-      \u0275\u0275pipe(36, "async");
-      \u0275\u0275elementEnd();
+      \u0275\u0275conditionalCreate(28, DashboardParam_Conditional_28_Template, 2, 0, "button", 9);
+      \u0275\u0275pipe(29, "async");
+      \u0275\u0275conditionalBranchCreate(30, DashboardParam_Conditional_30_Template, 2, 0, "button", 10);
+      \u0275\u0275elementEnd()()()();
     }
     if (rf & 2) {
-      \u0275\u0275advance(2);
+      \u0275\u0275advance(5);
       \u0275\u0275property("formGroup", ctx.subscriptionForm);
       \u0275\u0275advance(10);
       \u0275\u0275repeater(ctx.clients);
-      \u0275\u0275advance(6);
-      \u0275\u0275repeater(ctx.providers);
-      \u0275\u0275advance(16);
-      \u0275\u0275repeater(\u0275\u0275pipeBind1(36, 1, ctx.urls$));
+      \u0275\u0275advance(13);
+      \u0275\u0275conditional(\u0275\u0275pipeBind1(29, 2, ctx.dashboardService.loading$) ? 28 : 30);
     }
   }, dependencies: [
-    MatFormField,
-    MatLabel,
-    MatInput,
-    MatSelect,
-    MatOption,
-    MatButton,
-    IconButton,
-    MatSlideToggle,
     ReactiveFormsModule,
     \u0275NgNoValidate,
     DefaultValueAccessor,
@@ -60118,60 +63655,166 @@ var DashboardSub = class _DashboardSub {
     NgControlStatusGroup,
     FormGroupDirective,
     FormControlName,
-    CdkCopyToClipboard,
+    DashboardPanel,
+    MatCardHeader,
+    MatCardContent,
+    MatFormField,
+    MatLabel,
+    MatInput,
+    MatSelect,
+    MatOption,
+    MatSlideToggle,
+    MatButton,
+    MatCardTitle,
     AsyncPipe
-  ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  overflow: hidden;\n  flex: 1 1 auto;\n  flex-direction: column;\n  width: 100%;\n  gap: 8px;\n}\n[_nghost-%COMP%]   h2[_ngcontent-%COMP%] {\n  font-size: 16px;\n  font-weight: 500;\n}\n[_nghost-%COMP%]   form[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n}\n[_nghost-%COMP%]   form[_ngcontent-%COMP%]   .form-row[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: row;\n  gap: 12px;\n}\n[_nghost-%COMP%]   form[_ngcontent-%COMP%]   .form-suffix[_ngcontent-%COMP%] {\n  width: 82.5px;\n}\n[_nghost-%COMP%]   form[_ngcontent-%COMP%]   mat-form-field[_ngcontent-%COMP%] {\n  flex: 1;\n}\n[_nghost-%COMP%]   form[_ngcontent-%COMP%]   mat-slide-toggle[_ngcontent-%COMP%] {\n  padding-top: 4px;\n}\n[_nghost-%COMP%]   form[_ngcontent-%COMP%]   button[matButton=filled][_ngcontent-%COMP%] {\n  margin-top: 2px;\n}\n[_nghost-%COMP%]   form[_ngcontent-%COMP%]   mat-form-field[_ngcontent-%COMP%] {\n  --mat-form-field-container-text-size: 12px;\n}\n[_nghost-%COMP%]   form[_ngcontent-%COMP%]   mat-select[_ngcontent-%COMP%] {\n  --mat-select-trigger-text-size: 12px;\n}\n[_nghost-%COMP%]   form[_ngcontent-%COMP%]     .mat-mdc-option {\n  min-height: 28px;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%] {\n  display: flex;\n  overflow-y: auto;\n  flex-direction: column;\n  gap: 12px;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%]   .convertor-url[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: flex-start;\n  flex-direction: column;\n  justify-content: center;\n  box-sizing: border-box;\n  width: 100%;\n  height: auto;\n  padding: 12px;\n  border-radius: 12px;\n  background: #1a1c20;\n  gap: 12px;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%]   .convertor-url[_ngcontent-%COMP%]   .convertor-url-label[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  width: 100%;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%]   .convertor-url[_ngcontent-%COMP%]   .convertor-url-label[_ngcontent-%COMP%]   h5[_ngcontent-%COMP%] {\n  font-size: 12px;\n  font-weight: 400;\n  font-style: normal;\n  line-height: normal;\n  flex: 1 1 auto;\n  color: #ffffff;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%]   .convertor-url[_ngcontent-%COMP%]   .convertor-url-link[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: flex-start;\n  align-self: stretch;\n  flex-direction: column;\n  padding: 8px;\n  border-radius: 6px;\n  background: #0c0e12;\n  gap: 10px;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%]   .convertor-url[_ngcontent-%COMP%]   .convertor-url-link[_ngcontent-%COMP%]   code[_ngcontent-%COMP%] {\n  font-size: 12px;\n  font-weight: 400;\n  font-style: normal;\n  line-height: normal;\n  overflow: hidden;\n  overflow-y: auto;\n  flex: 1 1 auto;\n  width: 100%;\n  text-overflow: ellipsis;\n  word-break: break-word;\n  color: #ffffff;\n  overflow-wrap: anywhere;\n}\n/*# sourceMappingURL=dashboard-sub.css.map */"] });
+  ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  width: 100%;\n  gap: 8px;\n}\n[_nghost-%COMP%]   form[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n}\n[_nghost-%COMP%]   form[_ngcontent-%COMP%]   .form-row[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: row;\n  gap: 12px;\n}\n[_nghost-%COMP%]   form[_ngcontent-%COMP%]   .form-suffix[_ngcontent-%COMP%] {\n  width: 82.5px;\n}\n[_nghost-%COMP%]   form[_ngcontent-%COMP%]   mat-form-field[_ngcontent-%COMP%] {\n  flex: 1;\n}\n[_nghost-%COMP%]   form[_ngcontent-%COMP%]   mat-slide-toggle[_ngcontent-%COMP%] {\n  padding-top: 4px;\n}\n[_nghost-%COMP%]   form[_ngcontent-%COMP%]   button[matButton=filled][_ngcontent-%COMP%] {\n  margin-top: 2px;\n}\n[_nghost-%COMP%]   form[_ngcontent-%COMP%]   mat-form-field[_ngcontent-%COMP%] {\n  --mat-form-field-container-text-size: 12px;\n  --mat-form-field-outlined-label-text-color: color-mix(in srgb, var(--mat-sys-on-surface), transparent 30%);\n  --mat-form-field-outlined-hover-label-text-color: color-mix(in srgb, var(--mat-sys-on-surface), transparent 10%);\n  --mat-form-field-outlined-hover-outline-color: color-mix(in srgb, var(--mat-sys-on-surface), transparent 70%);\n}\n[_nghost-%COMP%]   form[_ngcontent-%COMP%]   mat-select[_ngcontent-%COMP%] {\n  --mat-select-trigger-text-size: 12px;\n}\n[_nghost-%COMP%]   form[_ngcontent-%COMP%]   button.error[_ngcontent-%COMP%] {\n  --mat-button-filled-label-text-color: var(--mat-sys-on-error);\n  --mat-button-filled-container-color: var(--mat-sys-error);\n}\n[_nghost-%COMP%]   form[_ngcontent-%COMP%]     .mat-mdc-option {\n  min-height: 28px;\n}\n/*# sourceMappingURL=dashboard-param.css.map */"] });
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(DashboardSub, [{
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(DashboardParam, [{
     type: Component,
-    args: [{ selector: "app-dashboard-sub", imports: [
+    args: [{ selector: "app-dashboard-param", imports: [
+      ReactiveFormsModule,
+      DashboardPanel,
+      MatCardHeader,
+      MatCardContent,
       MatFormField,
       MatLabel,
       MatInput,
       MatSelect,
       MatOption,
-      MatButton,
-      IconButton,
       MatSlideToggle,
-      ReactiveFormsModule,
       AsyncPipe,
-      CdkCopyToClipboard
-    ], template: '<h2>\u8BA2\u9605\u94FE\u63A5</h2>\n\n<form (submit)="submit()" [formGroup]="subscriptionForm">\n    <div class="form-row">\n        <mat-form-field appearance="outline" subscriptSizing="dynamic">\n            <mat-label>Secret</mat-label>\n            <input formControlName="secret" matInput>\n        </mat-form-field>\n        <mat-form-field appearance="outline" subscriptSizing="dynamic">\n            <mat-label>Client</mat-label>\n            <mat-select formControlName="client" panelClass="my-mat-option">\n                @for (c of clients; track c) {\n                    <mat-option value="{{ c.toLowerCase() }}">{{ c }}</mat-option>\n                }\n            </mat-select>\n        </mat-form-field>\n        <mat-form-field appearance="outline" subscriptSizing="dynamic">\n            <mat-label>Provider</mat-label>\n            <mat-select formControlName="provider" panelClass="my-mat-option">\n                @for (p of providers; track p) {\n                    <mat-option value="{{ p.toLowerCase() }}">{{ p }}</mat-option>\n                }\n            </mat-select>\n        </mat-form-field>\n        <mat-form-field appearance="outline" subscriptSizing="dynamic">\n            <mat-label>Interval</mat-label>\n            <input formControlName="interval" matInput type="number">\n        </mat-form-field>\n        <mat-slide-toggle class="form-suffix" formControlName="strict" labelPosition="before">Strict</mat-slide-toggle>\n    </div>\n    <div class="form-row">\n        <mat-form-field appearance="outline" subscriptSizing="dynamic">\n            <mat-label>Raw Subscription URL</mat-label>\n            <input formControlName="url" matInput>\n        </mat-form-field>\n        <button class="form-suffix" matButton="filled">Gen</button>\n    </div>\n</form>\n\n<section class="scroll-area">\n    @for (url of urls$ | async; track url.desc) {\n        <div class="convertor-url">\n            <div class="convertor-url-label">\n                <h5>{{ url.desc }}</h5>\n                <app-icon-button cdkCopyToClipboard="{{ url.url }}">content_copy</app-icon-button>\n            </div>\n            <div class="convertor-url-link">\n                <code>\n                    {{ url.url }}\n                </code>\n            </div>\n        </div>\n    }\n</section>\n', styles: ["/* src/app/page/dashboard/dashboard-sub/dashboard-sub.scss */\n:host {\n  display: flex;\n  overflow: hidden;\n  flex: 1 1 auto;\n  flex-direction: column;\n  width: 100%;\n  gap: 8px;\n}\n:host h2 {\n  font-size: 16px;\n  font-weight: 500;\n}\n:host form {\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n}\n:host form .form-row {\n  display: flex;\n  flex-direction: row;\n  gap: 12px;\n}\n:host form .form-suffix {\n  width: 82.5px;\n}\n:host form mat-form-field {\n  flex: 1;\n}\n:host form mat-slide-toggle {\n  padding-top: 4px;\n}\n:host form button[matButton=filled] {\n  margin-top: 2px;\n}\n:host form mat-form-field {\n  --mat-form-field-container-text-size: 12px;\n}\n:host form mat-select {\n  --mat-select-trigger-text-size: 12px;\n}\n:host form ::ng-deep .mat-mdc-option {\n  min-height: 28px;\n}\n:host section {\n  display: flex;\n  overflow-y: auto;\n  flex-direction: column;\n  gap: 12px;\n}\n:host section .convertor-url {\n  display: flex;\n  align-items: flex-start;\n  flex-direction: column;\n  justify-content: center;\n  box-sizing: border-box;\n  width: 100%;\n  height: auto;\n  padding: 12px;\n  border-radius: 12px;\n  background: #1a1c20;\n  gap: 12px;\n}\n:host section .convertor-url .convertor-url-label {\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  width: 100%;\n}\n:host section .convertor-url .convertor-url-label h5 {\n  font-size: 12px;\n  font-weight: 400;\n  font-style: normal;\n  line-height: normal;\n  flex: 1 1 auto;\n  color: #ffffff;\n}\n:host section .convertor-url .convertor-url-link {\n  display: flex;\n  align-items: flex-start;\n  align-self: stretch;\n  flex-direction: column;\n  padding: 8px;\n  border-radius: 6px;\n  background: #0c0e12;\n  gap: 10px;\n}\n:host section .convertor-url .convertor-url-link code {\n  font-size: 12px;\n  font-weight: 400;\n  font-style: normal;\n  line-height: normal;\n  overflow: hidden;\n  overflow-y: auto;\n  flex: 1 1 auto;\n  width: 100%;\n  text-overflow: ellipsis;\n  word-break: break-word;\n  color: #ffffff;\n  overflow-wrap: anywhere;\n}\n/*# sourceMappingURL=dashboard-sub.css.map */\n"] }]
+      MatButton,
+      MatCardTitle
+    ], template: '<app-dashboard-panel>\n    <mat-card-header>\n        <mat-card-title>\u8BA2\u9605\u53C2\u6570</mat-card-title>\n    </mat-card-header>\n    <mat-card-content>\n        <form (submit)="onSubmit()" [formGroup]="subscriptionForm">\n            <div class="form-row">\n                <mat-form-field appearance="outline" subscriptSizing="dynamic">\n                    <mat-label>Secret</mat-label>\n                    <input formControlName="secret" matInput>\n                </mat-form-field>\n                <mat-form-field appearance="outline" subscriptSizing="dynamic">\n                    <mat-label>Client</mat-label>\n                    <mat-select formControlName="client" panelClass="my-mat-option">\n                        @for (c of clients; track c) {\n                            <mat-option value="{{ c.toLowerCase() }}">{{ c }}</mat-option>\n                        }\n                    </mat-select>\n                </mat-form-field>\n                <mat-form-field appearance="outline" subscriptSizing="dynamic">\n                    <mat-label>Interval</mat-label>\n                    <input formControlName="interval" matInput type="number">\n                </mat-form-field>\n                <mat-slide-toggle class="form-suffix" formControlName="strict" labelPosition="before">Strict</mat-slide-toggle>\n            </div>\n            <div class="form-row">\n                <mat-form-field appearance="outline" subscriptSizing="dynamic">\n                    <mat-label>Subscription URL</mat-label>\n                    <input formControlName="url" matInput>\n                </mat-form-field>\n                @if (dashboardService.loading$ | async) {\n                    <button class="form-suffix error" matButton="filled" type="button" (click)="onCancel()">Cancel</button>\n                } @else {\n                    <button class="form-suffix" matButton="filled">Gen</button>\n                }\n            </div>\n        </form>\n    </mat-card-content>\n</app-dashboard-panel>\n', styles: ["/* src/app/page/dashboard/dashboard-param/dashboard-param.scss */\n:host {\n  display: flex;\n  flex-direction: column;\n  width: 100%;\n  gap: 8px;\n}\n:host form {\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n}\n:host form .form-row {\n  display: flex;\n  flex-direction: row;\n  gap: 12px;\n}\n:host form .form-suffix {\n  width: 82.5px;\n}\n:host form mat-form-field {\n  flex: 1;\n}\n:host form mat-slide-toggle {\n  padding-top: 4px;\n}\n:host form button[matButton=filled] {\n  margin-top: 2px;\n}\n:host form mat-form-field {\n  --mat-form-field-container-text-size: 12px;\n  --mat-form-field-outlined-label-text-color: color-mix(in srgb, var(--mat-sys-on-surface), transparent 30%);\n  --mat-form-field-outlined-hover-label-text-color: color-mix(in srgb, var(--mat-sys-on-surface), transparent 10%);\n  --mat-form-field-outlined-hover-outline-color: color-mix(in srgb, var(--mat-sys-on-surface), transparent 70%);\n}\n:host form mat-select {\n  --mat-select-trigger-text-size: 12px;\n}\n:host form button.error {\n  --mat-button-filled-label-text-color: var(--mat-sys-on-error);\n  --mat-button-filled-container-color: var(--mat-sys-error);\n}\n:host form ::ng-deep .mat-mdc-option {\n  min-height: 28px;\n}\n/*# sourceMappingURL=dashboard-param.css.map */\n"] }]
   }], null, null);
 })();
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardSub, { className: "DashboardSub", filePath: "src/app/page/dashboard/dashboard-sub/dashboard-sub.ts", lineNumber: 56 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardParam, { className: "DashboardParam", filePath: "src/app/page/dashboard/dashboard-param/dashboard-param.ts", lineNumber: 55 });
+})();
+
+// src/app/page/shared/title/title.ts
+var _c014 = ["*"];
+var Title2 = class _Title {
+  static \u0275fac = function Title_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _Title)();
+  };
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _Title, selectors: [["app-title"]], ngContentSelectors: _c014, decls: 2, vars: 0, template: function Title_Template(rf, ctx) {
+    if (rf & 1) {
+      \u0275\u0275projectionDef();
+      \u0275\u0275domElementStart(0, "h2");
+      \u0275\u0275projection(1);
+      \u0275\u0275domElementEnd();
+    }
+  }, styles: ["\n\nh2[_ngcontent-%COMP%] {\n  font-size: 16px;\n  font-weight: 500;\n}\n/*# sourceMappingURL=title.css.map */"] });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(Title2, [{
+    type: Component,
+    args: [{ selector: "app-title", imports: [], template: "<h2>\n    <ng-content></ng-content>\n</h2>\n", styles: ["/* src/app/page/shared/title/title.scss */\nh2 {\n  font-size: 16px;\n  font-weight: 500;\n}\n/*# sourceMappingURL=title.css.map */\n"] }]
+  }], null, null);
+})();
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(Title2, { className: "Title", filePath: "src/app/page/shared/title/title.ts", lineNumber: 9 });
+})();
+
+// src/app/page/dashboard/dashboard-subs/dashboard-subs.ts
+var DashboardSubs = class _DashboardSubs {
+  static \u0275fac = function DashboardSubs_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _DashboardSubs)();
+  };
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DashboardSubs, selectors: [["app-dashboard-subs"]], decls: 4, vars: 0, template: function DashboardSubs_Template(rf, ctx) {
+    if (rf & 1) {
+      \u0275\u0275elementStart(0, "app-title");
+      \u0275\u0275text(1, "\u8BA2\u9605\u94FE\u63A5");
+      \u0275\u0275elementEnd();
+      \u0275\u0275element(2, "mat-divider")(3, "section");
+    }
+  }, dependencies: [
+    ReactiveFormsModule,
+    MatDivider,
+    Title2
+  ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  overflow: hidden;\n  flex: 1 1 auto;\n  flex-direction: column;\n  width: 100%;\n  gap: 8px;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%] {\n  display: flex;\n  overflow-y: auto;\n  flex: 1;\n  flex-direction: column;\n  gap: 12px;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%]   .convertor-url[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: flex-start;\n  flex-direction: column;\n  justify-content: center;\n  box-sizing: border-box;\n  width: 100%;\n  height: auto;\n  padding: 12px;\n  border-radius: 12px;\n  gap: 12px;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%]   .convertor-url[_ngcontent-%COMP%]   .convertor-url-label[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  width: 100%;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%]   .convertor-url[_ngcontent-%COMP%]   .convertor-url-label[_ngcontent-%COMP%]   h5[_ngcontent-%COMP%] {\n  font-size: 12px;\n  font-weight: 400;\n  font-style: normal;\n  line-height: normal;\n  flex: 1 1 auto;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%]   .convertor-url[_ngcontent-%COMP%]   .convertor-url-link[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: flex-start;\n  align-self: stretch;\n  flex-direction: column;\n  padding: 8px;\n  border-radius: 6px;\n  background: #0c0e12;\n  gap: 10px;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%]   .convertor-url[_ngcontent-%COMP%]   .convertor-url-link[_ngcontent-%COMP%]   code[_ngcontent-%COMP%] {\n  font-size: 12px;\n  font-weight: 400;\n  font-style: normal;\n  line-height: normal;\n  overflow: hidden;\n  overflow-y: auto;\n  flex: 1 1 auto;\n  width: 100%;\n  text-overflow: ellipsis;\n  word-break: break-word;\n  overflow-wrap: anywhere;\n}\n/*# sourceMappingURL=dashboard-subs.css.map */"] });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(DashboardSubs, [{
+    type: Component,
+    args: [{ selector: "app-dashboard-subs", imports: [
+      ReactiveFormsModule,
+      MatDivider,
+      Title2
+    ], template: '<app-title>\u8BA2\u9605\u94FE\u63A5</app-title>\n\n<mat-divider></mat-divider>\n\n<section>\n    <!--    @if (error$ | async; as errorMessage) {-->\n    <!--        <app-error-view [error]="errorMessage"></app-error-view>-->\n    <!--    } @else if ((urls$ | async)?.length === 0) {-->\n    <!--        <h1>No Content</h1>-->\n    <!--    } @else {-->\n    <!--        @for (url of urls$ | async; track url.desc) {-->\n    <!--            <div class="convertor-url">-->\n    <!--                <div class="convertor-url-label">-->\n    <!--                    <h5>{{ url.desc }}</h5>-->\n    <!--                    <app-icon-button cdkCopyToClipboard="{{ url.url }}">content_copy</app-icon-button>-->\n    <!--                </div>-->\n    <!--                <div class="convertor-url-link">-->\n    <!--                    <code>-->\n    <!--                        {{ url.url }}-->\n    <!--                    </code>-->\n    <!--                </div>-->\n    <!--            </div>-->\n    <!--        }-->\n    <!--    }-->\n</section>\n', styles: ["/* src/app/page/dashboard/dashboard-subs/dashboard-subs.scss */\n:host {\n  display: flex;\n  overflow: hidden;\n  flex: 1 1 auto;\n  flex-direction: column;\n  width: 100%;\n  gap: 8px;\n}\n:host section {\n  display: flex;\n  overflow-y: auto;\n  flex: 1;\n  flex-direction: column;\n  gap: 12px;\n}\n:host section .convertor-url {\n  display: flex;\n  align-items: flex-start;\n  flex-direction: column;\n  justify-content: center;\n  box-sizing: border-box;\n  width: 100%;\n  height: auto;\n  padding: 12px;\n  border-radius: 12px;\n  gap: 12px;\n}\n:host section .convertor-url .convertor-url-label {\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  width: 100%;\n}\n:host section .convertor-url .convertor-url-label h5 {\n  font-size: 12px;\n  font-weight: 400;\n  font-style: normal;\n  line-height: normal;\n  flex: 1 1 auto;\n}\n:host section .convertor-url .convertor-url-link {\n  display: flex;\n  align-items: flex-start;\n  align-self: stretch;\n  flex-direction: column;\n  padding: 8px;\n  border-radius: 6px;\n  background: #0c0e12;\n  gap: 10px;\n}\n:host section .convertor-url .convertor-url-link code {\n  font-size: 12px;\n  font-weight: 400;\n  font-style: normal;\n  line-height: normal;\n  overflow: hidden;\n  overflow-y: auto;\n  flex: 1 1 auto;\n  width: 100%;\n  text-overflow: ellipsis;\n  word-break: break-word;\n  overflow-wrap: anywhere;\n}\n/*# sourceMappingURL=dashboard-subs.css.map */\n"] }]
+  }], null, null);
+})();
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardSubs, { className: "DashboardSubs", filePath: "src/app/page/dashboard/dashboard-subs/dashboard-subs.ts", lineNumber: 16 });
 })();
 
 // src/app/page/dashboard/dashboard.ts
+function Dashboard_Conditional_3_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275element(0, "app-dashboard-error");
+  }
+}
+function Dashboard_Conditional_6_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275element(0, "app-no-content");
+  }
+}
+function Dashboard_Conditional_7_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275element(0, "app-dashboard-subs");
+  }
+}
 var Dashboard = class _Dashboard {
+  dashboardService = inject2(DashboardService);
+  error$ = this.dashboardService.error$;
+  data$ = this.dashboardService.urlResult$;
   static \u0275fac = function Dashboard_Factory(__ngFactoryType__) {
     return new (__ngFactoryType__ || _Dashboard)();
   };
-  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _Dashboard, selectors: [["app-dashboard"]], decls: 5, vars: 0, template: function Dashboard_Template(rf, ctx) {
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _Dashboard, selectors: [["app-dashboard"]], features: [\u0275\u0275ProvidersFeature([
+    DashboardService
+  ])], decls: 8, vars: 5, template: function Dashboard_Template(rf, ctx) {
     if (rf & 1) {
-      \u0275\u0275elementStart(0, "div")(1, "h1");
-      \u0275\u0275text(2, "Convertor \xB7 Dashboard");
-      \u0275\u0275elementEnd()();
-      \u0275\u0275element(3, "app-dashboard-info")(4, "app-dashboard-sub");
+      \u0275\u0275elementStart(0, "h1");
+      \u0275\u0275text(1, "Convertor \xB7 Dashboard");
+      \u0275\u0275elementEnd();
+      \u0275\u0275element(2, "app-dashboard-param");
+      \u0275\u0275conditionalCreate(3, Dashboard_Conditional_3_Template, 1, 0, "app-dashboard-error");
+      \u0275\u0275pipe(4, "async");
+      \u0275\u0275pipe(5, "async");
+      \u0275\u0275conditionalBranchCreate(6, Dashboard_Conditional_6_Template, 1, 0, "app-no-content")(7, Dashboard_Conditional_7_Template, 1, 0, "app-dashboard-subs");
+    }
+    if (rf & 2) {
+      let tmp_0_0;
+      \u0275\u0275advance(3);
+      \u0275\u0275conditional((tmp_0_0 = \u0275\u0275pipeBind1(4, 1, ctx.error$)) ? 3 : !\u0275\u0275pipeBind1(5, 3, ctx.data$) ? 6 : 7, tmp_0_0);
     }
   }, dependencies: [
-    DashboardInfo,
-    DashboardSub
-  ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  overflow: hidden;\n  align-items: flex-start;\n  flex-direction: column;\n  box-sizing: border-box;\n  height: 100%;\n  padding: 24px 120px;\n  gap: 16px;\n}\n[_nghost-%COMP%]   h1[_ngcontent-%COMP%] {\n  font-size: 16px;\n  font-weight: 600;\n}\n[_nghost-%COMP%]   .dashboard-content[_ngcontent-%COMP%] {\n  display: flex;\n  flex: 1 1 auto;\n  flex-direction: column;\n  justify-content: space-between;\n}\n[_nghost-%COMP%]   .dashboard-content[_ngcontent-%COMP%]   .dashboard-row[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: row;\n  flex-wrap: wrap;\n}\n[_nghost-%COMP%]   .example-spacer[_ngcontent-%COMP%] {\n  flex: 1 1 auto;\n}\n/*# sourceMappingURL=dashboard.css.map */"], changeDetection: 0 });
+    DashboardSubs,
+    DashboardParam,
+    NoContent,
+    DashboardError,
+    AsyncPipe
+  ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  overflow: hidden;\n  align-items: flex-start;\n  flex-direction: column;\n  box-sizing: border-box;\n  height: 100%;\n  padding: 24px 120px;\n  gap: 16px;\n}\n[_nghost-%COMP%]   .dashboard-content[_ngcontent-%COMP%] {\n  display: flex;\n  flex: 1 1 auto;\n  flex-direction: column;\n  justify-content: space-between;\n}\n[_nghost-%COMP%]   .dashboard-content[_ngcontent-%COMP%]   .dashboard-row[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: row;\n  flex-wrap: wrap;\n}\n/*# sourceMappingURL=dashboard.css.map */"], changeDetection: 0 });
 };
 (() => {
   (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(Dashboard, [{
     type: Component,
     args: [{ selector: "app-dashboard", imports: [
-      DashboardInfo,
-      DashboardSub
-    ], changeDetection: ChangeDetectionStrategy.OnPush, template: "<div>\n    <h1>Convertor \xB7 Dashboard</h1>\n</div>\n<app-dashboard-info></app-dashboard-info>\n<app-dashboard-sub></app-dashboard-sub>\n", styles: ["/* src/app/page/dashboard/dashboard.scss */\n:host {\n  display: flex;\n  overflow: hidden;\n  align-items: flex-start;\n  flex-direction: column;\n  box-sizing: border-box;\n  height: 100%;\n  padding: 24px 120px;\n  gap: 16px;\n}\n:host h1 {\n  font-size: 16px;\n  font-weight: 600;\n}\n:host .dashboard-content {\n  display: flex;\n  flex: 1 1 auto;\n  flex-direction: column;\n  justify-content: space-between;\n}\n:host .dashboard-content .dashboard-row {\n  display: flex;\n  flex-direction: row;\n  flex-wrap: wrap;\n}\n:host .example-spacer {\n  flex: 1 1 auto;\n}\n/*# sourceMappingURL=dashboard.css.map */\n"] }]
+      DashboardSubs,
+      DashboardParam,
+      AsyncPipe,
+      NoContent,
+      DashboardError
+    ], changeDetection: ChangeDetectionStrategy.OnPush, providers: [
+      DashboardService
+    ], template: "<h1>Convertor \xB7 Dashboard</h1>\n<app-dashboard-param></app-dashboard-param>\n@if ((error$ | async); as error) {\n    <app-dashboard-error></app-dashboard-error>\n} @else if (!(data$ | async)) {\n    <app-no-content></app-no-content>\n} @else {\n    <app-dashboard-subs></app-dashboard-subs>\n}\n", styles: ["/* src/app/page/dashboard/dashboard.scss */\n:host {\n  display: flex;\n  overflow: hidden;\n  align-items: flex-start;\n  flex-direction: column;\n  box-sizing: border-box;\n  height: 100%;\n  padding: 24px 120px;\n  gap: 16px;\n}\n:host .dashboard-content {\n  display: flex;\n  flex: 1 1 auto;\n  flex-direction: column;\n  justify-content: space-between;\n}\n:host .dashboard-content .dashboard-row {\n  display: flex;\n  flex-direction: row;\n  flex-wrap: wrap;\n}\n/*# sourceMappingURL=dashboard.css.map */\n"] }]
   }], null, null);
 })();
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(Dashboard, { className: "Dashboard", filePath: "src/app/page/dashboard/dashboard.ts", lineNumber: 15 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(Dashboard, { className: "Dashboard", filePath: "src/app/page/dashboard/dashboard.ts", lineNumber: 25 });
 })();
 
 // src/app/app.ts
@@ -60184,12 +63827,12 @@ var App = class _App {
     if (rf & 1) {
       \u0275\u0275element(0, "app-dashboard");
     }
-  }, dependencies: [Dashboard], styles: ['@charset "UTF-8";\n\n\n\n[_nghost-%COMP%] {\n  display: block;\n  overflow: hidden;\n  width: 100%;\n  height: 100%;\n}\n[_nghost-%COMP%]   .aurora-container[_ngcontent-%COMP%] {\n  position: relative;\n  width: 100%;\n  min-height: 100vh;\n  background-color: #020617;\n}\n[_nghost-%COMP%]   .aurora-container__bg[_ngcontent-%COMP%] {\n  position: absolute;\n  z-index: 0;\n  background: #000000;\n  background-image:\n    radial-gradient(\n      circle at 1px 1px,\n      rgba(139, 92, 246, 0.2) 1px,\n      transparent 0),\n    radial-gradient(\n      circle at 1px 1px,\n      rgba(59, 130, 246, 0.18) 1px,\n      transparent 0),\n    radial-gradient(\n      circle at 1px 1px,\n      rgba(236, 72, 153, 0.15) 1px,\n      transparent 0);\n  background-position:\n    0 0,\n    10px 10px,\n    15px 5px;\n  background-size:\n    20px 20px,\n    30px 30px,\n    25px 25px;\n  inset: 0;\n}\n[_nghost-%COMP%]   .aurora-container__content[_ngcontent-%COMP%] {\n  position: relative;\n  z-index: 1;\n  height: 100%;\n  background: red;\n}\n/*# sourceMappingURL=app.css.map */'], changeDetection: 0 });
+  }, dependencies: [Dashboard], styles: ["\n\n[_nghost-%COMP%] {\n  display: block;\n  overflow: hidden;\n  width: 100%;\n  height: 100%;\n}\n/*# sourceMappingURL=app.css.map */"], changeDetection: 0 });
 };
 (() => {
   (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(App, [{
     type: Component,
-    args: [{ selector: "app-root", imports: [Dashboard], changeDetection: ChangeDetectionStrategy.OnPush, template: "<app-dashboard></app-dashboard>\n", styles: ['@charset "UTF-8";\n\n/* src/app/app.scss */\n:host {\n  display: block;\n  overflow: hidden;\n  width: 100%;\n  height: 100%;\n}\n:host .aurora-container {\n  position: relative;\n  width: 100%;\n  min-height: 100vh;\n  background-color: #020617;\n}\n:host .aurora-container__bg {\n  position: absolute;\n  z-index: 0;\n  background: #000000;\n  background-image:\n    radial-gradient(\n      circle at 1px 1px,\n      rgba(139, 92, 246, 0.2) 1px,\n      transparent 0),\n    radial-gradient(\n      circle at 1px 1px,\n      rgba(59, 130, 246, 0.18) 1px,\n      transparent 0),\n    radial-gradient(\n      circle at 1px 1px,\n      rgba(236, 72, 153, 0.15) 1px,\n      transparent 0);\n  background-position:\n    0 0,\n    10px 10px,\n    15px 5px;\n  background-size:\n    20px 20px,\n    30px 30px,\n    25px 25px;\n  inset: 0;\n}\n:host .aurora-container__content {\n  position: relative;\n  z-index: 1;\n  height: 100%;\n  background: red;\n}\n/*# sourceMappingURL=app.css.map */\n'] }]
+    args: [{ selector: "app-root", imports: [Dashboard], changeDetection: ChangeDetectionStrategy.OnPush, template: "<app-dashboard></app-dashboard>\n", styles: ["/* src/app/app.scss */\n:host {\n  display: block;\n  overflow: hidden;\n  width: 100%;\n  height: 100%;\n}\n/*# sourceMappingURL=app.css.map */\n"] }]
   }], null, null);
 })();
 (() => {
@@ -60218,8 +63861,8 @@ bootstrapApplication(App, appConfig).catch((err) => console.error(err));
 @angular/common/fesm2022/module.mjs:
 @angular/common/fesm2022/http.mjs:
 @angular/platform-browser/fesm2022/platform-browser.mjs:
-@angular/core/fesm2022/rxjs-interop.mjs:
 @angular/forms/fesm2022/forms.mjs:
+@angular/core/fesm2022/rxjs-interop.mjs:
   (**
    * @license Angular v20.2.1
    * (c) 2010-2025 Google LLC. https://angular.io/

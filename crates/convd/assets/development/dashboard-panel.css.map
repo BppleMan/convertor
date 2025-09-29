@@ -1,7 +1,7 @@
 {
   "version": 3,
   "sources": ["src/app/page/dashboard/dashboard-panel/dashboard-panel.scss"],
-  "sourcesContent": [":host {\n    flex: 1 1 auto;\n}\n"],
-  "mappings": ";AAAA;AACI,QAAA,EAAA,EAAA;;",
+  "sourcesContent": [":host {\n    overflow: hidden;\n    flex:     1;\n\n    mat-card {\n        max-height: 100%;\n        gap:        12px;\n    }\n}\n"],
+  "mappings": ";AAAA;AACI,YAAA;AACA,QAAA;;AAEA,MAAA;AACI,cAAA;AACA,OAAA;;",
   "names": []
 }
