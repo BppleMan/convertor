@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="exclude-assets" pattern="!file[convertor]:crates/convd/assets//*" />
+</component>

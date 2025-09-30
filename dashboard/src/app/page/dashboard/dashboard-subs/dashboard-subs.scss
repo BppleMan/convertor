@@ -1,72 +1,63 @@
 @use "@angular/material" as mat;
 
 :host {
-    display:        flex;
-    overflow:       hidden;
-    flex:           1 1 auto;
-    flex-direction: column;
-    width:          100%;
-    gap:            8px;
+    overflow: hidden;
+    flex:     1;
+    width:    100%;
 
-    section {
+    code {
+        text-wrap:  auto;
+        word-break: break-word;
+    }
+
+    .content-urls {
+        display:  flex;
+        overflow: hidden;
+        flex:     1;
+    }
+
+    section.urls {
         display:        flex;
-        overflow-y:     auto;
         flex:           1;
         flex-direction: column;
-        gap:            12px;
+        gap:            8px;
 
-        .convertor-url {
-            display:         flex;
-            align-items:     flex-start;
-            flex-direction:  column;
-            justify-content: center;
-            box-sizing:      border-box;
-            width:           100%;
-            height:          auto;
+        mat-card {
+            // overflow:      hidden;
+            flex:          1;
+            border-radius: 6px;
 
-            padding:         12px;
-            border-radius:   12px;
-            gap:             12px;
-
-            .convertor-url-label {
-                display:        flex;
-                align-items:    center;
-                flex-direction: row;
-                width:          100%;
-
-                h5 {
-                    font-size:   12px;
-                    font-weight: 400;
-                    font-style:  normal;
-                    line-height: normal;
-                    flex:        1 1 auto;
-                }
+            mat-card-header {
+                justify-content: space-between;
+                padding:         8px 12px;
             }
 
-            .convertor-url-link {
-                display:        flex;
-                align-items:    flex-start;
-                align-self:     stretch;
-                flex-direction: column;
-                padding:        8px;
-                border-radius:  6px;
+            mat-card-content {
+                padding:                    8px 12px;
+                border-bottom-right-radius: inherit;
+                border-bottom-left-radius:  inherit;
+                background:                 #0f1114;
+            }
 
-                background:     #0c0e12;
-                gap:            10px;
+            .desc {
+                font-size:   12px;
+                font-weight: 500;
+                line-height: 18px;
+                color:       var(--mat-sys-primary);
+            }
 
-                code {
-                    font-size:     12px;
-                    font-weight:   400;
-                    font-style:    normal;
-                    line-height:   normal;
-                    overflow:      hidden;
+            .url {
+                font-size:   12px;
+                font-weight: 400;
+                line-height: normal;
 
-                    overflow-y:    auto;
-                    flex:          1 1 auto;
-                    width:         100%;
-                    text-overflow: ellipsis;
-                    word-break:    break-word;
-                    overflow-wrap: anywhere;
+                a {
+                    text-decoration: none;
+                    color:           inherit;
+                }
+
+                a:hover {
+                    text-decoration: underline;
                 }
             }
         }

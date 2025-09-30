@@ -1,25 +1,21 @@
-<app-title>订阅链接</app-title>
-
-<mat-divider></mat-divider>
-
-<section>
-    <!--    @if (error$ | async; as errorMessage) {-->
-    <!--        <app-error-view [error]="errorMessage"></app-error-view>-->
-    <!--    } @else if ((urls$ | async)?.length === 0) {-->
-    <!--        <h1>No Content</h1>-->
-    <!--    } @else {-->
-    <!--        @for (url of urls$ | async; track url.desc) {-->
-    <!--            <div class="convertor-url">-->
-    <!--                <div class="convertor-url-label">-->
-    <!--                    <h5>{{ url.desc }}</h5>-->
-    <!--                    <app-icon-button cdkCopyToClipboard="{{ url.url }}">content_copy</app-icon-button>-->
-    <!--                </div>-->
-    <!--                <div class="convertor-url-link">-->
-    <!--                    <code>-->
-    <!--                        {{ url.url }}-->
-    <!--                    </code>-->
-    <!--                </div>-->
-    <!--            </div>-->
-    <!--        }-->
-    <!--    }-->
-</section>
+<app-dashboard-panel>
+    <mat-card-header>
+        <mat-card-title>订阅链接</mat-card-title>
+    </mat-card-header>
+    <mat-card-content class="content-urls">
+        <section class="scrollable urls">
+            @for (url of (urls$ | async); track url.url) {
+                <mat-card class="url" appearance="outlined">
+                    <mat-card-header>
+                        <mat-card-title class="desc">{{ url.desc }}</mat-card-title>
+                        <app-icon-button [cdkCopyToClipboard]="url.url?.toString() ?? ''">content_copy</app-icon-button>
+                    </mat-card-header>
+                    <mat-divider></mat-divider>
+                    <mat-card-content>
+                        <code class="url"><a target="_blank" rel="noopener noreferrer" href="{{url.url}}">{{ url.url }}</a></code>
+                    </mat-card-content>
+                </mat-card>
+            }
+        </section>
+    </mat-card-content>
+</app-dashboard-panel>

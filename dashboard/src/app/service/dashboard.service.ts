@@ -19,7 +19,7 @@ export class DashboardService {
     error: BehaviorSubject<DashboardHttpError | null> = new BehaviorSubject<DashboardHttpError | null>(null);
     error$ = this.error.asObservable();
 
-    urlResult = new BehaviorSubject<UrlResult | undefined>(undefined);
+    urlResult = new BehaviorSubject<UrlResult | null>(null);
     urlResult$ = this.urlResult.asObservable();
 
     public constructor(

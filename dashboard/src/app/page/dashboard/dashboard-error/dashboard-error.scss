@@ -1,11 +1,10 @@
 @use "@angular/material" as mat;
 
 :host {
-    display:        flex;
-    overflow:       hidden;
-    flex-direction: column;
-    width:          100%;
-    gap:            12px;
+    overflow: hidden;
+    // display:        flex;
+    // flex-direction: column;
+    // width:          100%;
 
     mat-panel-title {
         flex-basis:  unset;
@@ -89,6 +88,7 @@
             font-weight: inherit;
             font-style:  inherit;
             line-height: inherit;
+            text-align:  right;
         }
 
         .value {

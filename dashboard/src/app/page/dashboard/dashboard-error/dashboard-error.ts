@@ -11,7 +11,7 @@ import {
     MatExpansionPanelHeader,
     MatExpansionPanelTitle,
 } from "@angular/material/expansion";
-import { combineLatest, filter, map, Observable, tap, withLatestFrom } from "rxjs";
+import { combineLatest, filter, map, Observable, startWith, tap, withLatestFrom } from "rxjs";
 import { RequestSnapshot } from "../../../common/response/request";
 import { ApiResponse } from "../../../common/response/response";
 import { DashboardService } from "../../../service/dashboard.service";
@@ -81,8 +81,8 @@ export class DashboardError {
         map((response) => response.request),
     );
     requests$: Observable<Record<string, RequestSnapshot | null>> = combineLatest([
-        this.clientRequest$,
-        this.serverRequest$,
+        this.clientRequest$.pipe(startWith(null)),
+        this.serverRequest$.pipe(startWith(null)),
     ]).pipe(
         map(([ client, server ]) => {
             return {
@@ -106,8 +106,6 @@ export class DashboardError {
     );
 
     // ui
-
-    // clientRequestCollapsed = new BehaviorSubject<boolean>(true);
     clientRequestCollapsed = model(false);
 
     constructor() {

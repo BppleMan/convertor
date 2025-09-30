@@ -25,7 +25,7 @@ pub fn router(app_state: AppState) -> Router {
         .route("/actuator/healthy", get(actuator::healthy))
         .route("/actuator/ready", get(actuator::redis))
         .route("/actuator/redis", get(actuator::redis))
-        .route("/raw/{client}", get(profile::raw_profile))
+        .route("/raw-profile/{client}", get(profile::raw_profile))
         .route("/profile/{client}", get(profile::profile))
         .route("/rule-provider/{client}", get(profile::rule_provider))
         .route("/api/subscription/{client}", get(api::subscription::subscription))
