@@ -83,7 +83,7 @@ thiserror = { version = "2.0.16", default-features = false }
 mime = { version = "0.3.17", default-features = false }
 mime_guess = { version = "2.0.5", default-features = true }
 
-[profile.alpine]
+[profile.musl]
 inherits = "release" # 继承 release 配置
 opt-level = 3        # 极限体积优化（如需极致性能可改成3）
 lto = "fat"          # 最激进的链接时优化
