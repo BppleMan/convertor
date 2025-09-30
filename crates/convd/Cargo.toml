@@ -20,7 +20,7 @@ tracing = { workspace = true, features = ["attributes"] }
 # URL / 编码 / 工具
 url = { workspace = true, features = ["serde"] }
 mime = { workspace = true }
-uuid = { version = "1.18.0", features = ["v4", "serde"] }
+uuid = { workspace = true, features = ["v4", "serde"] }
 
 # HTTP 服务 / 中间件
 axum = { workspace = true, features = ["query", "json", "tokio", "http2", "macros"] }
@@ -34,15 +34,15 @@ tokio-util = { workspace = true, features = [] }
 
 # 缓存 / 存储 / 数据库
 moka = { workspace = true, features = ["future"] }
-redis = { workspace = true, default-features = true, features = ["tokio-rustls-comp", "streams", "connection-manager"] }
+redis = { workspace = true, features = ["tokio-rustls-comp", "streams", "connection-manager"] }
 
 # CLI / 工具 / 键入
-clap = { workspace = true, default-features = true, features = ["cargo", "derive"] }
+clap = { workspace = true, features = ["cargo", "derive", "default"] }
 
 # 其他 / 辅助
-mime_guess = { workspace = true, default-features = true }
+mime_guess = { workspace = true }
 thiserror = { workspace = true }
-include_dir = { workspace = true, default-features = true }
+include_dir = { workspace = true }
 color-eyre = { workspace = true }
 
 [dev-dependencies]

@@ -15,7 +15,7 @@ serde_json = { workspace = true }
 serde_yaml = { workspace = true }
 
 # HTTP 客户端 / 网络
-reqwest = { workspace = true, default-features = true, features = ["http2", "json", "stream", "rustls-tls"] }
+reqwest = { workspace = true, features = ["http2", "json", "stream", "rustls-tls"] }
 headers = { workspace = true }
 httpmock = { workspace = true, features = ["colored"], optional = true }
 
