@@ -72,7 +72,7 @@ pub async fn rule_provider(
     ConvertorQueryExtractor(query): ConvertorQueryExtractor,
     State(state): State<Arc<AppState>>,
     header_map: HeaderMap,
-) -> color_eyre::Result<String, ApiError> {
+) -> Result<String, ApiError> {
     let (query, policy) = query.check_for_rule_provider().map_err(ApiError::bad_request)?;
     let url_builder =
         UrlBuilder::from_convertor_query(query, &state.config.secret, client).map_err(ApiError::bad_request)?;

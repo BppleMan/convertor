@@ -20,8 +20,7 @@ tracing = { workspace = true, features = ["attributes"] }
 # URL / 编码 / 工具
 url = { workspace = true, features = ["serde"] }
 mime = { workspace = true }
-regex = { workspace = true }
-uuid = { version = "1.10.0", features = ["v4", "serde"] }
+uuid = { version = "1.18.0", features = ["v4", "serde"] }
 
 # HTTP 服务 / 中间件
 axum = { workspace = true, features = ["query", "json", "tokio", "http2", "macros"] }
@@ -31,7 +30,6 @@ tower-http = { workspace = true, features = ["trace", "fs", "request-id"] }
 
 # 并发 / 异步 运行时
 tokio = { workspace = true, features = ["fs", "rt-multi-thread", "signal", "macros"] }
-tokio-stream = { workspace = true, features = ["fs"] }
 tokio-util = { workspace = true, features = [] }
 
 # 缓存 / 存储 / 数据库
@@ -40,22 +38,12 @@ redis = { workspace = true, default-features = true, features = ["tokio-rustls-c
 
 # CLI / 工具 / 键入
 clap = { workspace = true, default-features = true, features = ["cargo", "derive"] }
-console = { workspace = true, features = ["ansi-parsing", "alloc"] }
-
-# 编码 / 加密
-base64 = { workspace = true }
-chacha20poly1305 = { workspace = true, features = ["getrandom", "alloc"] }
-rand_core = { workspace = true, features = ["os_rng"] }
-rand_chacha = { workspace = true }
 
 # 其他 / 辅助
 mime_guess = { workspace = true, default-features = true }
-strum = { workspace = true }
 thiserror = { workspace = true }
 include_dir = { workspace = true, default-features = true }
 color-eyre = { workspace = true }
-anyhow = { workspace = true }
-jsonpath_lib = { workspace = true }
 
 [dev-dependencies]
 # 测试 / 开发工具

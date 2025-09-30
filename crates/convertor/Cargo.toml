@@ -27,12 +27,10 @@ uuid = "1.18.1"
 
 # 异步运行时 / 并发
 futures-util = { workspace = true }
-#async-trait = { workspace = true }
 
 # 日志 / 追踪 / 遥测（可选 feature）
 tracing = { workspace = true, features = ["attributes"] }
 tracing-subscriber = { workspace = true, features = ["default", "env-filter", "json", "local-time"] }
-#tracing-appender = { workspace = true }
 tracing-loki = { workspace = true, default-features = false, features = ["rustls", "compat-0-2-1"] }
 tracing-opentelemetry = { workspace = true }
 

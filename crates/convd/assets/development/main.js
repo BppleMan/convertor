@@ -34296,8 +34296,8 @@ var Policy = class _Policy {
     this.is_subscription = is_subscription;
     this.option = option;
   }
-  static deserialize(policy2) {
-    return new _Policy(policy2.name, policy2.is_subscription, policy2.option);
+  static deserialize(policy3) {
+    return new _Policy(policy3.name, policy3.is_subscription, policy3.option);
   }
   clone() {
     return new _Policy(this.name, this.is_subscription, this.option);
@@ -34365,9 +34365,9 @@ var ConvertorUrl = class _ConvertorUrl {
 var UrlType = class _UrlType {
   name;
   policy;
-  constructor(name, policy2) {
+  constructor(name, policy3) {
     this.name = name;
-    this.policy = policy2;
+    this.policy = policy3;
   }
   clone() {
     return new _UrlType(this.name, this.policy?.clone());
@@ -34388,8 +34388,8 @@ var UrlType = class _UrlType {
       return new _UrlType(type);
     } else {
       const name = Object.keys(type)[0];
-      const policy2 = !!type[name] ? Policy.deserialize(type[name]) : void 0;
-      return new _UrlType(name, policy2);
+      const policy3 = !!type[name] ? Policy.deserialize(type[name]) : void 0;
+      return new _UrlType(name, policy3);
     }
   }
 };
@@ -34734,7 +34734,7 @@ var DashboardService = class _DashboardService {
   loading$ = this.loading.asObservable();
   error = new BehaviorSubject(null);
   error$ = this.error.asObservable();
-  urlResult = new BehaviorSubject(void 0);
+  urlResult = new BehaviorSubject(null);
   urlResult$ = this.urlResult.asObservable();
   constructor(http, latencyService) {
     this.http = http;
@@ -34797,18 +34797,24 @@ var NoContent = class _NoContent {
   static \u0275fac = function NoContent_Factory(__ngFactoryType__) {
     return new (__ngFactoryType__ || _NoContent)();
   };
-  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _NoContent, selectors: [["app-no-content"]], decls: 2, vars: 0, template: function NoContent_Template(rf, ctx) {
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _NoContent, selectors: [["app-no-content"]], decls: 13, vars: 0, consts: [[1, "no-content"], ["p-id", "7970", "viewBox", "0 0 1424 1024", "xmlns", "http://www.w3.org/2000/svg", 1, "icon", 2, "width", "100px", "height", "100px", "vertical-align", "middle", "fill", "currentColor", "overflow", "hidden"], ["d", "M0 814.577706c0 113.893406 318.496405 206.22798 711.408066 206.227981 392.889401 0 711.385806-92.323444 711.385806-206.216851 0-113.871146-318.518665-206.20572-711.385806-206.20572C318.518665 608.360856 0 700.70656 0 814.577706z", "fill", "#FBFAFF", "p-id", "7971"], ["d", "M244.103409 761.721282c0 74.815936 209.210824 135.452238 467.293527 135.452239 258.093833 0 467.304657-60.636302 467.304657-135.452239 0-74.793676-209.210824-135.452238-467.293527-135.452238-258.104963 0-467.304657 60.636302-467.304657 135.452238z", "fill", "#F4F2FF", "p-id", "7972"], ["d", "M326.821654 237.186107l343.33859-72.155864v612.417745L350.539708 688.764058z", "fill", "#D6D0F5", "p-id", "7973"], ["d", "M670.171374 291.834463V165.019113l407.247116 42.282914-338.174266 96.909008z", "fill", "#C8C1EB", "p-id", "7974"], ["d", "M723.784639 299.06897l-2.059052 521.697023-402.105051-104.143517v-324.773731l404.175233-92.779775zM452.613042 473.309298c-8.236208-1.023961-16.494677 4.118104-17.540898 12.365443-1.035091 8.236208 4.118104 16.494677 12.365443 17.529768l131.968544 23.695794c8.236208 1.035091 16.505807-4.118104 17.529768-12.354313 1.023961-8.258468-4.118104-16.505807-12.354312-17.518638l-131.968545-23.718054z", "fill", "#E0DCF5", "p-id", "7975"], ["d", "M721.714457 820.743733l363.951371-125.780259V376.389159l-363.951371-77.309059V820.765993z", "fill", "#E9E6FA", "p-id", "7976"], ["d", "M323.72751 237.186107l-109.274451 154.662638 397.964686 79.390371 109.274451-172.181276z", "fill", "#F5F3FF", "p-id", "7977"], ["d", "M835.118142 459.886504l347.456695-114.438776-105.122957-139.191923-354.680072 92.779775 112.346334 160.839794v0.01113z m10.306391 95.907308l134.049857-36.094627v92.779775l-134.049857 43.295744v-99.980892z", "fill", "#F4F1FF", "p-id", "7978"], ["d", "M864.000522 584.653932v-6.199417l49.48403-15.448455v6.188286l-49.48403 15.470716z m0 20.623911v-6.199417l41.236692-12.354312v6.177156l-41.236692 12.376573z m0 20.612781v-6.188287l69.07285-21.659002v6.188287l-69.07285 21.659002z", "fill", "#DFD9FF", "p-id", "7979"]], template: function NoContent_Template(rf, ctx) {
     if (rf & 1) {
-      \u0275\u0275domElementStart(0, "p");
-      \u0275\u0275text(1, "no-content works!");
+      \u0275\u0275domElementStart(0, "div", 0);
+      \u0275\u0275namespaceSVG();
+      \u0275\u0275domElementStart(1, "svg", 1);
+      \u0275\u0275domElement(2, "path", 2)(3, "path", 3)(4, "path", 4)(5, "path", 5)(6, "path", 6)(7, "path", 7)(8, "path", 8)(9, "path", 9)(10, "path", 10);
       \u0275\u0275domElementEnd();
+      \u0275\u0275namespaceHTML();
+      \u0275\u0275domElementStart(11, "h3");
+      \u0275\u0275text(12, "No Content");
+      \u0275\u0275domElementEnd()();
     }
-  }, encapsulation: 2 });
+  }, styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 100%;\n  height: 100%;\n}\n[_nghost-%COMP%]   div.no-content[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  justify-content: center;\n}\n[_nghost-%COMP%]   div.no-content[_ngcontent-%COMP%]   h3[_ngcontent-%COMP%] {\n  text-align: center;\n}\n/*# sourceMappingURL=no-content.css.map */"] });
 };
 (() => {
   (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(NoContent, [{
     type: Component,
-    args: [{ selector: "app-no-content", imports: [], template: "<p>no-content works!</p>\n" }]
+    args: [{ selector: "app-no-content", imports: [], template: '<div class="no-content">\n    <svg class="icon" p-id="7970" style="width: 100px;height: 100px;vertical-align: middle;fill: currentColor;overflow: hidden;" viewBox="0 0 1424 1024" xmlns="http://www.w3.org/2000/svg">\n        <path d="M0 814.577706c0 113.893406 318.496405 206.22798 711.408066 206.227981 392.889401 0 711.385806-92.323444 711.385806-206.216851 0-113.871146-318.518665-206.20572-711.385806-206.20572C318.518665 608.360856 0 700.70656 0 814.577706z" fill="#FBFAFF" p-id="7971"></path>\n        <path d="M244.103409 761.721282c0 74.815936 209.210824 135.452238 467.293527 135.452239 258.093833 0 467.304657-60.636302 467.304657-135.452239 0-74.793676-209.210824-135.452238-467.293527-135.452238-258.104963 0-467.304657 60.636302-467.304657 135.452238z" fill="#F4F2FF" p-id="7972"></path>\n        <path d="M326.821654 237.186107l343.33859-72.155864v612.417745L350.539708 688.764058z" fill="#D6D0F5" p-id="7973"></path>\n        <path d="M670.171374 291.834463V165.019113l407.247116 42.282914-338.174266 96.909008z" fill="#C8C1EB" p-id="7974"></path>\n        <path d="M723.784639 299.06897l-2.059052 521.697023-402.105051-104.143517v-324.773731l404.175233-92.779775zM452.613042 473.309298c-8.236208-1.023961-16.494677 4.118104-17.540898 12.365443-1.035091 8.236208 4.118104 16.494677 12.365443 17.529768l131.968544 23.695794c8.236208 1.035091 16.505807-4.118104 17.529768-12.354313 1.023961-8.258468-4.118104-16.505807-12.354312-17.518638l-131.968545-23.718054z" fill="#E0DCF5" p-id="7975"></path>\n        <path d="M721.714457 820.743733l363.951371-125.780259V376.389159l-363.951371-77.309059V820.765993z" fill="#E9E6FA" p-id="7976"></path>\n        <path d="M323.72751 237.186107l-109.274451 154.662638 397.964686 79.390371 109.274451-172.181276z" fill="#F5F3FF" p-id="7977"></path>\n        <path d="M835.118142 459.886504l347.456695-114.438776-105.122957-139.191923-354.680072 92.779775 112.346334 160.839794v0.01113z m10.306391 95.907308l134.049857-36.094627v92.779775l-134.049857 43.295744v-99.980892z" fill="#F4F1FF" p-id="7978"></path>\n        <path d="M864.000522 584.653932v-6.199417l49.48403-15.448455v6.188286l-49.48403 15.470716z m0 20.623911v-6.199417l41.236692-12.354312v6.177156l-41.236692 12.376573z m0 20.612781v-6.188287l69.07285-21.659002v6.188287l-69.07285 21.659002z" fill="#DFD9FF" p-id="7979"></path>\n        <!--    <path d="M608.299641 15.531931a15.470716 15.470716 0 1 0 30.941431-0.03339 15.470716 15.470716 0 0 0-30.941431 0.03339z m72.178123 0a15.470716 15.470716 0 1 0 30.941432-0.03339 15.470716 15.470716 0 0 0-30.941432 0.03339z m72.166994 0a15.470716 15.470716 0 1 0 30.963692-0.03339 15.470716 15.470716 0 0 0-30.963692 0.03339z" fill="#C8C1EB" p-id="7980"></path>-->\n    </svg>\n    <h3>No Content</h3>\n</div>\n', styles: ["/* src/app/page/shared/no-content/no-content.scss */\n:host {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 100%;\n  height: 100%;\n}\n:host div.no-content {\n  display: flex;\n  flex-direction: column;\n  justify-content: center;\n}\n:host div.no-content h3 {\n  text-align: center;\n}\n/*# sourceMappingURL=no-content.css.map */\n"] }]
   }], null, null);
 })();
 (() => {
@@ -52668,8 +52674,8 @@ var DashboardError = class _DashboardError {
   }));
   serverRequest$ = this.apiResponse$.pipe(map((response) => response.request));
   requests$ = combineLatest([
-    this.clientRequest$,
-    this.serverRequest$
+    this.clientRequest$.pipe(startWith(null)),
+    this.serverRequest$.pipe(startWith(null))
   ]).pipe(map(([client, server]) => {
     return {
       "\u5BA2\u6237\u7AEF\u53D1\u51FA\u8BF7\u6C42": client,
@@ -52681,7 +52687,6 @@ var DashboardError = class _DashboardError {
   mainMessage$ = this.apiResponse$.pipe(map((response) => response.messages[0] ?? ""), tap(console.log));
   causeMessages$ = this.apiResponse$.pipe(map((response) => response.messages.slice(1)));
   // ui
-  // clientRequestCollapsed = new BehaviorSubject<boolean>(true);
   clientRequestCollapsed = model(false, ...ngDevMode ? [{ debugName: "clientRequestCollapsed" }] : []);
   constructor() {
     effect(() => {
@@ -52774,7 +52779,7 @@ var DashboardError = class _DashboardError {
     MatChip,
     MatCardTitle,
     AsyncPipe
-  ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  overflow: hidden;\n  flex-direction: column;\n  width: 100%;\n  gap: 12px;\n}\n[_nghost-%COMP%]   mat-panel-title[_ngcontent-%COMP%] {\n  flex-basis: unset;\n  flex-grow: unset;\n  flex-shrink: unset;\n}\n[_nghost-%COMP%]   mat-expansion-panel[_ngcontent-%COMP%] {\n  border: 1px solid var(--mat-sys-outline);\n}\n[_nghost-%COMP%]   mat-panel-description[_ngcontent-%COMP%] {\n  overflow: hidden;\n  flex: 1;\n}\n[_nghost-%COMP%]   mat-chip.error-chip[_ngcontent-%COMP%] {\n  --mat-chip-label-text-size: 10px;\n  --mat-chip-label-text-weight: 500;\n  --mat-chip-label-text-line-height: normal;\n  --mat-chip-label-text-color: var(--mat-sys-on-error);\n  --mat-chip-container-height: 18px;\n  --mat-chip-container-shape-radius: 4px;\n  background-color: var(--mat-sys-error);\n}\n[_nghost-%COMP%]     .mat-mdc-standard-chip .mdc-evolution-chip__action--primary {\n  padding-right: 8px;\n  padding-left: 8px;\n}\n[_nghost-%COMP%]   code[_ngcontent-%COMP%] {\n  font-size: 12px;\n  font-weight: 400;\n  line-height: normal;\n  overflow: hidden;\n  text-wrap: auto;\n  word-break: break-word;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: start;\n  flex-direction: row;\n  margin: 12px auto;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%]   mat-panel-title[_ngcontent-%COMP%] {\n  font-size: 12px;\n  font-weight: 400;\n  line-height: normal;\n  letter-spacing: normal;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%]   mat-panel-description[_ngcontent-%COMP%] {\n  font-size: 12px;\n  font-weight: 400;\n  line-height: normal;\n}\n[_nghost-%COMP%]   section.headers[_ngcontent-%COMP%] {\n  font-size: 12px;\n  font-weight: 500;\n  font-style: normal;\n  line-height: 18px;\n  display: grid;\n  grid-template-columns: max-content 1fr;\n  column-gap: 12px;\n  row-gap: 8px;\n}\n[_nghost-%COMP%]   section.headers[_ngcontent-%COMP%]   .name[_ngcontent-%COMP%] {\n  font-size: inherit;\n  font-weight: inherit;\n  font-style: inherit;\n  line-height: inherit;\n}\n[_nghost-%COMP%]   section.headers[_ngcontent-%COMP%]   .value[_ngcontent-%COMP%] {\n  font-size: inherit;\n  font-weight: inherit;\n  font-style: inherit;\n  line-height: inherit;\n  color: #727272;\n}\n[_nghost-%COMP%]   mat-panel-description.error-status[_ngcontent-%COMP%] {\n  justify-content: end;\n  gap: 8px;\n}\n[_nghost-%COMP%]   section.error-detail[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: row;\n}\n[_nghost-%COMP%]   section.error-detail[_ngcontent-%COMP%]   pre[_ngcontent-%COMP%] {\n  margin: 0;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%] {\n  flex-direction: column;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   pre[_ngcontent-%COMP%] {\n  margin: 0;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .left[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 56px;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .right[_ngcontent-%COMP%] {\n  flex: 1;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .v-dash[_ngcontent-%COMP%] {\n  background-image:\n    linear-gradient(\n      to bottom,\n      var(--mat-sys-error) 50%,\n      transparent 50%);\n  background-size: 1px 5px;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .h-dash[_ngcontent-%COMP%] {\n  background-image:\n    linear-gradient(\n      to right,\n      var(--mat-sys-error) 50%,\n      transparent 50%);\n  background-size: 5px 1px;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .main-message[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: row;\n  gap: 8px;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .main-message[_ngcontent-%COMP%]   .left[_ngcontent-%COMP%] {\n  flex-direction: column;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .main-message[_ngcontent-%COMP%]   .left[_ngcontent-%COMP%]   .v-dash[_ngcontent-%COMP%] {\n  flex: 1;\n  width: 1px;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .cause-message[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: row;\n  gap: 8px;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .cause-message[_ngcontent-%COMP%]   .left[_ngcontent-%COMP%] {\n  flex-direction: row;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .cause-message[_ngcontent-%COMP%]   .left[_ngcontent-%COMP%]   .v-dash[_ngcontent-%COMP%] {\n  width: 1px;\n  height: 100%;\n  margin-left: 50%;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .cause-message[_ngcontent-%COMP%]   .left[_ngcontent-%COMP%]   .h-dash[_ngcontent-%COMP%] {\n  flex: 1;\n  height: 1px;\n}\n/*# sourceMappingURL=dashboard-error.css.map */"], changeDetection: 0 });
+  ], styles: ["\n\n[_nghost-%COMP%] {\n  overflow: hidden;\n}\n[_nghost-%COMP%]   mat-panel-title[_ngcontent-%COMP%] {\n  flex-basis: unset;\n  flex-grow: unset;\n  flex-shrink: unset;\n}\n[_nghost-%COMP%]   mat-expansion-panel[_ngcontent-%COMP%] {\n  border: 1px solid var(--mat-sys-outline);\n}\n[_nghost-%COMP%]   mat-panel-description[_ngcontent-%COMP%] {\n  overflow: hidden;\n  flex: 1;\n}\n[_nghost-%COMP%]   mat-chip.error-chip[_ngcontent-%COMP%] {\n  --mat-chip-label-text-size: 10px;\n  --mat-chip-label-text-weight: 500;\n  --mat-chip-label-text-line-height: normal;\n  --mat-chip-label-text-color: var(--mat-sys-on-error);\n  --mat-chip-container-height: 18px;\n  --mat-chip-container-shape-radius: 4px;\n  background-color: var(--mat-sys-error);\n}\n[_nghost-%COMP%]     .mat-mdc-standard-chip .mdc-evolution-chip__action--primary {\n  padding-right: 8px;\n  padding-left: 8px;\n}\n[_nghost-%COMP%]   code[_ngcontent-%COMP%] {\n  font-size: 12px;\n  font-weight: 400;\n  line-height: normal;\n  overflow: hidden;\n  text-wrap: auto;\n  word-break: break-word;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: start;\n  flex-direction: row;\n  margin: 12px auto;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%]   mat-panel-title[_ngcontent-%COMP%] {\n  font-size: 12px;\n  font-weight: 400;\n  line-height: normal;\n  letter-spacing: normal;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%]   mat-panel-description[_ngcontent-%COMP%] {\n  font-size: 12px;\n  font-weight: 400;\n  line-height: normal;\n}\n[_nghost-%COMP%]   section.headers[_ngcontent-%COMP%] {\n  font-size: 12px;\n  font-weight: 500;\n  font-style: normal;\n  line-height: 18px;\n  display: grid;\n  grid-template-columns: max-content 1fr;\n  column-gap: 12px;\n  row-gap: 8px;\n}\n[_nghost-%COMP%]   section.headers[_ngcontent-%COMP%]   .name[_ngcontent-%COMP%] {\n  font-size: inherit;\n  font-weight: inherit;\n  font-style: inherit;\n  line-height: inherit;\n  text-align: right;\n}\n[_nghost-%COMP%]   section.headers[_ngcontent-%COMP%]   .value[_ngcontent-%COMP%] {\n  font-size: inherit;\n  font-weight: inherit;\n  font-style: inherit;\n  line-height: inherit;\n  color: #727272;\n}\n[_nghost-%COMP%]   mat-panel-description.error-status[_ngcontent-%COMP%] {\n  justify-content: end;\n  gap: 8px;\n}\n[_nghost-%COMP%]   section.error-detail[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: row;\n}\n[_nghost-%COMP%]   section.error-detail[_ngcontent-%COMP%]   pre[_ngcontent-%COMP%] {\n  margin: 0;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%] {\n  flex-direction: column;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   pre[_ngcontent-%COMP%] {\n  margin: 0;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .left[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 56px;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .right[_ngcontent-%COMP%] {\n  flex: 1;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .v-dash[_ngcontent-%COMP%] {\n  background-image:\n    linear-gradient(\n      to bottom,\n      var(--mat-sys-error) 50%,\n      transparent 50%);\n  background-size: 1px 5px;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .h-dash[_ngcontent-%COMP%] {\n  background-image:\n    linear-gradient(\n      to right,\n      var(--mat-sys-error) 50%,\n      transparent 50%);\n  background-size: 5px 1px;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .main-message[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: row;\n  gap: 8px;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .main-message[_ngcontent-%COMP%]   .left[_ngcontent-%COMP%] {\n  flex-direction: column;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .main-message[_ngcontent-%COMP%]   .left[_ngcontent-%COMP%]   .v-dash[_ngcontent-%COMP%] {\n  flex: 1;\n  width: 1px;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .cause-message[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: row;\n  gap: 8px;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .cause-message[_ngcontent-%COMP%]   .left[_ngcontent-%COMP%] {\n  flex-direction: row;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .cause-message[_ngcontent-%COMP%]   .left[_ngcontent-%COMP%]   .v-dash[_ngcontent-%COMP%] {\n  width: 1px;\n  height: 100%;\n  margin-left: 50%;\n}\n[_nghost-%COMP%]   section.error-chain[_ngcontent-%COMP%]   .cause-message[_ngcontent-%COMP%]   .left[_ngcontent-%COMP%]   .h-dash[_ngcontent-%COMP%] {\n  flex: 1;\n  height: 1px;\n}\n/*# sourceMappingURL=dashboard-error.css.map */"], changeDetection: 0 });
 };
 (() => {
   (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(DashboardError, [{
@@ -52792,7 +52797,7 @@ var DashboardError = class _DashboardError {
       MatDivider,
       MatChip,
       MatCardTitle
-    ], changeDetection: ChangeDetectionStrategy.OnPush, template: '<app-dashboard-panel>\n    <mat-card-header>\n        <mat-card-title>HTTP \u9519\u8BEF\u8BE6\u60C5</mat-card-title>\n    </mat-card-header>\n    <mat-card-content class="scrollable">\n        <mat-accordion multi>\n            @let requests = (requests$ | async) ?? {};\n            @for (key of Object.keys(requests); track key) {\n                <mat-expansion-panel expanded="true">\n                    @let url = requests[key]?.url() ?? "no content";\n                    <mat-expansion-panel-header>\n                        <mat-panel-title>{{ key }}</mat-panel-title>\n                        <mat-panel-description class="error-status">\n                            <mat-chip class="error-chip">{{ requests[key]?.method }}</mat-chip>\n                        </mat-panel-description>\n                    </mat-expansion-panel-header>\n                    <mat-divider></mat-divider>\n                    <section class="url">\n                        <mat-panel-title>\u5B8C\u6574\u7684\u8BF7\u6C42\u94FE\u63A5</mat-panel-title>\n                        <mat-panel-description>\n                            <code class="full-url">{{ url }}</code>\n                        </mat-panel-description>\n                    </section>\n                    <mat-divider></mat-divider>\n                    <section class="headers">\n                        @for (header of requests[key]?.headers?.entries() ?? []; track header[0]) {\n                            <h6 class="name">{{ header[0] }}</h6>\n                            <code class="value right">{{ header[1] }}</code>\n                        }\n                    </section>\n                </mat-expansion-panel>\n            }\n\n            <mat-expansion-panel expanded="true">\n                <mat-expansion-panel-header>\n                    <mat-panel-title>\u670D\u52A1\u7AEF\u8FD4\u56DE\u54CD\u5E94</mat-panel-title>\n                    <mat-panel-description class="error-status">\n                        <mat-chip class="error-chip">{{ (httpErrorResponse$ | async)?.statusText }}</mat-chip>\n                        <mat-chip class="error-chip">{{ (httpErrorResponse$ | async)?.status }}</mat-chip>\n                    </mat-panel-description>\n                </mat-expansion-panel-header>\n                <mat-divider></mat-divider>\n                <section class="error-detail">\n                    <mat-panel-title>\u9519\u8BEF\u8BE6\u60C5</mat-panel-title>\n                    <mat-panel-description>\n                        <pre><code>{{ errorMessage$ | async }}</code></pre>\n                    </mat-panel-description>\n                </section>\n                <mat-divider></mat-divider>\n                <section class="error-chain">\n                    <div class="main-message">\n                        <div class="left">\n                            <h5>\u9519\u8BEF\u94FE</h5>\n                            <div class="v-dash"></div>\n                        </div>\n                        <pre class="right"><code>{{ mainMessage$ | async }}</code></pre>\n                    </div>\n                    <div class="h-dash" style="height: 1px; margin-left: 28px"></div>\n                    @for (causeMessage of (causeMessages$ | async); track causeMessage) {\n                        <div class="cause-message">\n                            <div class="left">\n                                <div class="v-dash"></div>\n                                <div class="h-dash"></div>\n                            </div>\n                            <pre class="right"><code>{{ causeMessage }}</code></pre>\n                        </div>\n                    }\n                </section>\n            </mat-expansion-panel>\n        </mat-accordion>\n    </mat-card-content>\n</app-dashboard-panel>\n', styles: ["/* src/app/page/dashboard/dashboard-error/dashboard-error.scss */\n:host {\n  display: flex;\n  overflow: hidden;\n  flex-direction: column;\n  width: 100%;\n  gap: 12px;\n}\n:host mat-panel-title {\n  flex-basis: unset;\n  flex-grow: unset;\n  flex-shrink: unset;\n}\n:host mat-expansion-panel {\n  border: 1px solid var(--mat-sys-outline);\n}\n:host mat-panel-description {\n  overflow: hidden;\n  flex: 1;\n}\n:host mat-chip.error-chip {\n  --mat-chip-label-text-size: 10px;\n  --mat-chip-label-text-weight: 500;\n  --mat-chip-label-text-line-height: normal;\n  --mat-chip-label-text-color: var(--mat-sys-on-error);\n  --mat-chip-container-height: 18px;\n  --mat-chip-container-shape-radius: 4px;\n  background-color: var(--mat-sys-error);\n}\n:host ::ng-deep .mat-mdc-standard-chip .mdc-evolution-chip__action--primary {\n  padding-right: 8px;\n  padding-left: 8px;\n}\n:host code {\n  font-size: 12px;\n  font-weight: 400;\n  line-height: normal;\n  overflow: hidden;\n  text-wrap: auto;\n  word-break: break-word;\n}\n:host section {\n  display: flex;\n  align-items: start;\n  flex-direction: row;\n  margin: 12px auto;\n}\n:host section mat-panel-title {\n  font-size: 12px;\n  font-weight: 400;\n  line-height: normal;\n  letter-spacing: normal;\n}\n:host section mat-panel-description {\n  font-size: 12px;\n  font-weight: 400;\n  line-height: normal;\n}\n:host section.headers {\n  font-size: 12px;\n  font-weight: 500;\n  font-style: normal;\n  line-height: 18px;\n  display: grid;\n  grid-template-columns: max-content 1fr;\n  column-gap: 12px;\n  row-gap: 8px;\n}\n:host section.headers .name {\n  font-size: inherit;\n  font-weight: inherit;\n  font-style: inherit;\n  line-height: inherit;\n}\n:host section.headers .value {\n  font-size: inherit;\n  font-weight: inherit;\n  font-style: inherit;\n  line-height: inherit;\n  color: #727272;\n}\n:host mat-panel-description.error-status {\n  justify-content: end;\n  gap: 8px;\n}\n:host section.error-detail {\n  display: flex;\n  flex-direction: row;\n}\n:host section.error-detail pre {\n  margin: 0;\n}\n:host section.error-chain {\n  flex-direction: column;\n}\n:host section.error-chain pre {\n  margin: 0;\n}\n:host section.error-chain .left {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 56px;\n}\n:host section.error-chain .right {\n  flex: 1;\n}\n:host section.error-chain .v-dash {\n  background-image:\n    linear-gradient(\n      to bottom,\n      var(--mat-sys-error) 50%,\n      transparent 50%);\n  background-size: 1px 5px;\n}\n:host section.error-chain .h-dash {\n  background-image:\n    linear-gradient(\n      to right,\n      var(--mat-sys-error) 50%,\n      transparent 50%);\n  background-size: 5px 1px;\n}\n:host section.error-chain .main-message {\n  display: flex;\n  flex-direction: row;\n  gap: 8px;\n}\n:host section.error-chain .main-message .left {\n  flex-direction: column;\n}\n:host section.error-chain .main-message .left .v-dash {\n  flex: 1;\n  width: 1px;\n}\n:host section.error-chain .cause-message {\n  display: flex;\n  flex-direction: row;\n  gap: 8px;\n}\n:host section.error-chain .cause-message .left {\n  flex-direction: row;\n}\n:host section.error-chain .cause-message .left .v-dash {\n  width: 1px;\n  height: 100%;\n  margin-left: 50%;\n}\n:host section.error-chain .cause-message .left .h-dash {\n  flex: 1;\n  height: 1px;\n}\n/*# sourceMappingURL=dashboard-error.css.map */\n"] }]
+    ], changeDetection: ChangeDetectionStrategy.OnPush, template: '<app-dashboard-panel>\n    <mat-card-header>\n        <mat-card-title>HTTP \u9519\u8BEF\u8BE6\u60C5</mat-card-title>\n    </mat-card-header>\n    <mat-card-content class="scrollable">\n        <mat-accordion multi>\n            @let requests = (requests$ | async) ?? {};\n            @for (key of Object.keys(requests); track key) {\n                <mat-expansion-panel expanded="true">\n                    @let url = requests[key]?.url() ?? "no content";\n                    <mat-expansion-panel-header>\n                        <mat-panel-title>{{ key }}</mat-panel-title>\n                        <mat-panel-description class="error-status">\n                            <mat-chip class="error-chip">{{ requests[key]?.method }}</mat-chip>\n                        </mat-panel-description>\n                    </mat-expansion-panel-header>\n                    <mat-divider></mat-divider>\n                    <section class="url">\n                        <mat-panel-title>\u5B8C\u6574\u7684\u8BF7\u6C42\u94FE\u63A5</mat-panel-title>\n                        <mat-panel-description>\n                            <code class="full-url">{{ url }}</code>\n                        </mat-panel-description>\n                    </section>\n                    <mat-divider></mat-divider>\n                    <section class="headers">\n                        @for (header of requests[key]?.headers?.entries() ?? []; track header[0]) {\n                            <h6 class="name">{{ header[0] }}</h6>\n                            <code class="value right">{{ header[1] }}</code>\n                        }\n                    </section>\n                </mat-expansion-panel>\n            }\n\n            <mat-expansion-panel expanded="true">\n                <mat-expansion-panel-header>\n                    <mat-panel-title>\u670D\u52A1\u7AEF\u8FD4\u56DE\u54CD\u5E94</mat-panel-title>\n                    <mat-panel-description class="error-status">\n                        <mat-chip class="error-chip">{{ (httpErrorResponse$ | async)?.statusText }}</mat-chip>\n                        <mat-chip class="error-chip">{{ (httpErrorResponse$ | async)?.status }}</mat-chip>\n                    </mat-panel-description>\n                </mat-expansion-panel-header>\n                <mat-divider></mat-divider>\n                <section class="error-detail">\n                    <mat-panel-title>\u9519\u8BEF\u8BE6\u60C5</mat-panel-title>\n                    <mat-panel-description>\n                        <pre><code>{{ errorMessage$ | async }}</code></pre>\n                    </mat-panel-description>\n                </section>\n                <mat-divider></mat-divider>\n                <section class="error-chain">\n                    <div class="main-message">\n                        <div class="left">\n                            <h5>\u9519\u8BEF\u94FE</h5>\n                            <div class="v-dash"></div>\n                        </div>\n                        <pre class="right"><code>{{ mainMessage$ | async }}</code></pre>\n                    </div>\n                    <div class="h-dash" style="height: 1px; margin-left: 28px"></div>\n                    @for (causeMessage of (causeMessages$ | async); track causeMessage) {\n                        <div class="cause-message">\n                            <div class="left">\n                                <div class="v-dash"></div>\n                                <div class="h-dash"></div>\n                            </div>\n                            <pre class="right"><code>{{ causeMessage }}</code></pre>\n                        </div>\n                    }\n                </section>\n            </mat-expansion-panel>\n        </mat-accordion>\n    </mat-card-content>\n</app-dashboard-panel>\n', styles: ["/* src/app/page/dashboard/dashboard-error/dashboard-error.scss */\n:host {\n  overflow: hidden;\n}\n:host mat-panel-title {\n  flex-basis: unset;\n  flex-grow: unset;\n  flex-shrink: unset;\n}\n:host mat-expansion-panel {\n  border: 1px solid var(--mat-sys-outline);\n}\n:host mat-panel-description {\n  overflow: hidden;\n  flex: 1;\n}\n:host mat-chip.error-chip {\n  --mat-chip-label-text-size: 10px;\n  --mat-chip-label-text-weight: 500;\n  --mat-chip-label-text-line-height: normal;\n  --mat-chip-label-text-color: var(--mat-sys-on-error);\n  --mat-chip-container-height: 18px;\n  --mat-chip-container-shape-radius: 4px;\n  background-color: var(--mat-sys-error);\n}\n:host ::ng-deep .mat-mdc-standard-chip .mdc-evolution-chip__action--primary {\n  padding-right: 8px;\n  padding-left: 8px;\n}\n:host code {\n  font-size: 12px;\n  font-weight: 400;\n  line-height: normal;\n  overflow: hidden;\n  text-wrap: auto;\n  word-break: break-word;\n}\n:host section {\n  display: flex;\n  align-items: start;\n  flex-direction: row;\n  margin: 12px auto;\n}\n:host section mat-panel-title {\n  font-size: 12px;\n  font-weight: 400;\n  line-height: normal;\n  letter-spacing: normal;\n}\n:host section mat-panel-description {\n  font-size: 12px;\n  font-weight: 400;\n  line-height: normal;\n}\n:host section.headers {\n  font-size: 12px;\n  font-weight: 500;\n  font-style: normal;\n  line-height: 18px;\n  display: grid;\n  grid-template-columns: max-content 1fr;\n  column-gap: 12px;\n  row-gap: 8px;\n}\n:host section.headers .name {\n  font-size: inherit;\n  font-weight: inherit;\n  font-style: inherit;\n  line-height: inherit;\n  text-align: right;\n}\n:host section.headers .value {\n  font-size: inherit;\n  font-weight: inherit;\n  font-style: inherit;\n  line-height: inherit;\n  color: #727272;\n}\n:host mat-panel-description.error-status {\n  justify-content: end;\n  gap: 8px;\n}\n:host section.error-detail {\n  display: flex;\n  flex-direction: row;\n}\n:host section.error-detail pre {\n  margin: 0;\n}\n:host section.error-chain {\n  flex-direction: column;\n}\n:host section.error-chain pre {\n  margin: 0;\n}\n:host section.error-chain .left {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 56px;\n}\n:host section.error-chain .right {\n  flex: 1;\n}\n:host section.error-chain .v-dash {\n  background-image:\n    linear-gradient(\n      to bottom,\n      var(--mat-sys-error) 50%,\n      transparent 50%);\n  background-size: 1px 5px;\n}\n:host section.error-chain .h-dash {\n  background-image:\n    linear-gradient(\n      to right,\n      var(--mat-sys-error) 50%,\n      transparent 50%);\n  background-size: 5px 1px;\n}\n:host section.error-chain .main-message {\n  display: flex;\n  flex-direction: row;\n  gap: 8px;\n}\n:host section.error-chain .main-message .left {\n  flex-direction: column;\n}\n:host section.error-chain .main-message .left .v-dash {\n  flex: 1;\n  width: 1px;\n}\n:host section.error-chain .cause-message {\n  display: flex;\n  flex-direction: row;\n  gap: 8px;\n}\n:host section.error-chain .cause-message .left {\n  flex-direction: row;\n}\n:host section.error-chain .cause-message .left .v-dash {\n  width: 1px;\n  height: 100%;\n  margin-left: 50%;\n}\n:host section.error-chain .cause-message .left .h-dash {\n  flex: 1;\n  height: 1px;\n}\n/*# sourceMappingURL=dashboard-error.css.map */\n"] }]
   }], () => [], null);
 })();
 (() => {
@@ -63693,61 +63698,1258 @@ var DashboardParam = class _DashboardParam {
   (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardParam, { className: "DashboardParam", filePath: "src/app/page/dashboard/dashboard-param/dashboard-param.ts", lineNumber: 55 });
 })();
 
-// src/app/page/shared/title/title.ts
-var _c014 = ["*"];
-var Title2 = class _Title {
-  static \u0275fac = function Title_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _Title)();
-  };
-  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _Title, selectors: [["app-title"]], ngContentSelectors: _c014, decls: 2, vars: 0, template: function Title_Template(rf, ctx) {
-    if (rf & 1) {
-      \u0275\u0275projectionDef();
-      \u0275\u0275domElementStart(0, "h2");
-      \u0275\u0275projection(1);
-      \u0275\u0275domElementEnd();
+// node_modules/.pnpm/@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2.1_@angular+compiler@20.2._6eb370e6db609bcf03dd6aace6d21017/node_modules/@angular/cdk/fesm2022/clipboard.mjs
+var PendingCopy = class {
+  _document;
+  _textarea;
+  constructor(text, _document2) {
+    this._document = _document2;
+    const textarea = this._textarea = this._document.createElement("textarea");
+    const styles = textarea.style;
+    styles.position = "fixed";
+    styles.top = styles.opacity = "0";
+    styles.left = "-999em";
+    textarea.setAttribute("aria-hidden", "true");
+    textarea.value = text;
+    textarea.readOnly = true;
+    (this._document.fullscreenElement || this._document.body).appendChild(textarea);
+  }
+  /** Finishes copying the text. */
+  copy() {
+    const textarea = this._textarea;
+    let successful = false;
+    try {
+      if (textarea) {
+        const currentFocus = this._document.activeElement;
+        textarea.select();
+        textarea.setSelectionRange(0, textarea.value.length);
+        successful = this._document.execCommand("copy");
+        if (currentFocus) {
+          currentFocus.focus();
+        }
+      }
+    } catch {
     }
-  }, styles: ["\n\nh2[_ngcontent-%COMP%] {\n  font-size: 16px;\n  font-weight: 500;\n}\n/*# sourceMappingURL=title.css.map */"] });
+    return successful;
+  }
+  /** Cleans up DOM changes used to perform the copy operation. */
+  destroy() {
+    const textarea = this._textarea;
+    if (textarea) {
+      textarea.remove();
+      this._textarea = void 0;
+    }
+  }
+};
+var Clipboard = class _Clipboard {
+  _document = inject2(DOCUMENT);
+  constructor() {
+  }
+  /**
+   * Copies the provided text into the user's clipboard.
+   *
+   * @param text The string to copy.
+   * @returns Whether the operation was successful.
+   */
+  copy(text) {
+    const pendingCopy = this.beginCopy(text);
+    const successful = pendingCopy.copy();
+    pendingCopy.destroy();
+    return successful;
+  }
+  /**
+   * Prepares a string to be copied later. This is useful for large strings
+   * which take too long to successfully render and be copied in the same tick.
+   *
+   * The caller must call `destroy` on the returned `PendingCopy`.
+   *
+   * @param text The string to copy.
+   * @returns the pending copy operation.
+   */
+  beginCopy(text) {
+    return new PendingCopy(text, this._document);
+  }
+  static \u0275fac = function Clipboard_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _Clipboard)();
+  };
+  static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
+    token: _Clipboard,
+    factory: _Clipboard.\u0275fac,
+    providedIn: "root"
+  });
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(Title2, [{
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(Clipboard, [{
+    type: Injectable,
+    args: [{
+      providedIn: "root"
+    }]
+  }], () => [], null);
+})();
+var CDK_COPY_TO_CLIPBOARD_CONFIG = new InjectionToken("CDK_COPY_TO_CLIPBOARD_CONFIG");
+var CdkCopyToClipboard = class _CdkCopyToClipboard {
+  _clipboard = inject2(Clipboard);
+  _ngZone = inject2(NgZone);
+  /** Content to be copied. */
+  text = "";
+  /**
+   * How many times to attempt to copy the text. This may be necessary for longer text, because
+   * the browser needs time to fill an intermediate textarea element and copy the content.
+   */
+  attempts = 1;
+  /**
+   * Emits when some text is copied to the clipboard. The
+   * emitted value indicates whether copying was successful.
+   */
+  copied = new EventEmitter();
+  /** Copies that are currently being attempted. */
+  _pending = /* @__PURE__ */ new Set();
+  /** Whether the directive has been destroyed. */
+  _destroyed;
+  /** Timeout for the current copy attempt. */
+  _currentTimeout;
+  constructor() {
+    const config2 = inject2(CDK_COPY_TO_CLIPBOARD_CONFIG, {
+      optional: true
+    });
+    if (config2 && config2.attempts != null) {
+      this.attempts = config2.attempts;
+    }
+  }
+  /** Copies the current text to the clipboard. */
+  copy(attempts = this.attempts) {
+    if (attempts > 1) {
+      let remainingAttempts = attempts;
+      const pending = this._clipboard.beginCopy(this.text);
+      this._pending.add(pending);
+      const attempt = () => {
+        const successful = pending.copy();
+        if (!successful && --remainingAttempts && !this._destroyed) {
+          this._currentTimeout = this._ngZone.runOutsideAngular(() => setTimeout(attempt, 1));
+        } else {
+          this._currentTimeout = null;
+          this._pending.delete(pending);
+          pending.destroy();
+          this.copied.emit(successful);
+        }
+      };
+      attempt();
+    } else {
+      this.copied.emit(this._clipboard.copy(this.text));
+    }
+  }
+  ngOnDestroy() {
+    if (this._currentTimeout) {
+      clearTimeout(this._currentTimeout);
+    }
+    this._pending.forEach((copy) => copy.destroy());
+    this._pending.clear();
+    this._destroyed = true;
+  }
+  static \u0275fac = function CdkCopyToClipboard_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _CdkCopyToClipboard)();
+  };
+  static \u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({
+    type: _CdkCopyToClipboard,
+    selectors: [["", "cdkCopyToClipboard", ""]],
+    hostBindings: function CdkCopyToClipboard_HostBindings(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275listener("click", function CdkCopyToClipboard_click_HostBindingHandler() {
+          return ctx.copy();
+        });
+      }
+    },
+    inputs: {
+      text: [0, "cdkCopyToClipboard", "text"],
+      attempts: [0, "cdkCopyToClipboardAttempts", "attempts"]
+    },
+    outputs: {
+      copied: "cdkCopyToClipboardCopied"
+    }
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(CdkCopyToClipboard, [{
+    type: Directive,
+    args: [{
+      selector: "[cdkCopyToClipboard]",
+      host: {
+        "(click)": "copy()"
+      }
+    }]
+  }], () => [], {
+    text: [{
+      type: Input,
+      args: ["cdkCopyToClipboard"]
+    }],
+    attempts: [{
+      type: Input,
+      args: ["cdkCopyToClipboardAttempts"]
+    }],
+    copied: [{
+      type: Output,
+      args: ["cdkCopyToClipboardCopied"]
+    }]
+  });
+})();
+var ClipboardModule = class _ClipboardModule {
+  static \u0275fac = function ClipboardModule_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _ClipboardModule)();
+  };
+  static \u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({
+    type: _ClipboardModule,
+    imports: [CdkCopyToClipboard],
+    exports: [CdkCopyToClipboard]
+  });
+  static \u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({});
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(ClipboardModule, [{
+    type: NgModule,
+    args: [{
+      imports: [CdkCopyToClipboard],
+      exports: [CdkCopyToClipboard]
+    }]
+  }], null, null);
+})();
+
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/icon-registry.mjs
+var policy2;
+function getPolicy2() {
+  if (policy2 === void 0) {
+    policy2 = null;
+    if (typeof window !== "undefined") {
+      const ttWindow = window;
+      if (ttWindow.trustedTypes !== void 0) {
+        policy2 = ttWindow.trustedTypes.createPolicy("angular#components", {
+          createHTML: (s) => s
+        });
+      }
+    }
+  }
+  return policy2;
+}
+function trustedHTMLFromString2(html) {
+  return getPolicy2()?.createHTML(html) || html;
+}
+function getMatIconNameNotFoundError(iconName) {
+  return Error(`Unable to find icon with the name "${iconName}"`);
+}
+function getMatIconNoHttpProviderError() {
+  return Error("Could not find HttpClient for use with Angular Material icons. Please add provideHttpClient() to your providers.");
+}
+function getMatIconFailedToSanitizeUrlError(url) {
+  return Error(`The URL provided to MatIconRegistry was not trusted as a resource URL via Angular's DomSanitizer. Attempted URL was "${url}".`);
+}
+function getMatIconFailedToSanitizeLiteralError(literal) {
+  return Error(`The literal provided to MatIconRegistry was not trusted as safe HTML by Angular's DomSanitizer. Attempted literal was "${literal}".`);
+}
+var SvgIconConfig = class {
+  url;
+  svgText;
+  options;
+  svgElement;
+  constructor(url, svgText, options) {
+    this.url = url;
+    this.svgText = svgText;
+    this.options = options;
+  }
+};
+var MatIconRegistry = class _MatIconRegistry {
+  _httpClient;
+  _sanitizer;
+  _errorHandler;
+  _document;
+  /**
+   * URLs and cached SVG elements for individual icons. Keys are of the format "[namespace]:[icon]".
+   */
+  _svgIconConfigs = /* @__PURE__ */ new Map();
+  /**
+   * SvgIconConfig objects and cached SVG elements for icon sets, keyed by namespace.
+   * Multiple icon sets can be registered under the same namespace.
+   */
+  _iconSetConfigs = /* @__PURE__ */ new Map();
+  /** Cache for icons loaded by direct URLs. */
+  _cachedIconsByUrl = /* @__PURE__ */ new Map();
+  /** In-progress icon fetches. Used to coalesce multiple requests to the same URL. */
+  _inProgressUrlFetches = /* @__PURE__ */ new Map();
+  /** Map from font identifiers to their CSS class names. Used for icon fonts. */
+  _fontCssClassesByAlias = /* @__PURE__ */ new Map();
+  /** Registered icon resolver functions. */
+  _resolvers = [];
+  /**
+   * The CSS classes to apply when an `<mat-icon>` component has no icon name, url, or font
+   * specified. The default 'material-icons' value assumes that the material icon font has been
+   * loaded as described at https://google.github.io/material-design-icons/#icon-font-for-the-web
+   */
+  _defaultFontSetClass = ["material-icons", "mat-ligature-font"];
+  constructor(_httpClient, _sanitizer, document2, _errorHandler) {
+    this._httpClient = _httpClient;
+    this._sanitizer = _sanitizer;
+    this._errorHandler = _errorHandler;
+    this._document = document2;
+  }
+  /**
+   * Registers an icon by URL in the default namespace.
+   * @param iconName Name under which the icon should be registered.
+   * @param url
+   */
+  addSvgIcon(iconName, url, options) {
+    return this.addSvgIconInNamespace("", iconName, url, options);
+  }
+  /**
+   * Registers an icon using an HTML string in the default namespace.
+   * @param iconName Name under which the icon should be registered.
+   * @param literal SVG source of the icon.
+   */
+  addSvgIconLiteral(iconName, literal, options) {
+    return this.addSvgIconLiteralInNamespace("", iconName, literal, options);
+  }
+  /**
+   * Registers an icon by URL in the specified namespace.
+   * @param namespace Namespace in which the icon should be registered.
+   * @param iconName Name under which the icon should be registered.
+   * @param url
+   */
+  addSvgIconInNamespace(namespace, iconName, url, options) {
+    return this._addSvgIconConfig(namespace, iconName, new SvgIconConfig(url, null, options));
+  }
+  /**
+   * Registers an icon resolver function with the registry. The function will be invoked with the
+   * name and namespace of an icon when the registry tries to resolve the URL from which to fetch
+   * the icon. The resolver is expected to return a `SafeResourceUrl` that points to the icon,
+   * an object with the icon URL and icon options, or `null` if the icon is not supported. Resolvers
+   * will be invoked in the order in which they have been registered.
+   * @param resolver Resolver function to be registered.
+   */
+  addSvgIconResolver(resolver) {
+    this._resolvers.push(resolver);
+    return this;
+  }
+  /**
+   * Registers an icon using an HTML string in the specified namespace.
+   * @param namespace Namespace in which the icon should be registered.
+   * @param iconName Name under which the icon should be registered.
+   * @param literal SVG source of the icon.
+   */
+  addSvgIconLiteralInNamespace(namespace, iconName, literal, options) {
+    const cleanLiteral = this._sanitizer.sanitize(SecurityContext.HTML, literal);
+    if (!cleanLiteral) {
+      throw getMatIconFailedToSanitizeLiteralError(literal);
+    }
+    const trustedLiteral = trustedHTMLFromString2(cleanLiteral);
+    return this._addSvgIconConfig(namespace, iconName, new SvgIconConfig("", trustedLiteral, options));
+  }
+  /**
+   * Registers an icon set by URL in the default namespace.
+   * @param url
+   */
+  addSvgIconSet(url, options) {
+    return this.addSvgIconSetInNamespace("", url, options);
+  }
+  /**
+   * Registers an icon set using an HTML string in the default namespace.
+   * @param literal SVG source of the icon set.
+   */
+  addSvgIconSetLiteral(literal, options) {
+    return this.addSvgIconSetLiteralInNamespace("", literal, options);
+  }
+  /**
+   * Registers an icon set by URL in the specified namespace.
+   * @param namespace Namespace in which to register the icon set.
+   * @param url
+   */
+  addSvgIconSetInNamespace(namespace, url, options) {
+    return this._addSvgIconSetConfig(namespace, new SvgIconConfig(url, null, options));
+  }
+  /**
+   * Registers an icon set using an HTML string in the specified namespace.
+   * @param namespace Namespace in which to register the icon set.
+   * @param literal SVG source of the icon set.
+   */
+  addSvgIconSetLiteralInNamespace(namespace, literal, options) {
+    const cleanLiteral = this._sanitizer.sanitize(SecurityContext.HTML, literal);
+    if (!cleanLiteral) {
+      throw getMatIconFailedToSanitizeLiteralError(literal);
+    }
+    const trustedLiteral = trustedHTMLFromString2(cleanLiteral);
+    return this._addSvgIconSetConfig(namespace, new SvgIconConfig("", trustedLiteral, options));
+  }
+  /**
+   * Defines an alias for CSS class names to be used for icon fonts. Creating an matIcon
+   * component with the alias as the fontSet input will cause the class name to be applied
+   * to the `<mat-icon>` element.
+   *
+   * If the registered font is a ligature font, then don't forget to also include the special
+   * class `mat-ligature-font` to allow the usage via attribute. So register like this:
+   *
+   * ```ts
+   * iconRegistry.registerFontClassAlias('f1', 'font1 mat-ligature-font');
+   * ```
+   *
+   * And use like this:
+   *
+   * ```html
+   * <mat-icon fontSet="f1" fontIcon="home"></mat-icon>
+   * ```
+   *
+   * @param alias Alias for the font.
+   * @param classNames Class names override to be used instead of the alias.
+   */
+  registerFontClassAlias(alias, classNames = alias) {
+    this._fontCssClassesByAlias.set(alias, classNames);
+    return this;
+  }
+  /**
+   * Returns the CSS class name associated with the alias by a previous call to
+   * registerFontClassAlias. If no CSS class has been associated, returns the alias unmodified.
+   */
+  classNameForFontAlias(alias) {
+    return this._fontCssClassesByAlias.get(alias) || alias;
+  }
+  /**
+   * Sets the CSS classes to be used for icon fonts when an `<mat-icon>` component does not
+   * have a fontSet input value, and is not loading an icon by name or URL.
+   */
+  setDefaultFontSetClass(...classNames) {
+    this._defaultFontSetClass = classNames;
+    return this;
+  }
+  /**
+   * Returns the CSS classes to be used for icon fonts when an `<mat-icon>` component does not
+   * have a fontSet input value, and is not loading an icon by name or URL.
+   */
+  getDefaultFontSetClass() {
+    return this._defaultFontSetClass;
+  }
+  /**
+   * Returns an Observable that produces the icon (as an `<svg>` DOM element) from the given URL.
+   * The response from the URL may be cached so this will not always cause an HTTP request, but
+   * the produced element will always be a new copy of the originally fetched icon. (That is,
+   * it will not contain any modifications made to elements previously returned).
+   *
+   * @param safeUrl URL from which to fetch the SVG icon.
+   */
+  getSvgIconFromUrl(safeUrl) {
+    const url = this._sanitizer.sanitize(SecurityContext.RESOURCE_URL, safeUrl);
+    if (!url) {
+      throw getMatIconFailedToSanitizeUrlError(safeUrl);
+    }
+    const cachedIcon = this._cachedIconsByUrl.get(url);
+    if (cachedIcon) {
+      return of(cloneSvg(cachedIcon));
+    }
+    return this._loadSvgIconFromConfig(new SvgIconConfig(safeUrl, null)).pipe(tap((svg) => this._cachedIconsByUrl.set(url, svg)), map((svg) => cloneSvg(svg)));
+  }
+  /**
+   * Returns an Observable that produces the icon (as an `<svg>` DOM element) with the given name
+   * and namespace. The icon must have been previously registered with addIcon or addIconSet;
+   * if not, the Observable will throw an error.
+   *
+   * @param name Name of the icon to be retrieved.
+   * @param namespace Namespace in which to look for the icon.
+   */
+  getNamedSvgIcon(name, namespace = "") {
+    const key = iconKey(namespace, name);
+    let config2 = this._svgIconConfigs.get(key);
+    if (config2) {
+      return this._getSvgFromConfig(config2);
+    }
+    config2 = this._getIconConfigFromResolvers(namespace, name);
+    if (config2) {
+      this._svgIconConfigs.set(key, config2);
+      return this._getSvgFromConfig(config2);
+    }
+    const iconSetConfigs = this._iconSetConfigs.get(namespace);
+    if (iconSetConfigs) {
+      return this._getSvgFromIconSetConfigs(name, iconSetConfigs);
+    }
+    return throwError(getMatIconNameNotFoundError(key));
+  }
+  ngOnDestroy() {
+    this._resolvers = [];
+    this._svgIconConfigs.clear();
+    this._iconSetConfigs.clear();
+    this._cachedIconsByUrl.clear();
+  }
+  /**
+   * Returns the cached icon for a SvgIconConfig if available, or fetches it from its URL if not.
+   */
+  _getSvgFromConfig(config2) {
+    if (config2.svgText) {
+      return of(cloneSvg(this._svgElementFromConfig(config2)));
+    } else {
+      return this._loadSvgIconFromConfig(config2).pipe(map((svg) => cloneSvg(svg)));
+    }
+  }
+  /**
+   * Attempts to find an icon with the specified name in any of the SVG icon sets.
+   * First searches the available cached icons for a nested element with a matching name, and
+   * if found copies the element to a new `<svg>` element. If not found, fetches all icon sets
+   * that have not been cached, and searches again after all fetches are completed.
+   * The returned Observable produces the SVG element if possible, and throws
+   * an error if no icon with the specified name can be found.
+   */
+  _getSvgFromIconSetConfigs(name, iconSetConfigs) {
+    const namedIcon = this._extractIconWithNameFromAnySet(name, iconSetConfigs);
+    if (namedIcon) {
+      return of(namedIcon);
+    }
+    const iconSetFetchRequests = iconSetConfigs.filter((iconSetConfig) => !iconSetConfig.svgText).map((iconSetConfig) => {
+      return this._loadSvgIconSetFromConfig(iconSetConfig).pipe(catchError((err) => {
+        const url = this._sanitizer.sanitize(SecurityContext.RESOURCE_URL, iconSetConfig.url);
+        const errorMessage = `Loading icon set URL: ${url} failed: ${err.message}`;
+        this._errorHandler.handleError(new Error(errorMessage));
+        return of(null);
+      }));
+    });
+    return forkJoin(iconSetFetchRequests).pipe(map(() => {
+      const foundIcon = this._extractIconWithNameFromAnySet(name, iconSetConfigs);
+      if (!foundIcon) {
+        throw getMatIconNameNotFoundError(name);
+      }
+      return foundIcon;
+    }));
+  }
+  /**
+   * Searches the cached SVG elements for the given icon sets for a nested icon element whose "id"
+   * tag matches the specified name. If found, copies the nested element to a new SVG element and
+   * returns it. Returns null if no matching element is found.
+   */
+  _extractIconWithNameFromAnySet(iconName, iconSetConfigs) {
+    for (let i = iconSetConfigs.length - 1; i >= 0; i--) {
+      const config2 = iconSetConfigs[i];
+      if (config2.svgText && config2.svgText.toString().indexOf(iconName) > -1) {
+        const svg = this._svgElementFromConfig(config2);
+        const foundIcon = this._extractSvgIconFromSet(svg, iconName, config2.options);
+        if (foundIcon) {
+          return foundIcon;
+        }
+      }
+    }
+    return null;
+  }
+  /**
+   * Loads the content of the icon URL specified in the SvgIconConfig and creates an SVG element
+   * from it.
+   */
+  _loadSvgIconFromConfig(config2) {
+    return this._fetchIcon(config2).pipe(tap((svgText) => config2.svgText = svgText), map(() => this._svgElementFromConfig(config2)));
+  }
+  /**
+   * Loads the content of the icon set URL specified in the
+   * SvgIconConfig and attaches it to the config.
+   */
+  _loadSvgIconSetFromConfig(config2) {
+    if (config2.svgText) {
+      return of(null);
+    }
+    return this._fetchIcon(config2).pipe(tap((svgText) => config2.svgText = svgText));
+  }
+  /**
+   * Searches the cached element of the given SvgIconConfig for a nested icon element whose "id"
+   * tag matches the specified name. If found, copies the nested element to a new SVG element and
+   * returns it. Returns null if no matching element is found.
+   */
+  _extractSvgIconFromSet(iconSet, iconName, options) {
+    const iconSource = iconSet.querySelector(`[id="${iconName}"]`);
+    if (!iconSource) {
+      return null;
+    }
+    const iconElement = iconSource.cloneNode(true);
+    iconElement.removeAttribute("id");
+    if (iconElement.nodeName.toLowerCase() === "svg") {
+      return this._setSvgAttributes(iconElement, options);
+    }
+    if (iconElement.nodeName.toLowerCase() === "symbol") {
+      return this._setSvgAttributes(this._toSvgElement(iconElement), options);
+    }
+    const svg = this._svgElementFromString(trustedHTMLFromString2("<svg></svg>"));
+    svg.appendChild(iconElement);
+    return this._setSvgAttributes(svg, options);
+  }
+  /**
+   * Creates a DOM element from the given SVG string.
+   */
+  _svgElementFromString(str) {
+    const div = this._document.createElement("DIV");
+    div.innerHTML = str;
+    const svg = div.querySelector("svg");
+    if (!svg) {
+      throw Error("<svg> tag not found");
+    }
+    return svg;
+  }
+  /**
+   * Converts an element into an SVG node by cloning all of its children.
+   */
+  _toSvgElement(element) {
+    const svg = this._svgElementFromString(trustedHTMLFromString2("<svg></svg>"));
+    const attributes = element.attributes;
+    for (let i = 0; i < attributes.length; i++) {
+      const {
+        name,
+        value
+      } = attributes[i];
+      if (name !== "id") {
+        svg.setAttribute(name, value);
+      }
+    }
+    for (let i = 0; i < element.childNodes.length; i++) {
+      if (element.childNodes[i].nodeType === this._document.ELEMENT_NODE) {
+        svg.appendChild(element.childNodes[i].cloneNode(true));
+      }
+    }
+    return svg;
+  }
+  /**
+   * Sets the default attributes for an SVG element to be used as an icon.
+   */
+  _setSvgAttributes(svg, options) {
+    svg.setAttribute("fit", "");
+    svg.setAttribute("height", "100%");
+    svg.setAttribute("width", "100%");
+    svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+    svg.setAttribute("focusable", "false");
+    if (options && options.viewBox) {
+      svg.setAttribute("viewBox", options.viewBox);
+    }
+    return svg;
+  }
+  /**
+   * Returns an Observable which produces the string contents of the given icon. Results may be
+   * cached, so future calls with the same URL may not cause another HTTP request.
+   */
+  _fetchIcon(iconConfig) {
+    const {
+      url: safeUrl,
+      options
+    } = iconConfig;
+    const withCredentials = options?.withCredentials ?? false;
+    if (!this._httpClient) {
+      throw getMatIconNoHttpProviderError();
+    }
+    if (safeUrl == null) {
+      throw Error(`Cannot fetch icon from URL "${safeUrl}".`);
+    }
+    const url = this._sanitizer.sanitize(SecurityContext.RESOURCE_URL, safeUrl);
+    if (!url) {
+      throw getMatIconFailedToSanitizeUrlError(safeUrl);
+    }
+    const inProgressFetch = this._inProgressUrlFetches.get(url);
+    if (inProgressFetch) {
+      return inProgressFetch;
+    }
+    const req = this._httpClient.get(url, {
+      responseType: "text",
+      withCredentials
+    }).pipe(map((svg) => {
+      return trustedHTMLFromString2(svg);
+    }), finalize(() => this._inProgressUrlFetches.delete(url)), share());
+    this._inProgressUrlFetches.set(url, req);
+    return req;
+  }
+  /**
+   * Registers an icon config by name in the specified namespace.
+   * @param namespace Namespace in which to register the icon config.
+   * @param iconName Name under which to register the config.
+   * @param config Config to be registered.
+   */
+  _addSvgIconConfig(namespace, iconName, config2) {
+    this._svgIconConfigs.set(iconKey(namespace, iconName), config2);
+    return this;
+  }
+  /**
+   * Registers an icon set config in the specified namespace.
+   * @param namespace Namespace in which to register the icon config.
+   * @param config Config to be registered.
+   */
+  _addSvgIconSetConfig(namespace, config2) {
+    const configNamespace = this._iconSetConfigs.get(namespace);
+    if (configNamespace) {
+      configNamespace.push(config2);
+    } else {
+      this._iconSetConfigs.set(namespace, [config2]);
+    }
+    return this;
+  }
+  /** Parses a config's text into an SVG element. */
+  _svgElementFromConfig(config2) {
+    if (!config2.svgElement) {
+      const svg = this._svgElementFromString(config2.svgText);
+      this._setSvgAttributes(svg, config2.options);
+      config2.svgElement = svg;
+    }
+    return config2.svgElement;
+  }
+  /** Tries to create an icon config through the registered resolver functions. */
+  _getIconConfigFromResolvers(namespace, name) {
+    for (let i = 0; i < this._resolvers.length; i++) {
+      const result = this._resolvers[i](name, namespace);
+      if (result) {
+        return isSafeUrlWithOptions(result) ? new SvgIconConfig(result.url, null, result.options) : new SvgIconConfig(result, null);
+      }
+    }
+    return void 0;
+  }
+  static \u0275fac = function MatIconRegistry_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatIconRegistry)(\u0275\u0275inject(HttpClient, 8), \u0275\u0275inject(DomSanitizer), \u0275\u0275inject(DOCUMENT, 8), \u0275\u0275inject(ErrorHandler));
+  };
+  static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
+    token: _MatIconRegistry,
+    factory: _MatIconRegistry.\u0275fac,
+    providedIn: "root"
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatIconRegistry, [{
+    type: Injectable,
+    args: [{
+      providedIn: "root"
+    }]
+  }], () => [{
+    type: HttpClient,
+    decorators: [{
+      type: Optional
+    }]
+  }, {
+    type: DomSanitizer
+  }, {
+    type: void 0,
+    decorators: [{
+      type: Optional
+    }, {
+      type: Inject,
+      args: [DOCUMENT]
+    }]
+  }, {
+    type: ErrorHandler
+  }], null);
+})();
+function ICON_REGISTRY_PROVIDER_FACTORY(parentRegistry, httpClient, sanitizer, errorHandler2, document2) {
+  return parentRegistry || new MatIconRegistry(httpClient, sanitizer, document2, errorHandler2);
+}
+var ICON_REGISTRY_PROVIDER = {
+  // If there is already an MatIconRegistry available, use that. Otherwise, provide a new one.
+  provide: MatIconRegistry,
+  deps: [[new Optional(), new SkipSelf(), MatIconRegistry], [new Optional(), HttpClient], DomSanitizer, ErrorHandler, [new Optional(), DOCUMENT]],
+  useFactory: ICON_REGISTRY_PROVIDER_FACTORY
+};
+function cloneSvg(svg) {
+  return svg.cloneNode(true);
+}
+function iconKey(namespace, name) {
+  return namespace + ":" + name;
+}
+function isSafeUrlWithOptions(value) {
+  return !!(value.url && value.options);
+}
+
+// node_modules/.pnpm/@angular+material@20.2.0_@angular+cdk@20.2.0_@angular+common@20.2.1_@angular+core@20.2._6b8f1d6e0ae1028a2a33a6e325236330/node_modules/@angular/material/fesm2022/icon.mjs
+var _c014 = ["*"];
+var MAT_ICON_DEFAULT_OPTIONS = new InjectionToken("MAT_ICON_DEFAULT_OPTIONS");
+var MAT_ICON_LOCATION = new InjectionToken("mat-icon-location", {
+  providedIn: "root",
+  factory: MAT_ICON_LOCATION_FACTORY
+});
+function MAT_ICON_LOCATION_FACTORY() {
+  const _document2 = inject2(DOCUMENT);
+  const _location = _document2 ? _document2.location : null;
+  return {
+    // Note that this needs to be a function, rather than a property, because Angular
+    // will only resolve it once, but we want the current path on each call.
+    getPathname: () => _location ? _location.pathname + _location.search : ""
+  };
+}
+var funcIriAttributes = ["clip-path", "color-profile", "src", "cursor", "fill", "filter", "marker", "marker-start", "marker-mid", "marker-end", "mask", "stroke"];
+var funcIriAttributeSelector = funcIriAttributes.map((attr) => `[${attr}]`).join(", ");
+var funcIriPattern = /^url\(['"]?#(.*?)['"]?\)$/;
+var MatIcon = class _MatIcon {
+  _elementRef = inject2(ElementRef);
+  _iconRegistry = inject2(MatIconRegistry);
+  _location = inject2(MAT_ICON_LOCATION);
+  _errorHandler = inject2(ErrorHandler);
+  _defaultColor;
+  /**
+   * Theme color of the icon. This API is supported in M2 themes only, it
+   * has no effect in M3 themes. For color customization in M3, see https://material.angular.dev/components/icon/styling.
+   *
+   * For information on applying color variants in M3, see
+   * https://material.angular.dev/guide/material-2-theming#optional-add-backwards-compatibility-styles-for-color-variants
+   */
+  get color() {
+    return this._color || this._defaultColor;
+  }
+  set color(value) {
+    this._color = value;
+  }
+  _color;
+  /**
+   * Whether the icon should be inlined, automatically sizing the icon to match the font size of
+   * the element the icon is contained in.
+   */
+  inline = false;
+  /** Name of the icon in the SVG icon set. */
+  get svgIcon() {
+    return this._svgIcon;
+  }
+  set svgIcon(value) {
+    if (value !== this._svgIcon) {
+      if (value) {
+        this._updateSvgIcon(value);
+      } else if (this._svgIcon) {
+        this._clearSvgElement();
+      }
+      this._svgIcon = value;
+    }
+  }
+  _svgIcon;
+  /** Font set that the icon is a part of. */
+  get fontSet() {
+    return this._fontSet;
+  }
+  set fontSet(value) {
+    const newValue = this._cleanupFontValue(value);
+    if (newValue !== this._fontSet) {
+      this._fontSet = newValue;
+      this._updateFontIconClasses();
+    }
+  }
+  _fontSet;
+  /** Name of an icon within a font set. */
+  get fontIcon() {
+    return this._fontIcon;
+  }
+  set fontIcon(value) {
+    const newValue = this._cleanupFontValue(value);
+    if (newValue !== this._fontIcon) {
+      this._fontIcon = newValue;
+      this._updateFontIconClasses();
+    }
+  }
+  _fontIcon;
+  _previousFontSetClass = [];
+  _previousFontIconClass;
+  _svgName;
+  _svgNamespace;
+  /** Keeps track of the current page path. */
+  _previousPath;
+  /** Keeps track of the elements and attributes that we've prefixed with the current path. */
+  _elementsWithExternalReferences;
+  /** Subscription to the current in-progress SVG icon request. */
+  _currentIconFetch = Subscription.EMPTY;
+  constructor() {
+    const ariaHidden = inject2(new HostAttributeToken("aria-hidden"), {
+      optional: true
+    });
+    const defaults2 = inject2(MAT_ICON_DEFAULT_OPTIONS, {
+      optional: true
+    });
+    if (defaults2) {
+      if (defaults2.color) {
+        this.color = this._defaultColor = defaults2.color;
+      }
+      if (defaults2.fontSet) {
+        this.fontSet = defaults2.fontSet;
+      }
+    }
+    if (!ariaHidden) {
+      this._elementRef.nativeElement.setAttribute("aria-hidden", "true");
+    }
+  }
+  /**
+   * Splits an svgIcon binding value into its icon set and icon name components.
+   * Returns a 2-element array of [(icon set), (icon name)].
+   * The separator for the two fields is ':'. If there is no separator, an empty
+   * string is returned for the icon set and the entire value is returned for
+   * the icon name. If the argument is falsy, returns an array of two empty strings.
+   * Throws an error if the name contains two or more ':' separators.
+   * Examples:
+   *   `'social:cake' -> ['social', 'cake']
+   *   'penguin' -> ['', 'penguin']
+   *   null -> ['', '']
+   *   'a:b:c' -> (throws Error)`
+   */
+  _splitIconName(iconName) {
+    if (!iconName) {
+      return ["", ""];
+    }
+    const parts = iconName.split(":");
+    switch (parts.length) {
+      case 1:
+        return ["", parts[0]];
+      // Use default namespace.
+      case 2:
+        return parts;
+      default:
+        throw Error(`Invalid icon name: "${iconName}"`);
+    }
+  }
+  ngOnInit() {
+    this._updateFontIconClasses();
+  }
+  ngAfterViewChecked() {
+    const cachedElements = this._elementsWithExternalReferences;
+    if (cachedElements && cachedElements.size) {
+      const newPath = this._location.getPathname();
+      if (newPath !== this._previousPath) {
+        this._previousPath = newPath;
+        this._prependPathToReferences(newPath);
+      }
+    }
+  }
+  ngOnDestroy() {
+    this._currentIconFetch.unsubscribe();
+    if (this._elementsWithExternalReferences) {
+      this._elementsWithExternalReferences.clear();
+    }
+  }
+  _usingFontIcon() {
+    return !this.svgIcon;
+  }
+  _setSvgElement(svg) {
+    this._clearSvgElement();
+    const path = this._location.getPathname();
+    this._previousPath = path;
+    this._cacheChildrenWithExternalReferences(svg);
+    this._prependPathToReferences(path);
+    this._elementRef.nativeElement.appendChild(svg);
+  }
+  _clearSvgElement() {
+    const layoutElement = this._elementRef.nativeElement;
+    let childCount = layoutElement.childNodes.length;
+    if (this._elementsWithExternalReferences) {
+      this._elementsWithExternalReferences.clear();
+    }
+    while (childCount--) {
+      const child = layoutElement.childNodes[childCount];
+      if (child.nodeType !== 1 || child.nodeName.toLowerCase() === "svg") {
+        child.remove();
+      }
+    }
+  }
+  _updateFontIconClasses() {
+    if (!this._usingFontIcon()) {
+      return;
+    }
+    const elem = this._elementRef.nativeElement;
+    const fontSetClasses = (this.fontSet ? this._iconRegistry.classNameForFontAlias(this.fontSet).split(/ +/) : this._iconRegistry.getDefaultFontSetClass()).filter((className) => className.length > 0);
+    this._previousFontSetClass.forEach((className) => elem.classList.remove(className));
+    fontSetClasses.forEach((className) => elem.classList.add(className));
+    this._previousFontSetClass = fontSetClasses;
+    if (this.fontIcon !== this._previousFontIconClass && !fontSetClasses.includes("mat-ligature-font")) {
+      if (this._previousFontIconClass) {
+        elem.classList.remove(this._previousFontIconClass);
+      }
+      if (this.fontIcon) {
+        elem.classList.add(this.fontIcon);
+      }
+      this._previousFontIconClass = this.fontIcon;
+    }
+  }
+  /**
+   * Cleans up a value to be used as a fontIcon or fontSet.
+   * Since the value ends up being assigned as a CSS class, we
+   * have to trim the value and omit space-separated values.
+   */
+  _cleanupFontValue(value) {
+    return typeof value === "string" ? value.trim().split(" ")[0] : value;
+  }
+  /**
+   * Prepends the current path to all elements that have an attribute pointing to a `FuncIRI`
+   * reference. This is required because WebKit browsers require references to be prefixed with
+   * the current path, if the page has a `base` tag.
+   */
+  _prependPathToReferences(path) {
+    const elements = this._elementsWithExternalReferences;
+    if (elements) {
+      elements.forEach((attrs, element) => {
+        attrs.forEach((attr) => {
+          element.setAttribute(attr.name, `url('${path}#${attr.value}')`);
+        });
+      });
+    }
+  }
+  /**
+   * Caches the children of an SVG element that have `url()`
+   * references that we need to prefix with the current path.
+   */
+  _cacheChildrenWithExternalReferences(element) {
+    const elementsWithFuncIri = element.querySelectorAll(funcIriAttributeSelector);
+    const elements = this._elementsWithExternalReferences = this._elementsWithExternalReferences || /* @__PURE__ */ new Map();
+    for (let i = 0; i < elementsWithFuncIri.length; i++) {
+      funcIriAttributes.forEach((attr) => {
+        const elementWithReference = elementsWithFuncIri[i];
+        const value = elementWithReference.getAttribute(attr);
+        const match = value ? value.match(funcIriPattern) : null;
+        if (match) {
+          let attributes = elements.get(elementWithReference);
+          if (!attributes) {
+            attributes = [];
+            elements.set(elementWithReference, attributes);
+          }
+          attributes.push({
+            name: attr,
+            value: match[1]
+          });
+        }
+      });
+    }
+  }
+  /** Sets a new SVG icon with a particular name. */
+  _updateSvgIcon(rawName) {
+    this._svgNamespace = null;
+    this._svgName = null;
+    this._currentIconFetch.unsubscribe();
+    if (rawName) {
+      const [namespace, iconName] = this._splitIconName(rawName);
+      if (namespace) {
+        this._svgNamespace = namespace;
+      }
+      if (iconName) {
+        this._svgName = iconName;
+      }
+      this._currentIconFetch = this._iconRegistry.getNamedSvgIcon(iconName, namespace).pipe(take(1)).subscribe((svg) => this._setSvgElement(svg), (err) => {
+        const errorMessage = `Error retrieving icon ${namespace}:${iconName}! ${err.message}`;
+        this._errorHandler.handleError(new Error(errorMessage));
+      });
+    }
+  }
+  static \u0275fac = function MatIcon_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatIcon)();
+  };
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+    type: _MatIcon,
+    selectors: [["mat-icon"]],
+    hostAttrs: ["role", "img", 1, "mat-icon", "notranslate"],
+    hostVars: 10,
+    hostBindings: function MatIcon_HostBindings(rf, ctx) {
+      if (rf & 2) {
+        \u0275\u0275attribute("data-mat-icon-type", ctx._usingFontIcon() ? "font" : "svg")("data-mat-icon-name", ctx._svgName || ctx.fontIcon)("data-mat-icon-namespace", ctx._svgNamespace || ctx.fontSet)("fontIcon", ctx._usingFontIcon() ? ctx.fontIcon : null);
+        \u0275\u0275classMap(ctx.color ? "mat-" + ctx.color : "");
+        \u0275\u0275classProp("mat-icon-inline", ctx.inline)("mat-icon-no-color", ctx.color !== "primary" && ctx.color !== "accent" && ctx.color !== "warn");
+      }
+    },
+    inputs: {
+      color: "color",
+      inline: [2, "inline", "inline", booleanAttribute],
+      svgIcon: "svgIcon",
+      fontSet: "fontSet",
+      fontIcon: "fontIcon"
+    },
+    exportAs: ["matIcon"],
+    ngContentSelectors: _c014,
+    decls: 1,
+    vars: 0,
+    template: function MatIcon_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275projectionDef();
+        \u0275\u0275projection(0);
+      }
+    },
+    styles: ["mat-icon,mat-icon.mat-primary,mat-icon.mat-accent,mat-icon.mat-warn{color:var(--mat-icon-color, inherit)}.mat-icon{-webkit-user-select:none;user-select:none;background-repeat:no-repeat;display:inline-block;fill:currentColor;height:24px;width:24px;overflow:hidden}.mat-icon.mat-icon-inline{font-size:inherit;height:inherit;line-height:inherit;width:inherit}.mat-icon.mat-ligature-font[fontIcon]::before{content:attr(fontIcon)}[dir=rtl] .mat-icon-rtl-mirror{transform:scale(-1, 1)}.mat-form-field:not(.mat-form-field-appearance-legacy) .mat-form-field-prefix .mat-icon,.mat-form-field:not(.mat-form-field-appearance-legacy) .mat-form-field-suffix .mat-icon{display:block}.mat-form-field:not(.mat-form-field-appearance-legacy) .mat-form-field-prefix .mat-icon-button .mat-icon,.mat-form-field:not(.mat-form-field-appearance-legacy) .mat-form-field-suffix .mat-icon-button .mat-icon{margin:auto}\n"],
+    encapsulation: 2,
+    changeDetection: 0
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatIcon, [{
     type: Component,
-    args: [{ selector: "app-title", imports: [], template: "<h2>\n    <ng-content></ng-content>\n</h2>\n", styles: ["/* src/app/page/shared/title/title.scss */\nh2 {\n  font-size: 16px;\n  font-weight: 500;\n}\n/*# sourceMappingURL=title.css.map */\n"] }]
+    args: [{
+      template: "<ng-content></ng-content>",
+      selector: "mat-icon",
+      exportAs: "matIcon",
+      host: {
+        "role": "img",
+        "class": "mat-icon notranslate",
+        "[class]": 'color ? "mat-" + color : ""',
+        "[attr.data-mat-icon-type]": '_usingFontIcon() ? "font" : "svg"',
+        "[attr.data-mat-icon-name]": "_svgName || fontIcon",
+        "[attr.data-mat-icon-namespace]": "_svgNamespace || fontSet",
+        "[attr.fontIcon]": "_usingFontIcon() ? fontIcon : null",
+        "[class.mat-icon-inline]": "inline",
+        "[class.mat-icon-no-color]": 'color !== "primary" && color !== "accent" && color !== "warn"'
+      },
+      encapsulation: ViewEncapsulation.None,
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      styles: ["mat-icon,mat-icon.mat-primary,mat-icon.mat-accent,mat-icon.mat-warn{color:var(--mat-icon-color, inherit)}.mat-icon{-webkit-user-select:none;user-select:none;background-repeat:no-repeat;display:inline-block;fill:currentColor;height:24px;width:24px;overflow:hidden}.mat-icon.mat-icon-inline{font-size:inherit;height:inherit;line-height:inherit;width:inherit}.mat-icon.mat-ligature-font[fontIcon]::before{content:attr(fontIcon)}[dir=rtl] .mat-icon-rtl-mirror{transform:scale(-1, 1)}.mat-form-field:not(.mat-form-field-appearance-legacy) .mat-form-field-prefix .mat-icon,.mat-form-field:not(.mat-form-field-appearance-legacy) .mat-form-field-suffix .mat-icon{display:block}.mat-form-field:not(.mat-form-field-appearance-legacy) .mat-form-field-prefix .mat-icon-button .mat-icon,.mat-form-field:not(.mat-form-field-appearance-legacy) .mat-form-field-suffix .mat-icon-button .mat-icon{margin:auto}\n"]
+    }]
+  }], () => [], {
+    color: [{
+      type: Input
+    }],
+    inline: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    svgIcon: [{
+      type: Input
+    }],
+    fontSet: [{
+      type: Input
+    }],
+    fontIcon: [{
+      type: Input
+    }]
+  });
+})();
+var MatIconModule = class _MatIconModule {
+  static \u0275fac = function MatIconModule_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _MatIconModule)();
+  };
+  static \u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({
+    type: _MatIconModule,
+    imports: [MatCommonModule, MatIcon],
+    exports: [MatIcon, MatCommonModule]
+  });
+  static \u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({
+    imports: [MatCommonModule, MatCommonModule]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatIconModule, [{
+    type: NgModule,
+    args: [{
+      imports: [MatCommonModule, MatIcon],
+      exports: [MatIcon, MatCommonModule]
+    }]
+  }], null, null);
+})();
+
+// src/app/page/shared/icon-button/icon-button.ts
+var _c015 = ["*"];
+var IconButton = class _IconButton {
+  static \u0275fac = function IconButton_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _IconButton)();
+  };
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _IconButton, selectors: [["app-icon-button"]], ngContentSelectors: _c015, decls: 3, vars: 0, consts: [["matIconButton", ""]], template: function IconButton_Template(rf, ctx) {
+    if (rf & 1) {
+      \u0275\u0275projectionDef();
+      \u0275\u0275elementStart(0, "button", 0)(1, "mat-icon");
+      \u0275\u0275projection(2);
+      \u0275\u0275elementEnd()();
+    }
+  }, dependencies: [
+    MatIcon,
+    MatIconButton
+  ], styles: ["\n\n[_nghost-%COMP%] {\n  box-sizing: border-box;\n}\n[_nghost-%COMP%]   button[matIconButton][_ngcontent-%COMP%] {\n  font-size: 16px;\n  width: 24px;\n  height: 24px;\n  padding: 4px;\n}\n[_nghost-%COMP%]   button[matIconButton][_ngcontent-%COMP%]   mat-icon[_ngcontent-%COMP%] {\n  font-size: 16px;\n  width: 16px;\n  height: 16px;\n}\n/*# sourceMappingURL=icon-button.css.map */"] });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(IconButton, [{
+    type: Component,
+    args: [{ selector: "app-icon-button", imports: [
+      MatIcon,
+      MatIconButton
+    ], template: "<button matIconButton>\n    <mat-icon>\n        <ng-content></ng-content>\n    </mat-icon>\n</button>\n", styles: ["/* src/app/page/shared/icon-button/icon-button.scss */\n:host {\n  box-sizing: border-box;\n}\n:host button[matIconButton] {\n  font-size: 16px;\n  width: 24px;\n  height: 24px;\n  padding: 4px;\n}\n:host button[matIconButton] mat-icon {\n  font-size: 16px;\n  width: 16px;\n  height: 16px;\n}\n/*# sourceMappingURL=icon-button.css.map */\n"] }]
   }], null, null);
 })();
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(Title2, { className: "Title", filePath: "src/app/page/shared/title/title.ts", lineNumber: 9 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IconButton, { className: "IconButton", filePath: "src/app/page/shared/icon-button/icon-button.ts", lineNumber: 14 });
 })();
 
 // src/app/page/dashboard/dashboard-subs/dashboard-subs.ts
+var _forTrack02 = ($index, $item) => $item.url;
+function DashboardSubs_For_7_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "mat-card", 2)(1, "mat-card-header")(2, "mat-card-title", 3);
+    \u0275\u0275text(3);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(4, "app-icon-button", 4);
+    \u0275\u0275text(5, "content_copy");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275element(6, "mat-divider");
+    \u0275\u0275elementStart(7, "mat-card-content")(8, "code", 5)(9, "a", 6);
+    \u0275\u0275text(10);
+    \u0275\u0275elementEnd()()()();
+  }
+  if (rf & 2) {
+    const url_r1 = ctx.$implicit;
+    \u0275\u0275advance(3);
+    \u0275\u0275textInterpolate(url_r1.desc);
+    \u0275\u0275advance();
+    \u0275\u0275property("cdkCopyToClipboard", (url_r1.url == null ? null : url_r1.url.toString()) ?? "");
+    \u0275\u0275advance(5);
+    \u0275\u0275property("href", \u0275\u0275interpolate(url_r1.url), \u0275\u0275sanitizeUrl);
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(url_r1.url);
+  }
+}
 var DashboardSubs = class _DashboardSubs {
+  dashboardService = inject2(DashboardService);
+  urlResult$ = this.dashboardService.urlResult$;
+  urls$ = this.urlResult$.pipe(filter((urlResult) => !!urlResult), map((urlResult) => [urlResult.raw_url, urlResult.raw_profile_url, urlResult.profile_url, ...urlResult.rule_providers_url]));
   static \u0275fac = function DashboardSubs_Factory(__ngFactoryType__) {
     return new (__ngFactoryType__ || _DashboardSubs)();
   };
-  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DashboardSubs, selectors: [["app-dashboard-subs"]], decls: 4, vars: 0, template: function DashboardSubs_Template(rf, ctx) {
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DashboardSubs, selectors: [["app-dashboard-subs"]], decls: 9, vars: 2, consts: [[1, "content-urls"], [1, "scrollable", "urls"], ["appearance", "outlined", 1, "url"], [1, "desc"], [3, "cdkCopyToClipboard"], [1, "url"], ["target", "_blank", "rel", "noopener noreferrer", 3, "href"]], template: function DashboardSubs_Template(rf, ctx) {
     if (rf & 1) {
-      \u0275\u0275elementStart(0, "app-title");
-      \u0275\u0275text(1, "\u8BA2\u9605\u94FE\u63A5");
-      \u0275\u0275elementEnd();
-      \u0275\u0275element(2, "mat-divider")(3, "section");
+      \u0275\u0275elementStart(0, "app-dashboard-panel")(1, "mat-card-header")(2, "mat-card-title");
+      \u0275\u0275text(3, "\u8BA2\u9605\u94FE\u63A5");
+      \u0275\u0275elementEnd()();
+      \u0275\u0275elementStart(4, "mat-card-content", 0)(5, "section", 1);
+      \u0275\u0275repeaterCreate(6, DashboardSubs_For_7_Template, 11, 5, "mat-card", 2, _forTrack02);
+      \u0275\u0275pipe(8, "async");
+      \u0275\u0275elementEnd()()();
+    }
+    if (rf & 2) {
+      \u0275\u0275advance(6);
+      \u0275\u0275repeater(\u0275\u0275pipeBind1(8, 0, ctx.urls$));
     }
   }, dependencies: [
     ReactiveFormsModule,
+    DashboardPanel,
+    MatCardHeader,
+    MatCardTitle,
+    MatCardContent,
+    MatCard,
     MatDivider,
-    Title2
-  ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  overflow: hidden;\n  flex: 1 1 auto;\n  flex-direction: column;\n  width: 100%;\n  gap: 8px;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%] {\n  display: flex;\n  overflow-y: auto;\n  flex: 1;\n  flex-direction: column;\n  gap: 12px;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%]   .convertor-url[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: flex-start;\n  flex-direction: column;\n  justify-content: center;\n  box-sizing: border-box;\n  width: 100%;\n  height: auto;\n  padding: 12px;\n  border-radius: 12px;\n  gap: 12px;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%]   .convertor-url[_ngcontent-%COMP%]   .convertor-url-label[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  width: 100%;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%]   .convertor-url[_ngcontent-%COMP%]   .convertor-url-label[_ngcontent-%COMP%]   h5[_ngcontent-%COMP%] {\n  font-size: 12px;\n  font-weight: 400;\n  font-style: normal;\n  line-height: normal;\n  flex: 1 1 auto;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%]   .convertor-url[_ngcontent-%COMP%]   .convertor-url-link[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: flex-start;\n  align-self: stretch;\n  flex-direction: column;\n  padding: 8px;\n  border-radius: 6px;\n  background: #0c0e12;\n  gap: 10px;\n}\n[_nghost-%COMP%]   section[_ngcontent-%COMP%]   .convertor-url[_ngcontent-%COMP%]   .convertor-url-link[_ngcontent-%COMP%]   code[_ngcontent-%COMP%] {\n  font-size: 12px;\n  font-weight: 400;\n  font-style: normal;\n  line-height: normal;\n  overflow: hidden;\n  overflow-y: auto;\n  flex: 1 1 auto;\n  width: 100%;\n  text-overflow: ellipsis;\n  word-break: break-word;\n  overflow-wrap: anywhere;\n}\n/*# sourceMappingURL=dashboard-subs.css.map */"] });
+    IconButton,
+    CdkCopyToClipboard,
+    AsyncPipe
+  ], styles: ["\n\n[_nghost-%COMP%] {\n  overflow: hidden;\n  flex: 1;\n  width: 100%;\n}\n[_nghost-%COMP%]   code[_ngcontent-%COMP%] {\n  text-wrap: auto;\n  word-break: break-word;\n}\n[_nghost-%COMP%]   .content-urls[_ngcontent-%COMP%] {\n  display: flex;\n  overflow: hidden;\n  flex: 1;\n}\n[_nghost-%COMP%]   section.urls[_ngcontent-%COMP%] {\n  display: flex;\n  flex: 1;\n  flex-direction: column;\n  gap: 8px;\n}\n[_nghost-%COMP%]   section.urls[_ngcontent-%COMP%]   mat-card[_ngcontent-%COMP%] {\n  flex: 1;\n  border-radius: 6px;\n}\n[_nghost-%COMP%]   section.urls[_ngcontent-%COMP%]   mat-card[_ngcontent-%COMP%]   mat-card-header[_ngcontent-%COMP%] {\n  justify-content: space-between;\n  padding: 8px 12px;\n}\n[_nghost-%COMP%]   section.urls[_ngcontent-%COMP%]   mat-card[_ngcontent-%COMP%]   mat-card-content[_ngcontent-%COMP%] {\n  padding: 8px 12px;\n  border-bottom-right-radius: inherit;\n  border-bottom-left-radius: inherit;\n  background: #0f1114;\n}\n[_nghost-%COMP%]   section.urls[_ngcontent-%COMP%]   mat-card[_ngcontent-%COMP%]   .desc[_ngcontent-%COMP%] {\n  font-size: 12px;\n  font-weight: 500;\n  line-height: 18px;\n  color: var(--mat-sys-primary);\n}\n[_nghost-%COMP%]   section.urls[_ngcontent-%COMP%]   mat-card[_ngcontent-%COMP%]   .url[_ngcontent-%COMP%] {\n  font-size: 12px;\n  font-weight: 400;\n  line-height: normal;\n}\n[_nghost-%COMP%]   section.urls[_ngcontent-%COMP%]   mat-card[_ngcontent-%COMP%]   .url[_ngcontent-%COMP%]   a[_ngcontent-%COMP%] {\n  text-decoration: none;\n  color: inherit;\n}\n[_nghost-%COMP%]   section.urls[_ngcontent-%COMP%]   mat-card[_ngcontent-%COMP%]   .url[_ngcontent-%COMP%]   a[_ngcontent-%COMP%]:hover {\n  text-decoration: underline;\n}\n/*# sourceMappingURL=dashboard-subs.css.map */"] });
 };
 (() => {
   (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(DashboardSubs, [{
     type: Component,
     args: [{ selector: "app-dashboard-subs", imports: [
       ReactiveFormsModule,
+      DashboardPanel,
+      MatCardHeader,
+      MatCardTitle,
+      MatCardContent,
+      MatCard,
+      AsyncPipe,
       MatDivider,
-      Title2
-    ], template: '<app-title>\u8BA2\u9605\u94FE\u63A5</app-title>\n\n<mat-divider></mat-divider>\n\n<section>\n    <!--    @if (error$ | async; as errorMessage) {-->\n    <!--        <app-error-view [error]="errorMessage"></app-error-view>-->\n    <!--    } @else if ((urls$ | async)?.length === 0) {-->\n    <!--        <h1>No Content</h1>-->\n    <!--    } @else {-->\n    <!--        @for (url of urls$ | async; track url.desc) {-->\n    <!--            <div class="convertor-url">-->\n    <!--                <div class="convertor-url-label">-->\n    <!--                    <h5>{{ url.desc }}</h5>-->\n    <!--                    <app-icon-button cdkCopyToClipboard="{{ url.url }}">content_copy</app-icon-button>-->\n    <!--                </div>-->\n    <!--                <div class="convertor-url-link">-->\n    <!--                    <code>-->\n    <!--                        {{ url.url }}-->\n    <!--                    </code>-->\n    <!--                </div>-->\n    <!--            </div>-->\n    <!--        }-->\n    <!--    }-->\n</section>\n', styles: ["/* src/app/page/dashboard/dashboard-subs/dashboard-subs.scss */\n:host {\n  display: flex;\n  overflow: hidden;\n  flex: 1 1 auto;\n  flex-direction: column;\n  width: 100%;\n  gap: 8px;\n}\n:host section {\n  display: flex;\n  overflow-y: auto;\n  flex: 1;\n  flex-direction: column;\n  gap: 12px;\n}\n:host section .convertor-url {\n  display: flex;\n  align-items: flex-start;\n  flex-direction: column;\n  justify-content: center;\n  box-sizing: border-box;\n  width: 100%;\n  height: auto;\n  padding: 12px;\n  border-radius: 12px;\n  gap: 12px;\n}\n:host section .convertor-url .convertor-url-label {\n  display: flex;\n  align-items: center;\n  flex-direction: row;\n  width: 100%;\n}\n:host section .convertor-url .convertor-url-label h5 {\n  font-size: 12px;\n  font-weight: 400;\n  font-style: normal;\n  line-height: normal;\n  flex: 1 1 auto;\n}\n:host section .convertor-url .convertor-url-link {\n  display: flex;\n  align-items: flex-start;\n  align-self: stretch;\n  flex-direction: column;\n  padding: 8px;\n  border-radius: 6px;\n  background: #0c0e12;\n  gap: 10px;\n}\n:host section .convertor-url .convertor-url-link code {\n  font-size: 12px;\n  font-weight: 400;\n  font-style: normal;\n  line-height: normal;\n  overflow: hidden;\n  overflow-y: auto;\n  flex: 1 1 auto;\n  width: 100%;\n  text-overflow: ellipsis;\n  word-break: break-word;\n  overflow-wrap: anywhere;\n}\n/*# sourceMappingURL=dashboard-subs.css.map */\n"] }]
+      IconButton,
+      CdkCopyToClipboard
+    ], template: `<app-dashboard-panel>
+    <mat-card-header>
+        <mat-card-title>\u8BA2\u9605\u94FE\u63A5</mat-card-title>
+    </mat-card-header>
+    <mat-card-content class="content-urls">
+        <section class="scrollable urls">
+            @for (url of (urls$ | async); track url.url) {
+                <mat-card class="url" appearance="outlined">
+                    <mat-card-header>
+                        <mat-card-title class="desc">{{ url.desc }}</mat-card-title>
+                        <app-icon-button [cdkCopyToClipboard]="url.url?.toString() ?? ''">content_copy</app-icon-button>
+                    </mat-card-header>
+                    <mat-divider></mat-divider>
+                    <mat-card-content>
+                        <code class="url"><a target="_blank" rel="noopener noreferrer" href="{{url.url}}">{{ url.url }}</a></code>
+                    </mat-card-content>
+                </mat-card>
+            }
+        </section>
+    </mat-card-content>
+</app-dashboard-panel>
+`, styles: ["/* src/app/page/dashboard/dashboard-subs/dashboard-subs.scss */\n:host {\n  overflow: hidden;\n  flex: 1;\n  width: 100%;\n}\n:host code {\n  text-wrap: auto;\n  word-break: break-word;\n}\n:host .content-urls {\n  display: flex;\n  overflow: hidden;\n  flex: 1;\n}\n:host section.urls {\n  display: flex;\n  flex: 1;\n  flex-direction: column;\n  gap: 8px;\n}\n:host section.urls mat-card {\n  flex: 1;\n  border-radius: 6px;\n}\n:host section.urls mat-card mat-card-header {\n  justify-content: space-between;\n  padding: 8px 12px;\n}\n:host section.urls mat-card mat-card-content {\n  padding: 8px 12px;\n  border-bottom-right-radius: inherit;\n  border-bottom-left-radius: inherit;\n  background: #0f1114;\n}\n:host section.urls mat-card .desc {\n  font-size: 12px;\n  font-weight: 500;\n  line-height: 18px;\n  color: var(--mat-sys-primary);\n}\n:host section.urls mat-card .url {\n  font-size: 12px;\n  font-weight: 400;\n  line-height: normal;\n}\n:host section.urls mat-card .url a {\n  text-decoration: none;\n  color: inherit;\n}\n:host section.urls mat-card .url a:hover {\n  text-decoration: underline;\n}\n/*# sourceMappingURL=dashboard-subs.css.map */\n"] }]
   }], null, null);
 })();
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardSubs, { className: "DashboardSubs", filePath: "src/app/page/dashboard/dashboard-subs/dashboard-subs.ts", lineNumber: 16 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardSubs, { className: "DashboardSubs", filePath: "src/app/page/dashboard/dashboard-subs/dashboard-subs.ts", lineNumber: 30 });
 })();
 
 // src/app/page/dashboard/dashboard.ts
