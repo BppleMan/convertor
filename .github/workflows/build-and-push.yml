@@ -95,12 +95,11 @@ jobs:
                 run: npm install -g pnpm
 
             -   name: 构建 conv 工具
-                run: cargo install -p conv .
+                run: cargo install --path crates/conv
+
             -   name: 构建 MUSL 二进制文件
                 shell: bash
-                run: |
-                    chmod +x ./scripts/build.sh
-                    source ./scripts/build.sh && build_musl ${{ steps.vars.outputs.profile }}
+                run: conv build convd prod -d musl amd,arm
 
             -   name: 获取版本号
                 id: version

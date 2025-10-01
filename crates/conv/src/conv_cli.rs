@@ -11,6 +11,9 @@ pub struct ConvCli {
 
 #[derive(Debug, Subcommand)]
 pub enum ConvCommand {
+    /// 显示版本信息
+    Version,
+
     /// 编译 convertor
     Build(BuildCommand),
 
@@ -38,6 +41,10 @@ pub struct CommonArgs {
 impl Commander for ConvCommand {
     fn create_command(&self) -> color_eyre::Result<Vec<Command>> {
         match self {
+            ConvCommand::Version => {
+                println!("{}", env!("CARGO_PKG_VERSION"));
+                Ok(vec![])
+            }
             ConvCommand::Build(build) => build.create_command(),
             ConvCommand::Publish(publish) => publish.create_command(),
             ConvCommand::Image(image) => image.create_command(),

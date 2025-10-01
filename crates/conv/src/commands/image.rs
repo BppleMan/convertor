@@ -19,20 +19,17 @@ pub struct ImageCommand {
 
 impl ImageCommand {
     pub fn prepare(&self) -> Result<Vec<Command>> {
-        let mut build_command = BuildCommand {
+        BuildCommand {
             common_args: CommonArgs {
                 profile: self.profile.clone(),
                 package: Package::Convd,
             },
-            target: Some(Target::Musl { arch: Arch::Amd }),
+            target: Some(Target::Musl {
+                arch: vec![Arch::Amd, Arch::Arm],
+            }),
             dashboard: self.dashboard,
-        };
-        let mut pre_commands = build_command.create_command()?;
-
-        build_command.target = Some(Target::Musl { arch: Arch::Arm });
-        pre_commands.extend(build_command.create_command()?);
-
-        Ok(pre_commands)
+        }
+            .create_command()
     }
 
     // pub fn build(&self) -> Result<Vec<Command>> {

@@ -7,8 +7,12 @@ pub enum Target {
     Native,
     /// 编译 linux-musl 目标
     Musl {
-        #[arg(value_enum, default_value_t = Arch::current())]
-        arch: Arch,
+        #[arg(
+            value_enum,
+            value_delimiter = ',',
+            default_values_t = Vec::from([Arch::current()])
+        )]
+        arch: Vec<Arch>,
     },
 }
 
@@ -20,10 +24,10 @@ impl Target {
         }
     }
 
-    pub fn as_target_triple(&self) -> Option<&'static str> {
+    pub fn arch(&self) -> Vec<Option<Arch>> {
         match self {
-            Target::Native => None,
-            Target::Musl { arch } => Some(arch.as_target_triple()),
+            Target::Native => vec![None],
+            Target::Musl { arch } => arch.iter().copied().map(Some).collect(),
         }
     }
 }

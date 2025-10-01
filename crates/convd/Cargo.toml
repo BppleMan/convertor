@@ -6,6 +6,13 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
+include = [
+    "assets/**",
+    "src/**",
+    "tests/**",
+    "build.rs",
+    "Cargo.toml",
+]
 
 [dependencies]
 convertor = { workspace = true }

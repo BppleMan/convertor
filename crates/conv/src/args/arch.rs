@@ -1,7 +1,7 @@
 use clap::ValueEnum;
 use std::fmt::{Display, Formatter};
 
-#[derive(Debug, Clone, ValueEnum)]
+#[derive(Debug, Clone, Copy, ValueEnum)]
 pub enum Arch {
     Amd,
     Arm,
