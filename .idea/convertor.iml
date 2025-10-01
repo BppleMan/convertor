@@ -20,6 +20,7 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/convertor/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/convertor/tests" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/crates/example/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/conv/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
       <excludeFolder url="file://$MODULE_DIR$/test-assets/cache" />
       <excludeFolder url="file://$MODULE_DIR$/test-assets/logs" />
@@ -30,6 +31,7 @@
       <excludeFolder url="file://$MODULE_DIR$/crates/convd/assets/development" />
       <excludeFolder url="file://$MODULE_DIR$/dashboard/.angular/cache" />
       <excludeFolder url="file://$MODULE_DIR$/dashboard/.idea" />
+      <excludeFolder url="file://$MODULE_DIR$/crates/convd/assets/production" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

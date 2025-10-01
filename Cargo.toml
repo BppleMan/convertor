@@ -4,6 +4,7 @@ members = [
     "crates/convd",
     "crates/confly",
     "crates/convertor",
+    "crates/conv",
     "crates/example",
 ]
 
@@ -67,10 +68,11 @@ moka = { version = "0.12.10", default-features = false }
 # 工具/解析/匹配/验证
 regex = { version = "1.11.2", default-features = false }
 console = { version = "0.16.1", default-features = false }
+indicatif = { version = "0.18.0", default-features = false }
 include_dir = { version = "0.7.4", default-features = true }
 clap = { version = "4.5.47", default-features = false }
 url = { version = "2.5.7", default-features = false }
-strum = { version = "0.27.2", default-features = false }
+chrono = { version = "0.4.42", default-features = false }
 
 # 测试/调试/开发工具
 insta = { version = "1.43.2", default-features = false }
@@ -82,14 +84,3 @@ thiserror = { version = "2.0.16", default-features = false }
 # MIME 与类型推断
 mime = { version = "0.3.17", default-features = false }
 mime_guess = { version = "2.0.5", default-features = true }
-
-[profile.musl]
-inherits = "release" # 继承 release 配置
-opt-level = 3        # 极限体积优化（如需极致性能可改成3）
-lto = "fat"          # 最激进的链接时优化
-codegen-units = 1    # 单单元生成，最大化优化效果
-#panic = "abort"         # panic 直接 abort，减少依赖和体积
-strip = true  # 自动剥离所有符号表
-debug = false # 不保留调试符号
-#incremental = false     # 关闭增量编译，避免缓存不一致
-overflow-checks = false # 禁用溢出检查

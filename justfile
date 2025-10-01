@@ -1,7 +1,24 @@
 #!/usr/bin/env just --justfile
-# Convertor 项目构建系统 (conv.sh 代理模式)
-# 注意: 这个文件只是为了兼容 just 用户的代理层
-# 真正的实现在 conv.sh 中，这里只是调用转发
+
+# build & push base image
+base:
+    echo $CR_PAT | docker login ghcr.io -u bppleman --password-stdin
+    docker buildx build \
+        -f base.Dockerfile \
+        --platform linux/amd64,linux/arm64 \
+        -t ghcr.io/bppleman/convertor/base:alpine3.20 \
+        -t ghcr.io/bppleman/convertor/base:latest \
+        --push .
+
+inspect image:
+    docker buildx imagetools inspect {{ image }}
+
+multi:
+    docker buildx imagetools create \
+      -t ghcr.io/you/convertor:2.6.12 \
+      -t ghcr.io/you/convertor:latest \
+      local:convd \
+      ghcr.io/you/convertor:tmp-arm64
 
 # 快速开发环境构建
 build-dev:

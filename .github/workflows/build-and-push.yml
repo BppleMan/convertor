@@ -36,37 +36,40 @@ jobs:
             -   name: 检出代码
                 uses: actions/checkout@v4
 
-            -   name: 解析镜像名称（小写）
-                id: img
-                shell: bash
-                run: |
-                    NAME="ghcr.io/${{ github.repository }}/convd"
-                    echo "image=${NAME,,}" >> "$GITHUB_OUTPUT"
+            # -   name: 解析镜像名称（小写）
+            #     id: img
+            #     shell: bash
+            #     run: |
+            #         NAME="ghcr.io/${{ github.repository }}/convd"
+            #         echo "image=${NAME,,}" >> "$GITHUB_OUTPUT"
+            #
+            # -   name: 处理输入参数
+            #     id: vars
+            #     shell: bash
+            #     run: |
+            #         # 统一使用 dev/prod 作为环境控制参数
+            #         p="${{ github.event.inputs.profile }}"
+            #         if [ -z "$p" ]; then p="${{ env.PROFILE }}"; fi
+            #         echo "profile=$p" >> "$GITHUB_OUTPUT"
+            #
+            #         # 映射到 cargo 的编译配置
+            #         if [ "$p" = "prod" ]; then
+            #             echo "cargo_profile=release" >> "$GITHUB_OUTPUT"
+            #         else
+            #             echo "cargo_profile=debug" >> "$GITHUB_OUTPUT"
+            #         fi
+            #
+            #         e="${{ github.event.inputs.extra_tag }}"
+            #         echo "extra=$e" >> "$GITHUB_OUTPUT"
 
-            -   name: 处理输入参数
-                id: vars
-                shell: bash
-                run: |
-                    # 统一使用 dev/prod 作为环境控制参数
-                    p="${{ github.event.inputs.profile }}"
-                    if [ -z "$p" ]; then p="${{ env.PROFILE }}"; fi
-                    echo "profile=$p" >> "$GITHUB_OUTPUT"
-                    
-                    # 映射到 cargo 的编译配置
-                    if [ "$p" = "prod" ]; then
-                        echo "cargo_profile=release" >> "$GITHUB_OUTPUT"
-                    else
-                        echo "cargo_profile=debug" >> "$GITHUB_OUTPUT"
-                    fi
-                    
-                    e="${{ github.event.inputs.extra_tag }}"
-                    echo "extra=$e" >> "$GITHUB_OUTPUT"
-
-            -   name: 安装 Rust 工具链
-                uses: dtolnay/rust-toolchain@stable
+            # -   name: 安装 Rust 工具链
+            #     uses: dtolnay/rust-toolchain@stable
 
             -   name: 添加 MUSL 目标平台
-                run: rustup target add x86_64-unknown-linux-musl
+                run: rustup target add x86_64-unknown-linux-musl aarch64-unknown-linux-musl
+
+            -   name: 安装 cargo-zigbuild
+                run: cargo install cargo-zigbuild --locked
 
             -   name: 缓存 Cargo 构建产物
                 uses: actions/cache@v4
@@ -82,17 +85,17 @@ jobs:
             -   name: 安装 Zig 编译器
                 uses: mlugg/setup-zig@v2
 
-            -   name: 安装 cargo-zigbuild
-                run: cargo install cargo-zigbuild --locked
 
-            -   name: 安装 Node.js
-                uses: actions/setup-node@v5
-                with:
-                    node-version: 'lts/*'
+            # -   name: 安装 Node.js
+            #     uses: actions/setup-node@v5
+            #     with:
+            #         node-version: 'lts/*'
 
             -   name: 安装 pnpm
                 run: npm install -g pnpm
 
+            -   name: 构建 conv 工具
+                run: cargo install -p conv .
             -   name: 构建 MUSL 二进制文件
                 shell: bash
                 run: |
