@@ -51,6 +51,7 @@ redis = { workspace = true, features = ["tokio-rustls-comp", "streams", "connect
 
 # CLI / 工具 / 键入
 clap = { workspace = true, features = ["std", "derive"] }
+config = { workspace = true, features = ["async", "yaml", "toml"] }
 
 # 错误 / 诊断
 color-eyre = { workspace = true, optional = true }

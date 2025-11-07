@@ -8,13 +8,13 @@ use tracing_subscriber::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
+pub const HOME_CONFIG_DIR: &str = ".convertor";
+
 pub fn init_base_dir() -> std::path::PathBuf {
     #[cfg(debug_assertions)]
-    let base_dir = std::env::current_dir()
-        .expect("无法获取当前工作目录")
-        .join(".convertor");
+    let base_dir = std::env::current_dir().expect("无法获取当前工作目录").join(HOME_CONFIG_DIR);
     #[cfg(not(debug_assertions))]
-    let base_dir = std::path::PathBuf::from(std::env::var("HOME").expect("没有找到 HOME 目录")).join(".convertor");
+    let base_dir = std::path::PathBuf::from(std::env::var("HOME").expect("没有找到 HOME 目录")).join(HOME_CONFIG_DIR);
     base_dir
 }
 
@@ -124,20 +124,12 @@ pub fn init_log(loki_url: Option<&str>, otlp_grpc: Option<&str>) -> Option<Backg
             }
             (Some(loki_layer), None) => {
                 eprintln!("无法读取 OTLP_GRPC, 不启用 otlp 日志");
-                tracing_subscriber::registry()
-                    .with(filter)
-                    .with(fmt_layer)
-                    .with(loki_layer)
-                    .init();
+                tracing_subscriber::registry().with(filter).with(fmt_layer).with(loki_layer).init();
             }
             (None, Some(otlp_grpc)) => {
                 eprintln!("无法读取 LOKI_URL, 不启用 loki 日志");
                 let otlp_layer = layer!(otlp_layer, otlp_grpc, service);
-                tracing_subscriber::registry()
-                    .with(filter)
-                    .with(fmt_layer)
-                    .with(otlp_layer)
-                    .init();
+                tracing_subscriber::registry().with(filter).with(fmt_layer).with(otlp_layer).init();
             }
             (None, None) => {
                 eprintln!("无法读取 LOKI_URL, 不启用 loki 日志");
