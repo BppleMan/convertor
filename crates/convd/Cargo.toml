@@ -6,13 +6,7 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-include = [
-    "assets/**",
-    "src/**",
-    "tests/**",
-    "build.rs",
-    "Cargo.toml",
-]
+include = ["assets/**", "src/**", "tests/**", "build.rs", "Cargo.toml"]
 
 [dependencies]
 convertor = { workspace = true }
@@ -23,6 +17,17 @@ serde = { workspace = true, features = ["derive"] }
 
 # 日志 / 追踪
 tracing = { workspace = true, features = ["attributes"] }
+tracing-subscriber = { workspace = true, features = [
+    "default",
+    "env-filter",
+    "json",
+    "local-time",
+] }
+tracing-loki = { workspace = true, default-features = false, features = [
+    "rustls",
+    "compat-0-2-1",
+] }
+tracing-opentelemetry = { workspace = true }
 
 # URL / 编码 / 工具
 url = { workspace = true, features = ["serde"] }
@@ -30,18 +35,37 @@ mime = { workspace = true }
 uuid = { workspace = true, features = ["v4", "serde"] }
 
 # HTTP 服务 / 中间件
-axum = { workspace = true, features = ["query", "json", "tokio", "http2", "macros"] }
-axum-extra = { workspace = true, features = ["typed-header", "scheme", "tracing"] }
+axum = { workspace = true, features = [
+    "query",
+    "json",
+    "tokio",
+    "http2",
+    "macros",
+] }
+axum-extra = { workspace = true, features = [
+    "typed-header",
+    "scheme",
+    "tracing",
+] }
 tower = { workspace = true, features = [] }
 tower-http = { workspace = true, features = ["trace", "fs", "request-id"] }
 
 # 并发 / 异步 运行时
-tokio = { workspace = true, features = ["fs", "rt-multi-thread", "signal", "macros"] }
+tokio = { workspace = true, features = [
+    "fs",
+    "rt-multi-thread",
+    "signal",
+    "macros",
+] }
 tokio-util = { workspace = true, features = [] }
 
 # 缓存 / 存储 / 数据库
 moka = { workspace = true, features = ["future"] }
-redis = { workspace = true, features = ["tokio-rustls-comp", "streams", "connection-manager"] }
+redis = { workspace = true, features = [
+    "tokio-rustls-comp",
+    "streams",
+    "connection-manager",
+] }
 
 # CLI / 工具 / 键入
 clap = { workspace = true, features = ["cargo", "derive", "default"] }

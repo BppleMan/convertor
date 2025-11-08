@@ -45,7 +45,13 @@ async fn main() -> Result<()> {
     });
     let loki_url = std::env::var("LOKI_URL").ok();
     let otlp_grpc = std::env::var("OTLP_GRPC").ok();
-    init_log(loki_url.as_deref(), otlp_grpc.as_deref());
+    let loki_task = init_log(loki_url.as_deref(), otlp_grpc.as_deref());
+
+    // 启动 loki 后台任务
+    if let Some(task) = loki_task {
+        tokio::spawn(task);
+    }
+
     info!("工作目录: {}", base_dir.display());
 
     info!("+──────────────────────────────────────────────+");

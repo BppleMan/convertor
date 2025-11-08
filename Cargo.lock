@@ -564,6 +564,9 @@ dependencies = [
     "tower",
     "tower-http",
     "tracing",
+    "tracing-loki",
+    "tracing-opentelemetry",
+    "tracing-subscriber",
     "url",
     "uuid",
 ]
