@@ -15,10 +15,10 @@ inspect image:
 
 multi:
     docker buildx imagetools create \
-      -t ghcr.io/you/convertor:2.6.12 \
-      -t ghcr.io/you/convertor:latest \
-      local:convd \
-      ghcr.io/you/convertor:tmp-arm64
+        -t ghcr.io/you/convertor:2.6.12 \
+        -t ghcr.io/you/convertor:latest \
+        local:convd \
+        ghcr.io/you/convertor:tmp-arm64
 
 # 快速开发环境构建
 build-dev:

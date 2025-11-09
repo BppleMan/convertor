@@ -1,7 +1,7 @@
 use clap::ValueEnum;
 use std::fmt::{Display, Formatter};
 
-#[derive(Debug, Clone, ValueEnum)]
+#[derive(Debug, Clone, Copy, ValueEnum)]
 pub enum Profile {
     Dev,
     Prod,
@@ -29,12 +29,12 @@ impl Profile {
         }
     }
 
-    pub fn as_image_registry(&self) -> &'static str {
-        match self {
-            Profile::Dev => "local",
-            Profile::Prod => "ghcr.io/bppleman/convertor",
-        }
-    }
+    // pub fn as_image_registry(&self) -> &'static str {
+    //     match self {
+    //         Profile::Dev => "local",
+    //         Profile::Prod => "ghcr.io/bppleman/convertor",
+    //     }
+    // }
 
     // pub fn as_image_tag(&self, name: impl AsRef<str>, version: impl AsRef<str>) -> String {
     //     match self {

@@ -27,6 +27,13 @@ impl Arch {
         }
     }
 
+    pub fn as_image_tag(&self) -> &'static str {
+        match self {
+            Arch::Amd => "linux_amd64",
+            Arch::Arm => "linux_arm64",
+        }
+    }
+
     pub fn as_dist_path(&self) -> &'static str {
         match self {
             Arch::Amd => "dist/amd64",

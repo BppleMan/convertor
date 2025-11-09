@@ -15,6 +15,12 @@ ARG VERSION=0.0.1
 ARG BUILD_DATE=1970-01-01T00:00:00Z
 ARG VCS_REF=unknown
 
+# 形如: x86_64-unknown-linux-musl/aarch64-unknown-linux-musl
+ARG TARGET_TRIPLE=unknown
+# 形如: release/debug
+ARG TARGET_DIR=unknown
+ARG BIN_PATH=target/${TARGET_TRIPLE}/${TARGET_DIR}/${NAME}
+
 LABEL org.opencontainers.image.title="${TITLE}" \
     org.opencontainers.image.description="${DESCRIPTION}" \
     org.opencontainers.image.url="${URL}" \
@@ -27,7 +33,7 @@ LABEL org.opencontainers.image.title="${TITLE}" \
     org.opencontainers.image.created="${BUILD_DATE}"
 
 # 复制编译好的二进制文件
-COPY --chown=app:app dist/${TARGETARCH}/${NAME} /app/convd
+COPY --chown=app:app ${BIN_PATH} /app/convd
 RUN mkdir -p /app/.convertor
 
 EXPOSE 8080

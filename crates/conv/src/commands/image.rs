@@ -1,4 +1,4 @@
-use crate::args::{Arch, Package, Profile, Target};
+use crate::args::{Arch, Package, Profile, Registry, Tag, Target};
 use crate::commands::{BuildCommand, Commander};
 use crate::conv_cli::CommonArgs;
 use clap::Args;
@@ -10,8 +10,20 @@ pub struct ImageCommand {
     #[arg(value_enum)]
     pub profile: Profile,
 
+    #[arg(short, long, value_delimiter = ',', default_values_t = default_arch())]
+    pub arch: Vec<Arch>,
+
+    #[arg(short, long, value_delimiter = ',', default_values_t = default_registries())]
+    pub registries: Vec<Registry>,
+
+    #[arg(long, default_value_t = default_user())]
+    pub user: String,
+
+    #[arg(long, default_value_t = default_project())]
+    pub project: String,
+
     #[arg(short, long, default_value_t = false)]
-    pub multi: bool,
+    pub push: bool,
 
     #[arg(short, long, default_value_t = false)]
     pub dashboard: bool,
@@ -24,81 +36,70 @@ impl ImageCommand {
                 profile: self.profile.clone(),
                 package: Package::Convd,
             },
-            target: Some(Target::Musl {
-                arch: vec![Arch::Amd, Arch::Arm],
-            }),
+            target: Some(Target::Musl { arch: self.arch.clone() }),
             dashboard: self.dashboard,
         }
-            .create_command()
+        .create_command()
     }
 
-    // pub fn build(&self) -> Result<Vec<Command>> {
-    //     let mut commands = self.prepare()?;
-    //
-    //     let registry = self.profile.as_image_registry();
-    //     let docker_args = DockerArgs::new(&self.profile, &self.arch);
-    //     let tag = format!("{}/{}:{}", registry, docker_args.name, docker_args.version);
-    //
-    //     let mut command = Command::new("docker");
-    //     command
-    //         .args(["buildx", "build"])
-    //         .args(["--platform", self.arch.as_image_platform()])
-    //         .args(["-f", "Dockerfile"]);
-    //     docker_args.build_arg(&mut command);
-    //     command.arg("--load");
-    //     command.args(["-t", tag.as_str()]).arg(".");
-    //     commands.push(command);
-    //
-    //     Ok(commands)
-    // }
-    //
-    // pub fn merge(&self) -> Result<Vec<Command>> {
-    //     if matches!(self.profile, Profile::Dev) {
-    //         return Err(eyre!("不能在 dev 配置下合并镜像"));
-    //     }
-    //     let registry = self.profile.as_image_registry();
-    //     let docker_args = DockerArgs::new(&self.profile, &self.arch);
-    //
-    //     let mut command = Command::new("docker");
-    //     command
-    //         .args(["buildx", "imagetools", "create"])
-    //         .arg("-t")
-    //         .arg(format!("{}/{}:{}", registry, docker_args.name, docker_args.version))
-    //         .arg("-t")
-    //         .arg(format!("{}/{}:latest", registry, docker_args.name))
-    //         .args([
-    //             format!(
-    //                 "{}/{}-{}:{}",
-    //                 registry,
-    //                 docker_args.name,
-    //                 Arch::Arm,
-    //                 docker_args.version
-    //             ),
-    //             format!(
-    //                 "{}/{}-{}:{}",
-    //                 registry,
-    //                 docker_args.name,
-    //                 Arch::Amd,
-    //                 docker_args.version
-    //             ),
-    //         ]);
-    //
-    //     Ok(vec![command])
-    // }
+    fn build_image(&self, tag: &Tag, arch: Arch) -> Command {
+        let build_args = BuildArgs::new(arch, self.profile);
+        let mut command = Command::new("docker");
+        command
+            .args(["buildx", "build"])
+            .args(["--platform", arch.as_image_platform()])
+            .args(["-t", tag.local(Some(arch)).as_str()]);
+        build_args.build_arg(&mut command);
+        command.args(["-f", "Dockerfile", "--load", "."]);
 
-    fn copy_command(&self, docker_args: &DockerArgs, arch: Arch) -> Command {
-        let bin_path = format!(
-            "target/{}/{}/{}",
-            arch.as_target_triple(),
-            self.profile.as_cargo_target_dir(),
-            docker_args.name
+        command
+    }
+
+    #[allow(unused)]
+    fn tag_image(&self, tag: &Tag, registry: Registry, arch: Arch) -> Command {
+        let mut command = Command::new("docker");
+        command.arg("tag").arg(tag.local(Some(arch))).arg(tag.remote(registry, Some(arch)));
+
+        command
+    }
+
+    fn push_image(&self, tag: &Tag, registry: Registry, arch: Arch) -> Command {
+        let mut command = Command::new("skopeo");
+        command
+            .arg("copy")
+            .arg(format!("docker-daemon:{}", tag.local(Some(arch))))
+            .arg(format!("docker://{}", tag.remote(registry, Some(arch))));
+
+        command
+    }
+
+    fn manifest_image(&self, tag: &Tag, registry: Registry) -> Command {
+        let mut command = Command::new("docker");
+        command
+            .args(["buildx", "imagetools", "create"])
+            .args(["-t", tag.remote(registry, None).as_str()]);
+        for arch in self.arch.iter().copied() {
+            command.arg(tag.remote(registry, Some(arch)));
+        }
+
+        command
+    }
+
+    fn login_registry(&self, registry: Registry) -> Command {
+        let echo_token = format!(r#"echo "${}{}_TOKEN{}""#, "{", registry.env_prefix(), "}");
+        let login = format!(
+            r#"login -u "${}{}_USER{}" --password-stdin {}"#,
+            "{",
+            registry.env_prefix(),
+            "}",
+            registry.as_url()
         );
-        let dist_path = format!("{}/{}", arch.as_dist_path(), docker_args.name);
-        let mut copy = Command::new("sh");
-        copy.arg("-c")
-            .arg(format!("mkdir -p {} && cp -rf {} {}", arch.as_dist_path(), bin_path, dist_path));
+        let mut command = Command::new("sh");
+        command
+            .arg("-c")
+            .arg(format!(r#"{} | docker {} && {} | skopeo {}"#, echo_token, login, echo_token, login));
 
-        copy
+        command
     }
 }
 
@@ -106,39 +107,32 @@ impl Commander for ImageCommand {
     fn create_command(&self) -> Result<Vec<Command>> {
         let mut commands = self.prepare()?;
 
-        let multi = self.multi && matches!(self.profile, Profile::Prod);
-        let registry = self.profile.as_image_registry();
-        let docker_args = DockerArgs::new();
-        let tag = format!("{}/{}:{}", registry, docker_args.name, docker_args.version);
-        let (load_or_push, platform) = match multi {
-            false => ("--load", Arch::current().as_image_platform().to_string()),
-            true => (
-                "--push",
-                format!("{},{}", Arch::Amd.as_image_platform(), Arch::Arm.as_image_platform()),
-            ),
-        };
-
-        let mut command = Command::new("docker");
-        command
-            .args(["buildx", "build"])
-            .args(["--platform", platform.as_str()])
-            .args(["-f", "Dockerfile"]);
-        docker_args.build_arg(&mut command);
-        command.args(["-t", tag.as_str()]).arg(load_or_push).arg(".");
-
-        if !multi {
-            commands.push(self.copy_command(&docker_args, Arch::current()));
-        } else {
-            commands.push(self.copy_command(&docker_args, Arch::Amd));
-            commands.push(self.copy_command(&docker_args, Arch::Arm));
+        let tag = Tag::new(&self.user, &self.project, self.profile);
+        // 先将所有架构的镜像构建出来
+        for arch in self.arch.iter().copied() {
+            commands.push(self.build_image(&tag, arch));
         }
-        commands.push(command);
+
+        // 然后以注册表为单位，给每个架构的镜像打标签并推送
+        for registry in self.registries.iter().copied() {
+            // 本地注册表不需要打标签和推送
+            if registry == Registry::Local {
+                continue;
+            }
+            // 每个注册表需要单独登录
+            commands.push(self.login_registry(registry));
+            for arch in self.arch.iter().copied() {
+                commands.push(self.push_image(&tag, registry, arch));
+            }
+            // 最后创建多架构清单并推送
+            commands.push(self.manifest_image(&tag, registry));
+        }
 
         Ok(commands)
     }
 }
 
-struct DockerArgs {
+struct BuildArgs {
     name: String,
     version: String,
     description: String,
@@ -146,10 +140,13 @@ struct DockerArgs {
     vendor: String,
     license: String,
     build_date: String,
+
+    target_triple: String,
+    target_dir: String,
 }
 
-impl DockerArgs {
-    fn new() -> Self {
+impl BuildArgs {
+    fn new(arch: Arch, profile: Profile) -> Self {
         let name = "convd".to_string();
         let version = env!("CARGO_PKG_VERSION").to_string();
         let description = env!("CARGO_PKG_DESCRIPTION").to_string();
@@ -158,6 +155,8 @@ impl DockerArgs {
         let license = env!("CARGO_PKG_LICENSE").to_string();
         let build_date = chrono::Utc::now().to_rfc3339();
 
+        let target_triple = arch.as_target_triple().to_string();
+        let target_dir = profile.as_cargo_target_dir().to_string();
         Self {
             name,
             version,
@@ -166,6 +165,8 @@ impl DockerArgs {
             vendor,
             license,
             build_date,
+            target_triple,
+            target_dir,
         }
     }
 
@@ -177,5 +178,23 @@ impl DockerArgs {
         command.arg("--build-arg").arg(format!("VENDOR={}", self.vendor));
         command.arg("--build-arg").arg(format!("LICENSE={}", self.license));
         command.arg("--build-arg").arg(format!("BUILD_DATE={}", self.build_date));
+        command.arg("--build-arg").arg(format!("TARGET_TRIPLE={}", self.target_triple));
+        command.arg("--build-arg").arg(format!("TARGET_DIR={}", self.target_dir));
     }
+}
+
+fn default_arch() -> Vec<Arch> {
+    vec![Arch::current()]
+}
+
+fn default_registries() -> Vec<Registry> {
+    vec![Registry::Local, Registry::Ghcr, Registry::Harbor]
+}
+
+fn default_user() -> String {
+    "bppleman".to_string()
+}
+
+fn default_project() -> String {
+    "convertor".to_string()
 }

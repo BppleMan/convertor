@@ -9,6 +9,7 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
 pub const HOME_CONFIG_DIR: &str = ".convertor";
+pub const K8S_CONFIG_DIR: &str = "/etc/convertor";
 
 pub fn init_base_dir() -> std::path::PathBuf {
     #[cfg(debug_assertions)]
