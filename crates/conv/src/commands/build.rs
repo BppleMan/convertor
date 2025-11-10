@@ -23,7 +23,7 @@ impl BuildCommand {
     pub fn prepare(&self) -> Result<Vec<Command>> {
         let CommonArgs { profile, package } = &self.common_args;
         match (package, self.dashboard) {
-            (&Package::Convd, true) => DashboardCommand::new(profile.clone()).create_command(),
+            (&Package::Convd, true) => DashboardCommand::new(*profile).create_command(),
             _ => Ok(vec![]),
         }
     }

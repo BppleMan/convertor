@@ -30,7 +30,7 @@ impl Tag {
             self.project,
             self.name,
             self.version,
-            self.profile,
+            self.profile.as_image_profile(),
             arch.map(|a| format!("-{}", a.as_image_tag())).unwrap_or_default(),
         )
     }
@@ -43,7 +43,7 @@ impl Tag {
             self.project,
             self.name,
             self.version,
-            self.profile,
+            self.profile.as_image_profile(),
             arch.map(|a| format!("-{}", a.as_image_tag())).unwrap_or_default(),
         )
     }
