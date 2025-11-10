@@ -21,7 +21,7 @@ fn main() -> Result<()> {
         let instant = std::time::Instant::now();
         println!(
             "{} {}",
-            style(format!("[{}/{}]", i, len)).green(),
+            style(format!("[{i}/{len}]")).green(),
             style(command_str).blue().bold().italic()
         );
         let status = command.status()?;

@@ -21,6 +21,7 @@ pub enum ConvCommand {
     Publish(PublishCommand),
 
     /// 构建 convd 镜像
+    #[command(subcommand)]
     Image(ImageCommand),
 
     /// 编译 dashboard

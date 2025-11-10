@@ -33,13 +33,6 @@ impl Arch {
             Arch::Arm => "linux_arm64",
         }
     }
-
-    pub fn as_dist_path(&self) -> &'static str {
-        match self {
-            Arch::Amd => "dist/amd64",
-            Arch::Arm => "dist/arm64",
-        }
-    }
 }
 
 impl Display for Arch {

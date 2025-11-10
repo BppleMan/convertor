@@ -1,118 +1,42 @@
-use crate::args::{Arch, Package, Profile, Registry, Tag, Target};
-use crate::commands::{BuildCommand, Commander};
-use crate::conv_cli::CommonArgs;
-use clap::Args;
+mod build;
+mod push;
+
+use crate::args::{Arch, Profile};
+use crate::commands::Commander;
+use crate::commands::image::build::ImageBuildCommand;
+use crate::commands::image::push::ImagePushCommand;
+use clap::{Args, Subcommand};
 use color_eyre::Result;
 use std::process::Command;
 
+#[derive(Debug, Subcommand)]
+pub enum ImageCommand {
+    Build(ImageBuildCommand),
+
+    Push(ImagePushCommand),
+}
+
 #[derive(Debug, Args)]
-pub struct ImageCommand {
+pub struct ImageCommonArgs {
     #[arg(value_enum)]
     pub profile: Profile,
 
     #[arg(short, long, value_delimiter = ',', default_values_t = default_arch())]
     pub arch: Vec<Arch>,
 
-    #[arg(short, long, value_delimiter = ',', default_values_t = default_registries())]
-    pub registries: Vec<Registry>,
-
-    #[arg(long, alias = "cr", value_delimiter = ',')]
-    pub custom_registries: Vec<String>,
-
     #[arg(long, default_value_t = default_user())]
     pub user: String,
 
     #[arg(long, default_value_t = default_project())]
     pub project: String,
-
-    #[arg(short, long, default_value_t = false)]
-    pub push: bool,
-
-    #[arg(short, long, default_value_t = false)]
-    pub dashboard: bool,
-}
-
-impl ImageCommand {
-    pub fn prepare(&self) -> Result<Vec<Command>> {
-        BuildCommand {
-            common_args: CommonArgs {
-                profile: self.profile,
-                package: Package::Convd,
-            },
-            target: Some(Target::Musl { arch: self.arch.clone() }),
-            dashboard: self.dashboard,
-        }
-        .create_command()
-    }
-
-    fn build_image(&self, tag: &Tag, arch: Arch) -> Command {
-        let build_args = BuildArgs::new(arch, self.profile);
-        let mut command = Command::new("docker");
-        command
-            .args(["buildx", "build"])
-            .args(["--platform", arch.as_image_platform()])
-            .args(["-t", tag.local(Some(arch)).as_str()]);
-        build_args.build_arg(&mut command);
-        command.args(["-f", "Dockerfile", "--load", "."]);
-
-        command
-    }
-
-    #[allow(unused)]
-    fn tag_image(&self, tag: &Tag, registry: &Registry, arch: Arch) -> Command {
-        let mut command = Command::new("docker");
-        command.arg("tag").arg(tag.local(Some(arch))).arg(tag.remote(registry, Some(arch)));
-
-        command
-    }
-
-    fn push_image(&self, tag: &Tag, registry: &Registry, arch: Arch) -> Command {
-        let mut command = Command::new("skopeo");
-        command
-            .arg("copy")
-            .arg(format!("docker-daemon:{}", tag.local(Some(arch))))
-            .arg(format!("docker://{}", tag.remote(registry, Some(arch))));
-
-        command
-    }
-
-    fn manifest_image(&self, tag: &Tag, registry: &Registry) -> Command {
-        let mut command = Command::new("docker");
-        command
-            .args(["buildx", "imagetools", "create"])
-            .args(["-t", tag.remote(registry, None).as_str()]);
-        for arch in self.arch.iter().copied() {
-            command.arg(tag.remote(registry, Some(arch)));
-        }
-
-        command
-    }
 }
 
 impl Commander for ImageCommand {
     fn create_command(&self) -> Result<Vec<Command>> {
-        let mut commands = self.prepare()?;
-
-        let tag = Tag::new(&self.user, &self.project, self.profile);
-        // 先将所有架构的镜像构建出来
-        for arch in self.arch.iter().copied() {
-            commands.push(self.build_image(&tag, arch));
+        match self {
+            ImageCommand::Build(build) => build.create_command(),
+            ImageCommand::Push(push) => push.create_command(),
         }
-
-        // 然后以注册表为单位，给每个架构的镜像打标签并推送
-        let mut registries = self.registries.clone();
-        for cr in &self.custom_registries {
-            registries.push(Registry::Custom(cr.to_string()));
-        }
-        for registry in registries {
-            for arch in self.arch.iter().copied() {
-                commands.push(self.push_image(&tag, &registry, arch));
-            }
-            // 最后创建多架构清单并推送
-            commands.push(self.manifest_image(&tag, &registry));
-        }
-
-        Ok(commands)
     }
 }
 
@@ -169,10 +93,6 @@ impl BuildArgs {
 
 fn default_arch() -> Vec<Arch> {
     vec![Arch::current()]
-}
-
-fn default_registries() -> Vec<Registry> {
-    vec![Registry::Ghcr]
 }
 
 fn default_user() -> String {
