@@ -29,6 +29,13 @@ impl Profile {
         }
     }
 
+    pub fn as_image_profile(&self) -> &'static str {
+        match self {
+            Profile::Dev => "-dev",
+            Profile::Prod => "",
+        }
+    }
+
     // pub fn as_image_registry(&self) -> &'static str {
     //     match self {
     //         Profile::Dev => "local",

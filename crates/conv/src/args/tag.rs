@@ -25,7 +25,7 @@ impl Tag {
 
     pub fn local(&self, arch: Option<Arch>) -> String {
         format!(
-            "local/{}/{}/{}:{}-{}{}",
+            "local/{}/{}/{}:{}{}{}",
             self.user,
             self.project,
             self.name,
@@ -37,7 +37,7 @@ impl Tag {
 
     pub fn remote(&self, registry: &Registry, arch: Option<Arch>) -> String {
         format!(
-            "{}/{}/{}/{}:{}-{}{}",
+            "{}/{}/{}/{}:{}{}{}",
             registry.as_url(),
             self.user,
             self.project,
