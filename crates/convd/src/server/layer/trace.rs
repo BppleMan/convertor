@@ -10,15 +10,8 @@ use tracing::{Level, Span, field, info_span};
 use uuid::Uuid;
 
 /// 创建配置好的分布式追踪层
-pub fn convd_trace_layer() -> TraceLayer<
-    HttpMakeClassifier,
-    ConvdMakeSpan,
-    HttpOnRequest,
-    HttpOnResponse,
-    DefaultOnBodyChunk,
-    DefaultOnEos,
-    HttpOnFailure,
-> {
+pub fn convd_trace_layer()
+-> TraceLayer<HttpMakeClassifier, ConvdMakeSpan, HttpOnRequest, HttpOnResponse, DefaultOnBodyChunk, DefaultOnEos, HttpOnFailure> {
     TraceLayer::new_for_http()
         .make_span_with(ConvdMakeSpan::default())
         .on_request(HttpOnRequest::default())
@@ -101,7 +94,9 @@ impl<B> MakeSpan<B> for ConvdMakeSpan {
         );
 
         let cx = global::get_text_map_propagator(|p| p.extract(&HeaderExtractor(request.headers())));
-        span.set_parent(cx);
+        if let Err(e) = span.set_parent(cx) {
+            tracing::warn!("Failed to extract trace context: {}", e);
+        };
 
         span
     }
@@ -203,12 +198,7 @@ impl<B> tower_http::trace::OnResponse<B> for HttpOnResponse {
 pub struct HttpOnFailure;
 
 impl tower_http::trace::OnFailure<tower_http::classify::ServerErrorsFailureClass> for HttpOnFailure {
-    fn on_failure(
-        &mut self,
-        failure_classification: tower_http::classify::ServerErrorsFailureClass,
-        latency: Duration,
-        span: &Span,
-    ) {
+    fn on_failure(&mut self, failure_classification: tower_http::classify::ServerErrorsFailureClass, latency: Duration, span: &Span) {
         let latency_ms = latency.as_millis() as u64;
         span.record("latency_ms", latency_ms);
 
@@ -229,10 +219,7 @@ fn get_service_instance_id() -> String {
         .or_else(|_| std::env::var("POD_NAME"))
         .unwrap_or_else(|_| {
             // 如果没有设置环境变量，生成基于主机名的实例ID
-            format!(
-                "convd-{}",
-                Uuid::new_v4().to_string().split('-').next().unwrap_or("unknown")
-            )
+            format!("convd-{}", Uuid::new_v4().to_string().split('-').next().unwrap_or("unknown"))
         })
 }
 

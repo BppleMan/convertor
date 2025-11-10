@@ -16,6 +16,9 @@ pub struct ImageCommand {
     #[arg(short, long, value_delimiter = ',', default_values_t = default_registries())]
     pub registries: Vec<Registry>,
 
+    #[arg(long, alias = "cr", value_delimiter = ',')]
+    pub custom_registries: Vec<String>,
+
     #[arg(long, default_value_t = default_user())]
     pub user: String,
 
@@ -33,7 +36,7 @@ impl ImageCommand {
     pub fn prepare(&self) -> Result<Vec<Command>> {
         BuildCommand {
             common_args: CommonArgs {
-                profile: self.profile.clone(),
+                profile: self.profile,
                 package: Package::Convd,
             },
             target: Some(Target::Musl { arch: self.arch.clone() }),
@@ -56,14 +59,14 @@ impl ImageCommand {
     }
 
     #[allow(unused)]
-    fn tag_image(&self, tag: &Tag, registry: Registry, arch: Arch) -> Command {
+    fn tag_image(&self, tag: &Tag, registry: &Registry, arch: Arch) -> Command {
         let mut command = Command::new("docker");
         command.arg("tag").arg(tag.local(Some(arch))).arg(tag.remote(registry, Some(arch)));
 
         command
     }
 
-    fn push_image(&self, tag: &Tag, registry: Registry, arch: Arch) -> Command {
+    fn push_image(&self, tag: &Tag, registry: &Registry, arch: Arch) -> Command {
         let mut command = Command::new("skopeo");
         command
             .arg("copy")
@@ -73,7 +76,7 @@ impl ImageCommand {
         command
     }
 
-    fn manifest_image(&self, tag: &Tag, registry: Registry) -> Command {
+    fn manifest_image(&self, tag: &Tag, registry: &Registry) -> Command {
         let mut command = Command::new("docker");
         command
             .args(["buildx", "imagetools", "create"])
@@ -81,23 +84,6 @@ impl ImageCommand {
         for arch in self.arch.iter().copied() {
             command.arg(tag.remote(registry, Some(arch)));
         }
-
-        command
-    }
-
-    fn login_registry(&self, registry: Registry) -> Command {
-        let echo_token = format!(r#"echo "${}{}_TOKEN{}""#, "{", registry.env_prefix(), "}");
-        let login = format!(
-            r#"login -u "${}{}_USER{}" --password-stdin {}"#,
-            "{",
-            registry.env_prefix(),
-            "}",
-            registry.as_url()
-        );
-        let mut command = Command::new("sh");
-        command
-            .arg("-c")
-            .arg(format!(r#"{} | docker {} && {} | skopeo {}"#, echo_token, login, echo_token, login));
 
         command
     }
@@ -114,18 +100,16 @@ impl Commander for ImageCommand {
         }
 
         // 然后以注册表为单位，给每个架构的镜像打标签并推送
-        for registry in self.registries.iter().copied() {
-            // 本地注册表不需要打标签和推送
-            if registry == Registry::Local {
-                continue;
-            }
-            // 每个注册表需要单独登录
-            commands.push(self.login_registry(registry));
+        let mut registries = self.registries.clone();
+        for cr in &self.custom_registries {
+            registries.push(Registry::Custom(cr.to_string()));
+        }
+        for registry in registries {
             for arch in self.arch.iter().copied() {
-                commands.push(self.push_image(&tag, registry, arch));
+                commands.push(self.push_image(&tag, &registry, arch));
             }
             // 最后创建多架构清单并推送
-            commands.push(self.manifest_image(&tag, registry));
+            commands.push(self.manifest_image(&tag, &registry));
         }
 
         Ok(commands)
@@ -188,7 +172,7 @@ fn default_arch() -> Vec<Arch> {
 }
 
 fn default_registries() -> Vec<Registry> {
-    vec![Registry::Local, Registry::Ghcr, Registry::Harbor]
+    vec![Registry::Ghcr]
 }
 
 fn default_user() -> String {

@@ -21,6 +21,7 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/convertor/tests" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/crates/example/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/conv/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/convd/examples" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
       <excludeFolder url="file://$MODULE_DIR$/test-assets/cache" />
       <excludeFolder url="file://$MODULE_DIR$/test-assets/logs" />

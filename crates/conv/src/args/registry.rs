@@ -1,50 +1,42 @@
 use clap::ValueEnum;
+use clap::builder::PossibleValue;
 use std::fmt::Display;
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, ValueEnum)]
+static VARIANTS: &[Registry] = &[Registry::Docker, Registry::Ghcr];
+
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Registry {
-    Local,
     Docker,
     Ghcr,
-    Harbor,
+    Custom(String),
 }
 
 impl Registry {
-    pub fn as_url(&self) -> &'static str {
+    pub fn as_url(&self) -> &str {
         match self {
-            Registry::Local => "local",
             Registry::Docker => "docker.io",
             Registry::Ghcr => "ghcr.io",
-            Registry::Harbor => "10.0.0.31:30083",
+            Registry::Custom(url) => url,
         }
     }
+}
 
-    pub fn as_tag_prefix(&self, name: impl AsRef<str>) -> String {
-        match self {
-            Registry::Local => format!("{}/{}", self.as_url(), name.as_ref()),
-            Registry::Docker => format!("{}/{}", self.as_url(), name.as_ref()),
-            Registry::Ghcr => format!("{}/{}", self.as_url(), name.as_ref()),
-            Registry::Harbor => format!("{}/{}", self.as_url(), name.as_ref()),
-        }
+impl ValueEnum for Registry {
+    fn value_variants<'a>() -> &'a [Self] {
+        VARIANTS
     }
 
-    pub fn env_prefix(&self) -> &'static str {
-        match self {
-            Registry::Local => "LOCAL",
-            Registry::Docker => "DOCKER",
-            Registry::Ghcr => "GHCR",
-            Registry::Harbor => "HARBOR",
-        }
+    fn to_possible_value(&self) -> Option<PossibleValue> {
+        Some(PossibleValue::new(self.to_string()).hide(matches!(self, Registry::Custom(_))))
     }
 }
 
 impl Display for Registry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Registry::Local => write!(f, "local"),
             Registry::Docker => write!(f, "docker"),
             Registry::Ghcr => write!(f, "ghcr"),
-            Registry::Harbor => write!(f, "harbor"),
+            Registry::Custom(_) => write!(f, "`custom_registry`"),
         }
     }
 }

@@ -25,8 +25,8 @@ impl Tag {
 
     pub fn local(&self, arch: Option<Arch>) -> String {
         format!(
-            "{}/{}/{}:{}-{}{}",
-            Registry::Local.as_tag_prefix(&self.user),
+            "local/{}/{}/{}:{}-{}{}",
+            self.user,
             self.project,
             self.name,
             self.version,
@@ -35,10 +35,11 @@ impl Tag {
         )
     }
 
-    pub fn remote(&self, registry: Registry, arch: Option<Arch>) -> String {
+    pub fn remote(&self, registry: &Registry, arch: Option<Arch>) -> String {
         format!(
-            "{}/{}/{}:{}-{}{}",
-            registry.as_tag_prefix(&self.user),
+            "{}/{}/{}/{}:{}-{}{}",
+            registry.as_url(),
+            self.user,
             self.project,
             self.name,
             self.version,
