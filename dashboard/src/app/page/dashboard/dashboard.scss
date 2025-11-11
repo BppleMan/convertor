@@ -25,3 +25,10 @@
         }
     }
 }
+
+/* Make horizontal padding 24px on viewports narrower than 1024px */
+@media (max-width: 1023.98px) {
+    :host {
+        padding: 24px; /* equals 24px 24px */
+    }
+}
