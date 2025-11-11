@@ -57,7 +57,7 @@ async fn main() -> Result<()> {
     info!("+──────────────────────────────────────────────+");
     info!("│               加载配置文件...                │");
     info!("+──────────────────────────────────────────────+");
-    let config = Config::search(&base_dir, args.config)?;
+    let config: Config = Config::search(&base_dir, args.config)?;
     info!("配置文件加载完成");
 
     start_server(args.listen, config).await?;

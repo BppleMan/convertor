@@ -27,6 +27,22 @@ impl SubscriptionConfig {
             headers: Headers::default(),
         }
     }
+
+    pub fn env_template(&self, prefix: impl AsRef<str>) -> Vec<(String, String)> {
+        let prefix = prefix.as_ref();
+        let mut vars = Vec::new();
+
+        vars.push((format!("{prefix}__SUB_URL"), self.sub_url.to_string()));
+        vars.push((format!("{prefix}__INTERVAL"), self.interval.to_string()));
+        vars.push((format!("{prefix}__STRICT"), self.strict.to_string()));
+
+        for (key, value) in self.headers.iter() {
+            let env_key = format!("{prefix}__HEADERS__{}", key.replace("-", "_").to_uppercase());
+            vars.push((env_key, value.clone()));
+        }
+
+        vars
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -56,8 +72,7 @@ impl Default for Headers {
             [
                 (
                     "User-Agent".to_string(),
-                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML), like Gecko) Chrome/"
-                        .to_string(),
+                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML), like Gecko) Chrome/".to_string(),
                 ),
                 (
                     "sec-ch-ua".to_string(),

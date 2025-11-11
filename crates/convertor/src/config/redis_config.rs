@@ -102,6 +102,27 @@ impl RedisConfig {
             tls: Some(TlsConfig::template()),
         }
     }
+
+    pub fn env_template(&self, prefix: impl AsRef<str>) -> Vec<(String, String)> {
+        let prefix = prefix.as_ref();
+        let mut vars = Vec::new();
+
+        vars.push((format!("{prefix}__HOST"), self.host.clone()));
+        vars.push((format!("{prefix}__PORT"), self.port.to_string()));
+        vars.push((format!("{prefix}__USERNAME"), self.username.clone()));
+        vars.push((format!("{prefix}__PASSWORD"), self.password.clone()));
+        vars.push((format!("{prefix}__PREFIX"), self.prefix.clone()));
+        if let Some(db) = self.db {
+            vars.push((format!("{prefix}__DB"), db.to_string()));
+        }
+
+        if let Some(tls) = &self.tls {
+            let tls_vars = tls.env_template(format!("{prefix}__TLS"));
+            vars.extend(tls_vars);
+        }
+
+        vars
+    }
 }
 
 impl TlsConfig {
@@ -135,6 +156,23 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=
                 .to_string(),
             ),
         }
+    }
+
+    pub fn env_template(&self, prefix: impl AsRef<str>) -> Vec<(String, String)> {
+        let prefix = prefix.as_ref();
+        let mut vars = Vec::new();
+
+        if let Some(ca_cert) = &self.ca_cert {
+            vars.push((format!("{prefix}__CA_CERT"), ca_cert.clone()));
+        }
+        if let Some(client_cert) = &self.client_cert {
+            vars.push((format!("{prefix}__CLIENT_CERT"), client_cert.clone()));
+        }
+        if let Some(client_key) = &self.client_key {
+            vars.push((format!("{prefix}__CLIENT_KEY"), client_key.clone()));
+        }
+
+        vars
     }
 }
 

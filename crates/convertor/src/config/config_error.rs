@@ -36,6 +36,6 @@ pub enum ConfigError {
     #[error("创建 UrlBuilder 时发生错误: {0}")]
     UrlBuilderError(#[from] UrlBuilderError),
 
-    #[error("配置多段搜索时发生错误: {0}")]
+    #[error("多段配置合并错误: {0}")]
     SearchConfigError(#[from] config::ConfigError),
 }
