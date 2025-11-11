@@ -8,7 +8,7 @@ pub struct ImagePushCommand {
     #[clap(flatten)]
     common_args: ImageCommonArgs,
 
-    #[arg(short, long, value_delimiter = ',', default_values_t = default_registries())]
+    #[arg(short, long, value_delimiter = ',')]
     registries: Vec<Registry>,
 
     #[arg(long, alias = "cr", value_delimiter = ',')]
@@ -67,8 +67,4 @@ impl Commander for ImagePushCommand {
 
         Ok(commands)
     }
-}
-
-fn default_registries() -> Vec<Registry> {
-    vec![Registry::Ghcr]
 }
