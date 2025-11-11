@@ -104,8 +104,11 @@ pub fn init_log(loki_url: Option<&str>, otlp_grpc: Option<&str>) -> Option<Backg
         // 2. 控制台日志（开发模式用 pretty，生产可换 compact）
         let fmt_layer = layer!(fmt_layer);
 
-        // 3. loki 日志（可选）
+        #[cfg(debug_assertions)]
+        let service = "convd-dev";
+        #[cfg(not(debug_assertions))]
         let service = "convd";
+        // 3. loki 日志（可选）
         let loki_layer = loki_url.map(|loki_url| {
             let (loki_layer, loki_task) = layer!(loki_layer, loki_url, service);
             loki_task_guard.replace(loki_task);
