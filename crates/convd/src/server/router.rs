@@ -12,12 +12,14 @@ use axum::http::request::Parts;
 use axum::response::Redirect;
 use axum::routing::get;
 use axum_extra::extract::{Host, Scheme};
+use axum_prometheus::PrometheusMetricLayer;
 use convertor::error::QueryError;
 use convertor::url::query::ConvertorQuery;
 use std::sync::Arc;
 use url::Url;
 
 pub fn router(app_state: AppState) -> Router {
+    let (prome_layer, prome_handle) = PrometheusMetricLayer::pair();
     Router::new()
         .route("/", get(|| async { Redirect::permanent("/dashboard/") }))
         .route("/dashboard", get(|| async { Redirect::permanent("/dashboard/") }))
@@ -25,6 +27,7 @@ pub fn router(app_state: AppState) -> Router {
         .route("/actuator/healthy", get(actuator::healthy))
         .route("/actuator/ready", get(actuator::redis))
         .route("/actuator/redis", get(actuator::redis))
+        .route("/actuator/metrics", get(|| async move { prome_handle.render() }))
         .route("/raw-profile/{client}", get(profile::raw_profile))
         .route("/profile/{client}", get(profile::profile))
         .route("/rule-provider/{client}", get(profile::rule_provider))
@@ -32,6 +35,7 @@ pub fn router(app_state: AppState) -> Router {
         .nest("/dashboard/", angular::router())
         .with_state(Arc::new(app_state))
         .layer(convd_trace_layer())
+        .layer(prome_layer)
 }
 
 #[derive(Debug, Clone)]
@@ -83,8 +87,8 @@ impl FromRequestParts<Arc<AppState>> for ConvertorQueryExtractor {
                 .ok_or(QueryError::EmptyQuery)
                 .map_err(AppError::QueryError)
                 .map_err(ApiError::bad_request)?;
-            let query = ConvertorQuery::parse_from_query_string(query_string, &state.config.secret, server)
-                .map_err(ApiError::bad_request)?;
+            let query =
+                ConvertorQuery::parse_from_query_string(query_string, &state.config.secret, server).map_err(ApiError::bad_request)?;
             Ok(ConvertorQueryExtractor(query))
         }
         .await;

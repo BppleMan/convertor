@@ -37,6 +37,7 @@ axum = { workspace = true, features = ["query", "json", "tokio", "http2", "macro
 axum-extra = { workspace = true, features = ["typed-header", "scheme", "tracing"] }
 tower = { workspace = true, features = [] }
 tower-http = { workspace = true, features = ["trace", "fs", "request-id"] }
+axum-prometheus = { workspace = true, features = ["prometheus"] }
 
 # 并发 / 异步 运行时
 tokio = { workspace = true, features = ["fs", "rt-multi-thread", "signal", "macros"] }

@@ -19,7 +19,10 @@ pub async fn redis(State(state): State<Arc<AppState>>) -> Result<ApiResponse<Str
     .await
     .transpose()
     .map_err(ApiError::internal_server_error)?;
-    Ok(ApiResponse::ok(
-        pong.unwrap_or_else(|| "Redis not configured".to_string()),
-    ))
+    Ok(ApiResponse::ok(pong.unwrap_or_else(|| "Redis not configured".to_string())))
+}
+
+#[instrument(skip_all)]
+pub async fn metrics() -> ApiResponse<()> {
+    ApiResponse::ok(())
 }
