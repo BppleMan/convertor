@@ -108,6 +108,7 @@ pub fn init_log(loki_url: Option<&str>, otlp_grpc: Option<&str>) -> Option<Backg
         let service = "convd-dev";
         #[cfg(not(debug_assertions))]
         let service = "convd";
+        println!("初始化日志系统, service: {service}");
         // 3. loki 日志（可选）
         let loki_layer = loki_url.map(|loki_url| {
             let (loki_layer, loki_task) = layer!(loki_layer, loki_url, service);

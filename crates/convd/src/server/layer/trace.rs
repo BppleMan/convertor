@@ -2,6 +2,7 @@ use axum::extract::ConnectInfo;
 use axum::http::HeaderMap;
 use convertor::telemetry::opentelemetry::global;
 use convertor::telemetry::opentelemetry::propagation::Extractor;
+use convertor::telemetry::opentelemetry::trace::TraceContextExt;
 use convertor::telemetry::tracing_opentelemetry::OpenTelemetrySpanExt;
 use std::net::SocketAddr;
 use std::time::Duration;
@@ -94,9 +95,14 @@ impl<B> MakeSpan<B> for ConvdMakeSpan {
         );
 
         let cx = global::get_text_map_propagator(|p| p.extract(&HeaderExtractor(request.headers())));
+        let parent_ctx = cx.span().span_context().clone();
+        if parent_ctx.is_valid() {
+            span.record("parent_span_id", &field::display(parent_ctx.span_id()));
+        }
         if let Err(e) = span.set_parent(cx) {
             tracing::warn!("Failed to extract trace context: {}", e);
         };
+        record_trace_ids(&span);
 
         span
     }
@@ -124,6 +130,8 @@ impl<B> tower_http::trace::OnResponse<B> for HttpOnResponse {
         let status = response.status();
         let status_code = status.as_u16();
         let latency_ms = latency.as_millis() as u64;
+
+        record_trace_ids(span);
 
         // 记录到span用于OpenTelemetry链路追踪
         span.record("status", status_code);
@@ -272,4 +280,13 @@ fn is_health_check_path(_span: &Span) -> bool {
     // 目前简单实现，后续可以根据实际需要优化
     // 例如检查span中的http.target字段是否包含"/actuator/"
     false
+}
+
+fn record_trace_ids(span: &Span) {
+    let ctx = span.context();
+    let span_ctx = ctx.span().span_context().clone();
+    if span_ctx.is_valid() {
+        span.record("trace_id", &field::display(span_ctx.trace_id()));
+        span.record("span_id", &field::display(span_ctx.span_id()));
+    }
 }
