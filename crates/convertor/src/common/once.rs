@@ -119,6 +119,8 @@ pub fn init_log(loki_url: Option<&str>, otlp_grpc: Option<&str>) -> Option<Backg
         // 4. otel 日志（可选）
         match (loki_layer, otlp_grpc) {
             (Some(loki_layer), Some(otlp_grpc)) => {
+                println!("启用 loki 日志: {loki_url:?}");
+                println!("启用 otlp 追踪: {otlp_grpc:?}");
                 let otlp_layer = layer!(otlp_layer, otlp_grpc, service);
                 tracing_subscriber::registry()
                     .with(filter)
@@ -128,7 +130,7 @@ pub fn init_log(loki_url: Option<&str>, otlp_grpc: Option<&str>) -> Option<Backg
                     .init();
             }
             (Some(loki_layer), None) => {
-                eprintln!("无法读取 OTLP_GRPC, 不启用 otlp 日志");
+                eprintln!("无法读取 OTLP_GRPC, 不启用 otlp 追踪");
                 tracing_subscriber::registry().with(filter).with(fmt_layer).with(loki_layer).init();
             }
             (None, Some(otlp_grpc)) => {
@@ -138,7 +140,7 @@ pub fn init_log(loki_url: Option<&str>, otlp_grpc: Option<&str>) -> Option<Backg
             }
             (None, None) => {
                 eprintln!("无法读取 LOKI_URL, 不启用 loki 日志");
-                eprintln!("无法读取 OTLP_GRPC, 不启用 otlp 日志");
+                eprintln!("无法读取 OTLP_GRPC, 不启用 otlp 追踪");
                 tracing_subscriber::registry()
                     .with(layer!(env_filter))
                     .with(layer!(fmt_layer))
