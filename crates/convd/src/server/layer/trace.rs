@@ -59,6 +59,12 @@ impl<B> MakeSpan<B> for ConvdMakeSpan {
         let path = request.uri().path();
         let method = request.method();
 
+        // 根据编译模式决定 service name
+        #[cfg(debug_assertions)]
+        let service_name = "convd-dev";
+        #[cfg(not(debug_assertions))]
+        let service_name = "convd";
+
         let span = info_span!(
             "http_request",
             // 基础HTTP信息
@@ -85,11 +91,7 @@ impl<B> MakeSpan<B> for ConvdMakeSpan {
             // OpenTelemetry 语义约定
             otel.name = %format!("{} {}", method, path),
             otel.kind = "server",
-
-            // Tempo/Jaeger 兼容字段
-            trace_id = field::Empty,
-            span_id = field::Empty,
-            "service.name" = "convd",
+            "service.name" = service_name,
             "service.version" = env!("CARGO_PKG_VERSION"),
             "service.instance.id" = %get_service_instance_id(),
         );

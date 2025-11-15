@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand};
 use color_eyre::Result;
 use convd::server::start_server;
 use convertor::common::clap_style::SONOKAI_TC;
-use convertor::common::once::{init_backtrace, init_base_dir, init_log};
+use convertor::common::once::{init_backtrace, init_base_dir, init_log, shutdown_telemetry};
 use convertor::config::Config;
 use std::net::SocketAddrV4;
 use std::path::PathBuf;
@@ -61,6 +61,11 @@ async fn main() -> Result<()> {
     info!("配置文件加载完成");
 
     start_server(args.listen, config).await?;
+
+    // 优雅关闭：确保所有 pending 的 spans 都导出到 Tempo
+    info!("正在关闭遥测系统，确保所有追踪数据已导出...");
+    shutdown_telemetry();
+    info!("遥测系统已关闭");
 
     Ok(())
 }

@@ -2,7 +2,7 @@ use crate::env::Env;
 use opentelemetry::trace::TracerProvider;
 use opentelemetry_otlp::WithExportConfig;
 use std::io::IsTerminal;
-use std::sync::Once;
+use std::sync::{Arc, Once, OnceLock};
 use tracing_loki::BackgroundTask;
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
@@ -34,7 +34,8 @@ where
 }
 
 static INITIALIZED_LOG: Once = Once::new();
-// pub static LOKI_TASK: OnceLock<Arc<Pin<BackgroundTask>>> = OnceLock::new();
+// 保存 TracerProvider 用于 graceful shutdown
+static TRACER_PROVIDER: OnceLock<Arc<opentelemetry_sdk::trace::SdkTracerProvider>> = OnceLock::new();
 
 macro_rules! layer {
     (env_filter) => {
@@ -72,27 +73,29 @@ macro_rules! layer {
             .build_url($loki_url.parse().expect("loki url"))
             .expect("无法创建 loki 层")
     };
-    (otlp_layer, $otlp_grpc:expr, $service:expr) => {
-        tracing_opentelemetry::layer().with_tracer(
-            opentelemetry_sdk::trace::SdkTracerProvider::builder()
-                .with_batch_exporter(
-                    opentelemetry_otlp::SpanExporter::builder()
-                        .with_tonic()
-                        .with_endpoint($otlp_grpc)
-                        .with_timeout(std::time::Duration::from_secs(2))
-                        .build()
-                        .expect("failed to create otlp exporter"),
-                )
-                .with_resource(
-                    opentelemetry_sdk::Resource::builder()
-                        .with_service_name($service)
-                        .with_attribute(opentelemetry::KeyValue::new("environment", Env::current().name()))
-                        .build(),
-                )
-                .build()
-                .tracer("convd"),
-        )
-    };
+    (otlp_layer, $otlp_grpc:expr, $service:expr) => {{
+        let exporter = opentelemetry_otlp::SpanExporter::builder()
+            .with_tonic()
+            .with_endpoint($otlp_grpc)
+            .with_timeout(std::time::Duration::from_secs(10))
+            .build()
+            .expect("failed to create otlp exporter");
+
+        let provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
+            .with_batch_exporter(exporter)
+            .with_resource(
+                opentelemetry_sdk::Resource::builder()
+                    .with_service_name($service)
+                    .with_attribute(opentelemetry::KeyValue::new("environment", Env::current().name()))
+                    .build(),
+            )
+            .build();
+
+        // 保存 provider 用于后续 shutdown
+        let _ = TRACER_PROVIDER.set(std::sync::Arc::new(provider.clone()));
+
+        tracing_opentelemetry::layer().with_tracer(provider.tracer("convd"))
+    }};
 }
 
 pub fn init_log(loki_url: Option<&str>, otlp_grpc: Option<&str>) -> Option<BackgroundTask> {
@@ -104,11 +107,14 @@ pub fn init_log(loki_url: Option<&str>, otlp_grpc: Option<&str>) -> Option<Backg
         // 2. 控制台日志（开发模式用 pretty，生产可换 compact）
         let fmt_layer = layer!(fmt_layer);
 
+        // 根据编译模式决定 service name
         #[cfg(debug_assertions)]
         let service = "convd-dev";
         #[cfg(not(debug_assertions))]
         let service = "convd";
-        println!("初始化日志系统, service: {service}");
+
+        println!("初始化日志系统, service: {service}, env: {}", Env::current().name());
+
         // 3. loki 日志（可选）
         let loki_layer = loki_url.map(|loki_url| {
             let (loki_layer, loki_task) = layer!(loki_layer, loki_url, service);
@@ -149,4 +155,17 @@ pub fn init_log(loki_url: Option<&str>, otlp_grpc: Option<&str>) -> Option<Backg
         }
     });
     loki_task_guard
+}
+
+/// Graceful shutdown: flush 所有 pending 的 spans
+/// 应该在进程退出前调用，确保不丢失 trace
+pub fn shutdown_telemetry() {
+    if let Some(provider) = TRACER_PROVIDER.get() {
+        if let Err(e) = provider.force_flush() {
+            eprintln!("Failed to flush tracer provider: {e:?}");
+        }
+        if let Err(e) = provider.shutdown() {
+            eprintln!("Failed to shutdown tracer provider: {e:?}");
+        }
+    }
 }
