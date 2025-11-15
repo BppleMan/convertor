@@ -103,8 +103,11 @@ impl<B> MakeSpan<B> for ConvdMakeSpan {
         }
         if let Err(e) = span.set_parent(cx) {
             tracing::warn!("Failed to extract trace context: {}", e);
-        };
-        record_trace_ids(&span);
+        }
+
+        // 注意：不在这里调用 record_trace_ids，因为此时 span 还没有被 OpenTelemetry layer 处理
+        // trace_id 会在 span 进入 OpenTelemetry layer 后才生成
+        // 应该在 HttpOnRequest 或 HttpOnResponse 中调用
 
         span
     }
@@ -116,6 +119,9 @@ pub struct HttpOnRequest;
 
 impl<B> tower_http::trace::OnRequest<B> for HttpOnRequest {
     fn on_request(&mut self, _request: &axum::http::Request<B>, span: &Span) {
+        // 在请求开始时记录 trace_id，此时 span 已经过 OpenTelemetry layer 处理
+        record_trace_ids(span);
+
         tracing::debug!(
             parent: span,
             "HTTP request started"
