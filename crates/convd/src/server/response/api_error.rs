@@ -1,52 +1,58 @@
-use axum::http::StatusCode;
-use axum::http::header::ToStrError;
+use crate::server::response::{ApiResponse, AppError, RequestSnapshot};
 use axum::response::{IntoResponse, Response};
-use convertor::config::proxy_client::ProxyClient;
-use convertor::error::{ProviderError, QueryError, UrlBuilderError};
-use redis::RedisError;
-use std::sync::Arc;
-use thiserror::Error;
+use tokio_util::bytes::{BufMut, Bytes, BytesMut};
 
-#[derive(Debug, Error)]
-pub enum ApiError {
-    #[error("获取原始非转换配置失败, 遇到错误的客户端: {0}")]
-    RawProfileUnsupportedClient(ProxyClient),
+#[derive(Debug)]
+pub struct ApiError {
+    pub status: axum::http::StatusCode,
+    pub error: AppError,
+    pub request: Option<RequestSnapshot>,
+}
 
-    #[error("没有找到对应的订阅提供者")]
-    NoSubProvider,
+impl ApiError {
+    pub fn bad_request(error: impl Into<AppError>) -> Self {
+        Self {
+            status: axum::http::StatusCode::BAD_REQUEST,
+            error: error.into(),
+            request: None,
+        }
+    }
 
-    #[error(transparent)]
-    UrlBuilderError(#[from] UrlBuilderError),
+    pub fn internal_server_error(error: impl Into<AppError>) -> Self {
+        Self {
+            status: axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            error: error.into(),
+            request: None,
+        }
+    }
 
-    #[error("Unauthorized: {0}")]
-    Unauthorized(String),
-
-    #[error(transparent)]
-    QueryError(#[from] QueryError),
-
-    #[error(transparent)]
-    ProviderError(#[from] ProviderError),
-
-    #[error(transparent)]
-    ToStr(#[from] ToStrError),
-
-    #[error(transparent)]
-    Utf8Error(#[from] std::str::Utf8Error),
-
-    #[error(transparent)]
-    CacheError(#[from] Arc<ApiError>),
-
-    #[error("Redis 错误: {0:?}")]
-    RedisError(#[from] RedisError),
-
-    #[error(transparent)]
-    Unknown(#[from] color_eyre::Report),
+    pub fn with_request(mut self, request: RequestSnapshot) -> Self {
+        self.request = Some(request);
+        self
+    }
 }
 
 impl IntoResponse for ApiError {
-    fn into_response(self) -> Response {
-        let message = format!("{self:?}");
-        let message = console::strip_ansi_codes(&message).to_string();
-        (StatusCode::INTERNAL_SERVER_ERROR, message).into_response()
+    fn into_response(mut self) -> Response {
+        let mut buf = BytesMut::with_capacity(256).writer();
+        let request = self.request.take();
+        let mut api_response: ApiResponse<()> = self.error.into();
+        if let Some(request) = request {
+            api_response = api_response.with_request(request);
+        }
+        match serde_json::to_writer(&mut buf, &api_response) {
+            Ok(()) => (
+                self.status,
+                [(axum::http::header::CONTENT_TYPE, "application/problem+json")],
+                buf.into_inner().freeze(),
+            )
+                .into_response(),
+            Err(err) => (
+                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                [(axum::http::header::CONTENT_TYPE, mime::TEXT_PLAIN_UTF_8.as_ref())],
+                Bytes::from(format!("Failed to serialize error response: {}", err)),
+            )
+                .into_response(),
+        }
     }
 }

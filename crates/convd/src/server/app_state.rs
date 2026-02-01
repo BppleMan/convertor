@@ -19,7 +19,7 @@ impl AppState {
         let config = Arc::new(config);
         let surge_service = SurgeService::new(config.clone());
         let clash_service = ClashService::new(config.clone());
-        let provider = SubsProvider::new(redis_connection.clone());
+        let provider = SubsProvider::new(redis_connection.clone(), config.redis.as_ref().map(|r| r.prefix.as_str()));
         Self {
             config,
             redis,

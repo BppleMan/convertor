@@ -2,6 +2,7 @@ use axum::extract::ConnectInfo;
 use axum::http::HeaderMap;
 use convertor::telemetry::opentelemetry::global;
 use convertor::telemetry::opentelemetry::propagation::Extractor;
+use convertor::telemetry::opentelemetry::trace::{SpanKind, TraceContextExt};
 use convertor::telemetry::tracing_opentelemetry::OpenTelemetrySpanExt;
 use std::net::SocketAddr;
 use std::time::Duration;
@@ -10,15 +11,8 @@ use tracing::{Level, Span, field, info_span};
 use uuid::Uuid;
 
 /// 创建配置好的分布式追踪层
-pub fn convd_trace_layer() -> TraceLayer<
-    HttpMakeClassifier,
-    ConvdMakeSpan,
-    HttpOnRequest,
-    HttpOnResponse,
-    DefaultOnBodyChunk,
-    DefaultOnEos,
-    HttpOnFailure,
-> {
+pub fn convd_trace_layer()
+-> TraceLayer<HttpMakeClassifier, ConvdMakeSpan, HttpOnRequest, HttpOnResponse, DefaultOnBodyChunk, DefaultOnEos, HttpOnFailure> {
     TraceLayer::new_for_http()
         .make_span_with(ConvdMakeSpan::default())
         .on_request(HttpOnRequest::default())
@@ -64,6 +58,13 @@ impl<B> MakeSpan<B> for ConvdMakeSpan {
 
         let path = request.uri().path();
         let method = request.method();
+        let span_name = format!("{} {}", method, path);
+
+        // 根据编译模式决定 service name
+        #[cfg(debug_assertions)]
+        let service_name = "convd-dev";
+        #[cfg(not(debug_assertions))]
+        let service_name = "convd";
 
         let span = info_span!(
             "http_request",
@@ -89,19 +90,25 @@ impl<B> MakeSpan<B> for ConvdMakeSpan {
             bytes_sent = field::Empty,
 
             // OpenTelemetry 语义约定
-            otel.name = %format!("{} {}", method, path),
-            otel.kind = "server",
-
-            // Tempo/Jaeger 兼容字段
-            trace_id = field::Empty,
-            span_id = field::Empty,
-            "service.name" = "convd",
+            otel.name = span_name,
+            otel.kind = ?SpanKind::Server,
+            "service.name" = service_name,
             "service.version" = env!("CARGO_PKG_VERSION"),
             "service.instance.id" = %get_service_instance_id(),
         );
 
         let cx = global::get_text_map_propagator(|p| p.extract(&HeaderExtractor(request.headers())));
-        span.set_parent(cx);
+        let parent_ctx = cx.span().span_context().clone();
+        if parent_ctx.is_valid() {
+            span.record("parent_span_id", &field::display(parent_ctx.span_id()));
+        }
+        if let Err(e) = span.set_parent(cx) {
+            tracing::warn!("Failed to extract trace context: {}", e);
+        }
+
+        // 注意：不在这里调用 record_trace_ids，因为此时 span 还没有被 OpenTelemetry layer 处理
+        // trace_id 会在 span 进入 OpenTelemetry layer 后才生成
+        // 应该在 HttpOnRequest 或 HttpOnResponse 中调用
 
         span
     }
@@ -113,13 +120,10 @@ pub struct HttpOnRequest;
 
 impl<B> tower_http::trace::OnRequest<B> for HttpOnRequest {
     fn on_request(&mut self, _request: &axum::http::Request<B>, span: &Span) {
-        tracing::debug!(
-            parent: span,
-            "HTTP request started"
-        );
+        // 在请求开始时记录 trace_id，此时 span 已经过 OpenTelemetry layer 处理
+        record_trace_ids(span);
     }
 }
-
 /// HTTP响应完成时的日志记录 - 记录请求完成信息和性能指标
 #[derive(Default, Clone)]
 pub struct HttpOnResponse;
@@ -129,6 +133,8 @@ impl<B> tower_http::trace::OnResponse<B> for HttpOnResponse {
         let status = response.status();
         let status_code = status.as_u16();
         let latency_ms = latency.as_millis() as u64;
+
+        record_trace_ids(span);
 
         // 记录到span用于OpenTelemetry链路追踪
         span.record("status", status_code);
@@ -203,12 +209,7 @@ impl<B> tower_http::trace::OnResponse<B> for HttpOnResponse {
 pub struct HttpOnFailure;
 
 impl tower_http::trace::OnFailure<tower_http::classify::ServerErrorsFailureClass> for HttpOnFailure {
-    fn on_failure(
-        &mut self,
-        failure_classification: tower_http::classify::ServerErrorsFailureClass,
-        latency: Duration,
-        span: &Span,
-    ) {
+    fn on_failure(&mut self, failure_classification: tower_http::classify::ServerErrorsFailureClass, latency: Duration, span: &Span) {
         let latency_ms = latency.as_millis() as u64;
         span.record("latency_ms", latency_ms);
 
@@ -229,10 +230,7 @@ fn get_service_instance_id() -> String {
         .or_else(|_| std::env::var("POD_NAME"))
         .unwrap_or_else(|_| {
             // 如果没有设置环境变量，生成基于主机名的实例ID
-            format!(
-                "convd-{}",
-                Uuid::new_v4().to_string().split('-').next().unwrap_or("unknown")
-            )
+            format!("convd-{}", Uuid::new_v4().to_string().split('-').next().unwrap_or("unknown"))
         })
 }
 
@@ -285,4 +283,13 @@ fn is_health_check_path(_span: &Span) -> bool {
     // 目前简单实现，后续可以根据实际需要优化
     // 例如检查span中的http.target字段是否包含"/actuator/"
     false
+}
+
+fn record_trace_ids(span: &Span) {
+    let ctx = span.context();
+    let span_ctx = ctx.span().span_context().clone();
+    if span_ctx.is_valid() {
+        span.record("trace_id", &field::display(span_ctx.trace_id()));
+        span.record("span_id", &field::display(span_ctx.span_id()));
+    }
 }

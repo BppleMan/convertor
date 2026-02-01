@@ -1,0 +1,21 @@
+<app-dashboard-panel>
+    <mat-card-header>
+        <mat-card-title>订阅链接</mat-card-title>
+    </mat-card-header>
+    <mat-card-content class="content-urls">
+        <section class="scrollable urls">
+            @for (url of (urls$ | async); track url.url) {
+                <mat-card class="url" appearance="outlined">
+                    <mat-card-header>
+                        <mat-card-title class="desc">{{ url.desc }}</mat-card-title>
+                        <app-icon-button [cdkCopyToClipboard]="url.url?.toString() ?? ''">content_copy</app-icon-button>
+                    </mat-card-header>
+                    <mat-divider></mat-divider>
+                    <mat-card-content>
+                        <code class="url"><a target="_blank" rel="noopener noreferrer" href="{{url.url}}">{{ url.url }}</a></code>
+                    </mat-card-content>
+                </mat-card>
+            }
+        </section>
+    </mat-card-content>
+</app-dashboard-panel>

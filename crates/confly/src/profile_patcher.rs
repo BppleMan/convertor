@@ -10,7 +10,7 @@ use convertor::core::renderer::clash_renderer::ClashRenderer;
 use convertor::core::renderer::surge_renderer::{
     SURGE_RULE_PROVIDER_COMMENT_END, SURGE_RULE_PROVIDER_COMMENT_START, SurgeRenderer,
 };
-use convertor::url::convertor_url::ConvertorUrlType;
+use convertor::url::convertor_url::UrlType;
 use convertor::url::url_builder::UrlBuilder;
 use std::borrow::Cow;
 
@@ -24,14 +24,14 @@ impl ClientConfig {
         // 更新主订阅配置，即由 convertor 生成的订阅配置
         let main_profile = Self::update_surge_conf(
             file_provider.read(self.main_profile_path())?,
-            url_builder.build_surge_header(ConvertorUrlType::Profile)?,
+            url_builder.build_surge_header(UrlType::Profile)?,
         )?;
         file_provider.write(self.main_profile_path(), main_profile)?;
 
         if let Some(path) = self.raw_path() {
             let raw = Self::update_surge_conf(
                 file_provider.read(&path)?,
-                url_builder.build_surge_header(ConvertorUrlType::Raw)?,
+                url_builder.build_surge_header(UrlType::Raw)?,
             )?;
             file_provider.write(path, raw)?;
         }
@@ -40,7 +40,7 @@ impl ClientConfig {
         if let Some(path) = self.raw_profile_path() {
             let raw_profile = Self::update_surge_conf(
                 file_provider.read(&path)?,
-                url_builder.build_surge_header(ConvertorUrlType::RawProfile)?,
+                url_builder.build_surge_header(UrlType::RawProfile)?,
             )?;
             file_provider.write(path, raw_profile)?;
         }

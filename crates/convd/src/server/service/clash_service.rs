@@ -1,6 +1,4 @@
-use color_eyre::Report;
-use color_eyre::Result;
-use color_eyre::eyre::eyre;
+use crate::server::response::AppError;
 use convertor::config::Config;
 use convertor::core::profile::Profile;
 use convertor::core::profile::clash_profile::ClashProfile;
@@ -11,6 +9,8 @@ use convertor::url::url_builder::UrlBuilder;
 use moka::future::Cache;
 use std::sync::Arc;
 use tracing::instrument;
+
+type Result<T> = core::result::Result<T, AppError>;
 
 #[derive(Clone)]
 pub struct ClashService {
@@ -54,9 +54,9 @@ impl ClashService {
                 let mut template = ClashProfile::template()?;
                 template.patch(profile)?;
                 template.convert(&url_builder)?;
-                Ok::<_, Report>(template)
+                Ok::<_, AppError>(template)
             })
             .await
-            .map_err(|e| eyre!(e))
+            .map_err(AppError::CacheError)
     }
 }

@@ -10,6 +10,7 @@ $font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
              "Segoe UI", "Helvetica Neue", Arial, "Noto Sans", sans-serif;
 
 :root {
+    //noinspection SassScssUnresolvedMixin
     @include mat.theme((
         color: (
             primary: mat.$blue-palette,
@@ -24,9 +25,13 @@ $font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
         ),
         density: -2,
     ));
+    //noinspection SassScssUnresolvedMixin
     @include mat.theme-overrides((
-        surface: #0c0e12,
-        on-surface: #ffffff,
+        surface: #15161a,
+        on-surface: #e0e0e0,
+        on-surface-variant: #afafaf,
+        outline: rgba(255, 255, 255, 0.04),
+        outline-variant: rgba(255, 255, 255, 0.04),
     ));
     @include mat.form-field-overrides((
         container-height: 24px,
@@ -35,8 +40,8 @@ $font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
         filled-with-label-container-padding-bottom: 4px,
         outlined-label-text-size: 12px,
         filled-label-text-size: 12px,
-        outlined-outline-color: rgba(255, 255, 255, 0.3),
-        outlined-hover-outline-color: rgba(255, 255, 255, 0.5),
+        // outlined-outline-color: rgba(255, 255, 255, 0.1),
+        // outlined-hover-outline-color: rgba(255, 255, 255, 0.5),
     ));
     @include mat.button-overrides((
         filled-container-shape: 4px,
@@ -56,9 +61,30 @@ $font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
         selected-with-icon-handle-horizontal-margin: 0 calc(42px - 18px - 4px),
         unselected-with-icon-handle-horizontal-margin: 0 4px,
     ));
+    @include mat.card-overrides((
+        outlined-container-shape: 12px,
+        title-text-size: 16px,
+        title-text-line-height: normal,
+        title-text-weight: 500,
+    ));
+    @include mat.expansion-overrides((
+        header-text-size: 12px,
+        header-text-weight: 400,
+        header-text-tracking: normal,
+        header-collapsed-state-height: 34px,
+        header-expanded-state-height: 34px,
+        header-text-color: var(--mat-sys-on-surface),
+        container-text-color: var(--mat-sys-on-surface-variant),
+    ));
     @include mat.option-overrides((
         label-text-size: 12px,
     ));
+    @include mat.icon-overrides((
+        // color: #505050,
+    ));
+    @include mat.select-overrides((
+        // enabled-arrow-color: #505050,
+    ))
 }
 
 body {
@@ -105,4 +131,32 @@ code {
 
 .my-mat-option .mat-mdc-option {
     min-height: 28px;
+}
+
+.scrollable {
+    overflow: auto;
+}
+
+/* 轨道（Track） */
+// .scrollable::-webkit-scrollbar-track {
+//     background: transparent; /* 透明轨道 */
+// }
+
+
+/* 滚动条整体 */
+.scrollable::-webkit-scrollbar {
+    width:  8px; /* 垂直滚动条宽度 */
+    height: 8px; /* 水平滚动条高度 */
+}
+
+/* 轨道（Track） */
+.scrollable::-webkit-scrollbar-track {
+    background: transparent; /* 透明轨道 */
+}
+
+/* 滑块（Thumb） */
+.scrollable::-webkit-scrollbar-thumb {
+    opacity:          50%;
+    border-radius:    4px;
+    background-color: color-mix(in srgb, var(--mat-sys-primary), transparent 30%);
 }

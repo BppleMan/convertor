@@ -1,7 +1,6 @@
 use crate::server::app_state::AppState;
 use crate::server::response::{ApiError, ApiResponse};
 use axum::extract::State;
-use color_eyre::eyre::OptionExt;
 use redis::AsyncTypedCommands;
 use std::sync::Arc;
 use tracing::instrument;
@@ -13,11 +12,17 @@ pub async fn healthy() -> ApiResponse<()> {
 
 #[instrument(skip_all)]
 pub async fn redis(State(state): State<Arc<AppState>>) -> Result<ApiResponse<String>, ApiError> {
-    let pong = state
-        .redis_connection
-        .clone()
-        .ok_or_eyre("没有 Redis 连接")?
-        .ping()
-        .await?;
-    Ok(ApiResponse::ok(pong))
+    let pong = async move {
+        let pong = state.redis_connection.clone()?.ping().await;
+        Some(pong)
+    }
+    .await
+    .transpose()
+    .map_err(ApiError::internal_server_error)?;
+    Ok(ApiResponse::ok(pong.unwrap_or_else(|| "Redis not configured".to_string())))
+}
+
+#[instrument(skip_all)]
+pub async fn metrics() -> ApiResponse<()> {
+    ApiResponse::ok(())
 }

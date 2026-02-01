@@ -1,5 +1,4 @@
-<mat-card>
-    <mat-card-header>{{ name() }}</mat-card-header>
+<mat-card appearance="outlined">
+    <ng-content select="mat-card-header"></ng-content>
     <ng-content select="mat-card-content"></ng-content>
-    <ng-content select="mat-card-footer"></ng-content>
 </mat-card>

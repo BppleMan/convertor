@@ -11,6 +11,17 @@ pub struct UrlResult {
     pub rule_providers_url: Vec<ConvertorUrl>,
 }
 
+impl UrlResult {
+    pub fn empty() -> Self {
+        Self {
+            raw_url: ConvertorUrl::empty(),
+            raw_profile_url: ConvertorUrl::empty(),
+            profile_url: ConvertorUrl::empty(),
+            rule_providers_url: vec![],
+        }
+    }
+}
+
 impl Display for UrlResult {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "{}", self.raw_url.desc)?;

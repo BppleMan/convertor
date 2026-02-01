@@ -1,4 +1,4 @@
-use convertor::common::once::init_backtrace;
+use convertor::common::once::{HOME_CONFIG_DIR, init_backtrace};
 use convertor::config::Config;
 use convertor::config::proxy_client::ProxyClient;
 use convertor::core::profile::Profile;
@@ -7,7 +7,7 @@ use std::path::Path;
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> color_eyre::Result<()> {
-    let base_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join(".convertor.bench");
+    let base_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("{HOME_CONFIG_DIR}.bench"));
     init_backtrace(|| {
         if let Err(e) = color_eyre::install() {
             eprintln!("Failed to install color_eyre: {e}");

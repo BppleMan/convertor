@@ -16,7 +16,7 @@ color-eyre = { workspace = true }
 
 # CLI / 工具
 clap = { workspace = true, features = ["default", "cargo", "derive"] }
-#include_dir = "0.7.4"
+config = { workspace = true, features = [] }
 
 # HTTP / 头部 处理
 #headers = { workspace = true }
@@ -29,6 +29,7 @@ url = { workspace = true, features = ["serde"] }
 serde = { workspace = true, features = ["derive"] }
 toml = { workspace = true, default-features = false }
 #regex = { workspace = true, default-features = false, features = ["unicode-perl"] }
+flate2 = { version = "1.1.2", features = ["rust_backend"] }
 
 # 异步运行时 / Tokio
 tokio = { workspace = true, features = ["fs", "rt-multi-thread", "signal", "macros"] }

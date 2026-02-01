@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand};
 use color_eyre::Result;
 use convd::server::start_server;
 use convertor::common::clap_style::SONOKAI_TC;
-use convertor::common::once::{init_backtrace, init_base_dir, init_log};
+use convertor::common::once::{init_backtrace, init_base_dir, init_log, shutdown_telemetry};
 use convertor::config::Config;
 use std::net::SocketAddrV4;
 use std::path::PathBuf;
@@ -38,23 +38,34 @@ async fn main() -> Result<()> {
     }
 
     let base_dir = init_base_dir();
-    let loki_url = std::env::var("LOKI_URL").ok();
-    let otlp_grpc = std::env::var("OTLP_GRPC").ok();
     init_backtrace(|| {
         if let Err(e) = color_eyre::install() {
             eprintln!("Failed to install color_eyre: {e}");
         }
     });
-    init_log(loki_url.as_deref(), otlp_grpc.as_deref());
+    let loki_url = std::env::var("LOKI_URL").ok();
+    let otlp_grpc = std::env::var("OTLP_GRPC").ok();
+    let loki_task = init_log(loki_url.as_deref(), otlp_grpc.as_deref());
+
+    // 启动 loki 后台任务
+    if let Some(task) = loki_task {
+        tokio::spawn(task);
+    }
+
     info!("工作目录: {}", base_dir.display());
 
     info!("+──────────────────────────────────────────────+");
     info!("│               加载配置文件...                │");
     info!("+──────────────────────────────────────────────+");
-    let config = Config::search(&base_dir, args.config)?;
+    let config: Config = Config::search(&base_dir, args.config)?;
     info!("配置文件加载完成");
 
     start_server(args.listen, config).await?;
+
+    // 优雅关闭：确保所有 pending 的 spans 都导出到 Tempo
+    info!("正在关闭遥测系统，确保所有追踪数据已导出...");
+    shutdown_telemetry();
+    info!("遥测系统已关闭");
 
     Ok(())
 }

@@ -6,21 +6,21 @@ expression: url_result.data.unwrap()
   "raw_url": {
     "type": "Raw",
     "server": "http://mock_host_port/subscription?token=bppleman&flag=surge",
-    "desc": "提供商原始订阅",
+    "desc": "订阅商原始订阅配置",
     "path": null,
     "query": null
   },
   "raw_profile_url": {
     "type": "RawProfile",
     "server": "http://127.0.0.1/",
-    "desc": "转发原始订阅",
+    "desc": "转换前订阅配置",
     "path": "/raw-profile/surge",
     "query": "interval=43200&strict=true&sub_url=http://mock_host_port/subscription?token=bppleman"
   },
   "profile_url": {
     "type": "Profile",
     "server": "http://127.0.0.1/",
-    "desc": "转换器订阅",
+    "desc": "转换后订阅配置",
     "path": "/profile/surge",
     "query": "interval=43200&strict=true&sub_url=http://mock_host_port/subscription?token=bppleman"
   },

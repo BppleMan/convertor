@@ -1,17 +1,17 @@
-use color_eyre::Report;
-use color_eyre::Result;
-use color_eyre::eyre::eyre;
+use crate::server::response::AppError;
 use convertor::config::Config;
 use convertor::core::profile::Profile;
 use convertor::core::profile::policy::Policy;
 use convertor::core::profile::surge_profile::SurgeProfile;
 use convertor::core::renderer::Renderer;
 use convertor::core::renderer::surge_renderer::SurgeRenderer;
-use convertor::url::convertor_url::ConvertorUrlType;
+use convertor::url::convertor_url::UrlType;
 use convertor::url::url_builder::UrlBuilder;
 use moka::future::Cache;
 use std::sync::Arc;
 use tracing::instrument;
+
+type Result<T> = core::result::Result<T, AppError>;
 
 #[derive(Clone)]
 pub struct SurgeService {
@@ -34,11 +34,9 @@ impl SurgeService {
 
     #[instrument(skip_all)]
     pub async fn raw_profile(&self, url_builder: UrlBuilder, raw_profile: String) -> Result<String> {
-        let surge_header = url_builder.build_surge_header(ConvertorUrlType::RawProfile)?;
-        let (_, right) = raw_profile
-            .split_once('\n')
-            .ok_or(eyre!("错误的原始配置, 未能找出第一行: {raw_profile}"))?;
-        Ok(format!("{surge_header}\n{right}"))
+        let surge_header = url_builder.build_surge_header(UrlType::RawProfile)?;
+        let parts = raw_profile.split_once('\n');
+        Ok(format!("{surge_header}\n{}", parts.map(|(_, v)| v).unwrap_or("")))
     }
 
     #[instrument(skip_all)]
@@ -50,14 +48,15 @@ impl SurgeService {
         }
     }
 
+    #[instrument(skip(self))]
     pub async fn try_get_profile(&self, url_builder: UrlBuilder, raw_profile: String) -> Result<SurgeProfile> {
         self.profile_cache
             .try_get_with(url_builder.clone(), async {
                 let mut profile = SurgeProfile::parse(raw_profile.clone())?;
                 profile.convert(&url_builder)?;
-                Ok::<_, Report>(profile)
+                Ok::<_, AppError>(profile)
             })
             .await
-            .map_err(|e| eyre!(e))
+            .map_err(AppError::CacheError)
     }
 }

@@ -2,11 +2,11 @@
 source: crates/confly/tests/subscription_test.rs
 expression: result
 ---
-提供商原始订阅
+订阅商原始订阅配置
 http://127.0.0.1:<PORT>/subscription?token=bppleman&flag=surge
-转换器订阅
+转换后订阅配置
 <SERVER>profile/surge?interval=86400&strict=true&sub_url=<ENC_SUB_URL>
-转发原始订阅
+转换前订阅配置
 <SERVER>raw-profile/surge?interval=86400&strict=true&sub_url=<ENC_SUB_URL>
 规则集: [Subscription]
 <SERVER>rule-provider/surge?interval=86400&policy[name]=DIRECT&policy[is_subscription]=true&sub_url=<ENC_SUB_URL>

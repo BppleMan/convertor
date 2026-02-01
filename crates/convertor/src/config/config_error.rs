@@ -4,10 +4,7 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum ConfigError {
     #[error("在 {} 中未找到配置文件: {}", .cwd.display(), .config_name)]
-    NotFound {
-        cwd: std::path::PathBuf,
-        config_name: String,
-    },
+    NotFound { cwd: std::path::PathBuf, config_name: String },
 
     #[error("在 Redis 中未找到配置项: {0}")]
     RedisNotFound(String),
@@ -38,4 +35,7 @@ pub enum ConfigError {
 
     #[error("创建 UrlBuilder 时发生错误: {0}")]
     UrlBuilderError(#[from] UrlBuilderError),
+
+    #[error("多段配置合并错误: {0}")]
+    SearchConfigError(#[from] config::ConfigError),
 }

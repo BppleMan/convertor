@@ -15,7 +15,7 @@ serde_json = { workspace = true }
 serde_yaml = { workspace = true }
 
 # HTTP 客户端 / 网络
-reqwest = { workspace = true, features = ["json", "stream", "rustls-tls", "cookies"] }
+reqwest = { workspace = true, features = ["http2", "json", "stream", "rustls-tls"] }
 headers = { workspace = true }
 httpmock = { workspace = true, features = ["colored"], optional = true }
 
@@ -23,15 +23,14 @@ httpmock = { workspace = true, features = ["colored"], optional = true }
 percent-encoding = { workspace = true }
 url = { workspace = true, features = ["serde"] }
 regex = { workspace = true, features = ["unicode-perl"] }
+uuid = "1.18.1"
 
 # 异步运行时 / 并发
 futures-util = { workspace = true }
-#async-trait = { workspace = true }
 
 # 日志 / 追踪 / 遥测（可选 feature）
 tracing = { workspace = true, features = ["attributes"] }
 tracing-subscriber = { workspace = true, features = ["default", "env-filter", "json", "local-time"] }
-tracing-appender = { workspace = true }
 tracing-loki = { workspace = true, default-features = false, features = ["rustls", "compat-0-2-1"] }
 tracing-opentelemetry = { workspace = true }
 
@@ -47,11 +46,12 @@ rand_core = { workspace = true, features = ["std", "os_rng"] }
 rand_chacha = { workspace = true, features = ["default"] }
 
 # 缓存 / 存储 / 数据库
-moka = { workspace = true, features = ["future"] }
+moka = { workspace = true, features = ["future", "logging"] }
 redis = { workspace = true, features = ["tokio-rustls-comp", "streams", "connection-manager"] }
 
 # CLI / 工具 / 键入
 clap = { workspace = true, features = ["std", "derive"] }
+config = { workspace = true, features = ["async", "yaml", "toml"] }
 
 # 错误 / 诊断
 color-eyre = { workspace = true, optional = true }

@@ -1,7 +1,7 @@
-use crate::common::ext::NonEmptyOptStr;
-use headers::{HeaderMap, UserAgent};
+use headers::HeaderMap;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 use std::ops::{Deref, DerefMut, Not};
 use url::Url;
@@ -27,6 +27,22 @@ impl SubscriptionConfig {
             headers: Headers::default(),
         }
     }
+
+    pub fn env_template(&self, prefix: impl AsRef<str>) -> Vec<(String, String)> {
+        let prefix = prefix.as_ref();
+        let mut vars = Vec::new();
+
+        vars.push((format!("{prefix}__SUB_URL"), self.sub_url.to_string()));
+        vars.push((format!("{prefix}__INTERVAL"), self.interval.to_string()));
+        vars.push((format!("{prefix}__STRICT"), self.strict.to_string()));
+
+        for (key, value) in self.headers.iter() {
+            let env_key = format!("{prefix}__HEADERS__{}", key.replace("-", "_").to_uppercase());
+            vars.push((env_key, value.clone()));
+        }
+
+        vars
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -34,29 +50,12 @@ impl SubscriptionConfig {
 pub struct Headers(pub HashMap<String, String>);
 
 impl Headers {
-    pub fn patch(mut self, config_headers: &Headers, user_agent: UserAgent) -> Headers {
-        let config_map = config_headers
-            .iter()
-            .filter_map(|(k, v)| k.is_empty().not().then_some((k, v)))
-            .collect::<HashMap<_, _>>();
-        for (k, v) in self.iter_mut() {
-            if k.is_empty() {
-                continue;
-            }
-            if let (true, Some(config_v)) = (v.is_empty().not(), config_map.get(k).filter_non_empty()) {
-                *v = (*config_v).to_string()
-            }
+    pub fn patch(self, config_headers: &Headers) -> Headers {
+        if config_headers.is_empty().not() {
+            config_headers.clone()
+        } else {
+            self
         }
-        if let Some(ua) = self.get_mut(&"User-Agent".to_string()) {
-            if ua.is_empty() {
-                *ua = user_agent.to_string();
-            }
-        } else if let Some(ua) = self.get_mut("user-agent") {
-            if ua.is_empty() {
-                *ua = user_agent.to_string();
-            }
-        }
-        self
     }
 
     pub fn from_header_map(header_map: HeaderMap) -> Self {
@@ -73,8 +72,7 @@ impl Default for Headers {
             [
                 (
                     "User-Agent".to_string(),
-                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML), like Gecko) Chrome/"
-                        .to_string(),
+                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML), like Gecko) Chrome/".to_string(),
                 ),
                 (
                     "sec-ch-ua".to_string(),
@@ -83,6 +81,19 @@ impl Default for Headers {
             ]
             .into(),
         )
+    }
+}
+
+impl Display for Headers {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        for (i, (k, v)) in self.iter().enumerate() {
+            if i == 0 {
+                write!(f, "{k}: {v}")?;
+            } else {
+                write!(f, "\n{k}: {v}")?;
+            }
+        }
+        Ok(())
     }
 }
 

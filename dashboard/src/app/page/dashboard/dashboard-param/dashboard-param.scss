@@ -1,0 +1,65 @@
+@use "@angular/material" as mat;
+
+:host {
+    display:        flex;
+    flex-direction: column;
+    width:          100%;
+    gap:            8px;
+
+    form {
+        display:        flex;
+        flex-direction: column;
+        gap:            8px;
+
+        .form-row {
+            display:        flex;
+            flex-direction: row;
+            gap:            12px;
+        }
+
+        .form-suffix {
+            width: 82.5px;
+        }
+
+        mat-form-field {
+            flex: 1;
+        }
+
+        mat-slide-toggle {
+            padding-top: 4px;
+        }
+
+        button[matButton="filled"] {
+            margin-top: 2px;
+        }
+
+        mat-form-field {
+            @include mat.form-field-overrides((
+                container-text-size: 12px,
+                outlined-label-text-color: color-mix(in srgb, var(--mat-sys-on-surface), transparent 30%),
+                outlined-hover-label-text-color: color-mix(in srgb, var(--mat-sys-on-surface), transparent 10%),
+                outlined-hover-outline-color: color-mix(in srgb, var(--mat-sys-on-surface), transparent 70%),
+            ));
+        }
+
+        mat-select {
+            @include mat.select-overrides((
+                trigger-text-size: 12px,
+            ));
+        }
+
+        button.error {
+            @include mat.button-overrides((
+                filled-label-text-color: var(--mat-sys-on-error),
+                filled-container-color: var(--mat-sys-error),
+            ))
+        }
+
+        ::ng-deep {
+            .mat-mdc-option {
+                min-height: 28px;
+            }
+        }
+
+    }
+}
