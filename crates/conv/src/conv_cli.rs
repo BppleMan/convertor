@@ -1,5 +1,5 @@
 use crate::args::{Package, Profile};
-use crate::commands::{BuildCommand, Commander, DashboardCommand, ImageCommand, PublishCommand};
+use crate::commands::{BuildCommand, Commander, DashboardCommand, ImageCommand, PublishCommand, VarCommand};
 use clap::{Args, Parser, Subcommand};
 use std::process::Command;
 
@@ -25,6 +25,9 @@ pub enum ConvCommand {
 
     /// 编译 dashboard
     Dashboard(DashboardCommand),
+
+    /// 获取配置变量值
+    Var(VarCommand),
 }
 
 #[derive(Debug, Args)]
@@ -43,6 +46,10 @@ impl Commander for ConvCommand {
         match self {
             ConvCommand::Version => {
                 println!("{}", env!("CARGO_PKG_VERSION"));
+                Ok(vec![])
+            }
+            ConvCommand::Var(var) => {
+                var.run()?;
                 Ok(vec![])
             }
             ConvCommand::Build(build) => build.create_command(),
