@@ -1,0 +1,35 @@
+services:
+  nginx-proxy-manager:
+    image: jc21/nginx-proxy-manager:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "81:81"
+    environment:
+      DB_SQLITE_FILE: "/data/npm.sqlite"
+    volumes:
+      - npm-data:/data
+      - npm-letsencrypt:/etc/letsencrypt
+    networks:
+      - convertor-network
+
+  convd:
+    image: ghcr.io/bppleman/convertor/convd:latest
+    restart: unless-stopped
+    expose:
+      - "8080"
+    environment:
+      RUST_LOG: info
+    volumes:
+      - convd-data:/app/.convertor
+    networks:
+      - convertor-network
+
+networks:
+  convertor-network:
+
+volumes:
+  npm-data:
+  npm-letsencrypt:
+  convd-data:

@@ -1,4 +1,4 @@
-FROM ghcr.io/bppleman/convertor/base:alpine3.20
+FROM ghcr.io/convertor-gitops/convertor/base:alpine3.20
 
 # buildx 构建参数
 ARG TARGETARCH

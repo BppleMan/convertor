@@ -1,0 +1,215 @@
+name: 构建、推送并部署
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "构建配置 (dev/prod)"
+        type: choice
+        options: [ prod, dev ]
+        required: false
+        default: prod
+      deploy:
+        description: "是否部署到 node-vultr-1"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/convd
+
+jobs:
+  build-and-push:
+    name: 构建多平台镜像并推送到 GHCR
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.vars.outputs.image }}
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      # 构建 conv 工具用于后续步骤
+      - name: 构建 conv 工具
+        run: cargo install --path crates/conv
+
+      - name: 设置构建参数
+        id: vars
+        run: |
+          PROFILE="${{ github.event.inputs.profile }}"
+          if [ -z "$PROFILE" ]; then PROFILE="prod"; fi
+          echo "profile=$PROFILE" >> "$GITHUB_OUTPUT"
+
+          # 通过 conv 获取 cargo 编译配置
+          echo "cargo_profile=$(conv var cargo-profile $PROFILE)" >> "$GITHUB_OUTPUT"
+
+          # 镜像名称（小写）
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          echo "image=${IMAGE,,}" >> "$GITHUB_OUTPUT"
+
+      - name: 添加 MUSL 目标平台
+        run: rustup target add x86_64-unknown-linux-musl aarch64-unknown-linux-musl
+
+      - name: 安装 Zig 编译器
+        uses: mlugg/setup-zig@v2
+
+      - name: 安装 cargo-zigbuild
+        run: cargo install cargo-zigbuild --locked
+
+      - name: 缓存 Cargo 构建产物
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: 安装 pnpm
+        run: npm install -g pnpm
+
+      - name: 缓存 pnpm 依赖
+        uses: actions/cache@v4
+        with:
+          path: dashboard/node_modules
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('dashboard/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: 安装 Dashboard 依赖
+        run: pnpm install
+        working-directory: dashboard
+
+      - name: 登录到 GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 设置 Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 检查基础镜像可访问性
+        run: |
+          echo "🔍 检查基础镜像: ghcr.io/convertor-gitops/convertor/base:alpine3.20"
+          echo "👤 当前登录用户: ${{ github.actor }}"
+          echo "📦 仓库所有者: ${{ github.repository_owner }}"
+
+          # 尝试 inspect 镜像
+          if docker buildx imagetools inspect ghcr.io/convertor-gitops/convertor/base:alpine3.20 > /dev/null 2>&1; then
+            echo "✅ 基础镜像可访问"
+          else
+            echo "❌ 基础镜像不可访问，尝试拉取..."
+            if docker pull ghcr.io/convertor-gitops/convertor/base:alpine3.20; then
+              echo "✅ 基础镜像拉取成功"
+            else
+              echo "❌ 基础镜像拉取失败"
+              exit 1
+            fi
+          fi
+
+      - name: 使用 conv 构建并推送镜像（多架构）
+        run: |
+          # conv image 会自动：
+          # 1. 构建二进制、Dashboard 和 Docker 镜像（多架构）
+          # 2. 推送到指定的 registries
+          # 3. 创建多架构 manifest（版本号 + latest 标签）
+          conv image ${{ steps.vars.outputs.profile }} \
+            --arch amd,arm \
+            --dashboard \
+            --user ${{ github.repository_owner }} \
+            --registries ghcr
+
+  deploy:
+    name: 部署到 node-vultr-1
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    # 仅在以下情况部署：
+    # 1. 推送 tag 时
+    # 2. 手动触发且选择了部署
+    if: github.ref_type == 'tag' || (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy == 'true')
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 SSH 密钥
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.CONVERTOR_SSH_KEY }}" > ~/.ssh/convertor_ed25519
+          chmod 600 ~/.ssh/convertor_ed25519
+          ssh-keyscan -H 167.179.111.233 >> ~/.ssh/known_hosts
+
+      - name: 配置 SSH config
+        run: |
+          cat >> ~/.ssh/config <<EOF
+          Host node-vultr-1
+            HostName 167.179.111.233
+            Port 22
+            User root
+            IdentityFile ~/.ssh/convertor_ed25519
+            StrictHostKeyChecking no
+            HostKeyAlgorithms ssh-ed25519
+          EOF
+          chmod 600 ~/.ssh/config
+
+      - name: 安装 Docker 运行时（如需要）
+        run: |
+          ssh node-vultr-1 << 'EOF'
+          # 检查 Docker 是否已安装
+          if ! command -v docker &> /dev/null; then
+            echo "📦 安装 Docker..."
+            curl -fsSL https://get.docker.com -o get-docker.sh
+            sh get-docker.sh
+            systemctl enable docker
+            systemctl start docker
+            rm get-docker.sh
+            echo "✅ Docker 安装完成"
+          else
+            echo "✅ Docker 已安装: $(docker --version)"
+          fi
+          EOF
+
+      - name: 上传 compose.yaml 并部署
+        run: |
+          # 上传 compose.yaml
+          scp compose/compose.yaml node-vultr-1:/tmp/compose.yaml
+
+          # 执行部署
+          ssh node-vultr-1 << 'EOF'
+          # 创建部署目录
+          mkdir -p /opt/convertor
+
+          # 更新 compose.yaml
+          mv /tmp/compose.yaml /opt/convertor/compose.yaml
+
+          cd /opt/convertor
+
+          # 拉取最新镜像（latest 标签）
+          echo "📥 拉取最新镜像..."
+          docker compose pull convd
+
+          # 启动或重启 convd 服务
+          echo "🔄 重启 convd 服务..."
+          docker compose up -d convd
+
+          # 清理未使用的镜像
+          echo "🧹 清理未使用的镜像..."
+          docker image prune -f
+
+          echo "✅ convd 服务已更新"
+          echo ""
+          echo "📊 服务状态:"
+          docker compose ps
+          EOF

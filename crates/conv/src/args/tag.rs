@@ -1,19 +1,18 @@
-use crate::args::{Arch, Profile, Registry};
+use crate::args::{Arch, Profile, Registry, Version};
 
 pub struct Tag {
     pub user: String,
     pub name: String,
-    pub version: String,
+    pub version: Version,
     pub project: String,
     pub profile: Profile,
 }
 
 impl Tag {
-    pub fn new(user: impl AsRef<str>, project: impl AsRef<str>, profile: Profile) -> Self {
+    pub fn new(user: impl AsRef<str>, project: impl AsRef<str>, version: Version, profile: Profile) -> Self {
         let user = user.as_ref().to_string();
         let project = project.as_ref().to_string();
         let name = "convd".to_string();
-        let version = env!("CARGO_PKG_VERSION").to_string();
         Self {
             user,
             name,
@@ -23,26 +22,18 @@ impl Tag {
         }
     }
 
-    pub fn local(&self, arch: Option<Arch>) -> String {
-        format!(
-            "local/{}/{}/{}:{}{}{}",
-            self.user,
-            self.project,
-            self.name,
-            self.version,
-            self.profile.as_image_profile(),
-            arch.map(|a| format!("-{}", a.as_image_tag())).unwrap_or_default(),
-        )
+    pub fn local(&self, arch: Option<Arch>, version: Option<&Version>) -> String {
+        self.remote(&Registry::Local, arch, version)
     }
 
-    pub fn remote(&self, registry: &Registry, arch: Option<Arch>) -> String {
+    pub fn remote(&self, registry: &Registry, arch: Option<Arch>, version: Option<&Version>) -> String {
         format!(
             "{}/{}/{}/{}:{}{}{}",
             registry.as_url(),
             self.user,
             self.project,
             self.name,
-            self.version,
+            version.unwrap_or(&self.version),
             self.profile.as_image_profile(),
             arch.map(|a| format!("-{}", a.as_image_tag())).unwrap_or_default(),
         )

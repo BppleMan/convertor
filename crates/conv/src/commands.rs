@@ -2,6 +2,7 @@ mod build;
 mod dashboard;
 mod image;
 mod publish;
+mod var;
 
 pub use build::*;
 use color_eyre::Result;
@@ -9,6 +10,7 @@ pub use dashboard::*;
 pub use image::*;
 pub use publish::*;
 use std::process::Command;
+pub use var::*;
 
 pub trait Commander {
     fn create_command(&self) -> Result<Vec<Command>>;
