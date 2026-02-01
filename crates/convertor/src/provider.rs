@@ -42,6 +42,7 @@ impl SubsProvider {
         }
     }
 
+    #[instrument(skip(self))]
     pub async fn get_raw_profile(&self, sub_url: Url, headers: Headers) -> Result<String, ProviderError> {
         let cache_key = CacheKey::new(&self.cache_prefix, sub_url.to_string(), None);
         let raw_profile = self
@@ -72,15 +73,11 @@ impl SubsProvider {
         let started = Instant::now();
 
         // —— 发出请求
-        let resp = self
-            .client
-            .execute(req)
-            .await
-            .map_err(|e| ProviderError::RequestError {
-                reason: "请求失败".to_string(),
-                source: Box::new(e),
-                request_info: request_info.clone(),
-            })?;
+        let resp = self.client.execute(req).await.map_err(|e| ProviderError::RequestError {
+            reason: "请求失败".to_string(),
+            source: Box::new(e),
+            request_info: request_info.clone(),
+        })?;
 
         let elapsed_headers_ms = started.elapsed().as_millis();
 

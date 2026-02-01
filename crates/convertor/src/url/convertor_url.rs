@@ -15,13 +15,7 @@ pub struct ConvertorUrl {
 }
 
 impl ConvertorUrl {
-    pub fn new(
-        r#type: UrlType,
-        server: Url,
-        path: impl Into<String>,
-        query: impl Into<String>,
-        desc: impl Into<String>,
-    ) -> Self {
+    pub fn new(r#type: UrlType, server: Url, path: impl Into<String>, query: impl Into<String>, desc: impl Into<String>) -> Self {
         let path = Some(path.into());
         let query = Some(query.into());
         let desc = desc.into();
@@ -32,6 +26,16 @@ impl ConvertorUrl {
             path,
             query,
             desc,
+        }
+    }
+
+    pub fn empty() -> Self {
+        Self {
+            r#type: UrlType::Raw,
+            server: Url::parse("http://example.com").unwrap(),
+            path: None,
+            query: None,
+            desc: UrlType::Raw.label(),
         }
     }
 

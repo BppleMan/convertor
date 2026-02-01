@@ -32,6 +32,7 @@ pub fn router(app_state: AppState) -> Router {
         .route("/profile/{client}", get(profile::profile))
         .route("/rule-provider/{client}", get(profile::rule_provider))
         .route("/api/subscription/{client}", get(api::subscription::subscription))
+        .route("/api/health", get(|| async { Ok::<_, ApiError>(()) }))
         .nest("/dashboard/", angular::router())
         .with_state(Arc::new(app_state))
         .layer(convd_trace_layer())

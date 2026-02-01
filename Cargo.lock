@@ -520,7 +520,7 @@ dependencies = [
 
 [[package]]
 name = "confly"
-version = "2.6.13"
+version = "2.6.15"
 dependencies = [
  "clap",
  "color-eyre",
@@ -561,7 +561,7 @@ dependencies = [
 
 [[package]]
 name = "conv"
-version = "2.6.13"
+version = "2.6.15"
 dependencies = [
  "chrono",
  "clap",
@@ -571,7 +571,7 @@ dependencies = [
 
 [[package]]
 name = "convd"
-version = "2.6.13"
+version = "2.6.15"
 dependencies = [
  "anyhow",
  "axum",
@@ -604,7 +604,7 @@ dependencies = [
 
 [[package]]
 name = "convertor"
-version = "2.6.13"
+version = "2.6.15"
 dependencies = [
  "base64",
  "chacha20poly1305",
@@ -787,7 +787,7 @@ dependencies = [
 
 [[package]]
 name = "example"
-version = "2.6.13"
+version = "2.6.15"
 dependencies = [
  "color-eyre",
  "convertor",

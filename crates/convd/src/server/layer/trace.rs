@@ -2,7 +2,7 @@ use axum::extract::ConnectInfo;
 use axum::http::HeaderMap;
 use convertor::telemetry::opentelemetry::global;
 use convertor::telemetry::opentelemetry::propagation::Extractor;
-use convertor::telemetry::opentelemetry::trace::TraceContextExt;
+use convertor::telemetry::opentelemetry::trace::{SpanKind, TraceContextExt};
 use convertor::telemetry::tracing_opentelemetry::OpenTelemetrySpanExt;
 use std::net::SocketAddr;
 use std::time::Duration;
@@ -58,6 +58,7 @@ impl<B> MakeSpan<B> for ConvdMakeSpan {
 
         let path = request.uri().path();
         let method = request.method();
+        let span_name = format!("{} {}", method, path);
 
         // 根据编译模式决定 service name
         #[cfg(debug_assertions)]
@@ -89,8 +90,8 @@ impl<B> MakeSpan<B> for ConvdMakeSpan {
             bytes_sent = field::Empty,
 
             // OpenTelemetry 语义约定
-            otel.name = %format!("{} {}", method, path),
-            otel.kind = "server",
+            otel.name = span_name,
+            otel.kind = ?SpanKind::Server,
             "service.name" = service_name,
             "service.version" = env!("CARGO_PKG_VERSION"),
             "service.instance.id" = %get_service_instance_id(),
@@ -121,14 +122,8 @@ impl<B> tower_http::trace::OnRequest<B> for HttpOnRequest {
     fn on_request(&mut self, _request: &axum::http::Request<B>, span: &Span) {
         // 在请求开始时记录 trace_id，此时 span 已经过 OpenTelemetry layer 处理
         record_trace_ids(span);
-
-        tracing::debug!(
-            parent: span,
-            "HTTP request started"
-        );
     }
 }
-
 /// HTTP响应完成时的日志记录 - 记录请求完成信息和性能指标
 #[derive(Default, Clone)]
 pub struct HttpOnResponse;

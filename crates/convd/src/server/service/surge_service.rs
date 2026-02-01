@@ -48,6 +48,7 @@ impl SurgeService {
         }
     }
 
+    #[instrument(skip(self))]
     pub async fn try_get_profile(&self, url_builder: UrlBuilder, raw_profile: String) -> Result<SurgeProfile> {
         self.profile_cache
             .try_get_with(url_builder.clone(), async {
