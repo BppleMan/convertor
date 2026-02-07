@@ -1,5 +1,7 @@
 use crate::args::{Arch, Profile, Registry, Version};
+use std::fmt::Write;
 
+#[derive(Debug)]
 pub struct Tag {
     pub user: String,
     pub name: String,
@@ -9,10 +11,10 @@ pub struct Tag {
 }
 
 impl Tag {
-    pub fn new(user: impl AsRef<str>, project: impl AsRef<str>, version: Version, profile: Profile) -> Self {
+    pub fn new(user: impl AsRef<str>, project: impl AsRef<str>, name: impl AsRef<str>, version: Version, profile: Profile) -> Self {
         let user = user.as_ref().to_string();
         let project = project.as_ref().to_string();
-        let name = "convd".to_string();
+        let name = name.as_ref().to_string();
         Self {
             user,
             name,
@@ -27,15 +29,21 @@ impl Tag {
     }
 
     pub fn remote(&self, registry: &Registry, arch: Option<Arch>, version: Option<&Version>) -> String {
-        format!(
-            "{}/{}/{}/{}:{}{}{}",
-            registry.as_url(),
-            self.user,
+        let mut tag = String::new();
+        write!(tag, "{}", registry.as_url()).unwrap();
+        if !self.user.is_empty() {
+            write!(tag, "/{}", self.user).unwrap();
+        }
+        write!(
+            tag,
+            "/{}/{}:{}{}{}",
             self.project,
             self.name,
             version.unwrap_or(&self.version),
             self.profile.as_image_profile(),
             arch.map(|a| format!("-{}", a.as_image_tag())).unwrap_or_default(),
         )
+            .unwrap();
+        tag
     }
 }

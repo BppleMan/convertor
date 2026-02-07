@@ -1,0 +1,100 @@
+name: 部署到 node-vultr-1
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "是否部署到 node-vultr-1"
+        type: boolean
+        required: false
+        default: true
+
+permissions:
+  contents: read
+
+env:
+  DEPLOY_HOST: node-vultr-1
+  DEPLOY_HOSTNAME: 167.179.111.233
+
+jobs:
+  deploy:
+    name: 部署到 node-vultr-1
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag' || (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy == 'true')
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 SSH 密钥
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.CONVERTOR_SSH_KEY }}" > ~/.ssh/convertor_ed25519
+          chmod 600 ~/.ssh/convertor_ed25519
+          ssh-keyscan -H ${{ env.DEPLOY_HOSTNAME }} >> ~/.ssh/known_hosts
+
+      - name: 配置 SSH config
+        run: |
+          cat >> ~/.ssh/config <<EOF
+          Host ${{ env.DEPLOY_HOST }}
+            HostName ${{ env.DEPLOY_HOSTNAME }}
+            Port 22
+            User root
+            IdentityFile ~/.ssh/convertor_ed25519
+            StrictHostKeyChecking no
+            HostKeyAlgorithms ssh-ed25519
+          EOF
+          chmod 600 ~/.ssh/config
+
+      - name: 安装 Docker 运行时（如需要）
+        run: |
+          ssh ${{ env.DEPLOY_HOST }} << 'EOF'
+          # 检查 Docker 是否已安装
+          if ! command -v docker &> /dev/null; then
+            echo "📦 安装 Docker..."
+            curl -fsSL https://get.docker.com -o get-docker.sh
+            sh get-docker.sh
+            systemctl enable docker
+            systemctl start docker
+            rm get-docker.sh
+            echo "✅ Docker 安装完成"
+          else
+            echo "✅ Docker 已安装: $(docker --version)"
+          fi
+          EOF
+
+      - name: 上传 compose.yaml 并部署
+        run: |
+          # 上传 compose.yaml
+          scp compose/compose.yaml ${{ env.DEPLOY_HOST }}:/tmp/compose.yaml
+
+          # 执行部署
+          ssh ${{ env.DEPLOY_HOST }} << 'EOF'
+          # 创建部署目录
+          mkdir -p /opt/convertor
+
+          # 更新 compose.yaml
+          mv /tmp/compose.yaml /opt/convertor/compose.yaml
+
+          cd /opt/convertor
+
+          # 拉取最新镜像（latest 标签）
+          echo "📥 拉取最新镜像..."
+          docker compose pull convd
+
+          # 启动或重启 convd 服务
+          echo "🔄 重启 convd 服务..."
+          docker compose up -d convd
+
+          # 清理未使用的镜像
+          echo "🧹 清理未使用的镜像..."
+          docker image prune -f
+
+          echo "✅ convd 服务已更新"
+          echo ""
+          echo "📊 服务状态:"
+          docker compose ps
+          EOF

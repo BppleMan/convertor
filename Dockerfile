@@ -1,4 +1,5 @@
-FROM ghcr.io/convertor-gitops/convertor/base:alpine3.20
+ARG BASE_IMAGE=ghcr.io/convertor-gitops/convertor/base:alpine3.20
+FROM ${BASE_IMAGE}
 
 # buildx 构建参数
 ARG TARGETARCH
