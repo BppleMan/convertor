@@ -1,7 +1,7 @@
 use crate::args::{Arch, Package, Profile, Registry, Tag, Target, Version};
 use crate::commands::{BuildCommand, Commander};
 use crate::conv_cli::CommonArgs;
-use clap::Args;
+use clap::{Args, ValueEnum};
 use color_eyre::Result;
 use color_eyre::eyre::bail;
 use std::process::Command;
@@ -20,40 +20,46 @@ pub struct ImageCommand {
     pub version: Version,
 
     /// 指定镜像注册表用户名
+    /// oci://domain/user/project/name:tag 中的 user 部分
     #[arg(long, default_value_t = default_user())]
     pub user: String,
 
     /// 指定镜像注册表项目名称
+    /// oci://domain/user/project/name:tag 中的 project 部分
     #[arg(long, default_value_t = default_project())]
     pub project: String,
 
+    /// 指定镜像名称
+    /// oci://domain/user/project/name:tag 中的 name 部分
+    #[arg(long, value_enum, default_value_t = default_name())]
+    pub name: ImageName,
+
     /// 指定镜像注册表，[local, docker, ghcr, custom_url]
     #[arg(short, long, value_enum, value_delimiter = ',')]
-    registries: Vec<Registry>,
+    pub registries: Vec<Registry>,
 
-    // /// 指定自定义镜像注册表地址
-    // #[arg(long, alias = "cr", value_delimiter = ',')]
-    // custom_registries: Vec<String>,
     /// 是否打包 dashboard
     #[arg(short, long, default_value_t = false)]
-    dashboard: bool,
+    pub dashboard: bool,
 
     /// 是否仅推送
     #[arg(long, alias = "po", default_value_t = false)]
-    push_only: bool,
+    pub push_only: bool,
 
     /// 仅打印镜像标签（不构建）
     #[arg(short, long, alias = "to", default_value_t = false)]
-    tag: bool,
+    pub tag: bool,
 }
 
 impl ImageCommand {
     pub fn build(&self) -> Result<Vec<Command>> {
+        let package = match self.name {
+            ImageName::Base => return Ok(vec![]),
+            ImageName::Convd => Package::Convd,
+        };
+        let profile = self.profile;
         BuildCommand {
-            common_args: CommonArgs {
-                profile: self.profile,
-                package: Package::Convd,
-            },
+            common_args: CommonArgs { profile, package },
             target: Some(Target::Musl { arch: self.arch.clone() }),
             dashboard: self.dashboard,
         }
@@ -61,14 +67,27 @@ impl ImageCommand {
     }
 
     fn build_image(&self, tag: &Tag, arch: Arch) -> Command {
-        let build_args = BuildArgs::new(arch, self.profile);
+        let base_image = match self.name {
+            ImageName::Base => None,
+            ImageName::Convd => Some(
+                Tag::new(
+                    &self.user,
+                    &self.project,
+                    ImageName::Base.image_name(),
+                    self.version.clone(),
+                    self.profile,
+                )
+                    .remote(&Registry::Local, Some(arch), None),
+            ),
+        };
+        let build_args = BuildArgs::new(self.name.image_name(), self.version.to_string(), arch, self.profile, base_image);
         let mut command = Command::new("docker");
         command
             .args(["buildx", "build"])
             .args(["--platform", arch.as_image_platform()])
-            .args(["-t", tag.local(Some(arch), None).as_str()]);
-        build_args.build_arg(&mut command);
-        command.args(["-f", "Dockerfile", "--load", "."]);
+            .args(["-t", tag.local(Some(arch), None).as_str()])
+            .build_args(&build_args);
+        command.args(["-f", self.name.dockerfile(), "--load", "."]);
 
         command
     }
@@ -98,7 +117,13 @@ impl ImageCommand {
 
 impl Commander for ImageCommand {
     fn create_command(&self) -> Result<Vec<Command>> {
-        let tag = Tag::new(&self.user, &self.project, self.version.clone(), self.profile);
+        let tag = Tag::new(
+            &self.user,
+            &self.project,
+            self.name.image_name(),
+            self.version.clone(),
+            self.profile,
+        );
 
         // 仅打印标签
         if self.tag {
@@ -111,7 +136,8 @@ impl Commander for ImageCommand {
 
         let mut commands = vec![];
 
-        if !self.push_only {
+        let need_build = !self.push_only;
+        if need_build {
             commands.extend(self.build()?);
             // 先将所有架构的镜像构建出来
             for arch in self.arch.iter().copied() {
@@ -135,6 +161,7 @@ impl Commander for ImageCommand {
 }
 
 struct BuildArgs {
+    base_image: Option<String>,
     name: String,
     version: String,
     description: String,
@@ -148,9 +175,10 @@ struct BuildArgs {
 }
 
 impl BuildArgs {
-    fn new(arch: Arch, profile: Profile) -> Self {
-        let name = "convd".to_string();
-        let version = env!("CARGO_PKG_VERSION").to_string();
+    fn new(name: impl AsRef<str>, version: impl AsRef<str>, arch: Arch, profile: Profile, base_image: Option<impl AsRef<str>>) -> Self {
+        let base_image = base_image.map(|s| s.as_ref().to_string());
+        let name = name.as_ref().to_string();
+        let version = version.as_ref().to_string();
         let description = env!("CARGO_PKG_DESCRIPTION").to_string();
         let url = env!("CARGO_PKG_REPOSITORY").to_string();
         let vendor = env!("CARGO_PKG_AUTHORS").to_string().replace("[", "").replace("]", "");
@@ -160,6 +188,7 @@ impl BuildArgs {
         let target_triple = arch.as_target_triple().to_string();
         let target_dir = profile.as_cargo_target_dir().to_string();
         Self {
+            base_image,
             name,
             version,
             description,
@@ -171,17 +200,53 @@ impl BuildArgs {
             target_dir,
         }
     }
+}
 
-    pub fn build_arg(&self, command: &mut Command) {
-        command.arg("--build-arg").arg(format!("NAME={}", self.name));
-        command.arg("--build-arg").arg(format!("VERSION={}", self.version));
-        command.arg("--build-arg").arg(format!("DESCRIPTION={}", self.description));
-        command.arg("--build-arg").arg(format!("URL={}", self.url));
-        command.arg("--build-arg").arg(format!("VENDOR={}", self.vendor));
-        command.arg("--build-arg").arg(format!("LICENSE={}", self.license));
-        command.arg("--build-arg").arg(format!("BUILD_DATE={}", self.build_date));
-        command.arg("--build-arg").arg(format!("TARGET_TRIPLE={}", self.target_triple));
-        command.arg("--build-arg").arg(format!("TARGET_DIR={}", self.target_dir));
+trait BuildArgument {
+    fn build_args(&mut self, build_args: &BuildArgs) -> &mut Self;
+}
+
+impl BuildArgument for Command {
+    fn build_args(&mut self, build_args: &BuildArgs) -> &mut Self {
+        if let Some(base_image) = &build_args.base_image {
+            self.arg("--build-arg").arg(format!("BASE_IMAGE={}", base_image));
+        }
+        self.arg("--build-arg").arg(format!("NAME={}", build_args.name));
+        self.arg("--build-arg").arg(format!("VERSION={}", build_args.version));
+        self.arg("--build-arg").arg(format!("DESCRIPTION={}", build_args.description));
+        self.arg("--build-arg").arg(format!("URL={}", build_args.url));
+        self.arg("--build-arg").arg(format!("VENDOR={}", build_args.vendor));
+        self.arg("--build-arg").arg(format!("LICENSE={}", build_args.license));
+        self.arg("--build-arg").arg(format!("BUILD_DATE={}", build_args.build_date));
+        self.arg("--build-arg").arg(format!("TARGET_TRIPLE={}", build_args.target_triple));
+        self.arg("--build-arg").arg(format!("TARGET_DIR={}", build_args.target_dir));
+        self
+    }
+}
+
+#[derive(Debug, Copy, Clone, ValueEnum)]
+pub enum ImageName {
+    Base,
+    Convd,
+}
+
+impl ImageName {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ImageName::Base => "base",
+            ImageName::Convd => "convd",
+        }
+    }
+
+    pub fn image_name(&self) -> &'static str {
+        self.as_str()
+    }
+
+    pub fn dockerfile(&self) -> &'static str {
+        match self {
+            ImageName::Base => "base.Dockerfile",
+            ImageName::Convd => "Dockerfile",
+        }
     }
 }
 
@@ -191,6 +256,10 @@ fn default_user() -> String {
 
 fn default_project() -> String {
     "convertor".to_string()
+}
+
+fn default_name() -> ImageName {
+    ImageName::Convd
 }
 
 fn default_version() -> Version {
